@@ -1,0 +1,7 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Inventory
+metadata:
+  name: inventory-sample
+spec:
+  # Add fields here
+  foo: bar
