@@ -8,14 +8,14 @@ k8s operator for inventory CRD
     # enable registry
     minikube addons enable registry
     # run proxy to registry
-    docker run --rm -d -name registry-bridge --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
+    docker run --rm -d --name registry-bridge --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
 
 ### Build and install
 
-    # build container and push to local registry
-    make docker-build docker-push IMG="localhost:5000/k8s-inventory:latest"
     # generate configs
     make install
+    # build container and push to local registry
+    make docker-build docker-push IMG="localhost:5000/k8s-inventory:latest"
     # deploy controller
     make deploy IMG="localhost:5000/k8s-inventory:latest"
 

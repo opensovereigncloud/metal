@@ -23,19 +23,188 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// InventorySpec defines the desired state of Inventory
+// InventorySpec contains result of inventorization process on the host
 type InventorySpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// System contains DMI system information
+	// +kubebuilder:validation:Required
+	System SystemSpec `json:"system,omitempty"`
+	// IPMIs contains info about IPMI interfaces on the host
+	// +kubebuilder:validation:Optional
+	IPMIs []IPMISpec `json:"ipmis,omitempty"`
+	// Blocks contains info about block devices on the host
+	// +kubebuilder:validation:Required
+	Blocks []BlockSpec `json:"blocks,omitempty"`
+	// Memory contains info block devices on the host
+	// +kubebuilder:validation:Required
+	Memory MemorySpec `json:"memory,omitempty"`
+	// CPUs contains info about cpus, cores and threads
+	// +kubebuilder:validation:Required
+	CPUs []CPUSpec `json:"cpus,omitempty"`
+	// NICs contains info about network interfaces and network discovery
+	// +kubebuilder:validation:Required
+	NICs []NICSpec `json:"nics,omitempty"`
+}
 
-	// Foo is an example field of Inventory. Edit Inventory_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// SystemSpec contains DMI system information
+type SystemSpec struct {
+	// ID is a UUID of a system board
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`
+	ID string `json:"id,omitempty"`
+	// Manufacturer refers to the company that produced the product
+	// +kubebuilder:validation:Required
+	Manufacturer string `json:"manufacturer,omitempty"`
+	// ProductSKU is a product's Stock Keeping Unit
+	// +kubebuilder:validation:Required
+	ProductSKU string `json:"productSku,omitempty"`
+	// SerialNumber contains serial number of a system
+	// +kubebuilder:validation:Required
+	SerialNumber string `json:"serialNumber,omitempty"`
+}
+
+// IPMISpec contains info about IPMI module
+type IPMISpec struct {
+	// IPAddress is an IP address assigned to IPMI network interface
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`
+	IPAddress string `json:"ipAddress,omitempty"`
+	// MACAddress is a MAC address of IPMI's network interface
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$`
+	MACAddress string `json:"macAddress,omitempty"`
+}
+
+// BlockSpec contains info about block device
+type BlockSpec struct {
+	// Name is a name of the device registered by Linux Kernel
+	// +kubebuilder:validation:Required
+	Name string `json:"name,omitempty"`
+	// Type refers to data carrier form-factor
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=Floppy;CD-ROM;SCSI;IDE;NVMe;USB;MMC;VirtIO;Xen
+	Type string `json:"type,omitempty"`
+	// Rotational shows whether disk is solid state or not
+	// +kubebuilder:validation:Required
+	Rotational bool `json:"rotational"`
+	// Bus is a type of hardware interface used to connect the disk to the system
+	// +kubebuilder:validation:Required
+	Bus string `json:"system,omitempty"`
+	// Model is a unique hardware part identifier
+	// +kubebuilder:validation:Required
+	Model string `json:"model,omitempty"`
+	// Size is a disk space available in bytes
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Size uint64 `json:"size,omitempty"`
+	// PartitionTable is a partition table currently written to the disk
+	// +kubebuilder:validation:Optional
+	PartitionTable *PartitionTableSpec `json:"partitionTable,omitempty"`
+}
+
+// PartitionTableSpec contains info about partition table on block device
+type PartitionTableSpec struct {
+	// Type is a format of partition table
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=MBR;GPT
+	Type string `json:"type,omitempty"`
+	// Partitions are active partition records on disk
+	// +kubebuilder:validation:Optional
+	Partitions []PartitionSpec `json:"partitions,omitempty"`
+}
+
+// PartitionSpec contains info about partition
+type PartitionSpec struct {
+	// ID is a GUID of GPT partition or number for MBR partition
+	// +kubebuilder:validation:Required
+	ID string `json:"id,omitempty"`
+	// Name is a human readable name given to the partition
+	// +kubebuilder:validation:Optional
+	Name string `json:"name,omitempty"`
+	// Size is a size of partition in bytes
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Size uint64 `json:"size,omitempty"`
+}
+
+// MemorySpec contains info about RAM on host
+type MemorySpec struct {
+	// Total is a total amount of RAM on host
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Total uint64 `json:"total,omitempty"`
+}
+
+// MemorySpec contains info about CPUs on hsot machine
+type CPUSpec struct {
+}
+
+// NICSpec contains info about network interfaces
+type NICSpec struct {
+	// Name is a name of the device registered by Linux Kernel
+	// +kubebuilder:validation:Required
+	Name string `json:"name,omitempty"`
+	// PCIAddress is the PCI bus address network interface is connected to
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1}$`
+	PCIAddress string `json:"pciAddress,omitempty"`
+	// MACAddress is the MAC address of network interface
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^([0-9A-Fa-f]{2}[:.-]){5}([0-9A-Fa-f]{2})$`
+	MACAddress string `json:"macAddress,omitempty"`
+	// MTU is refers to Maximum Transmission Unit
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	MTU uint16 `json:"mtu,omitempty"`
+	// Speed is a speed of network interface in Mbits/s
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Speed uint32 `json:"speed,omitempty"`
+	// LLDP is a collection of LLDP messages received by the network interface
+	// +kubebuilder:validation:Optional
+	LLDPs []LLDPSpec `json:"lldps,omitempty"`
+	// NDP is a collection of NDP messages received by the network interface
+	// +kubebuilder:validation:Optional
+	NDPs []NDPSpec `json:"ndps,omitempty"`
+}
+
+// LLDPSpec is an entry received by network interface by Link Layer Discovery Protocol
+type LLDPSpec struct {
+	// ChassisID is a neighbour box identifier
+	// +kubebuilder:validation:Required
+	ChassisID string `json:"chassisId,omitempty"`
+	// SystemName is given name to the neighbour box
+	// +kubebuilder:validation:Optional
+	SystemName string `json:"systemName,omitempty"`
+	// SystemDescription is a short description of the neighbour box
+	// +kubebuilder:validation:Optional
+	SystemDescription string `json:"systemDescription,omitempty"`
+	// PortID is a hardware identifier of the link port
+	// +kubebuilder:validation:Required
+	PortID string `json:"portId,omitempty"`
+	// PortDescription is a short description of the link port
+	// +kubebuilder:validation:Optional
+	PortDescription string `json:"portDescription,omitempty"`
+}
+
+// NDPSpec is an entry received by IPv6 Neighbour Discovery Protocol
+type NDPSpec struct {
+	// IPAddress is an IPv6 address of a neighbour
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$`
+	IPAddress string `json:"ipAddress,omitempty"`
+	// MACAddress is an MAC address of a neighbour
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^([0-9A-Fa-f]{2}[:.-]){5}([0-9A-Fa-f]{2})$`
+	MACAddress string `json:"macAddress,omitempty"`
+	// State is a state of discovery
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=None;Incomplete;Reachable;Stale;Delay;Probe;Failed;No ARP;Permanent
+	State string `json:"state,omitempty"`
 }
 
 // InventoryStatus defines the observed state of Inventory
 type InventoryStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// No additional state required for now
 }
 
 // +kubebuilder:object:root=true
