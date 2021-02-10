@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,7 +28,7 @@ import (
 type InventorySpec struct {
 	// System contains DMI system information
 	// +kubebuilder:validation:Required
-	System SystemSpec `json:"system,omitempty"`
+	System *SystemSpec `json:"system,omitempty"`
 	// IPMIs contains info about IPMI interfaces on the host
 	// +kubebuilder:validation:Optional
 	IPMIs []IPMISpec `json:"ipmis,omitempty"`
@@ -36,10 +37,10 @@ type InventorySpec struct {
 	Blocks []BlockSpec `json:"blocks,omitempty"`
 	// Memory contains info block devices on the host
 	// +kubebuilder:validation:Required
-	Memory MemorySpec `json:"memory,omitempty"`
+	Memory *MemorySpec `json:"memory,omitempty"`
 	// CPUs contains info about cpus, cores and threads
 	// +kubebuilder:validation:Required
-	CPUs []CPUSpec `json:"cpus,omitempty"`
+	CPUs *CPUTotalSpec `json:"cpus,omitempty"`
 	// NICs contains info about network interfaces and network discovery
 	// +kubebuilder:validation:Required
 	NICs []NICSpec `json:"nics,omitempty"`
@@ -134,8 +135,110 @@ type MemorySpec struct {
 	Total uint64 `json:"total,omitempty"`
 }
 
-// MemorySpec contains info about CPUs on hsot machine
+// CPUTotalSpec contains an overview of CPUs and calculated total
+type CPUTotalSpec struct {
+	// Sockets represents a total amount of physical processors
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Sockets uint64 `json:"sockets,omitempty"`
+	// Cores is a total amount of physical cores
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Cores uint64 `json:"cores,omitempty"`
+	// Cores is a total amount of logical cores
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Threads uint64 `json:"threads,omitempty"`
+	// CPUs is a collection of specs for physical CPUs
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
+	CPUs []CPUSpec `json:"cpus,omitempty"`
+}
+
+// CPUSpec contains info about CPUs on hsot machine
 type CPUSpec struct {
+	// PhysicalID is an ID of physical CPU
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=0
+	PhysicalID uint64 `json:"physicalId,omitempty"`
+	// LogicalIDs is a collection of logical CPU nums related to the physical CPU (required for NUMA)
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
+	LogicalIDs []uint64 `json:"LogicalIds,omitempty"`
+	// Cores is a number of physical cores
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Cores uint64 `json:"cores,omitempty"`
+	// Siblings is a number of logical CPUs/threads
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Siblings uint64 `json:"siblings,omitempty"`
+	// VendorID is a manufacturer identifire
+	// +kubebuilder:validation:Required
+	VendorID string `json:"vendorId,omitempty"`
+	// Family refers to processor type
+	// +kubebuilder:validation:Optional
+	Family string `json:"family,omitempty"`
+	// Model is a reference id of the model
+	// +kubebuilder:validation:Required
+	Model string `json:"model,omitempty"`
+	// ModelName is a common name of the processor
+	// +kubebuilder:validation:Required
+	ModelName string `json:"modelName,omitempty"`
+	// Stepping is an iteration of the architecture
+	// +kubebuilder:validation:Optional
+	Stepping string `json:"stepping,omitempty"`
+	// Microcode is a firmware reference
+	// +kubebuilder:validation:Optional
+	Microcode string `json:"microcode,omitempty"`
+	// MHz is a logical core frequency
+	// +kubebuilder:validation:Optional
+	MHz resource.Quantity `json:"mhz,omitempty"`
+	// CacheSize is an L2 cache size
+	// +kubebuilder:validation:Optional
+	CacheSize string `json:"cacheSize,omitempty"`
+	// APICID is a logical ID assigned by firmware
+	// +kubebuilder:validation:Optional
+	APICID string `json:"apicId,omitempty"`
+	// InitialAPICID is a logical ID assigned by firmware
+	// +kubebuilder:validation:Optional
+	InitialAPICID string `json:"initialApicId,omitempty"`
+	// FPU defines if CPU has a Floating Point Unit
+	// +kubebuilder:validation:Optional
+	FPU bool `json:"fpu"`
+	// FPUException
+	// +kubebuilder:validation:Optional
+	FPUException bool `json:"fpuException"`
+	// CPUIDLevel
+	// +kubebuilder:validation:Optional
+	CPUIDLevel uint64 `json:"cpuIdLevel,omitempty"`
+	// WP tells if WP bit is present
+	// +kubebuilder:validation:Optional
+	WP bool `json:"wp"`
+	// Flags defines a list of low-level computing capabilities
+	// +kubebuilder:validation:Optional
+	Flags []string `json:"flags,omitempty"`
+	// VMXFlags defines a list of virtualization capabilities
+	// +kubebuilder:validation:Optional
+	VMXFlags []string `json:"vmxFlags,omitempty"`
+	// Bugs contains a list of known hardware bugs
+	// +kubebuilder:validation:Optional
+	Bugs []string `json:"bugs,omitempty"`
+	// BogoMIPS is a synthetic performance metric
+	// +kubebuilder:validation:Required
+	BogoMIPS resource.Quantity `json:"bogoMips,omitempty"`
+	// CLFlushSize size for cache line flushing feature
+	// +kubebuilder:validation:Optional
+	CLFlushSize uint64 `json:"clFlushSize,omitempty"`
+	// CacheAlignment is a cache size
+	// +kubebuilder:validation:Optional
+	CacheAlignment uint64 `json:"cacheAlignment,omitempty"`
+	// AddressSizes is an info about address transition system
+	// +kubebuilder:validation:Optional
+	AddressSizes string `json:"addressSizes,omitempty"`
+	// PowerManagement
+	// +kubebuilder:validation:Optional
+	PowerManagement string `json:"powerManagement,omitempty"`
 }
 
 // NICSpec contains info about network interfaces
