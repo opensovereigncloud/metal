@@ -88,7 +88,7 @@ type BlockSpec struct {
 	// +kubebuilder:validation:Required
 	Rotational bool `json:"rotational"`
 	// Bus is a type of hardware interface used to connect the disk to the system
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	Bus string `json:"system,omitempty"`
 	// Model is a unique hardware part identifier
 	// +kubebuilder:validation:Required
@@ -197,12 +197,6 @@ type CPUSpec struct {
 	// CacheSize is an L2 cache size
 	// +kubebuilder:validation:Optional
 	CacheSize string `json:"cacheSize,omitempty"`
-	// APICID is a logical ID assigned by firmware
-	// +kubebuilder:validation:Optional
-	APICID string `json:"apicId,omitempty"`
-	// InitialAPICID is a logical ID assigned by firmware
-	// +kubebuilder:validation:Optional
-	InitialAPICID string `json:"initialApicId,omitempty"`
 	// FPU defines if CPU has a Floating Point Unit
 	// +kubebuilder:validation:Optional
 	FPU bool `json:"fpu"`
