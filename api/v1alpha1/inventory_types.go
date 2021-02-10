@@ -50,7 +50,7 @@ type InventorySpec struct {
 type SystemSpec struct {
 	// ID is a UUID of a system board
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`
+	// +kubebuilder:validation:Pattern=`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`
 	ID string `json:"id,omitempty"`
 	// Manufacturer refers to the company that produced the product
 	// +kubebuilder:validation:Required
@@ -164,7 +164,7 @@ type CPUSpec struct {
 	// LogicalIDs is a collection of logical CPU nums related to the physical CPU (required for NUMA)
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinItems=1
-	LogicalIDs []uint64 `json:"LogicalIds,omitempty"`
+	LogicalIDs []uint64 `json:"logicalIds,omitempty"`
 	// Cores is a number of physical cores
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=1

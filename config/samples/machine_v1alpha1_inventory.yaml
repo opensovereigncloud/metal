@@ -5,12 +5,12 @@ metadata:
 spec:
   system:
     id: a967954c-3475-11b2-a85c-84d8b4f8cd2d
-    manifacturer: LENOVO
+    manufacturer: LENOVO
     productSku: LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG
     serialNumber: R90QR6J0
   ipmis:
-    ipAddress: 192.168.10.191
-    macAddress: 38:68:dd:26:8d:f5
+    - ipAddress: 192.168.10.191
+      macAddress: 38:68:dd:26:8d:f5
   blocks:
     - name: nvme0n1
       type: NVMe
@@ -29,19 +29,19 @@ spec:
   cpus:
     sockets: 1
     cores: 2
-    thread: 4
+    threads: 4
     cpus:
       - physicalId: 0
         logicalIds: [0, 1, 2, 3]
         cores: 2
         siblings: 4
         vendorId: GenuineIntel
-        family: 6
-        model: 78
+        family: "6"
+        model: "78"
         modelName: Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz
-        stepping: 3
-        microcode: 0xe2
-        mhz: 2799.699
+        stepping: "3"
+        microcode: "0xe2"
+        mhz: "2799.699"
         cacheSize: 3072 KB
         fpu: true
         fpuException: true
@@ -50,7 +50,7 @@ spec:
         flags: ["fpu", "vme", "de", "pse", "tsc", "msr", "pae", "mce"]
         vmxFlags: ["vnmi", "preemption_timer", "invvpid", "ept_x_only", "ept_ad", "ept_1gb"]
         bugs: ["cpu_meltdown", "spectre_v1", "spectre_v2"]
-        bogoMips: 4999.9
+        bogoMips: "4999.9"
         clFlushSize: 64
         cacheAlignment: 64
         addressSizes: "39 bits physical, 48 bits virtual"

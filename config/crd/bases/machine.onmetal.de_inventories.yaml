@@ -124,20 +124,9 @@ spec:
                     items:
                       description: CPUSpec contains info about CPUs on hsot machine
                       properties:
-                        LogicalIds:
-                          description: LogicalIDs is a collection of logical CPU nums
-                            related to the physical CPU (required for NUMA)
-                          items:
-                            format: int64
-                            type: integer
-                          minItems: 1
-                          type: array
                         addressSizes:
                           description: AddressSizes is an info about address transition
                             system
-                          type: string
-                        apicId:
-                          description: APICID is a logical ID assigned by firmware
                           type: string
                         bogoMips:
                           anyOf:
@@ -186,9 +175,14 @@ spec:
                         fpuException:
                           description: FPUException
                           type: boolean
-                        initialApicId:
-                          description: InitialAPICID is a logical ID assigned by firmware
-                          type: string
+                        logicalIds:
+                          description: LogicalIDs is a collection of logical CPU nums
+                            related to the physical CPU (required for NUMA)
+                          items:
+                            format: int64
+                            type: integer
+                          minItems: 1
+                          type: array
                         mhz:
                           anyOf:
                           - type: integer
@@ -364,7 +358,7 @@ spec:
                 properties:
                   id:
                     description: ID is a UUID of a system board
-                    pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$
+                    pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
                     type: string
                   manufacturer:
                     description: Manufacturer refers to the company that produced
