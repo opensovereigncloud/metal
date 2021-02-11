@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
@@ -24,11 +23,11 @@ type InventoryInterface interface {
 	List(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.InventoryList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 	Create(ctx context.Context, inventory *v1alpha1.Inventory, opts metav1.CreateOptions) (*v1alpha1.Inventory, error)
-	Update(ctx context.Context, inventory *v1alpha1.Inventory, opts metav1.UpdateOptions) (*v1.ReplicationController, error)
-	UpdateStatus(ctx context.Context, replicationController *v1.ReplicationController, opts metav1.UpdateOptions) (*v1.ReplicationController, error)
+	Update(ctx context.Context, inventory *v1alpha1.Inventory, opts metav1.UpdateOptions) (*v1alpha1.Inventory, error)
+	UpdateStatus(ctx context.Context, inventory *v1alpha1.Inventory, opts metav1.UpdateOptions) (*v1alpha1.Inventory, error)
 	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1.ReplicationController, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1alpha1.Inventory, error)
 }
 
 type inventoryClient struct {
@@ -99,8 +98,8 @@ func (c *inventoryClient) Create(ctx context.Context, inventory *v1alpha1.Invent
 	return result, err
 }
 
-func (c *inventoryClient) Update(ctx context.Context, inventory *v1alpha1.Inventory, opts metav1.UpdateOptions) (*v1.ReplicationController, error) {
-	result := &v1.ReplicationController{}
+func (c *inventoryClient) Update(ctx context.Context, inventory *v1alpha1.Inventory, opts metav1.UpdateOptions) (*v1alpha1.Inventory, error) {
+	result := &v1alpha1.Inventory{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CInventoriesResourceType).
@@ -113,15 +112,15 @@ func (c *inventoryClient) Update(ctx context.Context, inventory *v1alpha1.Invent
 	return result, err
 }
 
-func (c *inventoryClient) UpdateStatus(ctx context.Context, replicationController *v1.ReplicationController, opts metav1.UpdateOptions) (*v1.ReplicationController, error) {
-	result := &v1.ReplicationController{}
+func (c *inventoryClient) UpdateStatus(ctx context.Context, inventory *v1alpha1.Inventory, opts metav1.UpdateOptions) (*v1alpha1.Inventory, error) {
+	result := &v1alpha1.Inventory{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CInventoriesResourceType).
-		Name(replicationController.Name).
+		Name(inventory.Name).
 		SubResource(CStatusSubresource).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(replicationController).
+		Body(inventory).
 		Do(ctx).
 		Into(result)
 
@@ -154,8 +153,8 @@ func (c *inventoryClient) DeleteCollection(ctx context.Context, opts metav1.Dele
 		Error()
 }
 
-func (c *inventoryClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1.ReplicationController, error) {
-	result := &v1.ReplicationController{}
+func (c *inventoryClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1alpha1.Inventory, error) {
+	result := &v1alpha1.Inventory{}
 	err := c.restClient.Patch(pt).
 		Namespace(c.ns).
 		Resource(CInventoriesResourceType).
