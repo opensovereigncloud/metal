@@ -19,10 +19,14 @@ package controllers
 import (
 	"context"
 
+	"github.com/d4l3k/messagediff"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 )
@@ -59,5 +63,33 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&machinev1alpha1.Inventory{}).
+		WithEventFilter(r.constructPredicates()).
 		Complete(r)
+}
+
+func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
+	return predicate.Funcs{
+		UpdateFunc: r.printDiffOnUpdate,
+	}
+}
+
+func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
+	old := event.ObjectOld.(*machinev1alpha1.Inventory)
+	upd := event.ObjectNew.(*machinev1alpha1.Inventory)
+
+	nsName := types.NamespacedName{
+		Namespace: old.Namespace,
+		Name:      old.Name,
+	}
+
+	l := r.Log.WithValues("inventory", nsName)
+
+	msg, eq := messagediff.PrettyDiff(old.Spec, upd.Spec)
+	if eq {
+		l.Info("new version is the same")
+	} else {
+		l.Info("found a difference on update", "diff", msg)
+	}
+
+	return true
 }
