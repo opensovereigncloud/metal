@@ -3,6 +3,7 @@ module github.com/onmetal/k8s-inventory
 go 1.15
 
 require (
+	github.com/d4l3k/messagediff v1.2.1
 	github.com/go-logr/logr v0.3.0
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
