@@ -16,7 +16,28 @@ spec:
     singular: inventory
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: Total amount of cores
+      jsonPath: .spec.cpus.cores
+      name: Cores
+      type: integer
+    - description: RAM amount in bytes
+      jsonPath: .spec.memory.total
+      name: Memory
+      type: integer
+    - description: Hardware disk count
+      jsonPath: .spec.blocks.count
+      name: Disks
+      type: integer
+    - description: Total amount of disk capacity
+      jsonPath: .spec.blocks.capacity
+      name: Storage
+      type: integer
+    - description: Total amount of hardware network interfaces
+      jsonPath: .spec.nics.count
+      name: NICs
+      type: integer
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Inventory is the Schema for the inventories API
@@ -39,78 +60,93 @@ spec:
             properties:
               blocks:
                 description: Blocks contains info about block devices on the host
-                items:
-                  description: BlockSpec contains info about block device
-                  properties:
-                    model:
-                      description: Model is a unique hardware part identifier
-                      type: string
-                    name:
-                      description: Name is a name of the device registered by Linux
-                        Kernel
-                      type: string
-                    partitionTable:
-                      description: PartitionTable is a partition table currently written
-                        to the disk
+                properties:
+                  blocks:
+                    description: Blocks contains info about block devices on the host
+                    items:
+                      description: BlockSpec contains info about block device
                       properties:
-                        partitions:
-                          description: Partitions are active partition records on
-                            disk
-                          items:
-                            description: PartitionSpec contains info about partition
-                            properties:
-                              id:
-                                description: ID is a GUID of GPT partition or number
-                                  for MBR partition
-                                type: string
-                              name:
-                                description: Name is a human readable name given to
-                                  the partition
-                                type: string
-                              size:
-                                description: Size is a size of partition in bytes
-                                format: int64
-                                minimum: 1
-                                type: integer
-                            type: object
-                          type: array
-                        type:
-                          description: Type is a format of partition table
-                          enum:
-                          - MBR
-                          - GPT
+                        model:
+                          description: Model is a unique hardware part identifier
                           type: string
+                        name:
+                          description: Name is a name of the device registered by
+                            Linux Kernel
+                          type: string
+                        partitionTable:
+                          description: PartitionTable is a partition table currently
+                            written to the disk
+                          properties:
+                            partitions:
+                              description: Partitions are active partition records
+                                on disk
+                              items:
+                                description: PartitionSpec contains info about partition
+                                properties:
+                                  id:
+                                    description: ID is a GUID of GPT partition or
+                                      number for MBR partition
+                                    type: string
+                                  name:
+                                    description: Name is a human readable name given
+                                      to the partition
+                                    type: string
+                                  size:
+                                    description: Size is a size of partition in bytes
+                                    format: int64
+                                    minimum: 1
+                                    type: integer
+                                type: object
+                              type: array
+                            type:
+                              description: Type is a format of partition table
+                              enum:
+                              - MBR
+                              - GPT
+                              type: string
+                          type: object
+                        rotational:
+                          description: Rotational shows whether disk is solid state
+                            or not
+                          type: boolean
+                        size:
+                          description: Size is a disk space available in bytes
+                          format: int64
+                          minimum: 1
+                          type: integer
+                        system:
+                          description: Bus is a type of hardware interface used to
+                            connect the disk to the system
+                          type: string
+                        type:
+                          description: Type refers to data carrier form-factor
+                          enum:
+                          - Floppy
+                          - CD-ROM
+                          - SCSI
+                          - IDE
+                          - NVMe
+                          - USB
+                          - MMC
+                          - VirtIO
+                          - Xen
+                          type: string
+                      required:
+                      - rotational
                       type: object
-                    rotational:
-                      description: Rotational shows whether disk is solid state or
-                        not
-                      type: boolean
-                    size:
-                      description: Size is a disk space available in bytes
-                      format: int64
-                      minimum: 1
-                      type: integer
-                    system:
-                      description: Bus is a type of hardware interface used to connect
-                        the disk to the system
-                      type: string
-                    type:
-                      description: Type refers to data carrier form-factor
-                      enum:
-                      - Floppy
-                      - CD-ROM
-                      - SCSI
-                      - IDE
-                      - NVMe
-                      - USB
-                      - MMC
-                      - VirtIO
-                      - Xen
-                      type: string
-                  required:
-                  - rotational
-                  type: object
-                type: array
+                    type: array
+                  capacity:
+                    description: Capacity is a total disk storage capacity on a host
+                      in bytes
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  count:
+                    description: Count is a total disk count on a host
+                    format: int64
+                    minimum: 1
+                    type: integer
+                type: object
               cpus:
                 description: CPUs contains info about cpus, cores and threads
                 properties:
@@ -268,91 +304,101 @@ spec:
               nics:
                 description: NICs contains info about network interfaces and network
                   discovery
-                items:
-                  description: NICSpec contains info about network interfaces
-                  properties:
-                    lldps:
-                      description: LLDP is a collection of LLDP messages received
-                        by the network interface
-                      items:
-                        description: LLDPSpec is an entry received by network interface
-                          by Link Layer Discovery Protocol
-                        properties:
-                          chassisId:
-                            description: ChassisID is a neighbour box identifier
-                            type: string
-                          portDescription:
-                            description: PortDescription is a short description of
-                              the link port
-                            type: string
-                          portId:
-                            description: PortID is a hardware identifier of the link
-                              port
-                            type: string
-                          systemDescription:
-                            description: SystemDescription is a short description
-                              of the neighbour box
-                            type: string
-                          systemName:
-                            description: SystemName is given name to the neighbour
-                              box
-                            type: string
-                        type: object
-                      type: array
-                    macAddress:
-                      description: MACAddress is the MAC address of network interface
-                      pattern: ^([0-9A-Fa-f]{2}[:.-]){5}([0-9A-Fa-f]{2})$
-                      type: string
-                    mtu:
-                      description: MTU is refers to Maximum Transmission Unit
-                      minimum: 1
-                      type: integer
-                    name:
-                      description: Name is a name of the device registered by Linux
-                        Kernel
-                      type: string
-                    ndps:
-                      description: NDP is a collection of NDP messages received by
-                        the network interface
-                      items:
-                        description: NDPSpec is an entry received by IPv6 Neighbour
-                          Discovery Protocol
-                        properties:
-                          ipAddress:
-                            description: IPAddress is an IPv6 address of a neighbour
-                            pattern: ^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$
-                            type: string
-                          macAddress:
-                            description: MACAddress is an MAC address of a neighbour
-                            pattern: ^([0-9A-Fa-f]{2}[:.-]){5}([0-9A-Fa-f]{2})$
-                            type: string
-                          state:
-                            description: State is a state of discovery
-                            enum:
-                            - None
-                            - Incomplete
-                            - Reachable
-                            - Stale
-                            - Delay
-                            - Probe
-                            - Failed
-                            - No ARP
-                            - Permanent
-                            type: string
-                        type: object
-                      type: array
-                    pciAddress:
-                      description: PCIAddress is the PCI bus address network interface
-                        is connected to
-                      pattern: ^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1}$
-                      type: string
-                    speed:
-                      description: Speed is a speed of network interface in Mbits/s
-                      format: int32
-                      minimum: 1
-                      type: integer
-                  type: object
-                type: array
+                properties:
+                  count:
+                    description: Count is a total amount of hardware NICs on host
+                    format: int64
+                    minimum: 1
+                    type: integer
+                  nics:
+                    description: NICs contains info about network interfaces and network
+                      discovery
+                    items:
+                      description: NICSpec contains info about network interfaces
+                      properties:
+                        lldps:
+                          description: LLDP is a collection of LLDP messages received
+                            by the network interface
+                          items:
+                            description: LLDPSpec is an entry received by network
+                              interface by Link Layer Discovery Protocol
+                            properties:
+                              chassisId:
+                                description: ChassisID is a neighbour box identifier
+                                type: string
+                              portDescription:
+                                description: PortDescription is a short description
+                                  of the link port
+                                type: string
+                              portId:
+                                description: PortID is a hardware identifier of the
+                                  link port
+                                type: string
+                              systemDescription:
+                                description: SystemDescription is a short description
+                                  of the neighbour box
+                                type: string
+                              systemName:
+                                description: SystemName is given name to the neighbour
+                                  box
+                                type: string
+                            type: object
+                          type: array
+                        macAddress:
+                          description: MACAddress is the MAC address of network interface
+                          pattern: ^([0-9A-Fa-f]{2}[:.-]){5}([0-9A-Fa-f]{2})$
+                          type: string
+                        mtu:
+                          description: MTU is refers to Maximum Transmission Unit
+                          minimum: 1
+                          type: integer
+                        name:
+                          description: Name is a name of the device registered by
+                            Linux Kernel
+                          type: string
+                        ndps:
+                          description: NDP is a collection of NDP messages received
+                            by the network interface
+                          items:
+                            description: NDPSpec is an entry received by IPv6 Neighbour
+                              Discovery Protocol
+                            properties:
+                              ipAddress:
+                                description: IPAddress is an IPv6 address of a neighbour
+                                pattern: ^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$
+                                type: string
+                              macAddress:
+                                description: MACAddress is an MAC address of a neighbour
+                                pattern: ^([0-9A-Fa-f]{2}[:.-]){5}([0-9A-Fa-f]{2})$
+                                type: string
+                              state:
+                                description: State is a state of discovery
+                                enum:
+                                - None
+                                - Incomplete
+                                - Reachable
+                                - Stale
+                                - Delay
+                                - Probe
+                                - Failed
+                                - No ARP
+                                - Permanent
+                                type: string
+                            type: object
+                          type: array
+                        pciAddress:
+                          description: PCIAddress is the PCI bus address network interface
+                            is connected to
+                          pattern: ^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1}$
+                          type: string
+                        speed:
+                          description: Speed is a speed of network interface in Mbits/s
+                          format: int32
+                          minimum: 1
+                          type: integer
+                      type: object
+                    type: array
+                type: object
               system:
                 description: System contains DMI system information
                 properties:
