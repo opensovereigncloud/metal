@@ -34,7 +34,7 @@ type InventorySpec struct {
 	IPMIs []IPMISpec `json:"ipmis,omitempty"`
 	// Blocks contains info about block devices on the host
 	// +kubebuilder:validation:Required
-	Blocks []BlockSpec `json:"blocks,omitempty"`
+	Blocks *BlockTotalSpec `json:"blocks,omitempty"`
 	// Memory contains info block devices on the host
 	// +kubebuilder:validation:Required
 	Memory *MemorySpec `json:"memory,omitempty"`
@@ -43,7 +43,7 @@ type InventorySpec struct {
 	CPUs *CPUTotalSpec `json:"cpus,omitempty"`
 	// NICs contains info about network interfaces and network discovery
 	// +kubebuilder:validation:Required
-	NICs []NICSpec `json:"nics,omitempty"`
+	NICs *NICTotalSpec `json:"nics,omitempty"`
 }
 
 // SystemSpec contains DMI system information
@@ -73,6 +73,21 @@ type IPMISpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$`
 	MACAddress string `json:"macAddress,omitempty"`
+}
+
+// BlockTotalSpec contains disk aggregates and disk descriptions
+type BlockTotalSpec struct {
+	// Count is a total disk count on a host
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Count uint64 `json:"count,omitempty"`
+	// Capacity is a total disk storage capacity on a host in bytes
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Capacity uint64 `json:"capacity,omitempty"`
+	// Blocks contains info about block devices on the host
+	// +kubebuilder:validation:Required
+	Blocks []BlockSpec `json:"blocks,omitempty"`
 }
 
 // BlockSpec contains info about block device
@@ -235,6 +250,17 @@ type CPUSpec struct {
 	PowerManagement string `json:"powerManagement,omitempty"`
 }
 
+// NICSpec contains info about network interfaces and aggregates
+type NICTotalSpec struct {
+	// Count is a total amount of hardware NICs on host
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	Count uint64 `json:"count,omitempty"`
+	// NICs contains info about network interfaces and network discovery
+	// +kubebuilder:validation:Required
+	NICs []NICSpec `json:"nics,omitempty"`
+}
+
 // NICSpec contains info about network interfaces
 type NICSpec struct {
 	// Name is a name of the device registered by Linux Kernel
@@ -304,10 +330,14 @@ type InventoryStatus struct {
 	// No additional state required for now
 }
 
+// Inventory is the Schema for the inventories API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-
-// Inventory is the Schema for the inventories API
+// +kubebuilder:printcolumn:name="Cores",type=integer,JSONPath=`.spec.cpus.cores`,description="Total amount of cores"
+// +kubebuilder:printcolumn:name="Memory",type=integer,JSONPath=`.spec.memory.total`,description="RAM amount in bytes"
+// +kubebuilder:printcolumn:name="Disks",type=integer,JSONPath=`.spec.blocks.count`,description="Hardware disk count"
+// +kubebuilder:printcolumn:name="Storage",type=integer,JSONPath=`.spec.blocks.capacity`,description="Total amount of disk capacity"
+// +kubebuilder:printcolumn:name="NICs",type=integer,JSONPath=`.spec.nics.count`,description="Total amount of hardware network interfaces"
 type Inventory struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
