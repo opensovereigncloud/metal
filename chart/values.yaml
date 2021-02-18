@@ -1,0 +1,50 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: []
+
+proxy:
+  image:
+    repository: gcr.io/kubebuilder/kube-rbac-proxy
+    pullPolicy: IfNotPresent
+    tag: "v0.5.0"
+manager:
+  image:
+    repository: localhost:5000/k8s-inventory
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  resources:
+    limits:
+      cpu: 100m
+      memory: 30Mi
+    requests:
+      cpu: 100m
+      memory: 20Mi
+  securityContext:
+    allowPrivilegeEscalation: false
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsUser: 65532
+
+replicaCount: 1
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+service:
+  type: ClusterIP
+  port: 8443
+
+crd:
+  group: machine.onmetal.de
+  plural: inventories
+  singular: inventory
+  kind: Inventory
+  listKind: InventoryList
+  scope: Namespaced
