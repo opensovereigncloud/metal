@@ -13,10 +13,7 @@ spec:
     singular: {{ .Values.crd.singular }}
   scope: {{ .Values.crd.scope }}
   versions:
-    - name: v1alpha1
-      served: true
-      storage: true
-      additionalPrinterColumns:
+    - additionalPrinterColumns:
         - description: Total amount of cores
           jsonPath: .spec.cpus.cores
           name: Cores
@@ -37,20 +34,26 @@ spec:
           jsonPath: .spec.nics.count
           name: NICs
           type: integer
+      name: v1alpha1
       schema:
         openAPIV3Schema:
           description: Inventory is the Schema for the inventories API
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
               type: string
             metadata:
               type: object
             spec:
-              description: InventorySpec contains result of inventorization process on the host
+              description: InventorySpec contains result of inventorization process
+                on the host
               properties:
                 blocks:
                   description: Blocks contains info about block devices on the host
@@ -64,21 +67,26 @@ spec:
                             description: Model is a unique hardware part identifier
                             type: string
                           name:
-                            description: Name is a name of the device registered by Linux Kernel
+                            description: Name is a name of the device registered by
+                              Linux Kernel
                             type: string
                           partitionTable:
-                            description: PartitionTable is a partition table currently written to the disk
+                            description: PartitionTable is a partition table currently
+                              written to the disk
                             properties:
                               partitions:
-                                description: Partitions are active partition records on disk
+                                description: Partitions are active partition records
+                                  on disk
                                 items:
                                   description: PartitionSpec contains info about partition
                                   properties:
                                     id:
-                                      description: ID is a GUID of GPT partition or number for MBR partition
+                                      description: ID is a GUID of GPT partition or
+                                        number for MBR partition
                                       type: string
                                     name:
-                                      description: Name is a human readable name given to the partition
+                                      description: Name is a human readable name given
+                                        to the partition
                                       type: string
                                     size:
                                       description: Size is a size of partition in bytes
@@ -95,7 +103,8 @@ spec:
                                 type: string
                             type: object
                           rotational:
-                            description: Rotational shows whether disk is solid state or not
+                            description: Rotational shows whether disk is solid state
+                              or not
                             type: boolean
                           size:
                             description: Size is a disk space available in bytes
@@ -103,7 +112,8 @@ spec:
                             minimum: 1
                             type: integer
                           system:
-                            description: Bus is a type of hardware interface used to connect the disk to the system
+                            description: Bus is a type of hardware interface used to
+                              connect the disk to the system
                             type: string
                           type:
                             description: Type refers to data carrier form-factor
@@ -123,7 +133,8 @@ spec:
                         type: object
                       type: array
                     capacity:
-                      description: Capacity is a total disk storage capacity on a host in bytes
+                      description: Capacity is a total disk storage capacity on a host
+                        in bytes
                       format: int64
                       minimum: 1
                       type: integer
@@ -147,7 +158,8 @@ spec:
                         description: CPUSpec contains info about CPUs on hsot machine
                         properties:
                           addressSizes:
-                            description: AddressSizes is an info about address transition system
+                            description: AddressSizes is an info about address transition
+                              system
                             type: string
                           bogoMips:
                             anyOf:
@@ -185,7 +197,8 @@ spec:
                             description: Family refers to processor type
                             type: string
                           flags:
-                            description: Flags defines a list of low-level computing capabilities
+                            description: Flags defines a list of low-level computing
+                              capabilities
                             items:
                               type: string
                             type: array
@@ -196,7 +209,8 @@ spec:
                             description: FPUException
                             type: boolean
                           logicalIds:
-                            description: LogicalIDs is a collection of logical CPU nums related to the physical CPU (required for NUMA)
+                            description: LogicalIDs is a collection of logical CPU nums
+                              related to the physical CPU (required for NUMA)
                             items:
                               format: int64
                               type: integer
@@ -265,7 +279,8 @@ spec:
                     description: IPMISpec contains info about IPMI module
                     properties:
                       ipAddress:
-                        description: IPAddress is an IP address assigned to IPMI network interface
+                        description: IPAddress is an IP address assigned to IPMI network
+                          interface
                         pattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
                         type: string
                       macAddress:
@@ -284,7 +299,8 @@ spec:
                       type: integer
                   type: object
                 nics:
-                  description: NICs contains info about network interfaces and network discovery
+                  description: NICs contains info about network interfaces and network
+                    discovery
                   properties:
                     count:
                       description: Count is a total amount of hardware NICs on host
@@ -292,29 +308,36 @@ spec:
                       minimum: 1
                       type: integer
                     nics:
-                      description: NICs contains info about network interfaces and network discovery
+                      description: NICs contains info about network interfaces and network
+                        discovery
                       items:
                         description: NICSpec contains info about network interfaces
                         properties:
                           lldps:
-                            description: LLDP is a collection of LLDP messages received by the network interface
+                            description: LLDP is a collection of LLDP messages received
+                              by the network interface
                             items:
-                              description: LLDPSpec is an entry received by network interface by Link Layer Discovery Protocol
+                              description: LLDPSpec is an entry received by network
+                                interface by Link Layer Discovery Protocol
                               properties:
                                 chassisId:
                                   description: ChassisID is a neighbour box identifier
                                   type: string
                                 portDescription:
-                                  description: PortDescription is a short description of the link port
+                                  description: PortDescription is a short description
+                                    of the link port
                                   type: string
                                 portId:
-                                  description: PortID is a hardware identifier of the link port
+                                  description: PortID is a hardware identifier of the
+                                    link port
                                   type: string
                                 systemDescription:
-                                  description: SystemDescription is a short description of the neighbour box
+                                  description: SystemDescription is a short description
+                                    of the neighbour box
                                   type: string
                                 systemName:
-                                  description: SystemName is given name to the neighbour box
+                                  description: SystemName is given name to the neighbour
+                                    box
                                   type: string
                               type: object
                             type: array
@@ -327,12 +350,15 @@ spec:
                             minimum: 1
                             type: integer
                           name:
-                            description: Name is a name of the device registered by Linux Kernel
+                            description: Name is a name of the device registered by
+                              Linux Kernel
                             type: string
                           ndps:
-                            description: NDP is a collection of NDP messages received by the network interface
+                            description: NDP is a collection of NDP messages received
+                              by the network interface
                             items:
-                              description: NDPSpec is an entry received by IPv6 Neighbour Discovery Protocol
+                              description: NDPSpec is an entry received by IPv6 Neighbour
+                                Discovery Protocol
                               properties:
                                 ipAddress:
                                   description: IPAddress is an IPv6 address of a neighbour
@@ -358,7 +384,8 @@ spec:
                               type: object
                             type: array
                           pciAddress:
-                            description: PCIAddress is the PCI bus address network interface is connected to
+                            description: PCIAddress is the PCI bus address network interface
+                              is connected to
                             pattern: ^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1}$
                             type: string
                           speed:
@@ -377,7 +404,8 @@ spec:
                       pattern: ^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$
                       type: string
                     manufacturer:
-                      description: Manufacturer refers to the company that produced the product
+                      description: Manufacturer refers to the company that produced
+                        the product
                       type: string
                     productSku:
                       description: ProductSKU is a product's Stock Keeping Unit
@@ -386,11 +414,37 @@ spec:
                       description: SerialNumber contains serial number of a system
                       type: string
                   type: object
+                virt:
+                  description: Virt is a virtualization detected on host
+                  properties:
+                    vmType:
+                      description: VMType is a type of virtual machine engine
+                      enum:
+                        - none
+                        - kvm
+                        - qemu
+                        - bochs
+                        - xen
+                        - uml
+                        - vmware
+                        - oracle
+                        - microsoft
+                        - zvm
+                        - parallels
+                        - bhyve
+                        - qnx
+                        - acrn
+                        - powervm
+                        - other
+                      type: string
+                  type: object
               type: object
             status:
               description: InventoryStatus defines the observed state of Inventory
               type: object
           type: object
+      served: true
+      storage: true
       subresources:
         status: {}
 status:

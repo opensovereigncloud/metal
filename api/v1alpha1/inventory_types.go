@@ -44,6 +44,9 @@ type InventorySpec struct {
 	// NICs contains info about network interfaces and network discovery
 	// +kubebuilder:validation:Required
 	NICs *NICTotalSpec `json:"nics,omitempty"`
+	// Virt is a virtualization detected on host
+	// +kubebuilder:validation:Optional
+	Virt *VirtSpec `json:"virt,omitempty"`
 }
 
 // SystemSpec contains DMI system information
@@ -323,6 +326,14 @@ type NDPSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=None;Incomplete;Reachable;Stale;Delay;Probe;Failed;No ARP;Permanent
 	State string `json:"state,omitempty"`
+}
+
+// VirtSpec contains info about detected host virtualization
+type VirtSpec struct {
+	// VMType is a type of virtual machine engine
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=none;kvm;qemu;bochs;xen;uml;vmware;oracle;microsoft;zvm;parallels;bhyve;qnx;acrn;powervm;other
+	VMType string `json:"vmType,omitempty"`
 }
 
 // InventoryStatus defines the observed state of Inventory

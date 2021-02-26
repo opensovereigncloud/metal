@@ -417,6 +417,30 @@ spec:
                     description: SerialNumber contains serial number of a system
                     type: string
                 type: object
+              virt:
+                description: Virt is a virtualization detected on host
+                properties:
+                  vmType:
+                    description: VMType is a type of virtual machine engine
+                    enum:
+                    - none
+                    - kvm
+                    - qemu
+                    - bochs
+                    - xen
+                    - uml
+                    - vmware
+                    - oracle
+                    - microsoft
+                    - zvm
+                    - parallels
+                    - bhyve
+                    - qnx
+                    - acrn
+                    - powervm
+                    - other
+                    type: string
+                type: object
             type: object
           status:
             description: InventoryStatus defines the observed state of Inventory
