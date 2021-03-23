@@ -21,6 +21,8 @@ import (
 
 	"github.com/d4l3k/messagediff"
 	"github.com/go-logr/logr"
+	"github.com/onmetal/k8s-size/api/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,9 +54,71 @@ type InventoryReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("inventory", req.NamespacedName)
+	log := r.Log.WithValues("inventory", req.NamespacedName)
 
-	// your logic here
+	inv := &machinev1alpha1.Inventory{}
+
+	err := r.Get(ctx, req.NamespacedName, inv)
+	if apierrors.IsNotFound(err) {
+		log.Error(err, "requested inventory resource not found", "name", req.NamespacedName)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	if err != nil {
+		log.Error(err, "unable to get inventory resource", "name", req.NamespacedName)
+		return ctrl.Result{}, err
+	}
+
+	continueToken := ""
+	limit := int64(1000)
+
+	for {
+		sizeList := &v1alpha1.SizeList{}
+		opts := &client.ListOptions{
+			Namespace: req.Namespace,
+			Limit:     limit,
+			Continue:  continueToken,
+		}
+		err := r.List(ctx, sizeList, opts)
+		if err != nil {
+			log.Error(err, "unable to get size resource list", "namespace", req.Namespace)
+			return ctrl.Result{}, err
+		}
+
+		for _, size := range sizeList.Items {
+			labelName := size.GetMatchLabel()
+			matches, err := size.Matches(inv)
+			sizeNamespacedName := types.NamespacedName{
+				Namespace: size.Namespace,
+				Name:      size.Name,
+			}
+			if err != nil {
+				log.Error(err, "unable to check match to provided size; will remove match if present", "size", sizeNamespacedName)
+			}
+			if matches {
+				log.Info("match between inventory and size found", "inventory", req.NamespacedName, "size", sizeNamespacedName)
+				inv.Labels[labelName] = "true"
+			} else {
+				if _, ok := inv.Labels[labelName]; ok {
+					log.Info("inventory no longer matches to size", "inventory", req.NamespacedName, "size", sizeNamespacedName)
+					delete(inv.Labels, labelName)
+				}
+			}
+		}
+
+		if sizeList.Continue == "" ||
+			sizeList.RemainingItemCount == nil ||
+			*sizeList.RemainingItemCount == 0 {
+			break
+		}
+
+		continueToken = sizeList.Continue
+	}
+
+	err = r.Update(ctx, inv)
+	if err != nil {
+		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
