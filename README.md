@@ -42,7 +42,7 @@ In order to build and deploy, execute following command set.
     # generate code and configs
     make install
     # build container and push to local registry
-    make docker-build docker-push IMG="localhost:5000/k8s-inventory:latest"
+    make docker-build docker-push IMG="localhost:5000/k8s-inventory:latest" GIT_USER=yourusername GIT_PASSWORD=youraccesstoken
     # deploy controller
     make deploy IMG="localhost:5000/k8s-inventory:latest"
 

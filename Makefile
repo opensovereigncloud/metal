@@ -33,6 +33,9 @@ IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
+# Private go mod repos
+GOPRIVATE ?= "github.com/onmetal/*"
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -92,7 +95,7 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
-	docker build -t ${IMG} .
+	docker build . -t ${IMG} --build-arg GOPRIVATE=$(GOPRIVATE) --build-arg GIT_USER=$(GIT_USER) --build-arg GIT_PASSWORD=$(GIT_PASSWORD)
 
 # Push the docker image
 docker-push:
