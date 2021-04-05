@@ -151,9 +151,9 @@ func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
 	msg, eq := messagediff.PrettyDiff(old.Spec, upd.Spec)
 	if eq {
 		l.Info("new version is the same")
-	} else {
-		l.Info("found a difference on update", "diff", msg)
+		return false
 	}
 
+	l.Info("found a difference on update", "diff", msg)
 	return true
 }
