@@ -386,7 +386,7 @@ spec:
                           pciAddress:
                             description: PCIAddress is the PCI bus address network interface
                               is connected to
-                            pattern: ^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1}$
+                            pattern: ^([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1})|([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$
                             type: string
                           speed:
                             description: Speed is a speed of network interface in Mbits/s
