@@ -271,7 +271,7 @@ type NICSpec struct {
 	Name string `json:"name,omitempty"`
 	// PCIAddress is the PCI bus address network interface is connected to
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=`^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1}$`
+	// +kubebuilder:validation:Pattern=`^([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}.[0-9]{1})|([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$`
 	PCIAddress string `json:"pciAddress,omitempty"`
 	// MACAddress is the MAC address of network interface
 	// +kubebuilder:validation:Required
