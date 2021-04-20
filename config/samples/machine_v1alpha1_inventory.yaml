@@ -78,3 +78,6 @@ spec:
             state: Reachable
   virt:
     vmType: none
+  host:
+    type: Machine
+    hostname: node1

@@ -25,6 +25,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // InventorySpec contains result of inventorization process on the host
+// +kubebuilder:object:generate=true
 type InventorySpec struct {
 	// System contains DMI system information
 	// +kubebuilder:validation:Required
@@ -47,9 +48,16 @@ type InventorySpec struct {
 	// Virt is a virtualization detected on host
 	// +kubebuilder:validation:Optional
 	Virt *VirtSpec `json:"virt,omitempty"`
+	// Host contains info about inventorying object
+	// +kubebuilder:validation:required
+	Host *HostSpec `json:"host"`
+	// Distro contains info about OS distro
+	// +kubebuilder:validation:Optional
+	Distro *DistroSpec `json:"distro,omitempty"`
 }
 
 // SystemSpec contains DMI system information
+// +kubebuilder:object:generate=true
 type SystemSpec struct {
 	// ID is a UUID of a system board
 	// +kubebuilder:validation:Required
@@ -67,6 +75,7 @@ type SystemSpec struct {
 }
 
 // IPMISpec contains info about IPMI module
+// +kubebuilder:object:generate=true
 type IPMISpec struct {
 	// IPAddress is an IP address assigned to IPMI network interface
 	// +kubebuilder:validation:Required
@@ -79,6 +88,7 @@ type IPMISpec struct {
 }
 
 // BlockTotalSpec contains disk aggregates and disk descriptions
+// +kubebuilder:object:generate=true
 type BlockTotalSpec struct {
 	// Count is a total disk count on a host
 	// +kubebuilder:validation:Required
@@ -94,6 +104,7 @@ type BlockTotalSpec struct {
 }
 
 // BlockSpec contains info about block device
+// +kubebuilder:object:generate=true
 type BlockSpec struct {
 	// Name is a name of the device registered by Linux Kernel
 	// +kubebuilder:validation:Required
@@ -121,6 +132,7 @@ type BlockSpec struct {
 }
 
 // PartitionTableSpec contains info about partition table on block device
+// +kubebuilder:object:generate=true
 type PartitionTableSpec struct {
 	// Type is a format of partition table
 	// +kubebuilder:validation:Required
@@ -132,6 +144,7 @@ type PartitionTableSpec struct {
 }
 
 // PartitionSpec contains info about partition
+// +kubebuilder:object:generate=true
 type PartitionSpec struct {
 	// ID is a GUID of GPT partition or number for MBR partition
 	// +kubebuilder:validation:Required
@@ -146,6 +159,7 @@ type PartitionSpec struct {
 }
 
 // MemorySpec contains info about RAM on host
+// +kubebuilder:object:generate=true
 type MemorySpec struct {
 	// Total is a total amount of RAM on host
 	// +kubebuilder:validation:Required
@@ -154,6 +168,7 @@ type MemorySpec struct {
 }
 
 // CPUTotalSpec contains an overview of CPUs and calculated total
+// +kubebuilder:object:generate=true
 type CPUTotalSpec struct {
 	// Sockets represents a total amount of physical processors
 	// +kubebuilder:validation:Required
@@ -174,6 +189,7 @@ type CPUTotalSpec struct {
 }
 
 // CPUSpec contains info about CPUs on hsot machine
+// +kubebuilder:object:generate=true
 type CPUSpec struct {
 	// PhysicalID is an ID of physical CPU
 	// +kubebuilder:validation:Required
@@ -253,7 +269,8 @@ type CPUSpec struct {
 	PowerManagement string `json:"powerManagement,omitempty"`
 }
 
-// NICSpec contains info about network interfaces and aggregates
+// NICTotalSpec contains info about network interfaces and aggregates
+// +kubebuilder:object:generate=true
 type NICTotalSpec struct {
 	// Count is a total amount of hardware NICs on host
 	// +kubebuilder:validation:Required
@@ -265,6 +282,7 @@ type NICTotalSpec struct {
 }
 
 // NICSpec contains info about network interfaces
+// +kubebuilder:object:generate=true
 type NICSpec struct {
 	// Name is a name of the device registered by Linux Kernel
 	// +kubebuilder:validation:Required
@@ -294,6 +312,7 @@ type NICSpec struct {
 }
 
 // LLDPSpec is an entry received by network interface by Link Layer Discovery Protocol
+// +kubebuilder:object:generate=true
 type LLDPSpec struct {
 	// ChassisID is a neighbour box identifier
 	// +kubebuilder:validation:Required
@@ -313,6 +332,7 @@ type LLDPSpec struct {
 }
 
 // NDPSpec is an entry received by IPv6 Neighbour Discovery Protocol
+// +kubebuilder:object:generate=true
 type NDPSpec struct {
 	// IPAddress is an IPv6 address of a neighbour
 	// +kubebuilder:validation:Required
@@ -329,6 +349,7 @@ type NDPSpec struct {
 }
 
 // VirtSpec contains info about detected host virtualization
+// +kubebuilder:object:generate=true
 type VirtSpec struct {
 	// VMType is a type of virtual machine engine
 	// +kubebuilder:validation:Optional
@@ -336,7 +357,40 @@ type VirtSpec struct {
 	VMType string `json:"vmType,omitempty"`
 }
 
+// HostSpec contains type of inventorying object and in case it is a switch - SONiC version
+// +kubebuilder:object:generate=true
+type HostSpec struct {
+	// Type referring either to Machine or Switch inventorying object type
+	// +kubebuilder:validation:Enum=Machine;Switch
+	Type string `json:"type"`
+	// Hostname contains hostname
+	// +kubebuilder:validation:Required
+	Hostname string `json:"hostname"`
+}
+
+// DistroSpec contains info about distro
+// +kubebuilder:object:generate=true
+type DistroSpec struct {
+	// +kubebuilder:validation:Optional
+	BuildVersion string `json:"buildVersion,omitempty"`
+	// +kubebuilder:validation:Optional
+	DebianVersion string `json:"debianVersion,omitempty"`
+	// +kubebuilder:validation:Optional
+	KernelVersion string `json:"kernelVersion,omitempty"`
+	// +kubebuilder:validation:Optional
+	AsicType string `json:"asicType,omitempty"`
+	// +kubebuilder:validation:Optional
+	CommitId string `json:"commitId,omitempty"`
+	// +kubebuilder:validation:Optional
+	BuildDate string `json:"buildDate,omitempty"`
+	// +kubebuilder:validation:Optional
+	BuildNumber uint32 `json:"buildNumber,omitempty"`
+	// +kubebuilder:validation:Optional
+	BuildBy string `json:"buildBy,omitempty"`
+}
+
 // InventoryStatus defines the observed state of Inventory
+// +kubebuilder:object:generate=true
 type InventoryStatus struct {
 	// No additional state required for now
 }

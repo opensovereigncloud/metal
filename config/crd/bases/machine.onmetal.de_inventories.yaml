@@ -276,6 +276,43 @@ spec:
                     minimum: 1
                     type: integer
                 type: object
+              distro:
+                description: Distro contains info about OS distro
+                properties:
+                  asicType:
+                    type: string
+                  buildBy:
+                    type: string
+                  buildDate:
+                    type: string
+                  buildNumber:
+                    type: string
+                  buildVersion:
+                    type: string
+                  commitId:
+                    type: string
+                  debianVersion:
+                    type: string
+                  kernelVersion:
+                    type: string
+                type: object
+              host:
+                description: Host contains info about inventorying object
+                properties:
+                  hostname:
+                    description: Hostname contains hostname
+                    type: string
+                  type:
+                    description: Type referring either to Machine or Switch inventorying
+                      object type
+                    enum:
+                    - Machine
+                    - Switch
+                    type: string
+                required:
+                - hostname
+                - type
+                type: object
               ipmis:
                 description: IPMIs contains info about IPMI interfaces on the host
                 items:
@@ -441,6 +478,8 @@ spec:
                     - other
                     type: string
                 type: object
+            required:
+            - host
             type: object
           status:
             description: InventoryStatus defines the observed state of Inventory
