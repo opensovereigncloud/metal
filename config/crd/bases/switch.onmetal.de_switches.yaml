@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: switches.switch.onmetal.de.onmetal.de
+  name: switches.switch.onmetal.de
 spec:
-  group: switch.onmetal.de.onmetal.de
+  group: switch.onmetal.de
   names:
     kind: Switch
     listKind: SwitchList
@@ -16,7 +16,32 @@ spec:
     singular: switch
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: Partition name
+      jsonPath: .spec.partition
+      name: Partition
+      type: string
+    - description: Room name
+      jsonPath: .spec.room
+      name: Room
+      type: string
+    - description: Row number
+      jsonPath: .spec.row
+      name: Row
+      type: integer
+    - description: Rack number
+      jsonPath: .spec.rack
+      name: Rack
+      type: integer
+    - description: Total amount of hardware network interfaces
+      jsonPath: .spec.ports
+      name: Ports
+      type: integer
+    - description: Total amount of neighbours
+      jsonPath: .spec.neighboursCount
+      name: Neighbours
+      type: integer
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Switch is the Schema for the switches API
@@ -71,6 +96,9 @@ spec:
                   - type
                   type: object
                 type: array
+              neighboursCount:
+                description: NeighboursCount referring to switch's neighbours
+                type: integer
               partition:
                 description: Partition referring to switch's location
                 type: string

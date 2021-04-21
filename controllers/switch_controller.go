@@ -34,17 +34,17 @@ import (
 
 const Switch = "Switch"
 
-// Reconciler reconciles a Switch object
-type Reconciler struct {
+// SwitchReconciler reconciles a Switch object
+type SwitchReconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=switch.onmetal.de.onmetal.de,resources=switches,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=switch.onmetal.de.onmetal.de,resources=switches/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=switch.onmetal.de.onmetal.de,resources=switches/finalizers,verbs=update
+//+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/finalizers,verbs=update
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=events,verbs=create;patch
@@ -58,7 +58,7 @@ type Reconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("switch", req.NamespacedName)
 
 	// your logic here:
@@ -82,14 +82,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1alpha1.Switch{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
 
-func (r *Reconciler) constructPredicates() predicate.Predicate {
+func (r *SwitchReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: onUpdate,
 	}

@@ -78,7 +78,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.Reconciler{
+	if err = (&controllers.SwitchReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
 		Scheme: mgr.GetScheme(),

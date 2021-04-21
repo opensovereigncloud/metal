@@ -42,6 +42,9 @@ type SwitchSpec struct {
 	// Ports referring to switch port number
 	// +kubebuilder:validation:Required
 	Ports uint64 `json:"ports"`
+	// NeighboursCount referring to switch's neighbours
+	// +kubebuilder:validation:Optional
+	NeighboursCount uint8 `json:"neighboursCount,omitempty"`
 	// Neighbours referring to switch's neighbours
 	// +kubebuilder:validation:Optional
 	Neighbours []NeighbourSpec `json:"neighbours,omitempty"`
@@ -75,6 +78,12 @@ type SwitchStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Partition",type=string,JSONPath=`.spec.partition`,description="Partition name"
+//+kubebuilder:printcolumn:name="Room",type=string,JSONPath=`.spec.room`,description="Room name"
+//+kubebuilder:printcolumn:name="Row",type=integer,JSONPath=`.spec.row`,description="Row number"
+//+kubebuilder:printcolumn:name="Rack",type=integer,JSONPath=`.spec.rack`,description="Rack number"
+//+kubebuilder:printcolumn:name="Ports",type=integer,JSONPath=`.spec.ports`,description="Total amount of hardware network interfaces"
+//+kubebuilder:printcolumn:name="Neighbours",type=integer,JSONPath=`.spec.neighboursCount`,description="Total amount of neighbours"
 
 // Switch is the Schema for the switches API
 type Switch struct {
