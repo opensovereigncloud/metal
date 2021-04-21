@@ -1,0 +1,20 @@
+# permissions for end users to view switches.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: switch-viewer-role
+rules:
+- apiGroups:
+  - switch.onmetal.de.onmetal.de
+  resources:
+  - switches
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - switch.onmetal.de.onmetal.de
+  resources:
+  - switches/status
+  verbs:
+  - get
