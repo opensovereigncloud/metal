@@ -1,0 +1,7 @@
+apiVersion: switch.onmetal.de.onmetal.de/v1alpha1
+kind: Switch
+metadata:
+  name: switch-sample
+spec:
+  # Add fields here
+  foo: bar
