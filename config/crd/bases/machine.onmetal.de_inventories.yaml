@@ -17,6 +17,14 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - description: Hostname
+      jsonPath: .spec.host.name
+      name: Hostname
+      type: string
+    - description: Type
+      jsonPath: .spec.host.type
+      name: Type
+      type: string
     - description: Total amount of cores
       jsonPath: .spec.cpus.cores
       name: Cores
@@ -286,7 +294,8 @@ spec:
                   buildDate:
                     type: string
                   buildNumber:
-                    type: string
+                    format: int32
+                    type: integer
                   buildVersion:
                     type: string
                   commitId:
@@ -299,7 +308,7 @@ spec:
               host:
                 description: Host contains info about inventorying object
                 properties:
-                  hostname:
+                  name:
                     description: Hostname contains hostname
                     type: string
                   type:
@@ -310,7 +319,7 @@ spec:
                     - Switch
                     type: string
                 required:
-                - hostname
+                - name
                 - type
                 type: object
               ipmis:

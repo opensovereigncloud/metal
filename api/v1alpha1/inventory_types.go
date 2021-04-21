@@ -49,7 +49,7 @@ type InventorySpec struct {
 	// +kubebuilder:validation:Optional
 	Virt *VirtSpec `json:"virt,omitempty"`
 	// Host contains info about inventorying object
-	// +kubebuilder:validation:required
+	// +kubebuilder:validation:Required
 	Host *HostSpec `json:"host"`
 	// Distro contains info about OS distro
 	// +kubebuilder:validation:Optional
@@ -361,11 +361,12 @@ type VirtSpec struct {
 // +kubebuilder:object:generate=true
 type HostSpec struct {
 	// Type referring either to Machine or Switch inventorying object type
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Machine;Switch
 	Type string `json:"type"`
 	// Hostname contains hostname
 	// +kubebuilder:validation:Required
-	Hostname string `json:"hostname"`
+	Name string `json:"name"`
 }
 
 // DistroSpec contains info about distro
@@ -398,6 +399,8 @@ type InventoryStatus struct {
 // Inventory is the Schema for the inventories API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.host.name`,description="Hostname"
+// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.host.type`,description="Type"
 // +kubebuilder:printcolumn:name="Cores",type=integer,JSONPath=`.spec.cpus.cores`,description="Total amount of cores"
 // +kubebuilder:printcolumn:name="Memory",type=integer,JSONPath=`.spec.memory.total`,description="RAM amount in bytes"
 // +kubebuilder:printcolumn:name="Disks",type=integer,JSONPath=`.spec.blocks.count`,description="Hardware disk count"
