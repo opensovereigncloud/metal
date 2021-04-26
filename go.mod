@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/d4l3k/messagediff v1.2.1
 	github.com/go-logr/logr v0.3.0
-	github.com/onmetal/k8s-size v0.0.0-20210421061640-857f330421d7
+	github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
 	golang.org/x/mod v0.4.2
