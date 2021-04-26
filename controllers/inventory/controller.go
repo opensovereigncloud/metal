@@ -30,8 +30,7 @@ import (
 )
 
 const (
-	Switch       = "Switch"
-	requeueAfter = 50
+	CSwitchType = "Switch"
 )
 
 // Reconciler reconciles a Switch object
@@ -51,10 +50,6 @@ type Reconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Switch object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
@@ -69,11 +64,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 		return ctrl.Result{}, err
 	}
-	if inventory.Spec.Host.Type != Switch {
+	if inventory.Spec.Host.Type != CSwitchType {
 		return ctrl.Result{}, nil
 	}
 	switches := &switchv1alpha1.SwitchList{}
-	switchRes, exists := switchResourceExists(inventory.Spec.System.SerialNumber, switches)
+	switchRes, exists := switchResourceExists(strings.ToLower(inventory.Spec.System.SerialNumber), switches)
 	if !exists {
 		r.Log.Info("switch resource does not exists")
 		preparedSwitch := getPreparedSwitch(switchRes, inventory)
@@ -96,7 +91,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*switchv1alpha1.Switch, bool) {
 	for _, switchRes := range switches.Items {
-		if switchRes.ObjectMeta.Name == name {
+		if switchRes.Name == name {
 			return &switchRes, true
 		}
 	}
@@ -104,12 +99,56 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*sw
 }
 
 func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) *switchv1alpha1.Switch {
-	//todo: determine what to do with name of switch resource due to we can't use raw serial number starting from digit
-	sw.ObjectMeta.Name = "switch-" + strings.ToLower(inv.Spec.System.SerialNumber)
-	sw.ObjectMeta.Namespace = inv.ObjectMeta.Namespace
-	//set validation pattern for ID field in switch types after we'll decide how to calculate UUID for switch
+	sw.Name = strings.ToLower(inv.Spec.System.SerialNumber)
+	sw.Namespace = inv.Namespace
 	sw.Spec.ID = inv.Spec.System.SerialNumber
 	sw.Spec.Ports = inv.Spec.NICs.Count
-	// todo: set neighbours initial info
+	sw.Spec.Neighbours, sw.Spec.NeighboursCount = setNeighbours(inv)
 	return sw
+}
+
+func setNeighbours(inv *inventoriesv1alpha1.Inventory) ([]switchv1alpha1.NeighbourSpec, uint8) {
+	count := uint8(0)
+	neighbours := make([]switchv1alpha1.NeighbourSpec, 0)
+	for _, nic := range inv.Spec.NICs.NICs {
+		if len(nic.LLDPs) == 0 {
+			continue
+		}
+		remoteMacAddress := nic.LLDPs[0].ChassisID
+		neighbour, found := findNeighbour(remoteMacAddress, nic.MACAddress)
+		if found {
+			neighbours = append(neighbours, neighbour)
+			count++
+		}
+	}
+	return neighbours, count
+}
+
+func findNeighbour(localMacAddress string, remoteMacAddress string) (switchv1alpha1.NeighbourSpec, bool) {
+	inventories := inventoriesv1alpha1.InventoryList{}
+	for _, inv := range inventories.Items {
+		for _, nic := range inv.Spec.NICs.NICs {
+			if len(nic.LLDPs) == 0 {
+				continue
+			}
+			if nic.MACAddress == localMacAddress && nic.LLDPs[0].ChassisID == remoteMacAddress {
+				id, name := "", ""
+				if inv.Spec.Host.Type == CSwitchType {
+					id = inv.Spec.System.SerialNumber
+					name = strings.ToLower(inv.Spec.System.SerialNumber)
+				} else {
+					id = inv.Spec.System.ID
+					name = inv.Name
+				}
+				return switchv1alpha1.NeighbourSpec{
+					ID:         id,
+					Name:       name,
+					Type:       inv.Spec.Host.Type,
+					Port:       nic.Name,
+					MACAddress: nic.MACAddress,
+				}, true
+			}
+		}
+	}
+	return switchv1alpha1.NeighbourSpec{}, false
 }
