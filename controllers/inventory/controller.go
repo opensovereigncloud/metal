@@ -14,28 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package inventory
 
 import (
 	"context"
-	"k8s.io/client-go/tools/record"
-	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const Switch = "Switch"
+const (
+	Switch       = "Switch"
+	requeueAfter = 50
+)
 
-// SwitchReconciler reconciles a Switch object
-type SwitchReconciler struct {
+// Reconciler reconciles a Switch object
+type Reconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
@@ -58,58 +57,40 @@ type SwitchReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
-func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("switch", req.NamespacedName)
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = r.Log.WithValues("inventory", req.NamespacedName)
+	r.Log.Info("starting reconciliation")
 
-	// your logic here:
-	// get list of inventories with host type == Switch
+	inventory := &inventoriesv1alpha1.Inventory{}
+	if err := r.Get(ctx, req.NamespacedName, inventory); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+	if inventory.Spec.Host.Type != Switch {
+		return ctrl.Result{}, nil
+	}
 	switches := &switchv1alpha1.SwitchList{}
-	inventories := getSwitchesInventories()
-	for _, inv := range inventories {
-		switchRes, exists := switchResourceExists(inv.Spec.System.SerialNumber, switches)
-		if !exists {
-			r.Log.Info("switch resource does not exists")
-			preparedSwitch := getPreparedSwitch(switchRes, inv)
-			if err := r.Client.Create(ctx, preparedSwitch); err != nil {
-				r.Log.Error(err, "failed to create switch resource")
-				return ctrl.Result{}, err
-			}
+	switchRes, exists := switchResourceExists(inventory.Spec.System.SerialNumber, switches)
+	if !exists {
+		r.Log.Info("switch resource does not exists")
+		preparedSwitch := getPreparedSwitch(switchRes, inventory)
+		if err := r.Client.Create(ctx, preparedSwitch); err != nil {
+			r.Log.Error(err, "failed to create switch resource")
+			return ctrl.Result{}, err
 		}
 	}
-	//todo: update connections
+	r.Log.Info("reconciliation finished")
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&switchv1alpha1.Switch{}).
-		WithEventFilter(r.constructPredicates()).
+		For(&inventoriesv1alpha1.Inventory{}).
 		Complete(r)
-}
-
-func (r *SwitchReconciler) constructPredicates() predicate.Predicate {
-	return predicate.Funcs{
-		UpdateFunc: onUpdate,
-	}
-}
-
-func onUpdate(e event.UpdateEvent) bool {
-	oldObject := e.ObjectOld.(*switchv1alpha1.Switch)
-	newObject := e.ObjectNew.(*switchv1alpha1.Switch)
-	return !reflect.DeepEqual(oldObject.Spec, newObject.Spec)
-}
-
-func getSwitchesInventories() []*inventoriesv1alpha1.Inventory {
-	result := make([]*inventoriesv1alpha1.Inventory, 0)
-	inventories := inventoriesv1alpha1.InventoryList{}
-	for _, inv := range inventories.Items {
-		if inv.Spec.Host.Type == Switch {
-			result = append(result, &inv)
-		}
-	}
-	return result
 }
 
 func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*switchv1alpha1.Switch, bool) {
@@ -123,7 +104,9 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*sw
 
 func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) *switchv1alpha1.Switch {
 	sw.ObjectMeta.Name = inv.Spec.System.SerialNumber
+	sw.ObjectMeta.Namespace = inv.ObjectMeta.Namespace
 	sw.Spec.ID = inv.Spec.System.SerialNumber // in future will be refactored to use UUID
 	sw.Spec.Ports = inv.Spec.NICs.Count
+	// todo: set neighbours info
 	return sw
 }
