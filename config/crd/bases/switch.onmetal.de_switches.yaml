@@ -62,8 +62,7 @@ spec:
             description: SwitchSpec defines the desired state of Switch
             properties:
               id:
-                description: ID referring to switch object id
-                pattern: ^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$
+                description: 'ID referring to switch object id todo: +kubebuilder:validation:Pattern=`^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$`'
                 type: string
               neighbours:
                 description: Neighbours referring to switch's neighbours
@@ -71,8 +70,7 @@ spec:
                   description: NeighbourSpec defines switch's neighbour
                   properties:
                     id:
-                      description: ID referring to neighbour id
-                      pattern: ^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$
+                      description: 'ID referring to neighbour id todo: +kubebuilder:validation:Pattern=`^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$`'
                       type: string
                     macAddress:
                       description: MACAddress referring to neighbour MAC address

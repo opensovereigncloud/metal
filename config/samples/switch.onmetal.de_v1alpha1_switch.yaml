@@ -1,7 +1,7 @@
 apiVersion: switch.onmetal.de.onmetal.de/v1alpha1
 kind: Switch
 metadata:
-  name: switch-sample
+  name: switch-772632x1950115
 spec:
-  # Add fields here
-  foo: bar
+  id: 772632X1950115
+  ports: 35

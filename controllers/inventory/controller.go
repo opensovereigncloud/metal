@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 const (
@@ -103,10 +104,12 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*sw
 }
 
 func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) *switchv1alpha1.Switch {
-	sw.ObjectMeta.Name = inv.Spec.System.SerialNumber
+	//todo: determine what to do with name of switch resource due to we can't use raw serial number starting from digit
+	sw.ObjectMeta.Name = "switch-" + strings.ToLower(inv.Spec.System.SerialNumber)
 	sw.ObjectMeta.Namespace = inv.ObjectMeta.Namespace
-	sw.Spec.ID = inv.Spec.System.SerialNumber // in future will be refactored to use UUID
+	//set validation pattern for ID field in switch types after we'll decide how to calculate UUID for switch
+	sw.Spec.ID = inv.Spec.System.SerialNumber
 	sw.Spec.Ports = inv.Spec.NICs.Count
-	// todo: set neighbours info
+	// todo: set neighbours initial info
 	return sw
 }
