@@ -18,6 +18,8 @@ package main
 
 import (
 	"flag"
+	"github.com/onmetal/switch-operator/controllers/inventory"
+	"github.com/onmetal/switch-operator/controllers/switch"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -32,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	switchonmetaldev1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
-	"github.com/onmetal/switch-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -78,12 +79,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.SwitchReconciler{
+	if err = (&_switch.Reconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch")
+		os.Exit(1)
+	}
+	if err = (&inventory.Reconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Inventory"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Inventory")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
