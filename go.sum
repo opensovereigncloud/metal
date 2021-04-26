@@ -295,6 +295,8 @@ github.com/onmetal/k8s-size v0.0.0-20210330130030-0e28c9bdd1bf h1:msk+xPwcaYzKbp
 github.com/onmetal/k8s-size v0.0.0-20210330130030-0e28c9bdd1bf/go.mod h1:PZTjc0RgegODQKp8ca6r9Gg21tQZCvPM51F8z/se4ys=
 github.com/onmetal/k8s-size v0.0.0-20210421061640-857f330421d7 h1:XxNeOPzMpSLKi7BT27Z/LPihw4jImzIQGI/lwktAYLo=
 github.com/onmetal/k8s-size v0.0.0-20210421061640-857f330421d7/go.mod h1:8+WcQdZjxVbtiv6HjbXiGtWOjX5I0Q3HKMLotAQGR60=
+github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80 h1:4ltuaLe4p9bxO7Y2FC+w3dAAOwknJpLt8YS1pJloNKg=
+github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80/go.mod h1:Pi09ghndU/+zKuyDrCzribl4OUWhsV6r1qHy8EVmrOY=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.11.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
