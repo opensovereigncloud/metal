@@ -18,6 +18,7 @@ package _switch
 
 import (
 	"context"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -57,11 +58,16 @@ type Reconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("switch", req.NamespacedName)
-	r.Log.Info("starting reconciliation")
+	switchRes := &switchv1alpha1.Switch{}
+	if err := r.Get(ctx, req.NamespacedName, switchRes); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+	//todo: update connections with data collected by separate lldp-ndp tool running on switches
 
-	//todo: update connections
 	r.Log.Info("reconciliation finished")
-
 	return ctrl.Result{}, nil
 }
 

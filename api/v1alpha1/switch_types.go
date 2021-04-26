@@ -25,7 +25,7 @@ import (
 type SwitchSpec struct {
 	// ID referring to switch object id
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=`^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$`
+	//todo: +kubebuilder:validation:Pattern=`^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$`
 	ID string `json:"id"`
 	// Partition referring to switch's location
 	// +kubebuilder:validation:Optional
@@ -55,7 +55,7 @@ type SwitchSpec struct {
 type NeighbourSpec struct {
 	// ID referring to neighbour id
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=`^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$`
+	//todo: +kubebuilder:validation:Pattern=`^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$`
 	ID string `json:"id"`
 	// Name referring to neighbour name
 	// +kubebuilder:validation:Required
