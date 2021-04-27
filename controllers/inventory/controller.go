@@ -30,7 +30,8 @@ import (
 )
 
 const (
-	CSwitchType = "Switch"
+	CSwitchType     = "Switch"
+	CReachableState = "Reachable"
 )
 
 // Reconciler reconciles a Switch object
@@ -110,45 +111,69 @@ func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inven
 func setNeighbours(inv *inventoriesv1alpha1.Inventory) ([]switchv1alpha1.NeighbourSpec, uint8) {
 	count := uint8(0)
 	neighbours := make([]switchv1alpha1.NeighbourSpec, 0)
+	macAddressMap := make(map[string]string)
 	for _, nic := range inv.Spec.NICs.NICs {
-		if len(nic.LLDPs) == 0 {
+		if len(nic.LLDPs) == 0 && len(nic.NDPs) == 0 {
 			continue
 		}
-		remoteMacAddress := nic.LLDPs[0].ChassisID
-		neighbour, found := findNeighbour(remoteMacAddress, nic.MACAddress)
-		if found {
-			neighbours = append(neighbours, neighbour)
-			count++
+		if len(nic.LLDPs) != 0 {
+			if _, ok := macAddressMap[nic.LLDPs[0].ChassisID]; !ok {
+				macAddressMap[nic.LLDPs[0].ChassisID] = nic.Name
+			}
+		}
+		for _, item := range nic.NDPs {
+			if item.State == CReachableState {
+				if _, ok := macAddressMap[item.MACAddress]; !ok {
+					macAddressMap[item.MACAddress] = nic.Name
+				}
+			}
+		}
+		for remoteMacAddress := range macAddressMap {
+			findNeighbour(remoteMacAddress, nic.MACAddress, &neighbours, &count)
 		}
 	}
 	return neighbours, count
 }
 
-func findNeighbour(localMacAddress string, remoteMacAddress string) (switchv1alpha1.NeighbourSpec, bool) {
-	inventories := inventoriesv1alpha1.InventoryList{}
+func findNeighbour(localMacAddress string, remoteMacAddress string, neighbours *[]switchv1alpha1.NeighbourSpec, count *uint8) {
+
+	inventories := &inventoriesv1alpha1.InventoryList{}
 	for _, inv := range inventories.Items {
 		for _, nic := range inv.Spec.NICs.NICs {
-			if len(nic.LLDPs) == 0 {
+			if len(nic.LLDPs) == 0 && len(nic.NDPs) == 0 {
 				continue
 			}
-			if nic.MACAddress == localMacAddress && nic.LLDPs[0].ChassisID == remoteMacAddress {
-				id, name := "", ""
-				if inv.Spec.Host.Type == CSwitchType {
-					id = inv.Spec.System.SerialNumber
-					name = strings.ToLower(inv.Spec.System.SerialNumber)
+			if nic.MACAddress == localMacAddress {
+				if nic.LLDPs[0].ChassisID == remoteMacAddress {
+					*neighbours = append(*neighbours, buildNeighbour(&inv, nic.Name, nic.MACAddress))
+					*count++
 				} else {
-					id = inv.Spec.System.ID
-					name = inv.Name
+					for _, item := range nic.NDPs {
+						if item.MACAddress == remoteMacAddress {
+							*neighbours = append(*neighbours, buildNeighbour(&inv, nic.Name, nic.MACAddress))
+							*count++
+						}
+					}
 				}
-				return switchv1alpha1.NeighbourSpec{
-					ID:         id,
-					Name:       name,
-					Type:       inv.Spec.Host.Type,
-					Port:       nic.Name,
-					MACAddress: nic.MACAddress,
-				}, true
 			}
 		}
 	}
-	return switchv1alpha1.NeighbourSpec{}, false
+}
+
+func buildNeighbour(inv *inventoriesv1alpha1.Inventory, nicName string, nicMacAddress string) switchv1alpha1.NeighbourSpec {
+	id, name := "", ""
+	if inv.Spec.Host.Type == CSwitchType {
+		id = inv.Spec.System.SerialNumber
+		name = strings.ToLower(inv.Spec.System.SerialNumber)
+	} else {
+		id = inv.Spec.System.ID
+		name = inv.Name
+	}
+	return switchv1alpha1.NeighbourSpec{
+		ID:         id,
+		Name:       name,
+		Type:       inv.Spec.Host.Type,
+		Port:       nicName,
+		MACAddress: nicMacAddress,
+	}
 }
