@@ -18,20 +18,26 @@ package inventory
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"strings"
+
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
+
+	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
 const (
-	CSwitchType     = "Switch"
-	CReachableState = "Reachable"
+	CSwitchType    = "Switch"
+	CSonicSwitchOs = "SONiC"
+	CSwitchRole    = "Undefined"
 )
 
 // Reconciler reconciles a Switch object
@@ -72,7 +78,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	switchRes, exists := switchResourceExists(strings.ToLower(inventory.Spec.System.SerialNumber), switches)
 	if !exists {
 		r.Log.Info("switch resource does not exists")
-		preparedSwitch := getPreparedSwitch(switchRes, inventory)
+		preparedSwitch, err := getPreparedSwitch(switchRes, inventory)
+		if err != nil {
+			r.Log.Error(err, "failed to prepare switch resource for creation")
+			return ctrl.Result{}, err
+		}
 		if err := r.Client.Create(ctx, preparedSwitch); err != nil {
 			r.Log.Error(err, "failed to create switch resource")
 			return ctrl.Result{}, err
@@ -99,81 +109,81 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*sw
 	return &switchv1alpha1.Switch{}, false
 }
 
-func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) *switchv1alpha1.Switch {
-	sw.Name = strings.ToLower(inv.Spec.System.SerialNumber)
-	sw.Namespace = inv.Namespace
-	sw.Spec.ID = inv.Spec.System.SerialNumber
-	sw.Spec.Ports = inv.Spec.NICs.Count
-	sw.Spec.Neighbours, sw.Spec.NeighboursCount = setNeighbours(inv)
-	return sw
-}
-
-func setNeighbours(inv *inventoriesv1alpha1.Inventory) ([]switchv1alpha1.NeighbourSpec, uint8) {
-	count := uint8(0)
-	neighbours := make([]switchv1alpha1.NeighbourSpec, 0)
-	macAddressMap := make(map[string]string)
-	for _, nic := range inv.Spec.NICs.NICs {
-		if len(nic.LLDPs) == 0 && len(nic.NDPs) == 0 {
-			continue
-		}
-		if len(nic.LLDPs) != 0 {
-			if _, ok := macAddressMap[nic.LLDPs[0].ChassisID]; !ok {
-				macAddressMap[nic.LLDPs[0].ChassisID] = nic.Name
-			}
-		}
-		for _, item := range nic.NDPs {
-			if item.State == CReachableState {
-				if _, ok := macAddressMap[item.MACAddress]; !ok {
-					macAddressMap[item.MACAddress] = nic.Name
-				}
-			}
-		}
-		for remoteMacAddress := range macAddressMap {
-			findNeighbour(remoteMacAddress, nic.MACAddress, &neighbours, &count)
-		}
-	}
-	return neighbours, count
-}
-
-func findNeighbour(localMacAddress string, remoteMacAddress string, neighbours *[]switchv1alpha1.NeighbourSpec, count *uint8) {
-
-	inventories := &inventoriesv1alpha1.InventoryList{}
-	for _, inv := range inventories.Items {
-		for _, nic := range inv.Spec.NICs.NICs {
-			if len(nic.LLDPs) == 0 && len(nic.NDPs) == 0 {
-				continue
-			}
-			if nic.MACAddress == localMacAddress {
-				if nic.LLDPs[0].ChassisID == remoteMacAddress {
-					*neighbours = append(*neighbours, buildNeighbour(&inv, nic.Name, nic.MACAddress))
-					*count++
-				} else {
-					for _, item := range nic.NDPs {
-						if item.MACAddress == remoteMacAddress {
-							*neighbours = append(*neighbours, buildNeighbour(&inv, nic.Name, nic.MACAddress))
-							*count++
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-func buildNeighbour(inv *inventoriesv1alpha1.Inventory, nicName string, nicMacAddress string) switchv1alpha1.NeighbourSpec {
-	id, name := "", ""
-	if inv.Spec.Host.Type == CSwitchType {
-		id = inv.Spec.System.SerialNumber
-		name = strings.ToLower(inv.Spec.System.SerialNumber)
+func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
+	if name, err := getUUID(strings.ToLower(inv.Spec.System.SerialNumber)); err != nil {
+		return nil, err
 	} else {
-		id = inv.Spec.System.ID
-		name = inv.Name
+		sw.Name = name
 	}
-	return switchv1alpha1.NeighbourSpec{
-		ID:         id,
-		Name:       name,
-		Type:       inv.Spec.Host.Type,
-		Port:       nicName,
-		MACAddress: nicMacAddress,
+	sw.Namespace = inv.Namespace
+	sw.Spec.Hostname = inv.Spec.Host.Name
+	sw.Spec.Ports = inv.Spec.NICs.Count
+	sw.Spec.SwitchPorts = countSwitchPorts(inv.Spec.NICs.NICs)
+	sw.Spec.SwitchDistro = &switchv1alpha1.SwitchDistroSpec{
+		OS:      CSonicSwitchOs,
+		Version: inv.Spec.Distro.CommitId,
+		ASIC:    inv.Spec.Distro.AsicType,
 	}
+	sw.Spec.SwitchChassis = &switchv1alpha1.SwitchChassisSpec{
+		Manufacturer: inv.Spec.System.Manufacturer,
+		SKU:          inv.Spec.System.ProductSKU,
+		Serial:       inv.Spec.System.SerialNumber,
+		ChassisID:    getChassisId(inv.Spec.NICs.NICs),
+	}
+	sw.Spec.Interfaces = setInterfaces(inv.Spec.NICs.NICs)
+	sw.Spec.Role = CSwitchRole
+	return sw, nil
+}
+
+func setInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.InterfaceSpec {
+	interfaces := make([]*switchv1alpha1.InterfaceSpec, 0)
+	for _, nic := range nics {
+		interfaces = append(interfaces, buildInterface(&nic))
+	}
+	return interfaces
+}
+
+func buildInterface(nic *inventoriesv1alpha1.NICSpec) *switchv1alpha1.InterfaceSpec {
+	iface := &switchv1alpha1.InterfaceSpec{
+		Name:       nic.Name,
+		MACAddress: nic.MACAddress,
+	}
+	if len(nic.LLDPs) != 0 {
+		lldpData := nic.LLDPs[0]
+		iface.LLDPChassisID = lldpData.ChassisID
+		iface.LLDPSystemName = lldpData.SystemName
+		iface.LLDPPortID = lldpData.PortID
+		iface.LLDPPortDescription = lldpData.PortDescription
+	}
+	return iface
+}
+
+func getUUID(text string) (string, error) {
+	hasher := md5.New()
+	hasher.Write([]byte(text))
+	rawUid := hex.EncodeToString(hasher.Sum(nil))
+	if uid, err := uuid.Parse(rawUid); err == nil {
+		return uid.String(), nil
+	} else {
+		return "", err
+	}
+}
+
+func countSwitchPorts(nics []inventoriesv1alpha1.NICSpec) uint64 {
+	count := uint64(0)
+	for _, item := range nics {
+		if item.PCIAddress == "" {
+			count++
+		}
+	}
+	return count
+}
+
+func getChassisId(nics []inventoriesv1alpha1.NICSpec) string {
+	for _, nic := range nics {
+		if nic.Name == "eth0" {
+			return nic.MACAddress
+		}
+	}
+	return ""
 }
