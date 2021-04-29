@@ -18,12 +18,9 @@ package inventory
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/google/uuid"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,9 +32,14 @@ import (
 )
 
 const (
+	CUndefinedRole = "Undefined"
+	CLeafRole      = "Leaf"
+	CSpineRole     = "Spine"
+)
+
+const (
 	CSwitchType    = "Switch"
 	CSonicSwitchOs = "SONiC"
-	CSwitchRole    = "Undefined"
 )
 
 // Reconciler reconciles a Switch object
@@ -110,11 +112,7 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*sw
 }
 
 func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
-	if name, err := getUUID(strings.ToLower(inv.Spec.System.SerialNumber)); err != nil {
-		return nil, err
-	} else {
-		sw.Name = name
-	}
+	sw.Name = inv.Name
 	sw.Namespace = inv.Namespace
 	sw.Spec.Hostname = inv.Spec.Host.Name
 	sw.Spec.Ports = inv.Spec.NICs.Count
@@ -130,43 +128,45 @@ func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inven
 		Serial:       inv.Spec.System.SerialNumber,
 		ChassisID:    getChassisId(inv.Spec.NICs.NICs),
 	}
-	sw.Spec.Interfaces = setInterfaces(inv.Spec.NICs.NICs)
-	sw.Spec.Role = CSwitchRole
+	sw.Spec.Interfaces, sw.Spec.Role = setInterfaces(inv.Spec.NICs.NICs)
 	return sw, nil
 }
 
-func setInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.InterfaceSpec {
+func setInterfaces(nics []inventoriesv1alpha1.NICSpec) ([]*switchv1alpha1.InterfaceSpec, string) {
+	role := CUndefinedRole
 	interfaces := make([]*switchv1alpha1.InterfaceSpec, 0)
 	for _, nic := range nics {
-		interfaces = append(interfaces, buildInterface(&nic))
+		iface, neighbourExists, machinesConnected := buildInterface(&nic)
+		if neighbourExists {
+			if !machinesConnected && role == CUndefinedRole {
+				role = CSpineRole
+			}
+			if machinesConnected && (role == CSpineRole || role == CUndefinedRole) {
+				role = CLeafRole
+			}
+		}
+		interfaces = append(interfaces, iface)
 	}
-	return interfaces
+	return interfaces, role
 }
 
-func buildInterface(nic *inventoriesv1alpha1.NICSpec) *switchv1alpha1.InterfaceSpec {
+func buildInterface(nic *inventoriesv1alpha1.NICSpec) (*switchv1alpha1.InterfaceSpec, bool, bool) {
+	neighbourExists := false
+	machineConnected := false
 	iface := &switchv1alpha1.InterfaceSpec{
 		Name:       nic.Name,
 		MACAddress: nic.MACAddress,
 	}
 	if len(nic.LLDPs) != 0 {
+		neighbourExists = true
 		lldpData := nic.LLDPs[0]
 		iface.LLDPChassisID = lldpData.ChassisID
 		iface.LLDPSystemName = lldpData.SystemName
 		iface.LLDPPortID = lldpData.PortID
 		iface.LLDPPortDescription = lldpData.PortDescription
+		//todo: check neighbour type using advertised LLDP capabilities
 	}
-	return iface
-}
-
-func getUUID(text string) (string, error) {
-	hasher := md5.New()
-	hasher.Write([]byte(text))
-	rawUid := hex.EncodeToString(hasher.Sum(nil))
-	if uid, err := uuid.Parse(rawUid); err == nil {
-		return uid.String(), nil
-	} else {
-		return "", err
-	}
+	return iface, neighbourExists, machineConnected
 }
 
 func countSwitchPorts(nics []inventoriesv1alpha1.NICSpec) uint64 {
