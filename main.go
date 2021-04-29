@@ -18,9 +18,10 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"github.com/onmetal/switch-operator/controllers/inventory"
 	"github.com/onmetal/switch-operator/controllers/switch"
-	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -34,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )

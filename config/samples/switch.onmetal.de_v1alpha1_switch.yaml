@@ -1,10 +1,10 @@
-apiVersion: switch.onmetal.de.onmetal.de/v1alpha1
+apiVersion: switch.onmetal.de/v1alpha1
 kind: Switch
 metadata:
-  name: 8f6a8649-ff45-a4de-cf71-ae2136e4ce3c
-  namespace: default
+  name: 8223ab8c-ad85-cabf-4c75-7217629ffece
+  namespace: onmetal
 spec:
-  hostname: 772632X1950115
+  hostname: spine-2
   interfaces:
     - macAddress: 68:21:5f:47:0d:6e
       name: Ethernet0

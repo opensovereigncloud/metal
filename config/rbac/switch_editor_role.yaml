@@ -5,7 +5,7 @@ metadata:
   name: switch-editor-role
 rules:
 - apiGroups:
-  - switch.onmetal.de.onmetal.de
+  - switch.onmetal.de
   resources:
   - switches
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - switch.onmetal.de.onmetal.de
+  - switch.onmetal.de
   resources:
   - switches/status
   verbs:
