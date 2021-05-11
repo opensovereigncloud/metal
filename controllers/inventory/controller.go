@@ -53,9 +53,8 @@ type Reconciler struct {
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/finalizers,verbs=update
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=events,verbs=create;patch
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -164,7 +163,8 @@ func buildInterface(nic *inventoriesv1alpha1.NICSpec) (*switchv1alpha1.Interface
 		iface.LLDPSystemName = lldpData.SystemName
 		iface.LLDPPortID = lldpData.PortID
 		iface.LLDPPortDescription = lldpData.PortDescription
-		//todo: check neighbour type using advertised LLDP capabilities
+		//todo: check neighbour type using advertised LLDP capabilities.
+		//  If station capability advertised - change "machineConnected" to true
 	}
 	return iface, neighbourExists, machineConnected
 }

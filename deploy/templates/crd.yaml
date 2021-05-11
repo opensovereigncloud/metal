@@ -1,0 +1,202 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: {{ .Values.crd.plural }}.{{ .Values.crd.group }}
+spec:
+  group: {{ .Values.crd.group }}
+  names:
+    kind: {{ .Values.crd.kind }}
+    listKind: {{ .Values.crd.listKind }}
+    plural: {{ .Values.crd.plural }}
+    singular: {{ .Values.crd.singular }}
+  scope: Namespaced
+  versions:
+    - additionalPrinterColumns:
+        - description: Switch's hostname
+          jsonPath: .spec.hostname
+          name: Hostname
+          type: string
+        - description: switch's role
+          jsonPath: .spec.role
+          name: Role
+          type: string
+        - description: OS running on switch
+          jsonPath: .spec.switchDistro.os
+          name: OS
+          type: string
+        - description: Total amount of non-management network interfaces
+          jsonPath: .spec.switchPorts
+          name: SwitchPorts
+          type: integer
+        - description: South subnet
+          jsonPath: .spec.southSubnet
+          name: SouthSubnet
+          type: string
+        - description: ASN
+          jsonPath: .spec.asn
+          name: ASN
+          type: integer
+        - description: Request for scan ports
+          jsonPath: .spec.scanPorts
+          name: ScanPorts
+          type: boolean
+      name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Switch is the Schema for the switches API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: SwitchSpec defines the desired state of Switch
+              properties:
+                asn:
+                  description: ASN
+                  format: int64
+                  type: integer
+                hostname:
+                  description: Hostname
+                  type: string
+                interfaces:
+                  description: Interfaces referring to details about network interfaces
+                  items:
+                    description: InterfaceSpec defines switch's network interface details
+                    properties:
+                      fec:
+                        description: FEC referring to error correction method
+                        enum:
+                          - "No"
+                          - Standard
+                          - RS
+                        type: string
+                      ipv4:
+                        description: IPv4 referring to interface's IPv4 address
+                        type: string
+                      ipv6:
+                        description: IPv6 referring to interface's IPv6 address
+                        type: string
+                      lane:
+                        description: Lane referring to what lanes are used by the interface
+                        type: string
+                      lldpChassisId:
+                        description: LLDPChassisID
+                        type: string
+                      lldpPortDescription:
+                        description: LLDPPortDescription
+                        type: string
+                      lldpPortId:
+                        description: LLDPPortID
+                        type: string
+                      lldpSystemName:
+                        description: LLDPSystemName
+                        type: string
+                      macAddress:
+                        description: MACAddress referring to interface's MAC address
+                        type: string
+                      name:
+                        description: Name referring to interface's name
+                        type: string
+                      neighbour:
+                        description: Neighbour referring to neighbour type
+                        enum:
+                          - Machine
+                          - Switch
+                        type: string
+                    type: object
+                  type: array
+                location:
+                  description: Location referring to the switch location
+                  properties:
+                    hu:
+                      description: HU referring to height in units
+                      type: integer
+                    rack:
+                      description: Rack referring to rack number
+                      type: integer
+                    room:
+                      description: Room referring to room name
+                      type: string
+                    row:
+                      description: Row referring to row number
+                      type: integer
+                  type: object
+                ports:
+                  description: Ports referring to network interfaces total count
+                  format: int64
+                  type: integer
+                role:
+                  description: 'Role referring to switch''s role: leaf or spine'
+                  enum:
+                    - Leaf
+                    - Spine
+                    - Undefined
+                  type: string
+                scanPorts:
+                  default: true
+                  description: ScanPorts flag determining whether scanning of ports is requested
+                  type: boolean
+                southSubnet:
+                  description: SouthSubnet referring to south subnet
+                  type: string
+                switchChassis:
+                  description: SwitchChassis referring to switch hardware information
+                  properties:
+                    chassisId:
+                      description: ChassisID referring to switch chassis ID advertising via LLDP
+                      type: string
+                    manufacturer:
+                      description: Manufacturer referring to switch chassis manufacturer
+                      type: string
+                    serial:
+                      description: Serial referring to switch chassis serial number
+                      type: string
+                    sku:
+                      description: SKU
+                      type: string
+                  type: object
+                switchDistro:
+                  description: SwitchDistro referring to switch OS information
+                  properties:
+                    asic:
+                      description: ASIC
+                      type: string
+                    os:
+                      description: OS referring to switch operating system
+                      type: string
+                    version:
+                      description: Version referring to switch OS version
+                      type: string
+                  type: object
+                switchPorts:
+                  description: SwitchPorts referring to non-management network interfaces count
+                  format: int64
+                  type: integer
+              required:
+                - hostname
+                - ports
+                - switchChassis
+                - switchPorts
+              type: object
+            status:
+              description: SwitchStatus defines the observed state of Switch
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

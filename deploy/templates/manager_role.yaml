@@ -1,0 +1,68 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ .Chart.Name }}-manager-role"
+rules:
+  - apiGroups:
+      - machine.onmetal.de
+    resources:
+      - inventories
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - machine.onmetal.de
+    resources:
+      - inventories/status
+    verbs:
+      - get
+  - apiGroups:
+      - machine.onmetal.de
+    resources:
+      - machines
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - machine.onmetal.de
+    resources:
+      - machines/status
+    verbs:
+      - get
+  - apiGroups:
+      - {{ .Values.crd.group }}
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - {{ .Values.crd.group }}
+    resources:
+      - {{ .Values.crd.plural }}
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - {{ .Values.crd.group }}
+    resources:
+      - {{ .Values.crd.plural }}/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - {{ .Values.crd.group }}
+    resources:
+      - {{ .Values.crd.plural }}/status
+    verbs:
+      - get
+      - patch
+      - update

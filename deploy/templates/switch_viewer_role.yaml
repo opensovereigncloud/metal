@@ -1,0 +1,20 @@
+# permissions for end users to view switches.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: "{{ .Chart.Name }}-viewer-role"
+rules:
+- apiGroups:
+  - {{ .Values.crd.group }}
+  resources:
+  - {{ .Values.crd.plural }}
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - {{ .Values.crd.group }}
+  resources:
+  - {{ .Values.crd.plural }}/status
+  verbs:
+  - get

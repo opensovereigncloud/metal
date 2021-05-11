@@ -68,7 +68,7 @@ After development is done, clean up local environment.
 
 ## Deployment
 
-Operator can be deployed with kubectl or kustomize (Helm is pending). Use may choose one that is more suitable.
+Operator can be deployed with kubectl, kustomize or Helm. Use may choose one that is more suitable.
 
 ### With kubectl using kustomize configs
 
@@ -83,3 +83,10 @@ Operator can be deployed with kubectl or kustomize (Helm is pending). Use may ch
     kustomize build config/default | kubectl apply -f -
     # build and remove
     kustomize build config/default | kubectl delete -f -
+
+### With Helm
+
+    # install release "onmetal-switch" to "onmetal" namespace
+    helm install onmetal-switch ./deploy/ -n onmetal --create-namespace
+    # remove release "onmetal-switch" from "onmetal" namespace
+    helm uninstall onmetal-switch -n onmetal
