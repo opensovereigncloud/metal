@@ -113,6 +113,12 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*sw
 func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
 	sw.Name = inv.Name
 	sw.Namespace = inv.Namespace
+	if inv.Labels != nil {
+		sw.Labels = inv.Labels
+		sw.Labels["chassisId"] = strings.ReplaceAll(getChassisId(inv.Spec.NICs.NICs), ":", "-")
+	} else {
+		sw.Labels = map[string]string{"chassisId": strings.ReplaceAll(getChassisId(inv.Spec.NICs.NICs), ":", "-")}
+	}
 	sw.Spec.Hostname = inv.Spec.Host.Name
 	sw.Spec.Ports = inv.Spec.NICs.Count
 	sw.Spec.SwitchPorts = countSwitchPorts(inv.Spec.NICs.NICs)
