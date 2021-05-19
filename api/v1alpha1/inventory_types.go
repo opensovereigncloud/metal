@@ -24,6 +24,11 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// LLDPCapabilities
+// +kubebuilder:validation:Enum=Other;Repeater;Bridge;WLAN Access Point;Router;Telephone;DOCSIS cable device;Station;Customer VLAN;Service VLAN;Two-port MAC Relay (TPMR)
+// +kubebuilder:object:generate=true
+type LLDPCapabilities string
+
 // InventorySpec contains result of inventorization process on the host
 // +kubebuilder:object:generate=true
 type InventorySpec struct {
@@ -303,6 +308,13 @@ type NICSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=1
 	Speed uint32 `json:"speed,omitempty"`
+	//Lanes is a number of used lanes (if supported)
+	// +kubebuilder:validation:Optional
+	Lanes uint8 `json:"lanes,omitempty"`
+	//ActiveFEC is an active error correction mode
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=Not Reported;None;Auto;Off;RS;BaseR;LLRS
+	ActiveFEC string `json:"activeFEC,omitempty"`
 	// LLDP is a collection of LLDP messages received by the network interface
 	// +kubebuilder:validation:Optional
 	LLDPs []LLDPSpec `json:"lldps,omitempty"`
@@ -329,6 +341,9 @@ type LLDPSpec struct {
 	// PortDescription is a short description of the link port
 	// +kubebuilder:validation:Optional
 	PortDescription string `json:"portDescription,omitempty"`
+	// Capabilities is a list of LLDP capabilities advertised by neighbor
+	// +kubebuilder:validation:Optional
+	Capabilities []LLDPCapabilities `json:"capabilities,omitempty"`
 }
 
 // NDPSpec is an entry received by IPv6 Neighbour Discovery Protocol

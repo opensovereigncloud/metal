@@ -291,10 +291,7 @@ github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn
 github.com/olekukonko/tablewriter v0.0.0-20170122224234-a0225b3f23b5/go.mod h1:vsDQFd/mU46D+Z4whnwzcISnGGzXWMclvtLoiIKAKIo=
 github.com/onmetal/k8s-inventory v0.0.0-20210226103223-f5b3c3dfc868/go.mod h1:v61fLKQcraI8tE4o0vHXgBIUY1GNON11nmfd+ws80pk=
 github.com/onmetal/k8s-inventory v0.0.0-20210421045428-4acba6361891/go.mod h1:kAqOlvPeZHSYsJudk0/Hdih5vgjgdg0B+7xEUupvSzo=
-github.com/onmetal/k8s-size v0.0.0-20210330130030-0e28c9bdd1bf h1:msk+xPwcaYzKbptND12N6Guu8cYZzNhKDpUbrj1mXHc=
 github.com/onmetal/k8s-size v0.0.0-20210330130030-0e28c9bdd1bf/go.mod h1:PZTjc0RgegODQKp8ca6r9Gg21tQZCvPM51F8z/se4ys=
-github.com/onmetal/k8s-size v0.0.0-20210421061640-857f330421d7 h1:XxNeOPzMpSLKi7BT27Z/LPihw4jImzIQGI/lwktAYLo=
-github.com/onmetal/k8s-size v0.0.0-20210421061640-857f330421d7/go.mod h1:8+WcQdZjxVbtiv6HjbXiGtWOjX5I0Q3HKMLotAQGR60=
 github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80 h1:4ltuaLe4p9bxO7Y2FC+w3dAAOwknJpLt8YS1pJloNKg=
 github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80/go.mod h1:Pi09ghndU/+zKuyDrCzribl4OUWhsV6r1qHy8EVmrOY=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
@@ -438,7 +435,6 @@ golang.org/x/mod v0.0.0-20190513183733-4bf6d317e70e/go.mod h1:mXi4GBBbnImb6dmsKG
 golang.org/x/mod v0.1.0/go.mod h1:0QHyrYULN0/3qlju5TqG8bIK38QM8yzMo5ekMj3DlcY=
 golang.org/x/mod v0.1.1-0.20191105210325-c90efee705ee/go.mod h1:QqPTAvyqsEbceGzBzNggFXnrqF1CaUcvgkdR5Ot7KZg=
 golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
-golang.org/x/mod v0.3.0 h1:RM4zey1++hCTbCVQfnWeKs9/IEsaBLA8vTkd0WVtmH4=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.4.2 h1:Gz96sIWK3OalVv/I/qNygP42zyoKp3xptRVCWRFEBvo=
 golang.org/x/mod v0.4.2/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
