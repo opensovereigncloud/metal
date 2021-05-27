@@ -57,7 +57,7 @@ spec:
         clFlushSize: 64
         cacheAlignment: 64
         addressSizes: "39 bits physical, 48 bits virtual"
-        powerManagement:
+        powerManagement: ""
   nics:
     count : 1
     nics:
@@ -80,4 +80,4 @@ spec:
     vmType: none
   host:
     type: Machine
-    hostname: node1
+    name: node1
