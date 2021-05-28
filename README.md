@@ -1,7 +1,9 @@
 # switch-operator
 
-switch-operator is a k8s controller that stores Switch custom resource created from collected inventories and handles
-its state.
+switch-operator is a k8s controller that includes the following custom resources:  
+- `Switch` defines switch object created from collected inventory and handles switch's state
+- `SwitchAssignment` defines created by user assignment of top-level spine role
+- `SwitchConnection` defines how switch interconnected with other switches, and it's position in switches' connection hierarchy
 
 ### Required tools
 
@@ -30,6 +32,11 @@ corresponding steps. Otherwise, create a local instance of k8s and registry.
     minikube addons enable registry
     # run proxy to registry
     docker run --rm -d --name registry-bridge --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
+
+### Webhooks
+If webhooks are not configured in your environment, you need to set environment variable ENABLE_WEBHOOKS to false:
+
+    export ENABLE_WEBHOOKS=false
 
 ### Build and install
 

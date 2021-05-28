@@ -20,9 +20,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/onmetal/switch-operator/controllers/inventory"
-	"github.com/onmetal/switch-operator/controllers/switch"
-
+	"github.com/onmetal/switch-operator/controllers"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -83,7 +81,29 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&_switch.Reconciler{
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&switchv1alpha1.SwitchAssignment{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "SwitchAssignment")
+		}
+	}
+
+	if err = (&controllers.SwitchAssignmentReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SwitchAssignment"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SwitchAssignment")
+		os.Exit(1)
+	}
+	if err = (&controllers.SwitchConnectionReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SwitchConnection"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SwitchConnection")
+		os.Exit(1)
+	}
+	if err = (&controllers.SwitchReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
 		Scheme: mgr.GetScheme(),
@@ -91,7 +111,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch")
 		os.Exit(1)
 	}
-	if err = (&inventory.Reconciler{
+	if err = (&controllers.InventoryReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Inventory"),
 		Scheme: mgr.GetScheme(),

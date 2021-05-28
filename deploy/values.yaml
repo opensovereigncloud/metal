@@ -47,12 +47,33 @@ service:
   port: 8443
 
 crd:
-  group: switch.onmetal.de
-  plural: switches
-  singular: switch
-  kind: Switch
-  listKind: SwitchList
-  scope: Namespaced
+  switch:
+    group: switch.onmetal.de
+    plural: switches
+    singular: switch
+    kind: Switch
+    listKind: SwitchList
+    scope: Namespaced
+    shortNames:
+      - sw
+  switchAssignment:
+    group: switch.onmetal.de
+    plural: switchassignments
+    singular: switchassignment
+    kind: SwitchAssignment
+    listKind: SwitchAssignmentList
+    scope: Namespaced
+    shortNames:
+      - swa
+  switchConnection:
+    group: switch.onmetal.de
+    plural: switchconnections
+    singular: switchconnection
+    kind: SwitchConnection
+    listKind: SwitchConnectionList
+    scope: Namespaced
+    shortNames:
+      - swc
 
 serviceAccount:
   create: true

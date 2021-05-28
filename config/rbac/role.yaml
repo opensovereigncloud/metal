@@ -3,6 +3,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: manager-role
 rules:
 - apiGroups:
@@ -42,6 +43,16 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switchassignments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - switch.onmetal.de
   resources:

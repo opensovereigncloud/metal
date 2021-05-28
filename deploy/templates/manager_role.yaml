@@ -34,16 +34,16 @@ rules:
     verbs:
       - get
   - apiGroups:
-      - {{ .Values.crd.group }}
+      - {{ .Values.crd.switch.group }}
     resources:
       - events
     verbs:
       - create
       - patch
   - apiGroups:
-      - {{ .Values.crd.group }}
+      - {{ .Values.crd.switch.group }}
     resources:
-      - {{ .Values.crd.plural }}
+      - {{ .Values.crd.switch.plural }}
     verbs:
       - create
       - delete
@@ -53,15 +53,81 @@ rules:
       - update
       - watch
   - apiGroups:
-      - {{ .Values.crd.group }}
+      - {{ .Values.crd.switch.group }}
     resources:
-      - {{ .Values.crd.plural }}/finalizers
+      - {{ .Values.crd.switch.plural }}/finalizers
     verbs:
       - update
   - apiGroups:
-      - {{ .Values.crd.group }}
+      - {{ .Values.crd.switch.group }}
     resources:
-      - {{ .Values.crd.plural }}/status
+      - {{ .Values.crd.switch.plural }}/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - {{ .Values.crd.switchAssignment.group }}
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - {{ .Values.crd.switchAssignment.group }}
+    resources:
+      - {{ .Values.crd.switchAssignment.plural }}
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - {{ .Values.crd.switchAssignment.group }}
+    resources:
+      - {{ .Values.crd.switchAssignment.plural }}/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - {{ .Values.crd.switchAssignment.group }}
+    resources:
+      - {{ .Values.crd.switchAssignment.plural }}/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - {{ .Values.crd.switchConnection.group }}
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - {{ .Values.crd.switchConnection.group }}
+    resources:
+      - {{ .Values.crd.switchConnection.plural }}
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - {{ .Values.crd.switchConnection.group }}
+    resources:
+      - {{ .Values.crd.switchConnection.plural }}/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - {{ .Values.crd.switchConnection.group }}
+    resources:
+      - {{ .Values.crd.switchConnection.plural }}/status
     verbs:
       - get
       - patch

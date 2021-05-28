@@ -41,16 +41,20 @@ type SwitchSpec struct {
 	//SwitchChassis referring to switch hardware information
 	//+kubebuilder:validation:Required
 	SwitchChassis *SwitchChassisSpec `json:"switchChassis"`
-	//SouthSubnet referring to south subnet
+	//SouthSubnet referring to south IPv4 subnet
 	//+kubebuilder:validation:Optional
-	SouthSubnet string `json:"southSubnet,omitempty"`
-	//ASN
+	SouthSubnetV4 string `json:"southSubnetV4,omitempty"`
+	//SouthSubnet referring to south IPv6 subnet
 	//+kubebuilder:validation:Optional
-	ASN uint64 `json:"asn,omitempty"`
+	SouthSubnetV6 string `json:"southSubnetV6,omitempty"`
 	//Role referring to switch's role: leaf or spine
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:validation:Enum=Leaf;Spine;Undefined
 	Role string `json:"role,omitempty"`
+	// ConnectionLevel refers the level of the connection
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:default=255
+	ConnectionLevel uint8 `json:"connectionLevel"`
 	//Interfaces referring to details about network interfaces
 	//+kubebuilder:validation:Optional
 	Interfaces []*InterfaceSpec `json:"interfaces,omitempty"`
@@ -111,12 +115,12 @@ type SwitchChassisSpec struct {
 //InterfaceSpec defines switch's network interface details
 //+kubebuilder:object:generate=true
 type InterfaceSpec struct {
-	//Lane referring to what lanes are used by the interface
+	//Lanes referring to how many lanes are used by the interface based on it's speed
 	//+kubebuilder:validation:Optional
-	Lane string `json:"lane,omitempty"`
+	Lanes uint8 `json:"lanes,omitempty"`
 	//FEC referring to error correction method
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=No;Standard;RS
+	//+kubebuilder:validation:Enum=None;BaseR;RS
 	FEC string `json:"fec,omitempty"`
 	//Neighbour referring to neighbour type
 	//+kubebuilder:validation:Optional
@@ -149,16 +153,18 @@ type InterfaceSpec struct {
 }
 
 // SwitchStatus defines the observed state of Switch
-type SwitchStatus struct{}
+type SwitchStatus struct {
+}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:shortName=sw
 //+kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.hostname`,description="Switch's hostname"
 //+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.role`,description="switch's role"
 //+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.switchDistro.os`,description="OS running on switch"
 //+kubebuilder:printcolumn:name="SwitchPorts",type=integer,JSONPath=`.spec.switchPorts`,description="Total amount of non-management network interfaces"
+//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.spec.connectionLevel`,description="Vertical level of switch connection"
 //+kubebuilder:printcolumn:name="SouthSubnet",type=string,JSONPath=`.spec.southSubnet`,description="South subnet"
-//+kubebuilder:printcolumn:name="ASN",type=integer,JSONPath=`.spec.asn`,description="ASN"
 //+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.spec.scanPorts`,description="Request for scan ports"
 
 // Switch is the Schema for the switches API

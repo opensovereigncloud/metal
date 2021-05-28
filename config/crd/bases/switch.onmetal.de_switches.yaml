@@ -13,6 +13,8 @@ spec:
     kind: Switch
     listKind: SwitchList
     plural: switches
+    shortNames:
+    - sw
     singular: switch
   scope: Namespaced
   versions:
@@ -33,14 +35,14 @@ spec:
       jsonPath: .spec.switchPorts
       name: SwitchPorts
       type: integer
+    - description: Vertical level of switch connection
+      jsonPath: .spec.connectionLevel
+      name: ConnectionLevel
+      type: integer
     - description: South subnet
       jsonPath: .spec.southSubnet
       name: SouthSubnet
       type: string
-    - description: ASN
-      jsonPath: .spec.asn
-      name: ASN
-      type: integer
     - description: Request for scan ports
       jsonPath: .spec.scanPorts
       name: ScanPorts
@@ -65,9 +67,9 @@ spec:
           spec:
             description: SwitchSpec defines the desired state of Switch
             properties:
-              asn:
-                description: ASN
-                format: int64
+              connectionLevel:
+                default: 255
+                description: ConnectionLevel refers the level of the connection
                 type: integer
               hostname:
                 description: Hostname
@@ -80,8 +82,8 @@ spec:
                     fec:
                       description: FEC referring to error correction method
                       enum:
-                      - "No"
-                      - Standard
+                      - None
+                      - BaseR
                       - RS
                       type: string
                     ipv4:
@@ -90,9 +92,10 @@ spec:
                     ipv6:
                       description: IPv6 referring to interface's IPv6 address
                       type: string
-                    lane:
-                      description: Lane referring to what lanes are used by the interface
-                      type: string
+                    lanes:
+                      description: Lanes referring to how many lanes are used by the
+                        interface based on it's speed
+                      type: integer
                     lldpChassisId:
                       description: LLDPChassisID
                       type: string
@@ -151,8 +154,11 @@ spec:
                 description: ScanPorts flag determining whether scanning of ports
                   is requested
                 type: boolean
-              southSubnet:
-                description: SouthSubnet referring to south subnet
+              southSubnetV4:
+                description: SouthSubnet referring to south IPv4 subnet
+                type: string
+              southSubnetV6:
+                description: SouthSubnet referring to south IPv6 subnet
                 type: string
               switchChassis:
                 description: SwitchChassis referring to switch hardware information

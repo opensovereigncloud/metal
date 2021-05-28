@@ -5,9 +5,9 @@ metadata:
   name: "{{ .Chart.Name }}-editor-role"
 rules:
 - apiGroups:
-  - {{ .Values.crd.group }}
+  - {{ .Values.crd.switch.group }}
   resources:
-  - {{ .Values.crd.plural }}
+  - {{ .Values.crd.switch.plural }}
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - {{ .Values.crd.group }}
+  - {{ .Values.crd.switch.group }}
   resources:
-  - {{ .Values.crd.plural }}/status
+  - {{ .Values.crd.switch.plural }}/status
   verbs:
   - get
