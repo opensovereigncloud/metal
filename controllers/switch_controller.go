@@ -117,6 +117,20 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	//todo define subnet
+	//if switchRes.Spec.SouthSubnetV4 == "" {
+	//	_, err := r.findV4Subnet(ctx)
+	//	if err != nil {
+	//		log.Error(err, "unable to find suitable IPv4 subnet")
+	//	}
+	//}
+	//if switchRes.Spec.SouthSubnetV4 == "" {
+	//	_, err := r.findV6Subnet(ctx)
+	//	if err != nil {
+	//		log.Error(err, "unable to find suitable IPv6 subnet")
+	//	}
+	//}
+
 	return ctrl.Result{RequeueAfter: util.CRequeueInterval}, nil
 }
 
@@ -233,3 +247,31 @@ func checkMachinesConnected(sw *switchv1alpha1.Switch) bool {
 	}
 	return false
 }
+
+//func (r *SwitchReconciler) findV4Subnet(ctx context.Context) (*subnetv1alpha1.Subnet, error) {
+//	subnetsList := &subnetv1alpha1.SubnetList{}
+//	err := r.Client.List(ctx, subnetsList)
+//	if err != nil {
+//		return nil, err
+//	}
+//	for _, item := range subnetsList.Items {
+//		if item.Spec.Type == "IPv4" {
+//			return &item, nil
+//		}
+//	}
+//	return nil, nil
+//}
+//
+//func (r *SwitchReconciler) findV6Subnet(ctx context.Context) (*subnetv1alpha1.Subnet, error) {
+//	subnetsList := &subnetv1alpha1.SubnetList{}
+//	err := r.Client.List(ctx, subnetsList)
+//	if err != nil {
+//		return nil, err
+//	}
+//	for _, item := range subnetsList.Items {
+//		if item.Spec.Type == "IPv6" {
+//			return &item, nil
+//		}
+//	}
+//	return nil, nil
+//}
