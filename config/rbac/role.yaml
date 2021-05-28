@@ -56,6 +56,16 @@ rules:
 - apiGroups:
   - switch.onmetal.de
   resources:
+  - switchconnections
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - switch.onmetal.de
+  resources:
   - switches
   verbs:
   - create
