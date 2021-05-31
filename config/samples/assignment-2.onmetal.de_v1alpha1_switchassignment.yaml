@@ -1,0 +1,8 @@
+apiVersion: switch.onmetal.de/v1alpha1
+kind: SwitchAssignment
+metadata:
+  name: switchassignment-1950148
+spec:
+  role: Spine
+  serial: "1950148"
+  chassisId: 68:21:5f:47:0b:6e

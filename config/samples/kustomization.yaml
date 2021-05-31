@@ -1,5 +1,9 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- switch.onmetal.de_v1alpha1_switch.yaml
-- switch.onmetal.de_v1alpha1_switchassignment.yaml
+  - assignment-1.onmetal.de_v1alpha1_switchassignment.yaml
+  - assignment-2.onmetal.de_v1alpha1_switchassignment.yaml
+  - leaf-1.onmetal.de_v1alpha1_switch.yaml
+  - leaf-2.onmetal.de_v1alpha1_switch.yaml
+  - spine-1.onmetal.de_v1alpha1_switch.yaml
+  - spine-2.onmetal.de_v1alpha1_switch.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

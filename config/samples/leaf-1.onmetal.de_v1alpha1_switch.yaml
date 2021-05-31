@@ -1,0 +1,59 @@
+apiVersion: switch.onmetal.de/v1alpha1
+kind: Switch
+metadata:
+  labels:
+    machine.onmetal.de/mac-address-eth0: 68-21-5f-47-16-6e
+    machine.onmetal.de/mac-address-ethernet0: 68-21-5f-47-16-6e
+    machine.onmetal.de/mac-address-ethernet4: 68-21-5f-47-16-6e
+    machine.onmetal.de/mac-address-ethernet8: 68-21-5f-47-16-6e
+    machine.onmetal.de/mac-address-ethernet12: 68-21-5f-47-16-6e
+    switch.onmetal.de/chassisId: 68-21-5f-47-16-6e
+  name: 58acdc85-32c7-31d3-9d25-5b84639faea9
+  namespace: onmetal
+spec:
+  connectionLevel: 1
+  hostname: leaf-1.fra3.infra.onmetal.de
+  interfaces:
+  - lanes: 4
+    lldpChassisId: 68:21:5f:47:0d:6e
+    lldpPortDescription: Ethernet0
+    lldpPortId: Eth29/1
+    lldpSystemName: spine-1.fra3.infra.onmetal.de
+    macAddress: 68:21:5f:47:16:6e
+    name: Ethernet0
+    neighbour: Switch
+  - lanes: 4
+    lldpChassisId: 68:21:5f:47:0b:6e
+    lldpPortDescription: Ethernet0
+    lldpPortId: Eth31/1
+    lldpSystemName: spine-2.fra3.infra.onmetal.de
+    macAddress: 68:21:5f:47:0d:6e
+    name: Ethernet4
+    neighbour: Switch
+  - lanes: 4
+    macAddress: 68:21:5f:47:0d:6e
+    name: Ethernet4
+  - lanes: 4
+    macAddress: 68:21:5f:47:0d:6e
+    name: Ethernet8
+  - lanes: 1
+    lldpChassisId: 64:9d:99:15:56:1c
+    lldpPortDescription: Ethernet Port on unit 1, port 12
+    lldpPortId: Eth 1/12
+    lldpSystemName: mgmt-sw-1
+    macAddress: 68:21:5f:47:16:6e
+    name: eth0
+    neighbour: Switch
+  ports: 35
+  role: Spine
+  scanPorts: true
+  switchChassis:
+    chassisId: 68:21:5f:47:16:6e
+    manufacturer: Accton
+    serial: 772632X1950126
+    sku: "1"
+  switchDistro:
+    asic: broadcom
+    os: SONiC
+    version: 7145582a
+  switchPorts: 4

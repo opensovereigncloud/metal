@@ -31,7 +31,7 @@ type SwitchAssignmentSpec struct {
 	Serial string `json:"serial"`
 	// ChassisID refers to switch chassis id
 	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Pattern='^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$'
+	//+kubebuilder:validation:Pattern=`^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$`
 	ChassisID string `json:"chassisId"`
 }
 
