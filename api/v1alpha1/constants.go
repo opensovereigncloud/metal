@@ -1,9 +1,6 @@
-package util
+package v1alpha1
 
-import (
-	"math"
-	"time"
-)
+import "time"
 
 const (
 	CLabelPrefix        = "switch.onmetal.de/"
@@ -38,11 +35,3 @@ const Namespace = "onmetal"
 var LabelSerial = CLabelPrefix + CLabelSerial
 var LabelChassisId = CLabelPrefix + CLabelChassisId
 var ConnectionLabelChassisId = CLabelPrefix + CLabelConnChassisId
-
-func GetNeededMaskLength(addressesCount float64) uint8 {
-	pow := 2.0
-	for math.Pow(2, pow) < addressesCount {
-		pow++
-	}
-	return 32 - uint8(pow)
-}

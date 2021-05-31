@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: "{{ .Chart.Name }}-editor-role"
+  name: "{{ .Values.namespace }}-{{ .Values.crd.switch.singular }}-editor-role"
 rules:
 - apiGroups:
   - {{ .Values.crd.switch.group }}

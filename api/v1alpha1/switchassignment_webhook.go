@@ -27,8 +27,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	"github.com/onmetal/switch-operator/util"
 )
 
 // log is for logging in this package.
@@ -50,8 +48,8 @@ var _ webhook.Defaulter = &SwitchAssignment{}
 func (swa *SwitchAssignment) Default() {
 	switchAssignmentLog.Info("default", "name", swa.Name)
 	swa.Labels = map[string]string{}
-	swa.Labels[util.LabelSerial] = swa.Spec.Serial
-	swa.Labels[util.LabelChassisId] = strings.ReplaceAll(swa.Spec.ChassisID, ":", "-")
+	swa.Labels[LabelSerial] = swa.Spec.Serial
+	swa.Labels[LabelChassisId] = strings.ReplaceAll(swa.Spec.ChassisID, ":", "-")
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -65,7 +63,7 @@ func (swa *SwitchAssignment) ValidateCreate() error {
 
 	var allErrors field.ErrorList
 
-	if swa.Spec.Role != util.CSpineRole {
+	if swa.Spec.Role != CSpineRole {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.role"), swa.Spec.Role, "Only spine role can be assigned"))
 	}
 

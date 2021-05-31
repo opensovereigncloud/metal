@@ -43,6 +43,7 @@ spec:
               properties:
                 chassisId:
                   description: ChassisID refers to switch chassis id
+                  pattern: ^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$
                   type: string
                 role:
                   description: Role refers to the role of the switch. Always "Spine"
