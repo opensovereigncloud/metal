@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
-	"github.com/onmetal/switch-operator/util"
 )
 
 type SwitchAssignmentReconciler struct {
@@ -48,8 +47,8 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	// if webhooks are not configured need to set labels in controller
 	if assignmentRes.Labels == nil {
 		assignmentRes.Labels = map[string]string{}
-		assignmentRes.Labels[util.LabelSerial] = assignmentRes.Spec.Serial
-		assignmentRes.Labels[util.LabelChassisId] = strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")
+		assignmentRes.Labels[switchv1alpha1.LabelSerial] = assignmentRes.Spec.Serial
+		assignmentRes.Labels[switchv1alpha1.LabelChassisId] = strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")
 		if err := r.Update(ctx, assignmentRes); err != nil {
 			log.Error(err, "unable to set labels for switchAssignment resource", "name", req.NamespacedName)
 			return ctrl.Result{}, err
@@ -57,7 +56,7 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// find and update dependent switch
-	selector := labels.SelectorFromSet(labels.Set{util.LabelChassisId: strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")})
+	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")})
 	opts := &client.ListOptions{
 		LabelSelector: selector,
 		Limit:         1000,
@@ -67,10 +66,10 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		log.Error(err, "unable to get switches list")
 	}
 	if len(switchesList.Items) == 0 {
-		return ctrl.Result{RequeueAfter: util.CRequeueInterval}, nil
+		return ctrl.Result{RequeueAfter: switchv1alpha1.CRequeueInterval}, nil
 	} else {
 		targetSwitch := &switchesList.Items[0]
-		targetSwitch.Spec.Role = util.CSpineRole
+		targetSwitch.Spec.Role = switchv1alpha1.CSpineRole
 		targetSwitch.Spec.ConnectionLevel = 0
 		if err := r.Update(ctx, targetSwitch); err != nil {
 			log.Error(err, "unable to update switch resource", "name", types.NamespacedName{

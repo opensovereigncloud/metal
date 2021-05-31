@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
-	"github.com/onmetal/switch-operator/util"
 )
 
 type SwitchConnectionReconciler struct {
@@ -70,7 +69,7 @@ func (r *SwitchConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		}
 	}
 
-	return ctrl.Result{RequeueAfter: util.CRequeueInterval}, nil
+	return ctrl.Result{RequeueAfter: switchv1alpha1.CRequeueInterval}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -90,7 +89,7 @@ func (r *SwitchConnectionReconciler) updateConnectionSwitchesData(switchConnecti
 		chassisIdsForLabels = append(chassisIdsForLabels, strings.ReplaceAll(item.ChassisID, ":", "-"))
 	}
 
-	labelsReq, err := labels.NewRequirement(util.LabelChassisId, selection.In, chassisIdsForLabels)
+	labelsReq, err := labels.NewRequirement(switchv1alpha1.LabelChassisId, selection.In, chassisIdsForLabels)
 	if err != nil {
 		r.Log.Error(err, "unable to build label selector requirements")
 		return err

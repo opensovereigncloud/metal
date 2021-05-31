@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
-	"github.com/onmetal/switch-operator/util"
 )
 
 // SwitchReconciler reconciles a Switch object
@@ -96,16 +95,16 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			updateNeeded = true
 		}
 		switch switchRes.Spec.Role {
-		case util.CUndefinedRole:
+		case switchv1alpha1.CUndefinedRole:
 			if checkMachinesConnected(switchRes) {
-				switchRes.Spec.Role = util.CLeafRole
+				switchRes.Spec.Role = switchv1alpha1.CLeafRole
 			} else {
-				switchRes.Spec.Role = util.CSpineRole
+				switchRes.Spec.Role = switchv1alpha1.CSpineRole
 			}
 			updateNeeded = true
-		case util.CSpineRole:
+		case switchv1alpha1.CSpineRole:
 			if checkMachinesConnected(switchRes) {
-				switchRes.Spec.Role = util.CLeafRole
+				switchRes.Spec.Role = switchv1alpha1.CLeafRole
 				updateNeeded = true
 			}
 		}
@@ -131,7 +130,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	//	}
 	//}
 
-	return ctrl.Result{RequeueAfter: util.CRequeueInterval}, nil
+	return ctrl.Result{RequeueAfter: switchv1alpha1.CRequeueInterval}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -198,7 +197,7 @@ func getDownstreamSwitches(sw *switchv1alpha1.Switch) []string {
 	connMap := make(map[string]struct{})
 	downstreamSwitches := make([]string, 0)
 	for _, iface := range sw.Spec.Interfaces {
-		if iface.Neighbour == util.CSwitchType {
+		if iface.Neighbour == switchv1alpha1.CSwitchType {
 			if _, ok := connMap[iface.LLDPChassisID]; !ok {
 				connMap[iface.LLDPChassisID] = struct{}{}
 				downstreamSwitches = append(downstreamSwitches, iface.LLDPChassisID)
@@ -218,7 +217,7 @@ func getPreparedSwitchConnection(conn *switchv1alpha1.SwitchConnection, sw *swit
 		Name:      sw.Name,
 		Namespace: sw.Namespace,
 		Labels: map[string]string{
-			util.ConnectionLabelChassisId: strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-"),
+			switchv1alpha1.ConnectionLabelChassisId: strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-"),
 		},
 	}
 	conn.Spec = switchv1alpha1.SwitchConnectionSpec{
@@ -241,7 +240,7 @@ func getPreparedSwitchConnection(conn *switchv1alpha1.SwitchConnection, sw *swit
 
 func checkMachinesConnected(sw *switchv1alpha1.Switch) bool {
 	for _, nic := range sw.Spec.Interfaces {
-		if nic.Neighbour == util.CMachineType {
+		if nic.Neighbour == switchv1alpha1.CMachineType {
 			return true
 		}
 	}
@@ -274,4 +273,12 @@ func checkMachinesConnected(sw *switchv1alpha1.Switch) bool {
 //		}
 //	}
 //	return nil, nil
+//}
+//
+//func GetNeededMaskLength(addressesCount float64) uint8 {
+//	pow := 2.0
+//	for math.Pow(2, pow) < addressesCount {
+//		pow++
+//	}
+//	return 32 - uint8(pow)
 //}

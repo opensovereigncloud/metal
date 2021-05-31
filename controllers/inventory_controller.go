@@ -29,7 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
-	"github.com/onmetal/switch-operator/util"
 )
 
 var Lanes = map[uint32]uint8{
@@ -70,7 +69,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		return ctrl.Result{}, err
 	}
-	if inventory.Spec.Host.Type != util.CSwitchType {
+	if inventory.Spec.Host.Type != switchv1alpha1.CSwitchType {
 		return ctrl.Result{}, nil
 	}
 	switches := &switchv1alpha1.SwitchList{}
@@ -111,7 +110,7 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*sw
 
 func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
 	sw.Name = inv.Name
-	sw.Namespace = util.Namespace
+	sw.Namespace = switchv1alpha1.Namespace
 	if inv.Labels != nil {
 		sw.Labels = inv.Labels
 	} else {
@@ -121,7 +120,7 @@ func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inven
 	sw.Spec.Ports = inv.Spec.NICs.Count
 	sw.Spec.SwitchPorts = countSwitchPorts(inv.Spec.NICs.NICs)
 	sw.Spec.SwitchDistro = &switchv1alpha1.SwitchDistroSpec{
-		OS:      util.CSonicSwitchOs,
+		OS:      switchv1alpha1.CSonicSwitchOs,
 		Version: inv.Spec.Distro.CommitId,
 		ASIC:    inv.Spec.Distro.AsicType,
 	}
@@ -133,7 +132,7 @@ func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inven
 	label := getChassisId(inv.Spec.NICs.NICs)
 	if label != nil {
 		sw.Spec.SwitchChassis.ChassisID = label.(string)
-		sw.Labels[util.LabelChassisId] = strings.ReplaceAll(label.(string), ":", "-")
+		sw.Labels[switchv1alpha1.LabelChassisId] = strings.ReplaceAll(label.(string), ":", "-")
 	}
 	sw.Spec.Interfaces, sw.Spec.Role = setInterfaces(inv.Spec.NICs.NICs)
 	sw.Spec.ConnectionLevel = 255
@@ -141,13 +140,13 @@ func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inven
 }
 
 func setInterfaces(nics []inventoriesv1alpha1.NICSpec) ([]*switchv1alpha1.InterfaceSpec, string) {
-	role := util.CUndefinedRole
+	role := switchv1alpha1.CUndefinedRole
 	interfaces := make([]*switchv1alpha1.InterfaceSpec, 0)
 	for _, nic := range nics {
 		iface, neighbourExists, machinesConnected := buildInterface(&nic)
 		if neighbourExists {
 			if machinesConnected {
-				role = util.CLeafRole
+				role = switchv1alpha1.CLeafRole
 			}
 		}
 		interfaces = append(interfaces, iface)
@@ -170,11 +169,11 @@ func buildInterface(nic *inventoriesv1alpha1.NICSpec) (*switchv1alpha1.Interface
 		iface.LLDPSystemName = lldpData.SystemName
 		iface.LLDPPortID = lldpData.PortID
 		iface.LLDPPortDescription = lldpData.PortDescription
-		iface.Neighbour = util.CSwitchType
+		iface.Neighbour = switchv1alpha1.CSwitchType
 		for i := range lldpData.Capabilities {
-			if lldpData.Capabilities[i] == util.CStationCapability {
+			if lldpData.Capabilities[i] == switchv1alpha1.CStationCapability {
 				machineConnected = true
-				iface.Neighbour = util.CMachineType
+				iface.Neighbour = switchv1alpha1.CMachineType
 				break
 			}
 		}
