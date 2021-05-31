@@ -90,3 +90,5 @@ affinity: {}
 
 ingress:
   enabled: false
+
+disable_webhooks: false

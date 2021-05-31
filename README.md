@@ -34,9 +34,12 @@ corresponding steps. Otherwise, create a local instance of k8s and registry.
     docker run --rm -d --name registry-bridge --network=host alpine ash -c "apk add socat && socat TCP-LISTEN:5000,reuseaddr,fork TCP:$(minikube ip):5000"
 
 ### Webhooks
-If webhooks are not configured in your environment, you need to set environment variable ENABLE_WEBHOOKS to false:
+If webhooks are not configured in your environment, you need to either set environment variable ENABLE_WEBHOOKS to false  
+for development environment (in case operator is running with `make run` command):
 
     export ENABLE_WEBHOOKS=false
+
+or pass it to the pod where compiled manager will be running.
 
 ### Build and install
 
@@ -92,8 +95,13 @@ Operator can be deployed with kubectl, kustomize or Helm. Use may choose one tha
     kustomize build config/default | kubectl delete -f -
 
 ### With Helm
+If webhooks are not configured in your environment, you need to pass `disable_webhooks=true` variable:
 
-    # install release "onmetal-switch" to "onmetal" namespace
+    # install release "onmetal-switch" to "onmetal" namespace WITH webhooks
     helm install onmetal-switch ./deploy/ -n onmetal --create-namespace
+    
+    # install release "onmetal-switch" to "onmetal" namespace WITHOUT webhooks
+    helm install --set disable_webhooks=true onmetal-switch ./deploy/ -n onmetal --create-namespace
+    
     # remove release "onmetal-switch" from "onmetal" namespace
     helm uninstall onmetal-switch -n onmetal
