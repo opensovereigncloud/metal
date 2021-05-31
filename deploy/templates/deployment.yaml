@@ -46,6 +46,11 @@ spec:
           command:
             - /manager
           image: "{{ .Values.manager.image.repository }}:{{ .Values.manager.image.tag | default .Chart.AppVersion }}"
+          {{ if .Values.disable_webhooks }}
+          env:
+            - name: ENABLE_WEBHOOKS
+              value: "false"
+          {{ end }}
           livenessProbe:
             httpGet:
               path: /healthz
