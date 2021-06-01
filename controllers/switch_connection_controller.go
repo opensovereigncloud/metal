@@ -87,10 +87,7 @@ func (r *SwitchConnectionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1alpha1.SwitchConnection{}).
 		Watches(&source.Kind{Type: &switchv1alpha1.SwitchConnection{}}, handler.Funcs{
-			CreateFunc:  nil,
-			UpdateFunc:  r.handleConnectionUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchConnectionList{}),
-			DeleteFunc:  nil,
-			GenericFunc: nil,
+			UpdateFunc: r.handleConnectionUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchConnectionList{}),
 		}).
 		Complete(r)
 }
@@ -205,37 +202,6 @@ func (r *SwitchConnectionReconciler) updateConnectionSwitchesData(switchConnecti
 	}
 
 	return nil
-}
-
-func (r *SwitchConnectionReconciler) rebuildConnectionsOld(conn *switchv1alpha1.SwitchConnection, ctx context.Context) (bool, error) {
-	update := false
-	connList := &switchv1alpha1.SwitchConnectionList{}
-	if err := r.Client.List(ctx, connList); err != nil {
-		return false, err
-	}
-	for _, item := range connList.Items {
-		for _, downstreamConn := range item.Spec.DownstreamSwitches.Switches {
-			if conn.Spec.Switch.ChassisID == downstreamConn.ChassisID && item.Spec.ConnectionLevel != 255 {
-				if conn.Spec.ConnectionLevel != item.Spec.ConnectionLevel+1 {
-					conn.Spec.ConnectionLevel = item.Spec.ConnectionLevel + 1
-					update = true
-				}
-				for _, value := range conn.Spec.DownstreamSwitches.Switches {
-					if value.ChassisID == item.Spec.Switch.ChassisID {
-						conn.Spec.DownstreamSwitches.Switches = updateDownstreamSwitches(conn, item.Spec.Switch.ChassisID)
-						conn.Spec.DownstreamSwitches.Count = len(conn.Spec.DownstreamSwitches.Switches)
-						conn.Spec.UpstreamSwitches.Switches = updateUpstreamSwitches(conn, value)
-						conn.Spec.UpstreamSwitches.Count = len(conn.Spec.UpstreamSwitches.Switches)
-						if err := r.updateConnectionSwitchesData(conn, ctx); err != nil {
-							return false, err
-						}
-						update = true
-					}
-				}
-			}
-		}
-	}
-	return update, nil
 }
 
 func (r *SwitchConnectionReconciler) rebuildConnections(conn *switchv1alpha1.SwitchConnection, ctx context.Context) (bool, error) {

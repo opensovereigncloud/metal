@@ -71,7 +71,6 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	// create switch connection resource if not exist
 	connRes := &switchv1alpha1.SwitchConnection{}
 	err := r.Get(ctx, req.NamespacedName, connRes)
 	if err != nil {
@@ -79,9 +78,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			log.Error(err, "failed to get switch connection resource for switch", "name", req.NamespacedName)
 			return ctrl.Result{}, err
 		} else {
-			// create connection
-			connectedSwitchesIds := getDownstreamSwitches(switchRes)
-			getPreparedSwitchConnection(connRes, switchRes, connectedSwitchesIds)
+			getPreparedSwitchConnection(connRes, switchRes)
 			if err := r.Client.Create(ctx, connRes); err != nil {
 				log.Error(err, "unable to create switchConnection resource")
 				return ctrl.Result{}, err
@@ -93,23 +90,23 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			switchRes.Spec.ConnectionLevel = connRes.Spec.ConnectionLevel
 			updateNeeded = true
 		}
+
 		switch switchRes.Spec.Role {
 		case switchv1alpha1.CUndefinedRole:
-			if checkMachinesConnected(switchRes) {
-				switchRes.Spec.Role = switchv1alpha1.CLeafRole
-			} else {
-				switchRes.Spec.Role = switchv1alpha1.CSpineRole
-			}
-			updateNeeded = true
+			fallthrough
 		case switchv1alpha1.CSpineRole:
+			role := switchv1alpha1.CSpineRole
 			if checkMachinesConnected(switchRes) {
-				switchRes.Spec.Role = switchv1alpha1.CLeafRole
+				role = switchv1alpha1.CLeafRole
+			}
+			if role != switchRes.Spec.Role {
+				switchRes.Spec.Role = role
 				updateNeeded = true
 			}
 		}
 		if updateNeeded {
-			if err := r.Update(ctx, switchRes); err != nil {
-				log.Error(err, "unable to update switch resource", "name", req.NamespacedName)
+			if err := r.Client.Update(ctx, switchRes); err != nil {
+				log.Error(err, "failed to update switch resource")
 				return ctrl.Result{}, err
 			}
 		}
@@ -137,10 +134,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1alpha1.Switch{}).
 		Watches(&source.Kind{Type: &switchv1alpha1.SwitchConnection{}}, handler.Funcs{
-			CreateFunc:  nil,
-			UpdateFunc:  r.handleConnectionUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchConnectionList{}),
-			DeleteFunc:  nil,
-			GenericFunc: nil,
+			UpdateFunc: r.handleConnectionUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchConnectionList{}),
 		}).
 		Complete(r)
 }
@@ -212,8 +206,9 @@ func getDownstreamSwitches(sw *switchv1alpha1.Switch) []string {
 	return downstreamSwitches
 }
 
-func getPreparedSwitchConnection(conn *switchv1alpha1.SwitchConnection, sw *switchv1alpha1.Switch, connectedSwitches []string) {
+func getPreparedSwitchConnection(conn *switchv1alpha1.SwitchConnection, sw *switchv1alpha1.Switch) {
 	connectedSwitchesSpecs := make([]switchv1alpha1.ConnectedSwitchSpec, 0)
+	connectedSwitches := getDownstreamSwitches(sw)
 	for _, id := range connectedSwitches {
 		connectedSwitchesSpecs = append(connectedSwitchesSpecs, switchv1alpha1.ConnectedSwitchSpec{ChassisID: id})
 	}

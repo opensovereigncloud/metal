@@ -55,7 +55,6 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		}
 	}
 
-	// find and update dependent switch
 	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")})
 	opts := &client.ListOptions{
 		LabelSelector: selector,
