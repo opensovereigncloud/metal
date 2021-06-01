@@ -138,18 +138,18 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&switchv1alpha1.Switch{}).
 		Watches(&source.Kind{Type: &switchv1alpha1.SwitchConnection{}}, handler.Funcs{
 			CreateFunc:  nil,
-			UpdateFunc:  handleConnectionUpdate(r.Client, r.Log, mgr.GetScheme(), &switchv1alpha1.SwitchConnectionList{}),
+			UpdateFunc:  r.handleConnectionUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchConnectionList{}),
 			DeleteFunc:  nil,
 			GenericFunc: nil,
 		}).
 		Complete(r)
 }
 
-func handleConnectionUpdate(c client.Client, log logr.Logger, scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
+func (r *SwitchReconciler) handleConnectionUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
 	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-		err := enqueueSwitchReconcileRequest(c, log, scheme, q, ro)
+		err := enqueueSwitchReconcileRequest(r.Client, r.Log, scheme, q, ro)
 		if err != nil {
-			log.Error(err, "error triggering switch reconciliation on connection update")
+			r.Log.Error(err, "error triggering switch reconciliation on connection update")
 		}
 	}
 }
@@ -202,7 +202,7 @@ func getDownstreamSwitches(sw *switchv1alpha1.Switch) []string {
 	connMap := make(map[string]struct{})
 	downstreamSwitches := make([]string, 0)
 	for _, iface := range sw.Spec.Interfaces {
-		if iface.Neighbour == switchv1alpha1.CSwitchType {
+		if !strings.HasPrefix(iface.Name, "eth") && iface.Neighbour == switchv1alpha1.CSwitchType {
 			if _, ok := connMap[iface.LLDPChassisID]; !ok {
 				connMap[iface.LLDPChassisID] = struct{}{}
 				downstreamSwitches = append(downstreamSwitches, iface.LLDPChassisID)
@@ -233,7 +233,7 @@ func getPreparedSwitchConnection(conn *switchv1alpha1.SwitchConnection, sw *swit
 		},
 		UpstreamSwitches: &switchv1alpha1.UpstreamSwitchesSpec{
 			Count:    0,
-			Switches: nil,
+			Switches: make([]switchv1alpha1.ConnectedSwitchSpec, 0),
 		},
 		DownstreamSwitches: &switchv1alpha1.DownstreamSwitchesSpec{
 			Count:    len(connectedSwitchesSpecs),
