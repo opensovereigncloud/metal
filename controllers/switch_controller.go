@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -130,7 +129,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	//	}
 	//}
 
-	return ctrl.Result{RequeueAfter: switchv1alpha1.CRequeueInterval}, nil
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -156,6 +155,7 @@ func handleConnectionUpdate(c client.Client, log logr.Logger, scheme *runtime.Sc
 }
 
 func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
+	ctx := context.Background()
 	list := &unstructured.UnstructuredList{}
 	gvk, err := apiutil.GVKForObject(ro, scheme)
 	if err != nil {
@@ -163,22 +163,27 @@ func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *run
 		return err
 	}
 	list.SetGroupVersionKind(gvk)
-	if err := c.List(context.Background(), list); err != nil {
+	if err := c.List(ctx, list); err != nil {
 		log.Error(err, "unable to get list of items")
 		return err
 	}
 	for _, item := range list.Items {
-		data, err := json.Marshal(item)
-		if err != nil {
-			log.Error(err, "unable to marshal data")
-			return err
-		}
 		obj := &switchv1alpha1.SwitchConnection{}
-		err = json.Unmarshal(data, obj)
+		err := c.Get(ctx, types.NamespacedName{
+			Namespace: item.GetNamespace(),
+			Name:      item.GetName(),
+		}, obj)
 		if err != nil {
-			log.Error(err, "unable to unmarshal data")
-			return err
+			log.Error(err, "failed to get switchConnection resource", "name", types.NamespacedName{
+				Namespace: item.GetNamespace(),
+				Name:      item.GetName(),
+			})
+			continue
 		}
+		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+			Namespace: obj.Spec.Switch.Namespace,
+			Name:      obj.Spec.Switch.Name,
+		}})
 		if obj.Spec.DownstreamSwitches != nil {
 			for _, sw := range obj.Spec.DownstreamSwitches.Switches {
 				if sw.Name != "" && sw.Namespace != "" {
