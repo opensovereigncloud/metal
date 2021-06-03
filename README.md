@@ -3,7 +3,6 @@
 switch-operator is a k8s controller that includes the following custom resources:  
 - `Switch` defines switch object created from collected inventory and handles switch's state
 - `SwitchAssignment` defines created by user assignment of top-level spine role
-- `SwitchConnection` defines how switch interconnected with other switches, and it's position in switches' connection hierarchy
 
 ### Required tools
 
