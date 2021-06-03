@@ -47,14 +47,6 @@ type SwitchSpec struct {
 	//SouthSubnet referring to south IPv6 subnet
 	//+kubebuilder:validation:Optional
 	SouthSubnetV6 string `json:"southSubnetV6,omitempty"`
-	//Role referring to switch's role: leaf or spine
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=Leaf;Spine;Undefined
-	Role string `json:"role,omitempty"`
-	// ConnectionLevel refers the level of the connection
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:default=255
-	ConnectionLevel uint8 `json:"connectionLevel"`
 	//Interfaces referring to details about network interfaces
 	//+kubebuilder:validation:Optional
 	Interfaces []*InterfaceSpec `json:"interfaces,omitempty"`
@@ -62,6 +54,9 @@ type SwitchSpec struct {
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:default=true
 	ScanPorts bool `json:"scanPorts,omitempty"`
+	//State referring to current switch state
+	//kubebuilder:validation:Optional
+	State *SwitchStateSpec `json:"state"`
 }
 
 //LocationSpec defines location details
@@ -152,18 +147,77 @@ type InterfaceSpec struct {
 	LLDPPortDescription string `json:"lldpPortDescription,omitempty"`
 }
 
+// SwitchStateSpec defines current connection state of the Switch
+type SwitchStateSpec struct {
+	//Role referring to switch's role: leaf or spine
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:Enum=Leaf;Spine;Undefined
+	Role string `json:"role,omitempty"`
+	// ConnectionLevel refers the level of the connection
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:default=255
+	ConnectionLevel uint8 `json:"connectionLevel"`
+	// NorthSwitches refers to up-level switch
+	//+kubebuilder:validation:Optional
+	NorthConnections *NorthConnectionsSpec `json:"northSwitches,omitempty"`
+	// SouthSwitches refers to down-level switch
+	//+kubebuilder:validation:Optional
+	SouthConnections *SouthConnectionsSpec `json:"southSwitches,omitempty"`
+}
+
 // SwitchStatus defines the observed state of Switch
-type SwitchStatus struct {
+type SwitchStatus struct{}
+
+// NorthConnectionsSpec defines upstream switches count and properties
+//+kubebuilder:object:generate=true
+type NorthConnectionsSpec struct {
+	// Count refers to upstream switches count
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:default=0
+	Count int `json:"count"`
+	// Switches refers to connected upstream switches
+	//+kubebuilder:validation:Optional
+	Connections []NeighbourSpec `json:"switches"`
+}
+
+// SouthConnectionsSpec defines downstream switches count and properties
+//+kubebuilder:object:generate=true
+type SouthConnectionsSpec struct {
+	// Count refers to upstream switches count
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:default=0
+	Count int `json:"count"`
+	// Switches refers to connected upstream switches
+	//+kubebuilder:validation:Optional
+	Connections []NeighbourSpec `json:"switches"`
+}
+
+// NeighbourSpec defines switch connected to another switch
+//+kubebuilder:object:generate=true
+type NeighbourSpec struct {
+	// Name refers to switch's name
+	//+kubebuilder:validation:Optional
+	Name string `json:"name"`
+	// Namespace refers to switch's namespace
+	//+kubebuilder:validation:Optional
+	Namespace string `json:"namespace"`
+	// ChassisID refers to switch's chassis id
+	//+kubebuilder:validation:Required
+	ChassisID string `json:"chassisId"`
+	//Type referring to neighbour type
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:Enum=Machine;Switch
+	Type string `json:"type,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=sw
 //+kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.hostname`,description="Switch's hostname"
-//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.role`,description="switch's role"
+//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.state.role`,description="switch's role"
 //+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.switchDistro.os`,description="OS running on switch"
 //+kubebuilder:printcolumn:name="SwitchPorts",type=integer,JSONPath=`.spec.switchPorts`,description="Total amount of non-management network interfaces"
-//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.spec.connectionLevel`,description="Vertical level of switch connection"
+//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.spec.state.connectionLevel`,description="Vertical level of switch connection"
 //+kubebuilder:printcolumn:name="SouthSubnet",type=string,JSONPath=`.spec.southSubnet`,description="South subnet"
 //+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.spec.scanPorts`,description="Request for scan ports"
 
@@ -187,4 +241,50 @@ type SwitchList struct {
 
 func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
+}
+
+func (sw *Switch) GetNorthSwitchConnection(swList []Switch) []Switch {
+	result := make([]Switch, 0)
+	for _, obj := range swList {
+		if sw.checkSwitchInSouthConnections(obj) {
+			result = append(result, obj)
+		}
+	}
+	return result
+}
+
+func (sw *Switch) checkSwitchInSouthConnections(obj Switch) bool {
+	for _, conn := range obj.Spec.State.SouthConnections.Connections {
+		if sw.Spec.SwitchChassis.ChassisID == conn.ChassisID {
+			return true
+		}
+	}
+	return false
+}
+
+func (sw *Switch) CheckMachinesConnected() bool {
+	for _, iface := range sw.Spec.Interfaces {
+		if iface.Neighbour == CMachineType {
+			return true
+		}
+	}
+	return false
+}
+
+func (sw *Switch) CheckSouthNeighboursDataUpdateNeeded() bool {
+	for _, item := range sw.Spec.State.SouthConnections.Connections {
+		if item.Name == "" || item.Namespace == "" {
+			return true
+		}
+	}
+	return false
+}
+
+func (sw *Switch) CheckNorthNeighboursDataUpdateNeeded() bool {
+	for _, item := range sw.Spec.State.SouthConnections.Connections {
+		if item.Name == "" || item.Namespace == "" {
+			return true
+		}
+	}
+	return false
 }

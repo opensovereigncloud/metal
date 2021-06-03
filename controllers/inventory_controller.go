@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -76,9 +77,9 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err := r.List(ctx, switches); err != nil {
 		log.Error(err, "unable to get switches list")
 	}
-	switchRes, exists := switchResourceExists(strings.ToLower(inventory.Name), switches)
+	exists := switchResourceExists(strings.ToLower(inventory.Name), switches)
 	if !exists {
-		preparedSwitch, err := getPreparedSwitch(switchRes, inventory)
+		preparedSwitch, err := getPreparedSwitch(inventory)
 		if err != nil {
 			r.Log.Error(err, "failed to prepare switch resource for creation")
 			return ctrl.Result{}, err
@@ -99,71 +100,82 @@ func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) (*switchv1alpha1.Switch, bool) {
+func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) bool {
 	for _, switchRes := range switches.Items {
 		if switchRes.Name == name {
-			return &switchRes, true
+			return true
 		}
 	}
-	return &switchv1alpha1.Switch{}, false
+	return false
 }
 
-func getPreparedSwitch(sw *switchv1alpha1.Switch, inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
-	sw.Name = inv.Name
-	sw.Namespace = switchv1alpha1.Namespace
+func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
+	chassisId := ""
+	labels := map[string]string{}
 	if inv.Labels != nil {
-		sw.Labels = inv.Labels
-	} else {
-		sw.Labels = map[string]string{}
-	}
-	sw.Spec.Hostname = inv.Spec.Host.Name
-	sw.Spec.Ports = inv.Spec.NICs.Count
-	sw.Spec.SwitchPorts = countSwitchPorts(inv.Spec.NICs.NICs)
-	sw.Spec.SwitchDistro = &switchv1alpha1.SwitchDistroSpec{
-		OS:      switchv1alpha1.CSonicSwitchOs,
-		Version: inv.Spec.Distro.CommitId,
-		ASIC:    inv.Spec.Distro.AsicType,
-	}
-	sw.Spec.SwitchChassis = &switchv1alpha1.SwitchChassisSpec{
-		Manufacturer: inv.Spec.System.Manufacturer,
-		SKU:          inv.Spec.System.ProductSKU,
-		Serial:       inv.Spec.System.SerialNumber,
+		labels = inv.Labels
 	}
 	label := getChassisId(inv.Spec.NICs.NICs)
 	if label != nil {
-		sw.Spec.SwitchChassis.ChassisID = label.(string)
-		sw.Labels[switchv1alpha1.LabelChassisId] = strings.ReplaceAll(label.(string), ":", "-")
+		chassisId = label.(string)
+		labels[switchv1alpha1.LabelChassisId] = strings.ReplaceAll(label.(string), ":", "-")
 	}
-	sw.Spec.Interfaces, sw.Spec.Role = setInterfaces(inv.Spec.NICs.NICs)
-	sw.Spec.ConnectionLevel = 255
+	interfaces := setInterfaces(inv.Spec.NICs.NICs)
+	southConnections, northConnections := getSwitchConnections(interfaces)
+
+	sw := &switchv1alpha1.Switch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      inv.Name,
+			Namespace: switchv1alpha1.Namespace,
+			Labels:    labels,
+		},
+		Spec: switchv1alpha1.SwitchSpec{
+			Hostname:    inv.Spec.Host.Name,
+			Location:    nil,
+			Ports:       inv.Spec.NICs.Count,
+			SwitchPorts: countSwitchPorts(inv.Spec.NICs.NICs),
+			SwitchDistro: &switchv1alpha1.SwitchDistroSpec{
+				OS:      switchv1alpha1.CSonicSwitchOs,
+				Version: inv.Spec.Distro.CommitId,
+				ASIC:    inv.Spec.Distro.AsicType,
+			},
+			SwitchChassis: &switchv1alpha1.SwitchChassisSpec{
+				Manufacturer: inv.Spec.System.Manufacturer,
+				SKU:          inv.Spec.System.ProductSKU,
+				Serial:       inv.Spec.System.SerialNumber,
+				ChassisID:    chassisId,
+			},
+			SouthSubnetV4: "",
+			SouthSubnetV6: "",
+			Interfaces:    interfaces,
+			ScanPorts:     false,
+			State: &switchv1alpha1.SwitchStateSpec{
+				Role:             switchv1alpha1.CUndefinedRole,
+				ConnectionLevel:  255,
+				NorthConnections: northConnections,
+				SouthConnections: southConnections,
+			},
+		},
+	}
 	return sw, nil
 }
 
-func setInterfaces(nics []inventoriesv1alpha1.NICSpec) ([]*switchv1alpha1.InterfaceSpec, string) {
-	role := switchv1alpha1.CUndefinedRole
+func setInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.InterfaceSpec {
 	interfaces := make([]*switchv1alpha1.InterfaceSpec, 0)
 	for _, nic := range nics {
-		iface, neighbourExists, machinesConnected := buildInterface(&nic)
-		if neighbourExists {
-			if machinesConnected {
-				role = switchv1alpha1.CLeafRole
-			}
-		}
+		iface := buildInterface(&nic)
 		interfaces = append(interfaces, iface)
 	}
-	return interfaces, role
+	return interfaces
 }
 
-func buildInterface(nic *inventoriesv1alpha1.NICSpec) (*switchv1alpha1.InterfaceSpec, bool, bool) {
-	neighbourExists := false
-	machineConnected := false
+func buildInterface(nic *inventoriesv1alpha1.NICSpec) *switchv1alpha1.InterfaceSpec {
 	iface := &switchv1alpha1.InterfaceSpec{
 		Name:       nic.Name,
 		MACAddress: nic.MACAddress,
 		Lanes:      Lanes[nic.Speed],
 	}
 	if len(nic.LLDPs) > 1 {
-		neighbourExists = true
 		lldpData := nic.LLDPs[1]
 		iface.LLDPChassisID = lldpData.ChassisID
 		iface.LLDPSystemName = lldpData.SystemName
@@ -172,13 +184,12 @@ func buildInterface(nic *inventoriesv1alpha1.NICSpec) (*switchv1alpha1.Interface
 		iface.Neighbour = switchv1alpha1.CSwitchType
 		for i := range lldpData.Capabilities {
 			if lldpData.Capabilities[i] == switchv1alpha1.CStationCapability {
-				machineConnected = true
 				iface.Neighbour = switchv1alpha1.CMachineType
 				break
 			}
 		}
 	}
-	return iface, neighbourExists, machineConnected
+	return iface
 }
 
 func countSwitchPorts(nics []inventoriesv1alpha1.NICSpec) uint64 {
@@ -198,4 +209,45 @@ func getChassisId(nics []inventoriesv1alpha1.NICSpec) interface{} {
 		}
 	}
 	return nil
+}
+
+func getSwitchConnections(interfaces []*switchv1alpha1.InterfaceSpec) (*switchv1alpha1.SouthConnectionsSpec, *switchv1alpha1.NorthConnectionsSpec) {
+	switchNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
+	machinesNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
+	for _, iface := range interfaces {
+		switch iface.Neighbour {
+		case switchv1alpha1.CSwitchType:
+			if !strings.HasPrefix(iface.Name, "eth") {
+				switchNeighbours = append(switchNeighbours, switchv1alpha1.NeighbourSpec{
+					ChassisID: iface.LLDPChassisID,
+					Type:      switchv1alpha1.CSwitchType,
+				})
+			}
+		case switchv1alpha1.CMachineType:
+			machinesNeighbours = append(machinesNeighbours, switchv1alpha1.NeighbourSpec{
+				ChassisID: iface.LLDPChassisID,
+				Type:      switchv1alpha1.CMachineType,
+			})
+		}
+	}
+	southConnections := &switchv1alpha1.SouthConnectionsSpec{
+		Count:       0,
+		Connections: nil,
+	}
+	northConnections := &switchv1alpha1.NorthConnectionsSpec{
+		Count:       0,
+		Connections: nil,
+	}
+	switch len(machinesNeighbours) {
+	case 0:
+		southConnections.Connections = switchNeighbours
+		southConnections.Count = len(switchNeighbours)
+		northConnections.Connections = make([]switchv1alpha1.NeighbourSpec, 0)
+	default:
+		southConnections.Connections = machinesNeighbours
+		southConnections.Count = len(machinesNeighbours)
+		northConnections.Connections = switchNeighbours
+		northConnections.Count = len(switchNeighbours)
+	}
+	return southConnections, northConnections
 }

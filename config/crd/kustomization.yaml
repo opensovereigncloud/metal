@@ -4,7 +4,6 @@
 resources:
 - bases/switch.onmetal.de_switches.yaml
 - bases/switch.onmetal.de_switchassignments.yaml
-- bases/switch.onmetal.de_switchconnections.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

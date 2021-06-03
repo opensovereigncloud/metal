@@ -95,14 +95,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "SwitchAssignment")
 		os.Exit(1)
 	}
-	if err = (&controllers.SwitchConnectionReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SwitchConnection"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SwitchConnection")
-		os.Exit(1)
-	}
 	if err = (&controllers.SwitchReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
