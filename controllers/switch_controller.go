@@ -67,7 +67,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	switchRes := &switchv1alpha1.Switch{}
 	if err := r.Get(ctx, req.NamespacedName, switchRes); err != nil {
 		if apierrors.IsNotFound(err) {
-			log.Error(err, "requested switch resource not found", "name", req.NamespacedName)
+			log.Info("requested switch resource not found", "name", req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "failed to get switch resource", "name", req.NamespacedName)

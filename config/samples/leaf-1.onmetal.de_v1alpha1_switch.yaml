@@ -3,15 +3,14 @@ kind: Switch
 metadata:
   labels:
     machine.onmetal.de/mac-address-eth0: 68-21-5f-47-16-6e
-    machine.onmetal.de/mac-address-ethernet0: 68-21-5f-47-16-6e
     machine.onmetal.de/mac-address-ethernet4: 68-21-5f-47-16-6e
     machine.onmetal.de/mac-address-ethernet8: 68-21-5f-47-16-6e
     machine.onmetal.de/mac-address-ethernet12: 68-21-5f-47-16-6e
+    machine.onmetal.de/mac-address-ethernet112: 68-21-5f-47-16-6e
     switch.onmetal.de/chassisId: 68-21-5f-47-16-6e
   name: 58acdc85-32c7-31d3-9d25-5b84639faea9
   namespace: onmetal
 spec:
-  connectionLevel: 1
   hostname: leaf-1.fra3.infra.onmetal.de
   interfaces:
   - lanes: 4
@@ -20,15 +19,15 @@ spec:
     lldpPortId: Eth29/1
     lldpSystemName: spine-1.fra3.infra.onmetal.de
     macAddress: 68:21:5f:47:16:6e
-    name: Ethernet0
+    name: Ethernet112
     neighbour: Switch
   - lanes: 4
     lldpChassisId: 68:21:5f:47:0b:6e
-    lldpPortDescription: Ethernet0
+    lldpPortDescription: Ethernet8
     lldpPortId: Eth31/1
     lldpSystemName: spine-2.fra3.infra.onmetal.de
     macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet4
+    name: Ethernet120
     neighbour: Switch
   - lanes: 4
     macAddress: 68:21:5f:47:0d:6e
@@ -45,8 +44,24 @@ spec:
     name: eth0
     neighbour: Switch
   ports: 35
-  role: Spine
   scanPorts: true
+  state:
+    connectionLevel: 255
+    northSwitches:
+      count: 0
+      switches: []
+    role: Spine
+    southSwitches:
+      count: 2
+      switches:
+      - chassisId: 68:21:5f:47:0d:6e
+        name: ""
+        namespace: ""
+        type: Switch
+      - chassisId: 68:21:5f:47:0b:6e
+        name: ""
+        namespace: ""
+        type: Switch
   switchChassis:
     chassisId: 68:21:5f:47:16:6e
     manufacturer: Accton

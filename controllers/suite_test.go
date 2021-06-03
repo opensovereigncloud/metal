@@ -17,20 +17,27 @@ limitations under the License.
 package controllers
 
 import (
+	"go/build"
+	"io/ioutil"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 
+	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"golang.org/x/mod/modfile"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	switchonmetaldev1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -53,8 +60,28 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
+	inventoryGlobalPackagePath := reflect.TypeOf(inventoriesv1alpha1.Inventory{}).PkgPath()
+
+	goModData, err := ioutil.ReadFile(filepath.Join("..", "go.mod"))
+	Expect(err).NotTo(HaveOccurred())
+
+	goModFile, err := modfile.Parse("", goModData, nil)
+	Expect(err).NotTo(HaveOccurred())
+
+	inventoryGlobalModulePath := ""
+	for _, req := range goModFile.Require {
+		if strings.HasPrefix(inventoryGlobalPackagePath, req.Mod.Path) {
+			inventoryGlobalModulePath = req.Mod.String()
+			break
+		}
+	}
+	Expect(inventoryGlobalModulePath).NotTo(BeZero())
+
+	inventoryGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", inventoryGlobalModulePath, "config", "crd", "bases")
+	switchGlobalCrdPath := filepath.Join("..", "config", "crd", "bases")
+
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -62,13 +89,41 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = switchonmetaldev1alpha1.AddToScheme(scheme.Scheme)
+	err = switchv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = inventoriesv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme.Scheme,
+	})
+	Expect(err).ToNot(HaveOccurred())
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	Expect(err).NotTo(HaveOccurred())
+	err = (&SwitchReconciler{
+		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&SwitchAssignmentReconciler{
+		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SwitchAssignment"),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&InventoryReconciler{
+		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Inventory"),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		err = k8sManager.Start(ctrl.SetupSignalHandler())
+		Expect(err).ToNot(HaveOccurred())
+	}()
+
+	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).NotTo(BeNil())
 
 }, 60)
