@@ -1,12 +1,10 @@
 # switch-operator
-
 switch-operator is a k8s controller that includes the following custom resources:  
 - `Switch` defines switch object created from collected inventory and handles switch's state
 - `SwitchAssignment` defines created by user assignment of top-level spine role
 
 ### Required tools
-
-Following tools are required to make changes on that package.
+The following tools are required to make changes on that package.
 
 - [make](https://www.gnu.org/software/make/) - to execute build goals
 - [golang](https://golang.org/) - to compile the code
@@ -21,7 +19,6 @@ If you have to build Docker images on your host,
 you also need to have [Docker](https://www.docker.com/) or its alternative installed.
 
 ### Prepare environment
-
 If you have access to the docker registry and k8s installation that you can use for development purposes, you may skip
 corresponding steps. Otherwise, create a local instance of k8s and registry.
 
@@ -41,8 +38,11 @@ for development environment (in case operator is running with `make run` command
 or pass it to the pod where compiled manager will be running.
 
 ### Build and install
+In order to build and deploy, execute following command set, where `localhost:5000` in `IMG` arguments is a URL to access registry.
+Please note that during the build of the docker image, detected tests will be run. To use existing cluster for tests (for example it
+could be minikube cluster), you need to set environment variable:
 
-In order to build and deploy, execute following command set, where `localhost:5000` in `IMG` arguments is a URL to access registry  
+    export USE_EXISTING_CLUSTER=true
 
     # install crds. You also need to install k8s-inventory/inventory crds by yourself
     make install
@@ -53,8 +53,15 @@ In order to build and deploy, execute following command set, where `localhost:50
 
 Check `Makefile` for the full list of `make` goals with descriptions.
 
-### Use
+### Test
+To run tests:
 
+    # run tests on existing cluster
+    USE_EXISTING_CLUSTER=true make test
+    # run tests on dedicated cluster
+    USE_EXISTING_CLUSTER=false make test
+
+### Use
 `./config/samples/` directory contains examples of manifests. They can be used to try out the controller.
 
     # apply config
@@ -65,7 +72,6 @@ Check `Makefile` for the full list of `make` goals with descriptions.
     kubectl describe switches.switch.onmetal.de -n onmetal 8223ab8c-ad85-cabf-4c75-7217629ffece
 
 ### Clean
-
 After development is done, clean up local environment.
 
     # generate deployment config and delete corresponding entities
@@ -76,7 +82,6 @@ After development is done, clean up local environment.
     minikube stop
 
 ## Deployment
-
 Operator can be deployed with kubectl, kustomize or Helm. Use may choose one that is more suitable.
 
 ### With kubectl using kustomize configs

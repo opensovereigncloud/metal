@@ -11,7 +11,6 @@ metadata:
   name: af972f5c-b80b-355f-a6fe-8a4592cd39b0
   namespace: onmetal
 spec:
-  connectionLevel: 0
   hostname: spine-2.fra3.infra.onmetal.de
   interfaces:
   - lanes: 4
@@ -19,22 +18,22 @@ spec:
     name: Ethernet0
   - lanes: 4
     lldpChassisId: 68:21:5f:47:15:6e
-    lldpPortDescription: Ethernet4
+    lldpPortDescription: Ethernet120
     lldpPortId: Eth31/1
     lldpSystemName: leaf-2.fra3.infra.onmetal.de
     macAddress: 68:21:5f:47:0b:6e
-    name: Ethernet4
+    name: Ethernet12
     neighbour: Switch
   - lanes: 4
     macAddress: 68:21:5f:47:0d:6e
     name: Ethernet4
   - lanes: 4
     lldpChassisId: 68:21:5f:47:16:6e
-    lldpPortDescription: Ethernet4
+    lldpPortDescription: Ethernet120
     lldpPortId: Eth31/1
     lldpSystemName: leaf-1.fra3.infra.onmetal.de
     macAddress: 68:21:5f:47:0b:6e
-    name: Ethernet0
+    name: Ethernet8
     neighbour: Switch
   - lanes: 1
     lldpChassisId: 64:9d:99:15:56:1c
@@ -45,8 +44,24 @@ spec:
     name: eth0
     neighbour: Switch
   ports: 35
-  role: Spine
   scanPorts: true
+  state:
+    connectionLevel: 255
+    northSwitches:
+      count: 0
+      switches: []
+    role: Spine
+    southSwitches:
+      count: 2
+      switches:
+      - chassisId: 68:21:5f:47:15:6e
+        name: ""
+        namespace: ""
+        type: Switch
+      - chassisId: 68:21:5f:47:16:6e
+        name: ""
+        namespace: ""
+        type: Switch
   switchChassis:
     chassisId: 68:21:5f:47:0b:6e
     manufacturer: Accton

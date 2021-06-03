@@ -1,0 +1,277 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Inventory
+metadata:
+  generation: 1
+  labels:
+    machine.onmetal.de/mac-address-eth0: 68-21-5f-47-0b-6e
+    machine.onmetal.de/mac-address-ethernet0: 68-21-5f-47-0b-6e
+    machine.onmetal.de/mac-address-ethernet4: 68-21-5f-47-0b-6e
+    machine.onmetal.de/mac-address-ethernet8: 68-21-5f-47-0b-6e
+    machine.onmetal.de/mac-address-ethernet12: 68-21-5f-47-0b-6e
+  name: af972f5c-b80b-355f-a6fe-8a4592cd39b0
+  namespace: default
+spec:
+  blocks:
+    blocks:
+    - model: TS64GMTS400
+      name: sda
+      partitionTable:
+        partitions:
+        - id: 7BA840AB-E5CD-4FF8-B2A5-0767B06E1DB6
+          name: SONiC-OS
+          size: 34359738368
+        - id: 8BDEDB68-2F99-4954-BDDA-F7D4C46E88AC
+          name: ACCTON-DIAG
+          size: 2147483648
+        - id: DDFB83F2-1B51-451E-9DB7-AC2B7391FDAB
+          name: ONIE-BOOT
+          size: 134217728
+        - id: FB13F87C-A073-4EC3-96A0-AC547ACB8F5F
+          name: GRUB-BOOT
+          size: 2097152
+        type: GPT
+      rotational: false
+      size: 64023257088
+      system: ATA
+      type: SCSI
+    capacity: 64023257088
+    count: 1
+  cpus:
+    cores: 4
+    cpus:
+    - addressSizes: 46 bits physical, 48 bits virtual
+      bogoMips: 4400180m
+      bugs:
+      - cpu_meltdown
+      - itlb_multihit
+      - l1tf
+      - mds
+      - spec_store_bypass
+      - spectre_v1
+      - spectre_v2
+      - swapgs
+      - taa
+      cacheAlignment: 64
+      cacheSize: 6144 KB
+      clFlushSize: 64
+      cores: 4
+      cpuIdLevel: 20
+      family: "6"
+      flags:
+      - 3dnowprefetch
+      - abm
+      - acpi
+      - adx
+      - aes
+      - aperfmperf
+      - apic
+      - arat
+      - arch_perfmon
+      - avx
+      - avx2
+      - bmi1
+      - bmi2
+      - bts
+      - cat_l3
+      - cdp_l3
+      - clflush
+      - cmov
+      - constant_tsc
+      - cpuid
+      - cpuid_fault
+      - cqm
+      - cqm_llc
+      - cqm_mbm_local
+      - cqm_mbm_total
+      - cqm_occup_llc
+      - cx16
+      - cx8
+      - dca
+      - de
+      - ds_cpl
+      - dtes64
+      - dtherm
+      - dts
+      - epb
+      - ept
+      - ept_ad
+      - erms
+      - est
+      - f16c
+      - flexpriority
+      - fma
+      - fpu
+      - fsgsbase
+      - fxsr
+      - hle
+      - ht
+      - ibpb
+      - ibrs
+      - intel_ppin
+      - intel_pt
+      - invpcid
+      - invpcid_single
+      - lahf_lm
+      - lm
+      - mca
+      - mce
+      - mmx
+      - monitor
+      - movbe
+      - msr
+      - mtrr
+      - nonstop_tsc
+      - nopl
+      - nx
+      - pae
+      - pat
+      - pbe
+      - pcid
+      - pclmulqdq
+      - pdcm
+      - pdpe1gb
+      - pebs
+      - pge
+      - pln
+      - pni
+      - popcnt
+      - pse
+      - pse36
+      - pti
+      - pts
+      - rdrand
+      - rdseed
+      - rdt_a
+      - rdtscp
+      - rep_good
+      - rtm
+      - sdbg
+      - sep
+      - smap
+      - smep
+      - smx
+      - ss
+      - sse
+      - sse2
+      - sse4_1
+      - sse4_2
+      - ssse3
+      - stibp
+      - syscall
+      - tm
+      - tm2
+      - tpr_shadow
+      - tsc
+      - tsc_adjust
+      - tsc_deadline_timer
+      - vme
+      - vmx
+      - vnmi
+      - vpid
+      - x2apic
+      - xsave
+      - xsaveopt
+      - xtopology
+      - xtpr
+      fpu: true
+      fpuException: true
+      logicalIds:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      mhz: "807.521"
+      microcode: "0x7000012"
+      model: "86"
+      modelName: Intel(R) Xeon(R) CPU D-1518 @ 2.20GHz
+      siblings: 8
+      stepping: "3"
+      vendorId: GenuineIntel
+      wp: true
+    sockets: 1
+    threads: 8
+  distro:
+    asicType: broadcom
+    buildDate: Mon Apr 12 17:05:04 UTC 2021
+    buildVersion: HEAD.0-dirty-20210412.163217
+    commitId: 7145582a
+    debianVersion: "10.9"
+    kernelVersion: 4.19.0-12-2-amd64
+  host:
+    name: spine-2.fra3.infra.onmetal.de
+    type: Switch
+  memory:
+    total: 16716308480
+  nics:
+    count: 35
+    nics:
+    - macAddress: 68:21:5f:47:0b:6e
+      mtu: 9100
+      name: Ethernet0
+      speed: 100000
+    - lldps:
+      - {}
+      - capabilities:
+        - Bridge
+        - Router
+        chassisId: 68:21:5f:47:15:6e
+        portDescription: Ethernet120
+        portId: Eth31/1
+        systemDescription: 'Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1
+          SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64'
+        systemName: leaf-2.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:0b:6e
+      mtu: 9100
+      name: Ethernet12
+      ndps:
+      - {}
+      speed: 100000
+    - macAddress: 68:21:5f:47:0d:6e
+      mtu: 9100
+      name: Ethernet4
+      speed: 100000
+    - lldps:
+      - {}
+      - capabilities:
+        - Bridge
+        - Router
+        chassisId: 68:21:5f:47:16:6e
+        portDescription: Ethernet120
+        portId: Eth31/1
+        systemDescription: 'Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1
+          SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64'
+        systemName: leaf-1.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:0b:6e
+      mtu: 9100
+      name: Ethernet8
+      ndps:
+      - {}
+      speed: 100000
+    - lldps:
+      - {}
+      - capabilities:
+        - Bridge
+        - Router
+        chassisId: 64:9d:99:15:56:1c
+        portDescription: Ethernet Port on unit 1, port 34
+        portId: Eth 1/34
+        systemDescription: S3900-48T4S
+        systemName: mgmt-sw-1
+      macAddress: 68:21:5f:47:0b:6e
+      mtu: 1500
+      name: eth0
+      ndps:
+      - {}
+      pciAddress: 0000:0b:00.0
+      speed: 1000
+  system:
+    id: af972f5c-b80b-355f-a6fe-8a4592cd39b0
+    manufacturer: Accton
+    productSku: "1"
+    serialNumber: 772632X1950148
+  virt:
+    vmType: none
