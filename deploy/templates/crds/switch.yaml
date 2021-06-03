@@ -22,7 +22,7 @@ spec:
           name: Hostname
           type: string
         - description: switch's role
-          jsonPath: .spec.role
+          jsonPath: .spec.state.role
           name: Role
           type: string
         - description: OS running on switch
@@ -34,7 +34,7 @@ spec:
           name: SwitchPorts
           type: integer
         - description: Vertical level of switch connection
-          jsonPath: .spec.connectionLevel
+          jsonPath: .spec.state.connectionLevel
           name: ConnectionLevel
           type: integer
         - description: South subnet
@@ -65,10 +65,6 @@ spec:
             spec:
               description: SwitchSpec defines the desired state of Switch
               properties:
-                connectionLevel:
-                  default: 255
-                  description: ConnectionLevel refers the level of the connection
-                  type: integer
                 hostname:
                   description: Hostname
                   type: string
@@ -140,13 +136,6 @@ spec:
                   description: Ports referring to network interfaces total count
                   format: int64
                   type: integer
-                role:
-                  description: 'Role referring to switch''s role: leaf or spine'
-                  enum:
-                    - Leaf
-                    - Spine
-                    - Undefined
-                  type: string
                 scanPorts:
                   default: true
                   description: ScanPorts flag determining whether scanning of ports
@@ -158,6 +147,85 @@ spec:
                 southSubnetV6:
                   description: SouthSubnet referring to south IPv6 subnet
                   type: string
+                state:
+                  description: State referring to current switch state
+                  properties:
+                    connectionLevel:
+                      default: 255
+                      description: ConnectionLevel refers the level of the connection
+                      type: integer
+                    northSwitches:
+                      description: NorthSwitches refers to up-level switch
+                      properties:
+                        count:
+                          description: Count refers to upstream switches count
+                          type: integer
+                        switches:
+                          description: Switches refers to connected upstream switches
+                          items:
+                            description: NeighbourSpec defines switch connected to another
+                              switch
+                            properties:
+                              chassisId:
+                                description: ChassisID refers to switch's chassis id
+                                type: string
+                              name:
+                                description: Name refers to switch's name
+                                type: string
+                              namespace:
+                                description: Namespace refers to switch's namespace
+                                type: string
+                              type:
+                                description: Type referring to neighbour type
+                                enum:
+                                  - Machine
+                                  - Switch
+                                type: string
+                            required:
+                              - chassisId
+                            type: object
+                          type: array
+                      type: object
+                    role:
+                      description: 'Role referring to switch''s role: leaf or spine'
+                      enum:
+                        - Leaf
+                        - Spine
+                        - Undefined
+                      type: string
+                    southSwitches:
+                      description: SouthSwitches refers to down-level switch
+                      properties:
+                        count:
+                          description: Count refers to upstream switches count
+                          type: integer
+                        switches:
+                          description: Switches refers to connected upstream switches
+                          items:
+                            description: NeighbourSpec defines switch connected to another
+                              switch
+                            properties:
+                              chassisId:
+                                description: ChassisID refers to switch's chassis id
+                                type: string
+                              name:
+                                description: Name refers to switch's name
+                                type: string
+                              namespace:
+                                description: Namespace refers to switch's namespace
+                                type: string
+                              type:
+                                description: Type referring to neighbour type
+                                enum:
+                                  - Machine
+                                  - Switch
+                                type: string
+                            required:
+                              - chassisId
+                            type: object
+                          type: array
+                      type: object
+                  type: object
                 switchChassis:
                   description: SwitchChassis referring to switch hardware information
                   properties:
@@ -196,6 +264,7 @@ spec:
               required:
                 - hostname
                 - ports
+                - state
                 - switchChassis
                 - switchPorts
               type: object

@@ -65,15 +65,6 @@ crd:
     scope: Namespaced
     shortNames:
       - swa
-  switchConnection:
-    group: switch.onmetal.de
-    plural: switchconnections
-    singular: switchconnection
-    kind: SwitchConnection
-    listKind: SwitchConnectionList
-    scope: Namespaced
-    shortNames:
-      - swc
 
 serviceAccount:
   create: true
