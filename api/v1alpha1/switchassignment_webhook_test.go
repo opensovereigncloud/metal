@@ -2,11 +2,13 @@ package v1alpha1
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
 	controllerRuntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("SwitchAssignment Webhook", func() {
@@ -16,7 +18,24 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 		SWASpineRole        = "Spine"
 		SWAInvalidChassisID = "0Z:0X:0Y:0A:0B:0C"
 		SWAValidChassisID   = "02:ff:0f:50:60:70"
+		timeout             = time.Second * 30
+		interval            = time.Millisecond * 250
 	)
+
+	AfterEach(func() {
+		Expect(k8sClient.DeleteAllOf(ctx, &SwitchAssignment{}, client.InNamespace(SWANamespace))).To(Succeed())
+		Eventually(func() bool {
+			list := &SwitchAssignmentList{}
+			err := k8sClient.List(ctx, list)
+			if err != nil {
+				return false
+			}
+			if len(list.Items) > 0 {
+				return false
+			}
+			return true
+		}, timeout, interval).Should(BeTrue())
+	})
 
 	Context("On SwitchAssignment creation", func() {
 		It("Should not allow to pass invalid fields values", func() {
