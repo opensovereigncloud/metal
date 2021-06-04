@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -91,7 +90,6 @@ var _ = Describe("Switch controller", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				swa.Namespace = SwitchNamespace
-				fmt.Println(swa)
 				Expect(k8sClient.Create(ctx, swa)).To(Succeed())
 				createdSwitchAssignment := &switchv1alpha1.SwitchAssignment{}
 				Eventually(func() bool {
