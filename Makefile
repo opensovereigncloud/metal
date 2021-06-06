@@ -143,3 +143,12 @@ bundle: manifests kustomize
 .PHONY: bundle-build ## Build the bundle image.
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+.PHONY: install-cert-manager ### Deploy cert-manager to the cluster
+install-cert-manager:
+	helm repo add jetstack https://charts.jetstack.io
+	helm install \
+		cert-manager jetstack/cert-manager \
+		--namespace cert-manager \
+		--create-namespace \
+		--set installCRDs=true

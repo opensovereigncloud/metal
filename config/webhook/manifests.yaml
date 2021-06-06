@@ -47,7 +47,7 @@ webhooks:
   name: vswitchassignment.kb.io
   rules:
   - apiGroups:
-    - switch.onmetal.de.onmetal.de
+    - switch.onmetal.de
     apiVersions:
     - v1alpha1
     operations:

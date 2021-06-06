@@ -82,4 +82,11 @@ affinity: {}
 ingress:
   enabled: false
 
-disable_webhooks: false
+webhooks:
+  cert:
+    nameSuffix: "-serving-cert"
+  secret:
+    name: "webhook-server-cert"
+  service:
+    nameSuffix: "-webhook-service"
+    port: 443
