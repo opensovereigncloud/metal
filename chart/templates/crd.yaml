@@ -359,6 +359,20 @@ spec:
                       items:
                         description: NICSpec contains info about network interfaces
                         properties:
+                          activeFEC:
+                            description: ActiveFEC is an active error correction mode
+                            enum:
+                              - Not Reported
+                              - None
+                              - Auto
+                              - "Off"
+                              - RS
+                              - BaseR
+                              - LLRS
+                            type: string
+                          lanes:
+                            description: Lanes is a number of used lanes (if supported)
+                            type: integer
                           lldps:
                             description: LLDP is a collection of LLDP messages received
                               by the network interface
@@ -366,6 +380,25 @@ spec:
                               description: LLDPSpec is an entry received by network
                                 interface by Link Layer Discovery Protocol
                               properties:
+                                capabilities:
+                                  description: Capabilities is a list of LLDP capabilities
+                                    advertised by neighbor
+                                  items:
+                                    description: LLDPCapabilities
+                                    enum:
+                                      - Other
+                                      - Repeater
+                                      - Bridge
+                                      - WLAN Access Point
+                                      - Router
+                                      - Telephone
+                                      - DOCSIS cable device
+                                      - Station
+                                      - Customer VLAN
+                                      - Service VLAN
+                                      - Two-port MAC Relay (TPMR)
+                                    type: string
+                                  type: array
                                 chassisId:
                                   description: ChassisID is a neighbour box identifier
                                   type: string
