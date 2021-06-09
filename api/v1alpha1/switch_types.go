@@ -17,6 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"math"
+	"net"
+
+	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -43,10 +47,10 @@ type SwitchSpec struct {
 	SwitchChassis *SwitchChassisSpec `json:"switchChassis"`
 	//SouthSubnet referring to south IPv4 subnet
 	//+kubebuilder:validation:Optional
-	SouthSubnetV4 string `json:"southSubnetV4,omitempty"`
+	SouthSubnetV4 *SwitchSubnetSpec `json:"southSubnetV4,omitempty"`
 	//SouthSubnet referring to south IPv6 subnet
 	//+kubebuilder:validation:Optional
-	SouthSubnetV6 string `json:"southSubnetV6,omitempty"`
+	SouthSubnetV6 *SwitchSubnetSpec `json:"southSubnetV6,omitempty"`
 	//Interfaces referring to details about network interfaces
 	//+kubebuilder:validation:Optional
 	Interfaces []*InterfaceSpec `json:"interfaces,omitempty"`
@@ -88,6 +92,28 @@ type SwitchDistroSpec struct {
 	//ASIC
 	//+kubebuilder:validation:Optional
 	ASIC string `json:"asic,omitempty"`
+}
+
+// SwitchSubnetSpec defines switch subnet details
+//+kubebuilder:object:generate=true
+type SwitchSubnetSpec struct {
+	// ParentSubnet referring to the subnet resource namespaced name where CIDR was booked
+	//+kubebuilder:validation:Optional
+	ParentSubnet *ParentSubnetSpec `json:"parentSubnet"`
+	// CIDR referring to the assigned subnet
+	//+kubebuilder:validation:Optional
+	CIDR string `json:"cidr"`
+}
+
+// ParentSubnetSpec defines switch subnet name and namespace
+//+kubebuilder:object:generate=true
+type ParentSubnetSpec struct {
+	// Name referring to the subnet resource name where CIDR was booked
+	//+kubebuilder:validation:Optional
+	Name string `json:"name"`
+	// Namespace referring to the subnet resource name where CIDR was booked
+	//+kubebuilder:validation:Optional
+	Namespace string `json:"namespace"`
 }
 
 //SwitchChassisSpec defines switch chassis details
@@ -218,7 +244,8 @@ type NeighbourSpec struct {
 //+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.switchDistro.os`,description="OS running on switch"
 //+kubebuilder:printcolumn:name="SwitchPorts",type=integer,JSONPath=`.spec.switchPorts`,description="Total amount of non-management network interfaces"
 //+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.spec.state.connectionLevel`,description="Vertical level of switch connection"
-//+kubebuilder:printcolumn:name="SouthSubnet",type=string,JSONPath=`.spec.southSubnet`,description="South subnet"
+//+kubebuilder:printcolumn:name="SouthSubnetV4",type=string,JSONPath=`.spec.southSubnetV4.cidr`,description="South IPv4 subnet"
+//+kubebuilder:printcolumn:name="SouthSubnetV6",type=string,JSONPath=`.spec.southSubnetV6.cidr`,description="South IPv6 subnet"
 //+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.spec.scanPorts`,description="Request for scan ports"
 
 // Switch is the Schema for the switches API
@@ -281,10 +308,43 @@ func (sw *Switch) CheckSouthNeighboursDataUpdateNeeded() bool {
 }
 
 func (sw *Switch) CheckNorthNeighboursDataUpdateNeeded() bool {
-	for _, item := range sw.Spec.State.SouthConnections.Connections {
+	for _, item := range sw.Spec.State.NorthConnections.Connections {
 		if item.Name == "" || item.Namespace == "" {
 			return true
 		}
 	}
 	return false
+}
+
+func (sw *Switch) GetNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount float64) net.IPMask {
+	bits := uint8(0)
+	if addrType == subnetv1alpha1.CIPv4SubnetType {
+		addressesCount = float64(sw.GetAddressNeededCount(addrType))
+		bits = 32
+	}
+	if addrType == subnetv1alpha1.CIPv6SubnetType {
+		addressesCount = float64(sw.GetAddressNeededCount(addrType))
+		bits = 128
+	}
+	pow := 2.0
+	for math.Pow(2, pow) < addressesCount {
+		pow++
+	}
+	maskLength := bits - uint8(pow)
+	mask := (0xFFFFFFFF << (bits - maskLength)) & 0xFFFFFFFF
+	netMask := make([]byte, 0, 4)
+	for i := 1; i <= 4; i++ {
+		tmp := byte(mask >> (bits - 8) & 0xFF)
+		netMask = append(netMask, tmp)
+		bits -= 8
+	}
+	return netMask
+}
+
+func (sw *Switch) GetAddressNeededCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
+	if addrType == subnetv1alpha1.CIPv4SubnetType {
+		return int64(sw.Spec.SwitchPorts * CIPv4AddressesPerPort)
+	} else {
+		return int64(sw.Spec.SwitchPorts * CIPv6AddressesPerPort)
+	}
 }

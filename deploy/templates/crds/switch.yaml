@@ -37,9 +37,13 @@ spec:
           jsonPath: .spec.state.connectionLevel
           name: ConnectionLevel
           type: integer
-        - description: South subnet
-          jsonPath: .spec.southSubnet
-          name: SouthSubnet
+        - description: South IPv4 subnet
+          jsonPath: .spec.southSubnetV4.cidr
+          name: SouthSubnetV4
+          type: string
+        - description: South IPv6 subnet
+          jsonPath: .spec.southSubnetV6.cidr
+          name: SouthSubnetV6
           type: string
         - description: Request for scan ports
           jsonPath: .spec.scanPorts
@@ -143,10 +147,44 @@ spec:
                   type: boolean
                 southSubnetV4:
                   description: SouthSubnet referring to south IPv4 subnet
-                  type: string
+                  properties:
+                    cidr:
+                      description: CIDR referring to the assigned subnet
+                      type: string
+                    parentSubnet:
+                      description: ParentSubnet referring to the subnet resource namespaced
+                        name where CIDR was booked
+                      properties:
+                        name:
+                          description: Name referring to the subnet resource name where
+                            CIDR was booked
+                          type: string
+                        namespace:
+                          description: Namespace referring to the subnet resource name
+                            where CIDR was booked
+                          type: string
+                      type: object
+                  type: object
                 southSubnetV6:
                   description: SouthSubnet referring to south IPv6 subnet
-                  type: string
+                  properties:
+                    cidr:
+                      description: CIDR referring to the assigned subnet
+                      type: string
+                    parentSubnet:
+                      description: ParentSubnet referring to the subnet resource namespaced
+                        name where CIDR was booked
+                      properties:
+                        name:
+                          description: Name referring to the subnet resource name where
+                            CIDR was booked
+                          type: string
+                        namespace:
+                          description: Namespace referring to the subnet resource name
+                            where CIDR was booked
+                          type: string
+                      type: object
+                  type: object
                 state:
                   description: State referring to current switch state
                   properties:

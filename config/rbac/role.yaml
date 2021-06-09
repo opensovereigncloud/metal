@@ -7,6 +7,14 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - machine.onmetal.de
   resources:
   - inventories
@@ -37,6 +45,22 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - machine.onmetal.de
+  resources:
+  - subnets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - subnets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - switch.onmetal.de
   resources:
   - events
@@ -48,6 +72,18 @@ rules:
   resources:
   - switchassignments
   verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switches
+  verbs:
+  - create
+  - delete
   - get
   - list
   - patch

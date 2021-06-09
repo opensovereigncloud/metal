@@ -126,7 +126,7 @@ func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Swit
 	sw := &switchv1alpha1.Switch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      inv.Name,
-			Namespace: switchv1alpha1.Namespace,
+			Namespace: switchv1alpha1.CNamespace,
 			Labels:    labels,
 		},
 		Spec: switchv1alpha1.SwitchSpec{
@@ -145,10 +145,8 @@ func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Swit
 				Serial:       inv.Spec.System.SerialNumber,
 				ChassisID:    chassisId,
 			},
-			SouthSubnetV4: "",
-			SouthSubnetV6: "",
-			Interfaces:    interfaces,
-			ScanPorts:     false,
+			Interfaces: interfaces,
+			ScanPorts:  false,
 			State: &switchv1alpha1.SwitchStateSpec{
 				Role:             switchv1alpha1.CUndefinedRole,
 				ConnectionLevel:  255,

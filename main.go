@@ -35,6 +35,8 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
+
+	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -48,6 +50,7 @@ func init() {
 
 	utilruntime.Must(switchv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(subnetv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

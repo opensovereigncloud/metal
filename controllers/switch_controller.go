@@ -18,11 +18,15 @@ package controllers
 
 import (
 	"context"
+	"net"
 	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/go-logr/logr"
+	netglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -34,10 +38,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
@@ -56,6 +63,9 @@ type SwitchReconciler struct {
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=subnets,verbs=get;list;watch;update
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=subnets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -68,15 +78,33 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err := r.Get(ctx, req.NamespacedName, switchRes); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("requested switch resource not found", "name", req.NamespacedName)
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
 		log.Error(err, "failed to get switch resource", "name", req.NamespacedName)
 		return ctrl.Result{}, err
 	}
 
-	//todo: book subnet since it does not depend on connections
+	if switchRes.DeletionTimestamp != nil {
+		if controllerutil.ContainsFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer) {
+			if err := r.finalizeSwitch(switchRes, ctx); err != nil {
+				log.Error(err, "failed to finalize switch")
+				return ctrl.Result{}, err
+			}
+
+			controllerutil.RemoveFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer)
+			if err := r.Client.Update(ctx, switchRes); err != nil {
+				log.Error(err, "failed to update switch resource on finalizer removal")
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
 
 	oldRes := switchRes.DeepCopy()
+
+	if !controllerutil.ContainsFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer) {
+		controllerutil.AddFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer)
+	}
 
 	switch switchRes.Spec.State.Role {
 	case switchv1alpha1.CUndefinedRole:
@@ -85,6 +113,12 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	case switchv1alpha1.CSpineRole:
 		if switchRes.CheckMachinesConnected() {
 			switchRes.Spec.State.Role = switchv1alpha1.CLeafRole
+		}
+	}
+
+	if switchRes.Spec.SouthSubnetV4 == nil || switchRes.Spec.SouthSubnetV6 == nil {
+		if err := r.defineSubnets(switchRes, ctx); err != nil {
+			log.Info("unable to define subnet(s)", "error", err.Error())
 		}
 	}
 
@@ -111,11 +145,17 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 		}
 	}
+	updateInterfacesAddresses(switchRes)
 
 	if !reflect.DeepEqual(oldRes, switchRes) {
 		if err := r.Client.Update(ctx, switchRes); err != nil {
 			log.Error(err, "failed to update switch resource")
+			return ctrl.Result{}, err
 		}
+	}
+
+	if switchRes.Spec.SouthSubnetV4 == nil || switchRes.Spec.SouthSubnetV6 == nil {
+		return ctrl.Result{RequeueAfter: switchv1alpha1.CSwitchRequeueInterval}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -160,10 +200,12 @@ func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *run
 			Name:      item.GetName(),
 		}, obj)
 		if err != nil {
-			log.Error(err, "failed to get switch resource", "name", types.NamespacedName{
-				Namespace: item.GetNamespace(),
-				Name:      item.GetName(),
-			})
+			if !apierrors.IsNotFound(err) {
+				log.Error(err, "failed to get switch resource", "name", types.NamespacedName{
+					Namespace: item.GetNamespace(),
+					Name:      item.GetName(),
+				})
+			}
 			continue
 		}
 		if obj.Spec.State.SouthConnections != nil {
@@ -287,6 +329,126 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 	return nil
 }
 
+func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.Context) error {
+	cm := &v1.ConfigMap{}
+	// todo: discuss configMap parameters and data structure
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: "partition-cm", Namespace: "default"}, cm); err != nil {
+		if apierrors.IsNotFound(err) {
+			return errors.New("requested configMap not found")
+		}
+		return err
+	}
+	regions := strings.Split(cm.Data["regions"], ",")
+	zones := strings.Split(cm.Data["availabilityZones"], ",")
+	subnetList := &subnetv1alpha1.SubnetList{}
+	if err := r.Client.List(ctx, subnetList); err != nil {
+		return err
+	}
+	if sw.Spec.SouthSubnetV4 == nil {
+		addressesCount := sw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
+		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv4SubnetType, regions, zones, addressesCount)
+		if err != nil {
+			return err
+		}
+		if cidr != nil && sn != nil {
+			sw.Spec.SouthSubnetV4 = &switchv1alpha1.SwitchSubnetSpec{
+				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{
+					Namespace: sn.Namespace,
+					Name:      sn.Name,
+				},
+				CIDR: cidr.String(),
+			}
+			if err := r.Status().Update(ctx, sn); err != nil {
+				return err
+			}
+		}
+	}
+	if sw.Spec.SouthSubnetV6 == nil {
+		addressCount := sw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
+		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv6SubnetType, regions, zones, addressCount)
+		if err != nil {
+			return err
+		}
+		if cidr != nil && sn != nil {
+			sw.Spec.SouthSubnetV6 = &switchv1alpha1.SwitchSubnetSpec{
+				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{
+					Namespace: sn.Namespace,
+					Name:      sn.Name,
+				},
+				CIDR: cidr.String(),
+			}
+			if err := r.Status().Update(ctx, sn); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (r *SwitchReconciler) finalizeSwitch(sw *switchv1alpha1.Switch, ctx context.Context) error {
+	if sw.Spec.SouthSubnetV4 != nil {
+		subnetV4 := &subnetv1alpha1.Subnet{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Namespace: sw.Spec.SouthSubnetV4.ParentSubnet.Namespace,
+			Name:      sw.Spec.SouthSubnetV4.ParentSubnet.Name,
+		}, subnetV4); err != nil {
+			if apierrors.IsNotFound(err) {
+				r.Log.Error(err, "subnet not found")
+				return nil
+			}
+			r.Log.Error(err, "failed to get subnet")
+			return err
+		}
+		cidrToRelease, err := netglobalv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV4.CIDR)
+		if err != nil {
+			r.Log.Error(err, "failed to get switch south network CIDR to release")
+			return err
+		}
+		if subnetV4.CanRelease(cidrToRelease) {
+			err := subnetV4.Release(cidrToRelease)
+			if err != nil {
+				r.Log.Error(err, "failed to release switch south network CIDR")
+				return err
+			}
+			if err := r.Status().Update(ctx, subnetV4); err != nil {
+				r.Log.Error(err, "failed to update subnet status")
+				return err
+			}
+		}
+	}
+	if sw.Spec.SouthSubnetV6 != nil {
+		subnetV6 := &subnetv1alpha1.Subnet{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Namespace: sw.Spec.SouthSubnetV6.ParentSubnet.Namespace,
+			Name:      sw.Spec.SouthSubnetV6.ParentSubnet.Name,
+		}, subnetV6); err != nil {
+			if apierrors.IsNotFound(err) {
+				r.Log.Error(err, "subnet not found")
+				return nil
+			}
+			r.Log.Error(err, "failed to get subnet")
+			return err
+		}
+		cidrToRelease, err := netglobalv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV6.CIDR)
+		if err != nil {
+			r.Log.Error(err, "failed to get switch south network CIDR to release")
+			return err
+		}
+		if subnetV6.CanRelease(cidrToRelease) {
+			err := subnetV6.Release(cidrToRelease)
+			if err != nil {
+				r.Log.Error(err, "failed to release switch south network CIDR")
+				return err
+			}
+			if err := r.Status().Update(ctx, subnetV6); err != nil {
+				r.Log.Error(err, "failed to update subnet status")
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func getMinConnectionLevel(switchList []switchv1alpha1.Switch) uint8 {
 	result := uint8(255)
 	for _, item := range switchList {
@@ -352,4 +514,61 @@ func removeFromSouthConnections(sw *switchv1alpha1.Switch, ncm map[string]struct
 		}
 	}
 	sw.Spec.State.SouthConnections.Connections = connections
+}
+
+func getSuitableSubnet(
+	sw *switchv1alpha1.Switch,
+	subnetList *subnetv1alpha1.SubnetList,
+	addressType subnetv1alpha1.SubnetAddressType,
+	regions []string,
+	zones []string,
+	addressesNeeded int64) (*netglobalv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
+
+	for _, sn := range subnetList.Items {
+		if sn.Spec.NetworkGlobalName == "underlay" &&
+			reflect.DeepEqual(sn.Spec.Regions, regions) &&
+			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
+			addressesLeft, _ := sn.Status.CapacityLeft.AsInt64()
+			if sn.Status.Type == addressType && addressesLeft >= addressesNeeded {
+				minVacantCIDR := getMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)
+				mask := sw.GetNeededMask(subnetv1alpha1.CIPv4SubnetType, float64(addressesNeeded))
+				addr := minVacantCIDR.Net.IP
+				network := &net.IPNet{
+					IP:   addr,
+					Mask: mask,
+				}
+				cidrCandidate := &netglobalv1alpha1.CIDR{Net: network}
+				if sn.CanReserve(cidrCandidate) {
+					if err := sn.Reserve(cidrCandidate); err != nil {
+						return nil, nil, err
+					} else {
+						return cidrCandidate, &sn, nil
+					}
+				}
+			}
+		}
+	}
+	return nil, nil, nil
+}
+
+func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *netglobalv1alpha1.CIDR {
+	zeroNetString := ""
+	if addressType == subnetv1alpha1.CIPv4SubnetType {
+		zeroNetString = switchv1alpha1.CIPv4ZeroNet
+	} else {
+		zeroNetString = switchv1alpha1.CIPv6ZeroNet
+	}
+	_, zeroNet, _ := net.ParseCIDR(zeroNetString)
+	minSuitableNet := netglobalv1alpha1.CIDRFromNet(zeroNet)
+	for _, cidr := range vacant {
+		if cidr.AddressCapacity().Int64() < minSuitableNet.AddressCapacity().Int64() &&
+			cidr.AddressCapacity().Int64() >= addressesCount {
+			minSuitableNet = &cidr
+		}
+	}
+	return minSuitableNet
+}
+
+func updateInterfacesAddresses(sw *switchv1alpha1.Switch) {
+	// todo: assign addresses for "south" interfaces
 }

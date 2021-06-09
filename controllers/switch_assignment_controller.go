@@ -1,3 +1,19 @@
+/*
+Copyright 2021.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package controllers
 
 import (
@@ -44,17 +60,6 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	// if webhooks are not configured need to set labels in controller
-	if assignmentRes.Labels == nil {
-		assignmentRes.Labels = map[string]string{}
-		assignmentRes.Labels[switchv1alpha1.LabelSerial] = assignmentRes.Spec.Serial
-		assignmentRes.Labels[switchv1alpha1.LabelChassisId] = strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")
-		if err := r.Update(ctx, assignmentRes); err != nil {
-			log.Error(err, "unable to set labels for switchAssignment resource", "name", req.NamespacedName)
-			return ctrl.Result{}, err
-		}
-	}
-
 	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")})
 	opts := &client.ListOptions{
 		LabelSelector: selector,
@@ -65,7 +70,7 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		log.Error(err, "unable to get switches list")
 	}
 	if len(switchesList.Items) == 0 {
-		return ctrl.Result{RequeueAfter: switchv1alpha1.CRequeueInterval}, nil
+		return ctrl.Result{RequeueAfter: switchv1alpha1.CAssignmentRequeueInterval}, nil
 	} else {
 		targetSwitch := &switchesList.Items[0]
 		targetSwitch.Spec.State.ConnectionLevel = 0
