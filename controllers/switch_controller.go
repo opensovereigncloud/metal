@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"math/big"
 	"net"
 	"reflect"
 	"sort"
@@ -551,8 +552,8 @@ func getSuitableSubnet(
 		if sn.Spec.NetworkGlobalName == "underlay" &&
 			reflect.DeepEqual(sn.Spec.Regions, regions) &&
 			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
-			addressesLeft, _ := sn.Status.CapacityLeft.AsInt64()
-			if sn.Status.Type == addressType && addressesLeft >= addressesNeeded {
+			addressesLeft := sn.Status.CapacityLeft
+			if sn.Status.Type == addressType && addressesLeft.CmpInt64(addressesNeeded) >= 0 {
 				minVacantCIDR := getMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)
 				mask := sw.GetNeededMask(subnetv1alpha1.CIPv4SubnetType, float64(addressesNeeded))
 				addr := minVacantCIDR.Net.IP
@@ -587,8 +588,8 @@ func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1a
 	_, zeroNet, _ := net.ParseCIDR(zeroNetString)
 	minSuitableNet := netglobalv1alpha1.CIDRFromNet(zeroNet)
 	for _, cidr := range vacant {
-		if cidr.AddressCapacity().Int64() < minSuitableNet.AddressCapacity().Int64() &&
-			cidr.AddressCapacity().Int64() >= addressesCount {
+		if cidr.AddressCapacity().Cmp(minSuitableNet.AddressCapacity()) < 0 &&
+			cidr.AddressCapacity().Cmp(new(big.Int).SetInt64(addressesCount)) >= 0 {
 			minSuitableNet = &cidr
 		}
 	}
