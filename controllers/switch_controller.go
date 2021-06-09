@@ -26,8 +26,6 @@ import (
 
 	"github.com/go-logr/logr"
 	netglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -341,16 +339,16 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 //defineSubnets process related resources to define switch's
 //"south" subnets. Returns an error.
 func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.Context) error {
-	cm := &v1.ConfigMap{}
-	// todo: discuss configMap parameters and data structure
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: "partition-cm", Namespace: "default"}, cm); err != nil {
-		if apierrors.IsNotFound(err) {
-			return errors.New("requested configMap not found")
-		}
-		return err
+	topLevelSwitch := r.GetTopLevelSwitch(sw, ctx)
+	if topLevelSwitch == nil {
+		return nil
 	}
-	regions := strings.Split(cm.Data["regions"], ",")
-	zones := strings.Split(cm.Data["availabilityZones"], ",")
+	relatedAssignment := r.GetRelatedAssignment(topLevelSwitch, ctx)
+	if relatedAssignment == nil {
+		return nil
+	}
+	regions := []string{relatedAssignment.Spec.Region}
+	zones := []string{relatedAssignment.Spec.AvailabilityZone}
 	subnetList := &subnetv1alpha1.SubnetList{}
 	if err := r.Client.List(ctx, subnetList); err != nil {
 		return err
@@ -394,6 +392,43 @@ func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.
 		}
 	}
 	return nil
+}
+
+//GetTopLevelSwitch recursively searches for top level switch
+//related to the target switch.
+func (r *SwitchReconciler) GetTopLevelSwitch(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.Switch {
+	if sw.Spec.State.NorthConnections != nil && sw.Spec.State.NorthConnections.Count != 0 {
+		nextLevelSwitch := &switchv1alpha1.Switch{}
+		if err := r.Client.Get(ctx, types.NamespacedName{
+			Namespace: sw.Spec.State.NorthConnections.Connections[0].Namespace,
+			Name:      sw.Spec.State.NorthConnections.Connections[0].Name,
+		}, nextLevelSwitch); err != nil {
+			return nil
+		}
+		return r.GetTopLevelSwitch(nextLevelSwitch, ctx)
+	}
+	if sw.Spec.State.ConnectionLevel == 0 {
+		return sw
+	}
+	return nil
+}
+
+//GetRelatedAssignment searches for switch assignment resource
+//related to target top level switch.
+func (r *SwitchReconciler) GetRelatedAssignment(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.SwitchAssignment {
+	swaList := &switchv1alpha1.SwitchAssignmentList{}
+	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: sw.Labels[switchv1alpha1.LabelChassisId]})
+	opts := &client.ListOptions{
+		LabelSelector: selector,
+		Limit:         1000,
+	}
+	if err := r.List(ctx, swaList, opts); err != nil {
+		r.Log.Error(err, "unable to get switch assignments list")
+	}
+	if len(swaList.Items) == 0 {
+		return nil
+	}
+	return &swaList.Items[0]
 }
 
 //finalizeSwitch prepare environment for switch resource deletion

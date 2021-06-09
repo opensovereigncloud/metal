@@ -30,8 +30,6 @@ import (
 var _ = Describe("SwitchAssignment Webhook", func() {
 	const (
 		SWANamespace        = "onmetal"
-		SWALeafRole         = "Leaf"
-		SWASpineRole        = "Spine"
 		SWAInvalidChassisID = "0Z:0X:0Y:0A:0B:0C"
 		SWAValidChassisID   = "02:ff:0f:50:60:70"
 		timeout             = time.Second * 30
@@ -64,15 +62,13 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 					Namespace: SWANamespace,
 				},
 				Spec: SwitchAssignmentSpec{
-					Role:      SWALeafRole,
-					Serial:    "999999",
-					ChassisID: SWAInvalidChassisID,
+					Serial:           "999999",
+					ChassisID:        SWAInvalidChassisID,
+					Region:           "EU-West",
+					AvailabilityZone: "A",
 				},
 			}
 
-			Expect(k8sClient.Create(ctx, &cr)).ShouldNot(Succeed())
-
-			cr.Spec.Role = SWASpineRole
 			Expect(k8sClient.Create(ctx, &cr)).ShouldNot(Succeed())
 
 			cr.Spec.ChassisID = SWAValidChassisID
@@ -92,6 +88,10 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 
 			By("Update SwitchAssignment resource")
 			cr.Spec.Serial = "000001"
+			Expect(k8sClient.Update(ctx, &cr)).ShouldNot(Succeed())
+			cr.Spec.Region = "EU-East"
+			Expect(k8sClient.Update(ctx, &cr)).ShouldNot(Succeed())
+			cr.Spec.AvailabilityZone = "B"
 			Expect(k8sClient.Update(ctx, &cr)).ShouldNot(Succeed())
 		})
 	})

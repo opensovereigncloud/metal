@@ -19,9 +19,13 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: switch's role
-      jsonPath: .spec.role
-      name: Role
+    - description: switch's region
+      jsonPath: .spec.region
+      name: Region
+      type: string
+    - description: switch's AZ
+      jsonPath: .spec.availabilityZone
+      name: Availability Zone
       type: string
     name: v1alpha1
     schema:
@@ -43,19 +47,24 @@ spec:
           spec:
             description: SwitchAssignmentSpec defines the desired state of SwitchAssignment
             properties:
+              availabilityZone:
+                description: AvailabilityZone refers to the switch's availability
+                  zone
+                type: string
               chassisId:
                 description: ChassisID refers to switch chassis id
                 pattern: ^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$
                 type: string
-              role:
-                description: Role refers to the role of the switch. Always "Spine"
+              region:
+                description: Region refers to the switch's region
                 type: string
               serial:
                 description: Serial refers to switch serial number
                 type: string
             required:
+            - availabilityZone
             - chassisId
-            - role
+            - region
             - serial
             type: object
           status:

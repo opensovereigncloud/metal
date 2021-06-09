@@ -59,21 +59,7 @@ var _ webhook.Validator = &SwitchAssignment{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (swa *SwitchAssignment) ValidateCreate() error {
-	switchAssignmentLog.Info("validate create", "name", swa.Name)
-
-	var allErrors field.ErrorList
-
-	if swa.Spec.Role != CSpineRole {
-		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.role"), swa.Spec.Role, "Only spine role can be assigned"))
-	}
-
-	if len(allErrors) > 0 {
-		return apierrors.NewInvalid(schema.GroupKind{
-			Group: GroupVersion.Group,
-			Kind:  "SwitchAssignment",
-		}, swa.Name, allErrors)
-	}
-
+	//switchAssignmentLog.Info("validate create", "name", swa.Name)
 	return nil
 }
 
@@ -88,16 +74,20 @@ func (swa *SwitchAssignment) ValidateUpdate(old runtime.Object) error {
 
 	var allErrors field.ErrorList
 
-	if oldSwitchAssignment.Spec.Role != swa.Spec.Role {
-		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.role"), swa.Spec.Role, "Role change disallowed"))
-	}
-
 	if oldSwitchAssignment.Spec.Serial != swa.Spec.Serial {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.serial"), swa.Spec.Serial, "Serial number change disallowed"))
 	}
 
 	if oldSwitchAssignment.Spec.ChassisID != swa.Spec.ChassisID {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.chassisId"), swa.Spec.ChassisID, "Chassis ID change disallowed"))
+	}
+
+	if oldSwitchAssignment.Spec.Region != swa.Spec.Region {
+		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.region"), swa.Spec.Region, "Region change disallowed"))
+	}
+
+	if oldSwitchAssignment.Spec.AvailabilityZone != swa.Spec.AvailabilityZone {
+		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.availabilityZone"), swa.Spec.AvailabilityZone, "Availability Zone change disallowed"))
 	}
 
 	if len(allErrors) > 0 {
@@ -112,7 +102,7 @@ func (swa *SwitchAssignment) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (swa *SwitchAssignment) ValidateDelete() error {
-	switchAssignmentLog.Info("validate delete", "name", swa.Name)
+	//switchAssignmentLog.Info("validate delete", "name", swa.Name)
 
 	return nil
 }
