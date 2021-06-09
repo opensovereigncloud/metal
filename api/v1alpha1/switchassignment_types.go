@@ -23,9 +23,6 @@ import (
 // SwitchAssignmentSpec defines the desired state of SwitchAssignment
 //+kubebuilder:object:generate=true
 type SwitchAssignmentSpec struct {
-	// Role refers to the role of the switch. Always "Spine"
-	//+kubebuilder:validation:default=Spine
-	Role string `json:"role"`
 	// Serial refers to switch serial number
 	//+kubebuilder:validation:Required
 	Serial string `json:"serial"`
@@ -33,6 +30,12 @@ type SwitchAssignmentSpec struct {
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:Pattern=`^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$`
 	ChassisID string `json:"chassisId"`
+	//Region refers to the switch's region
+	//+kubebuilder:validation:Required
+	Region string `json:"region"`
+	//AvailabilityZone refers to the switch's availability zone
+	//+kubebuilder:validation:Required
+	AvailabilityZone string `json:"availabilityZone"`
 }
 
 // SwitchAssignmentStatus defines the observed state of SwitchAssignment
@@ -41,7 +44,8 @@ type SwitchAssignmentStatus struct{}
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=swa
-//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.role`,description="switch's role"
+//+kubebuilder:printcolumn:name="Region",type=string,JSONPath=`.spec.region`,description="switch's region"
+//+kubebuilder:printcolumn:name="Availability Zone",type=string,JSONPath=`.spec.availabilityZone`,description="switch's AZ"
 
 // SwitchAssignment is the Schema for the switch assignments API
 type SwitchAssignment struct {
