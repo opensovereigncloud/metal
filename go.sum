@@ -359,8 +359,8 @@ github.com/onmetal/k8s-network-global v0.0.0-20210528142724-3da4d0e4351e h1:kon7
 github.com/onmetal/k8s-network-global v0.0.0-20210528142724-3da4d0e4351e/go.mod h1:7t5AUuEq0JqsIB392eWMfRNhW+xPYcnFilVD7MXatjw=
 github.com/onmetal/k8s-size v0.0.0-20210330130030-0e28c9bdd1bf/go.mod h1:PZTjc0RgegODQKp8ca6r9Gg21tQZCvPM51F8z/se4ys=
 github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80/go.mod h1:Pi09ghndU/+zKuyDrCzribl4OUWhsV6r1qHy8EVmrOY=
-github.com/onmetal/k8s-subnet v0.0.0-20210531153920-100a5590c730 h1:ymQIMQr7bxQgbR/nerGprmghKbtZG2LJtZjKDfYPR00=
-github.com/onmetal/k8s-subnet v0.0.0-20210531153920-100a5590c730/go.mod h1:HP1HNdo3oKGQrtbREwf8IJoWi46oJ7VvtMp99AzelZM=
+github.com/onmetal/k8s-subnet v0.0.0-20210609074228-b14771cc742f h1:NQjtkaPMhwrPG012Hrq+hQbrsC3wYZBzHgBSHAyA16Q=
+github.com/onmetal/k8s-subnet v0.0.0-20210609074228-b14771cc742f/go.mod h1:HP1HNdo3oKGQrtbREwf8IJoWi46oJ7VvtMp99AzelZM=
 github.com/onsi/ginkgo v0.0.0-20170829012221-11459a886d9c/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.11.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
