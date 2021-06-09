@@ -100,6 +100,8 @@ func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+//switchResourceExists returns `true` if switch resource exists
+// or false if it doesn't.
 func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) bool {
 	for _, switchRes := range switches.Items {
 		if switchRes.Name == name {
@@ -109,6 +111,7 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) bool
 	return false
 }
 
+//getPreparedSwitch returns switch resource prepared for creation or an error.
 func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
 	chassisId := ""
 	labels := map[string]string{}
@@ -120,7 +123,7 @@ func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Swit
 		chassisId = label.(string)
 		labels[switchv1alpha1.LabelChassisId] = strings.ReplaceAll(label.(string), ":", "-")
 	}
-	interfaces := setInterfaces(inv.Spec.NICs.NICs)
+	interfaces := prepareInterfaces(inv.Spec.NICs.NICs)
 	southConnections, northConnections := getSwitchConnections(interfaces)
 
 	sw := &switchv1alpha1.Switch{
@@ -158,7 +161,8 @@ func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Swit
 	return sw, nil
 }
 
-func setInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.InterfaceSpec {
+//prepareInterfaces returns list of interfaces specifications.
+func prepareInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.InterfaceSpec {
 	interfaces := make([]*switchv1alpha1.InterfaceSpec, 0)
 	for _, nic := range nics {
 		iface := buildInterface(&nic)
@@ -167,6 +171,7 @@ func setInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.Interfa
 	return interfaces
 }
 
+//buildInterface constructs switch's interface specification.
 func buildInterface(nic *inventoriesv1alpha1.NICSpec) *switchv1alpha1.InterfaceSpec {
 	iface := &switchv1alpha1.InterfaceSpec{
 		Name:       nic.Name,
@@ -190,6 +195,8 @@ func buildInterface(nic *inventoriesv1alpha1.NICSpec) *switchv1alpha1.InterfaceS
 	return iface
 }
 
+//countSwitchPorts calculates count of switch ports
+//(without management and service ports).
 func countSwitchPorts(nics []inventoriesv1alpha1.NICSpec) uint64 {
 	count := uint64(0)
 	for _, item := range nics {
@@ -200,6 +207,7 @@ func countSwitchPorts(nics []inventoriesv1alpha1.NICSpec) uint64 {
 	return count
 }
 
+//getChassisId returns chassis id value
 func getChassisId(nics []inventoriesv1alpha1.NICSpec) interface{} {
 	for _, nic := range nics {
 		if nic.Name == "eth0" {
@@ -209,6 +217,8 @@ func getChassisId(nics []inventoriesv1alpha1.NICSpec) interface{} {
 	return nil
 }
 
+//getSwitchConnections constructs switch's resource south and north
+//connections specifications.
 func getSwitchConnections(interfaces []*switchv1alpha1.InterfaceSpec) (*switchv1alpha1.SouthConnectionsSpec, *switchv1alpha1.NorthConnectionsSpec) {
 	switchNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
 	machinesNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)

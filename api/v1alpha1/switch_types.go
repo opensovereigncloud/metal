@@ -270,6 +270,8 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
+//GetNorthSwitchConnection returns the list of switches
+//that should be set as north connections.
 func (sw *Switch) GetNorthSwitchConnection(swList []Switch) []Switch {
 	result := make([]Switch, 0)
 	for _, obj := range swList {
@@ -280,6 +282,8 @@ func (sw *Switch) GetNorthSwitchConnection(swList []Switch) []Switch {
 	return result
 }
 
+//checkSwitchInSouthConnections checks whether switch objects
+//is in south connections list.
 func (sw *Switch) checkSwitchInSouthConnections(obj Switch) bool {
 	for _, conn := range obj.Spec.State.SouthConnections.Connections {
 		if sw.Spec.SwitchChassis.ChassisID == conn.ChassisID {
@@ -289,6 +293,8 @@ func (sw *Switch) checkSwitchInSouthConnections(obj Switch) bool {
 	return false
 }
 
+//CheckMachinesConnected checks whether any machine is
+//connected to the switch.
 func (sw *Switch) CheckMachinesConnected() bool {
 	for _, iface := range sw.Spec.Interfaces {
 		if iface.Neighbour == CMachineType {
@@ -298,6 +304,8 @@ func (sw *Switch) CheckMachinesConnected() bool {
 	return false
 }
 
+//CheckSouthNeighboursDataUpdateNeeded checks whether all
+//south neighbours specifications are fulfilled or not.
 func (sw *Switch) CheckSouthNeighboursDataUpdateNeeded() bool {
 	for _, item := range sw.Spec.State.SouthConnections.Connections {
 		if item.Name == "" || item.Namespace == "" {
@@ -307,6 +315,8 @@ func (sw *Switch) CheckSouthNeighboursDataUpdateNeeded() bool {
 	return false
 }
 
+//CheckNorthNeighboursDataUpdateNeeded checks whether all
+////north neighbours specifications are fulfilled or not.
 func (sw *Switch) CheckNorthNeighboursDataUpdateNeeded() bool {
 	for _, item := range sw.Spec.State.NorthConnections.Connections {
 		if item.Name == "" || item.Namespace == "" {
@@ -316,6 +326,8 @@ func (sw *Switch) CheckNorthNeighboursDataUpdateNeeded() bool {
 	return false
 }
 
+//GetNeededMask calculates the minimum network mask needed to fit
+//switch's interfaces and needed IP addresses amount.
 func (sw *Switch) GetNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount float64) net.IPMask {
 	bits := uint8(0)
 	if addrType == subnetv1alpha1.CIPv4SubnetType {
@@ -341,6 +353,8 @@ func (sw *Switch) GetNeededMask(addrType subnetv1alpha1.SubnetAddressType, addre
 	return netMask
 }
 
+//GetAddressNeededCount calculates the number of IP addresses
+//needed for switch's interfaces.
 func (sw *Switch) GetAddressNeededCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
 	if addrType == subnetv1alpha1.CIPv4SubnetType {
 		return int64(sw.Spec.SwitchPorts * CIPv4AddressesPerPort)

@@ -171,6 +171,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+//handleSwitchUpdate handler for UpdateEvent for switch resources
 func (r *SwitchReconciler) handleSwitchUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
 	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 		err := enqueueSwitchReconcileRequest(r.Client, r.Log, scheme, q, ro)
@@ -180,6 +181,8 @@ func (r *SwitchReconciler) handleSwitchUpdate(scheme *runtime.Scheme, ro runtime
 	}
 }
 
+//enqueueSwitchReconcileRequest adds related switch resources
+//to the reconciliation queue
 func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
 	ctx := context.Background()
 	list := &unstructured.UnstructuredList{}
@@ -222,7 +225,8 @@ func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *run
 	return nil
 }
 
-//common function
+//findSouthNeighboursSwitches returns a SwitchList resource, that includes
+//"downstream" switches or an error.
 func (r *SwitchReconciler) findSouthNeighboursSwitches(switchRes *switchv1alpha1.Switch, ctx context.Context) (*switchv1alpha1.SwitchList, error) {
 	swList := &switchv1alpha1.SwitchList{}
 	connectionsChassisIds := make([]string, 0, len(switchRes.Spec.State.SouthConnections.Connections))
@@ -251,6 +255,8 @@ func (r *SwitchReconciler) findSouthNeighboursSwitches(switchRes *switchv1alpha1
 	return swList, nil
 }
 
+//findNorthNeighboursSwitches returns a SwitchList resource, that includes
+//"upstream" switches or an error.
 func (r *SwitchReconciler) findNorthNeighboursSwitches(switchRes *switchv1alpha1.Switch, ctx context.Context) (*switchv1alpha1.SwitchList, error) {
 	swList := &switchv1alpha1.SwitchList{}
 	connectionsChassisIds := make([]string, 0, len(switchRes.Spec.State.NorthConnections.Connections))
@@ -279,6 +285,8 @@ func (r *SwitchReconciler) findNorthNeighboursSwitches(switchRes *switchv1alpha1
 	return swList, nil
 }
 
+//updateConnectionLevel calculates switch's connection level,
+//basing on neighbours connection levels. Returns an error.
 func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx context.Context) error {
 	swList := &switchv1alpha1.SwitchList{}
 	if err := r.Client.List(ctx, swList); err != nil {
@@ -329,6 +337,8 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 	return nil
 }
 
+//defineSubnets process related resources to define switch's
+//"south" subnets. Returns an error.
 func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.Context) error {
 	cm := &v1.ConfigMap{}
 	// todo: discuss configMap parameters and data structure
@@ -385,6 +395,8 @@ func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.
 	return nil
 }
 
+//finalizeSwitch prepare environment for switch resource deletion
+//by updating related resources. Returns an error.
 func (r *SwitchReconciler) finalizeSwitch(sw *switchv1alpha1.Switch, ctx context.Context) error {
 	if sw.Spec.SouthSubnetV4 != nil {
 		subnetV4 := &subnetv1alpha1.Subnet{}
@@ -449,6 +461,8 @@ func (r *SwitchReconciler) finalizeSwitch(sw *switchv1alpha1.Switch, ctx context
 	return nil
 }
 
+//getMinConnectionLevel calculates the minimum connection level
+//value among switches in the list provided as argument.
 func getMinConnectionLevel(switchList []switchv1alpha1.Switch) uint8 {
 	result := uint8(255)
 	for _, item := range switchList {
@@ -459,6 +473,8 @@ func getMinConnectionLevel(switchList []switchv1alpha1.Switch) uint8 {
 	return result
 }
 
+//constructNeighboursFromSwitchList creates list of neighbours
+//specs from the list of switches.
 func constructNeighboursFromSwitchList(swl []switchv1alpha1.Switch) map[string]switchv1alpha1.NeighbourSpec {
 	neighbours := map[string]switchv1alpha1.NeighbourSpec{}
 	for _, item := range swl {
@@ -472,6 +488,7 @@ func constructNeighboursFromSwitchList(swl []switchv1alpha1.Switch) map[string]s
 	return neighbours
 }
 
+//updateNorthConnections updates switch resource north connections list.
 func updateNorthConnections(sw *switchv1alpha1.Switch, ncm map[string]switchv1alpha1.NeighbourSpec) {
 	connections := make([]switchv1alpha1.NeighbourSpec, 0)
 	if sw.Spec.State.NorthConnections.Connections == nil || len(sw.Spec.State.NorthConnections.Connections) == 0 {
@@ -489,6 +506,7 @@ func updateNorthConnections(sw *switchv1alpha1.Switch, ncm map[string]switchv1al
 	sw.Spec.State.NorthConnections.Connections = connections
 }
 
+//updateSouthConnections updates switch resource south connections list.
 func updateSouthConnections(sw *switchv1alpha1.Switch, ncm map[string]switchv1alpha1.NeighbourSpec) {
 	connections := make([]switchv1alpha1.NeighbourSpec, 0)
 	if sw.Spec.State.SouthConnections.Connections == nil || len(sw.Spec.State.SouthConnections.Connections) == 0 {
@@ -506,6 +524,8 @@ func updateSouthConnections(sw *switchv1alpha1.Switch, ncm map[string]switchv1al
 	sw.Spec.State.SouthConnections.Connections = connections
 }
 
+//removeFromSouthConnections removes item from switch resource
+//south connections list if this item presents in north connections.
 func removeFromSouthConnections(sw *switchv1alpha1.Switch, ncm map[string]struct{}) {
 	connections := make([]switchv1alpha1.NeighbourSpec, 0)
 	for _, item := range sw.Spec.State.SouthConnections.Connections {
@@ -516,6 +536,9 @@ func removeFromSouthConnections(sw *switchv1alpha1.Switch, ncm map[string]struct
 	sw.Spec.State.SouthConnections.Connections = connections
 }
 
+//getSuitableSubnet finds the subnet resource, that fits address
+//type, region, availability zones and addresses count. It returns
+//pointers to the CIDR and subnet resource objects or an error.
 func getSuitableSubnet(
 	sw *switchv1alpha1.Switch,
 	subnetList *subnetv1alpha1.SubnetList,
@@ -551,6 +574,9 @@ func getSuitableSubnet(
 	return nil, nil, nil
 }
 
+//getMinimalVacantCIDR calculates the minimal suitable network
+//from the networks list provided as argument according to the
+//needed addresses count. It returns the pointer to the CIDR object.
 func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *netglobalv1alpha1.CIDR {
 	zeroNetString := ""
 	if addressType == subnetv1alpha1.CIPv4SubnetType {
@@ -569,6 +595,8 @@ func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1a
 	return minSuitableNet
 }
 
+//updateInterfacesAddresses sets IP addresses for switch
+//interfaces according to south subnets values.
 func updateInterfacesAddresses(sw *switchv1alpha1.Switch) {
 	// todo: assign addresses for "south" interfaces
 }
