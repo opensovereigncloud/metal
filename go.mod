@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/onmetal/k8s-inventory v0.0.0-20210519063844-3509e56a2416
 	github.com/onmetal/k8s-network-global v0.0.0-20210528142724-3da4d0e4351e
-	github.com/onmetal/k8s-subnet v0.0.0-20210609074228-b14771cc742f
+	github.com/onmetal/k8s-subnet v0.0.0-20210609114747-2f4101a2caa5
 	github.com/onsi/ginkgo v1.15.1
 	github.com/onsi/gomega v1.11.0
 	github.com/pkg/errors v0.9.1
