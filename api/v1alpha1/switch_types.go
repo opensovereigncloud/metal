@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"math"
 	"net"
+	"strings"
 
 	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -361,4 +362,16 @@ func (sw *Switch) GetAddressNeededCount(addrType subnetv1alpha1.SubnetAddressTyp
 	} else {
 		return int64(sw.Spec.SwitchPorts * CIPv6AddressesPerPort)
 	}
+}
+
+//GetSwitchPorts returns list of interface specifications only
+//for switch ports (without management interfaces)
+func (sw *Switch) GetSwitchPorts() []*InterfaceSpec {
+	result := make([]*InterfaceSpec, 0, sw.Spec.SwitchPorts)
+	for _, item := range sw.Spec.Interfaces {
+		if strings.HasPrefix(item.Name, "Ethernet") {
+			result = append(result, item)
+		}
+	}
+	return result
 }

@@ -18,12 +18,15 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"net"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
+	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-logr/logr"
 	netglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -121,30 +124,29 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if switchRes.CheckNorthNeighboursDataUpdateNeeded() || switchRes.CheckSouthNeighboursDataUpdateNeeded() {
-		switch switchRes.Spec.State.ConnectionLevel {
-		case 0:
-			southSwitchList, err := r.findSouthNeighboursSwitches(switchRes, ctx)
-			if err != nil {
-				log.Error(err, "failed to get south switch neighbours")
-				return ctrl.Result{}, err
-			}
-			neighboursMap := constructNeighboursFromSwitchList(southSwitchList.Items)
-			connections := switchRes.Spec.State.SouthConnections.Connections
-			for i, neighbour := range connections {
-				if _, ok := neighboursMap[neighbour.ChassisID]; ok {
-					connections[i] = neighboursMap[neighbour.ChassisID]
-				}
-			}
-			switchRes.Spec.State.SouthConnections.Connections = connections
-		default:
-			if err := r.updateConnectionLevel(switchRes, ctx); err != nil {
-				log.Error(err, "failed to update switch connection level")
-				return ctrl.Result{}, err
+	switch switchRes.Spec.State.ConnectionLevel {
+	case 0:
+		southSwitchList, err := r.findSouthNeighboursSwitches(switchRes, ctx)
+		if err != nil {
+			log.Error(err, "failed to get south switch neighbours")
+			return ctrl.Result{}, err
+		}
+		neighboursMap := constructNeighboursFromSwitchList(southSwitchList.Items)
+		connections := switchRes.Spec.State.SouthConnections.Connections
+		for i, neighbour := range connections {
+			if _, ok := neighboursMap[neighbour.ChassisID]; ok {
+				connections[i] = neighboursMap[neighbour.ChassisID]
 			}
 		}
+		switchRes.Spec.State.SouthConnections.Connections = connections
+	default:
+		if err := r.updateConnectionLevel(switchRes, ctx); err != nil {
+			log.Error(err, "failed to update switch connection level")
+			return ctrl.Result{}, err
+		}
 	}
-	updateInterfacesAddresses(switchRes)
+	updateSouthInterfacesAddresses(switchRes)
+	r.updateNorthInterfacesAddresses(switchRes, ctx)
 
 	if !reflect.DeepEqual(oldRes, switchRes) {
 		if err := r.Client.Update(ctx, switchRes); err != nil {
@@ -631,8 +633,98 @@ func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1a
 	return minSuitableNet
 }
 
-//updateInterfacesAddresses sets IP addresses for switch
-//interfaces according to south subnets values.
-func updateInterfacesAddresses(sw *switchv1alpha1.Switch) {
-	// todo: assign addresses for "south" interfaces
+//updateSouthInterfacesAddresses sets IP addresses for switch
+//south interfaces according to switch south subnets values.
+func updateSouthInterfacesAddresses(sw *switchv1alpha1.Switch) {
+	interfaces := sw.GetSwitchPorts()
+	sort.Slice(interfaces, func(i, j int) bool {
+		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[i].Name, "Ethernet", ""))
+		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[j].Name, "Ethernet", ""))
+		return leftIndex < rightIndex
+	})
+	for _, iface := range interfaces {
+		if sw.Spec.SouthSubnetV4 != nil && iface.IPv4 == "" && iface.LLDPChassisID != "" {
+			for _, item := range sw.Spec.State.SouthConnections.Connections {
+				if item.ChassisID == iface.LLDPChassisID {
+					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV4.CIDR)
+					ifaceSubnet := getInterfaceSubnet(network, iface, subnetv1alpha1.CIPv4SubnetType)
+					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
+					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), switchv1alpha1.CIPv4InterfaceSubnetMask)
+				}
+			}
+		}
+		if sw.Spec.SouthSubnetV6 != nil && iface.IPv6 == "" && iface.LLDPChassisID != "" {
+			for _, item := range sw.Spec.State.SouthConnections.Connections {
+				if item.ChassisID == iface.LLDPChassisID {
+					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV6.CIDR)
+					ifaceSubnet := getInterfaceSubnet(network, iface, subnetv1alpha1.CIPv6SubnetType)
+					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
+					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), switchv1alpha1.CIPv6InterfaceSubnetMask)
+				}
+			}
+		}
+	}
+}
+
+//updateNorthInterfacesAddresses sets IP addresses for switch
+//north interfaces according to north switch subnets values.
+func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Switch, ctx context.Context) {
+	if sw.Spec.State.NorthConnections.Count > 0 {
+		for _, item := range sw.Spec.State.NorthConnections.Connections {
+			northSwitch := &switchv1alpha1.Switch{}
+			northIPv4Subnet := &net.IPNet{}
+			northIPv6Subnet := &net.IPNet{}
+			if item.Name != "" && item.Namespace != "" {
+				if err := r.Client.Get(ctx, types.NamespacedName{
+					Namespace: item.Namespace,
+					Name:      item.Name,
+				}, northSwitch); err != nil {
+					if apierrors.IsNotFound(err) {
+						item.Namespace = ""
+						item.Name = ""
+						continue
+					}
+					continue
+				}
+				// got north switch resource
+				for _, iface := range northSwitch.Spec.Interfaces {
+					if iface.LLDPChassisID == sw.Spec.SwitchChassis.ChassisID {
+						if iface.IPv4 != "" {
+							_, northIPv4Subnet, _ = net.ParseCIDR(iface.IPv4)
+						}
+						if iface.IPv6 != "" {
+							_, northIPv6Subnet, _ = net.ParseCIDR(iface.IPv6)
+						}
+						break
+					}
+				}
+			}
+			for _, iface := range sw.Spec.Interfaces {
+				if iface.LLDPChassisID == northSwitch.Spec.SwitchChassis.ChassisID {
+					if addr, err := gocidr.Host(northIPv4Subnet, 2); err == nil {
+						iface.IPv4 = fmt.Sprintf("%s/%d", addr.String(), switchv1alpha1.CIPv4InterfaceSubnetMask)
+					}
+					if addr, err := gocidr.Host(northIPv6Subnet, 1); err == nil {
+						iface.IPv6 = fmt.Sprintf("%s/%d", addr.String(), switchv1alpha1.CIPv6InterfaceSubnetMask)
+					}
+					break
+				}
+			}
+		}
+	}
+}
+
+func getInterfaceSubnet(network *net.IPNet, iface *switchv1alpha1.InterfaceSpec, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
+	index, _ := strconv.Atoi(strings.ReplaceAll(iface.Name, "Ethernet", ""))
+	prefix, _ := network.Mask.Size()
+	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(addrType)-prefix, index)
+	return ifaceNet
+}
+
+func getInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int {
+	if addrType == subnetv1alpha1.CIPv4SubnetType {
+		return switchv1alpha1.CIPv4InterfaceSubnetMask
+	} else {
+		return switchv1alpha1.CIPv6InterfaceSubnetMask
+	}
 }

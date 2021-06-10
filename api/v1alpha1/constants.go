@@ -46,6 +46,9 @@ const (
 	CNamespace = "onmetal"
 
 	CSwitchFinalizer = "switches.switch.onmetal.de/finalizer"
+
+	CIPv4InterfaceSubnetMask = 30
+	CIPv6InterfaceSubnetMask = 127
 )
 
 var LabelSerial = CLabelPrefix + CLabelSerial
