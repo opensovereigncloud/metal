@@ -3,6 +3,7 @@ module github.com/onmetal/switch-operator
 go 1.15
 
 require (
+	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/go-logr/logr v0.4.0
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/onmetal/k8s-inventory v0.0.0-20210519063844-3509e56a2416
