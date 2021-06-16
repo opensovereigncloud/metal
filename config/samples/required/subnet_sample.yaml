@@ -1,0 +1,13 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Subnet
+metadata:
+  name: subnet-sample
+  namespace: onmetal
+spec:
+  cidr: "100.64.0.0/12"
+  parentSubnetName: ""
+  networkGlobalName: underlay
+  regions:
+    - EU-West
+  availabilityZones:
+    - A

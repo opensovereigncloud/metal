@@ -48,7 +48,6 @@ var _ webhook.Defaulter = &SwitchAssignment{}
 func (swa *SwitchAssignment) Default() {
 	switchAssignmentLog.Info("default", "name", swa.Name)
 	swa.Labels = map[string]string{}
-	swa.Labels[LabelSerial] = swa.Spec.Serial
 	swa.Labels[LabelChassisId] = strings.ReplaceAll(swa.Spec.ChassisID, ":", "-")
 }
 
@@ -73,19 +72,12 @@ func (swa *SwitchAssignment) ValidateUpdate(old runtime.Object) error {
 	}
 
 	var allErrors field.ErrorList
-
-	if oldSwitchAssignment.Spec.Serial != swa.Spec.Serial {
-		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.serial"), swa.Spec.Serial, "Serial number change disallowed"))
-	}
-
 	if oldSwitchAssignment.Spec.ChassisID != swa.Spec.ChassisID {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.chassisId"), swa.Spec.ChassisID, "Chassis ID change disallowed"))
 	}
-
 	if oldSwitchAssignment.Spec.Region != swa.Spec.Region {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.region"), swa.Spec.Region, "Region change disallowed"))
 	}
-
 	if oldSwitchAssignment.Spec.AvailabilityZone != swa.Spec.AvailabilityZone {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.availabilityZone"), swa.Spec.AvailabilityZone, "Availability Zone change disallowed"))
 	}

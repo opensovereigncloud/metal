@@ -219,7 +219,7 @@ func getChassisId(nics []inventoriesv1alpha1.NICSpec) interface{} {
 
 //getSwitchConnections constructs switch's resource south and north
 //connections specifications.
-func getSwitchConnections(interfaces []*switchv1alpha1.InterfaceSpec) (*switchv1alpha1.SouthConnectionsSpec, *switchv1alpha1.NorthConnectionsSpec) {
+func getSwitchConnections(interfaces []*switchv1alpha1.InterfaceSpec) (*switchv1alpha1.ConnectionsSpec, *switchv1alpha1.ConnectionsSpec) {
 	switchNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
 	machinesNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
 	for _, iface := range interfaces {
@@ -238,11 +238,11 @@ func getSwitchConnections(interfaces []*switchv1alpha1.InterfaceSpec) (*switchv1
 			})
 		}
 	}
-	southConnections := &switchv1alpha1.SouthConnectionsSpec{
+	southConnections := &switchv1alpha1.ConnectionsSpec{
 		Count:       0,
 		Connections: nil,
 	}
-	northConnections := &switchv1alpha1.NorthConnectionsSpec{
+	northConnections := &switchv1alpha1.ConnectionsSpec{
 		Count:       0,
 		Connections: nil,
 	}

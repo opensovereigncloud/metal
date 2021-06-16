@@ -58,14 +58,10 @@ spec:
               region:
                 description: Region refers to the switch's region
                 type: string
-              serial:
-                description: Serial refers to switch serial number
-                type: string
             required:
             - availabilityZone
             - chassisId
             - region
-            - serial
             type: object
           status:
             description: SwitchAssignmentStatus defines the observed state of SwitchAssignment

@@ -20,7 +20,6 @@ import "time"
 
 const (
 	CLabelPrefix    = "switch.onmetal.de/"
-	CLabelSerial    = "serial"
 	CLabelChassisId = "chassisId"
 
 	CUndefinedRole = "Undefined"
@@ -51,5 +50,4 @@ const (
 	CIPv6InterfaceSubnetMask = 127
 )
 
-var LabelSerial = CLabelPrefix + CLabelSerial
 var LabelChassisId = CLabelPrefix + CLabelChassisId

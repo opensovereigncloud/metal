@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"strings"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -60,7 +59,7 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignmentRes.Spec.ChassisID, ":", "-")})
+	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: assignmentRes.Labels[switchv1alpha1.LabelChassisId]})
 	opts := &client.ListOptions{
 		LabelSelector: selector,
 		Limit:         1000,

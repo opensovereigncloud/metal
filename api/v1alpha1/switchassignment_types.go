@@ -23,9 +23,6 @@ import (
 // SwitchAssignmentSpec defines the desired state of SwitchAssignment
 //+kubebuilder:object:generate=true
 type SwitchAssignmentSpec struct {
-	// Serial refers to switch serial number
-	//+kubebuilder:validation:Required
-	Serial string `json:"serial"`
 	// ChassisID refers to switch chassis id
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:Pattern=`^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$`

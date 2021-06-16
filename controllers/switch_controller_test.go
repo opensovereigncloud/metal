@@ -90,6 +90,7 @@ var _ = Describe("Switch controller", func() {
 			switchAssignmentSamples := []string{
 				filepath.Join("..", "config", "samples", "assignment-1.onmetal.de_v1alpha1_switchassignment.yaml"),
 				filepath.Join("..", "config", "samples", "assignment-2.onmetal.de_v1alpha1_switchassignment.yaml"),
+				filepath.Join("..", "config", "samples", "assignment-3.onmetal.de_v1alpha1_switchassignment.yaml"),
 			}
 
 			for _, sample := range switchAssignmentSamples {
@@ -122,10 +123,22 @@ var _ = Describe("Switch controller", func() {
 
 			By("Switch CR installed")
 			switchesSamples := []string{
-				filepath.Join("..", "config", "samples", "spine-1.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "spine-2.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-0-1.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-0-2.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-0-3.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-1-1.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-1-2.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-1-3.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-1-4.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-1-5.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "spine-1-6.onmetal.de_v1alpha1_inventory.yaml"),
 				filepath.Join("..", "config", "samples", "leaf-1.onmetal.de_v1alpha1_inventory.yaml"),
 				filepath.Join("..", "config", "samples", "leaf-2.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "leaf-3.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "leaf-4.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "leaf-5.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "leaf-6.onmetal.de_v1alpha1_inventory.yaml"),
+				filepath.Join("..", "config", "samples", "leaf-7.onmetal.de_v1alpha1_inventory.yaml"),
 			}
 
 			for _, sample := range switchesSamples {
@@ -166,11 +179,14 @@ var _ = Describe("Switch controller", func() {
 			}, timeout, interval).Should(BeTrue())
 			for _, sw := range list.Items {
 				Expect(sw.Spec.State.Role).Should(Equal(switchv1alpha1.CSpineRole))
-				if strings.HasPrefix(sw.Name, "spine") {
+				if strings.HasPrefix(sw.Spec.Hostname, "spine-0") {
 					Expect(sw.Spec.State.ConnectionLevel).Should(Equal(uint8(0)))
 				}
-				if strings.HasPrefix(sw.Name, "leaf") {
-					Expect(sw.Spec.State.ConnectionLevel).Should(Equal(uint8(1)))
+				if strings.HasPrefix(sw.Spec.Hostname, "spine-1") {
+					Expect(sw.Spec.State.ConnectionLevel).Should(Equal(uint8(0)))
+				}
+				if strings.HasPrefix(sw.Spec.Hostname, "leaf") {
+					Expect(sw.Spec.State.ConnectionLevel).Should(Equal(uint8(2)))
 				}
 			}
 		})
