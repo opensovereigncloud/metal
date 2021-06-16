@@ -1,0 +1,7 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: NetworkGlobal
+metadata:
+  name: underlay
+  namespace: onmetal
+spec:
+  description: sample

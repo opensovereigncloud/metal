@@ -194,13 +194,10 @@ spec:
                     default: 255
                     description: ConnectionLevel refers the level of the connection
                     type: integer
-                  northSwitches:
+                  northConnections:
                     description: NorthSwitches refers to up-level switch
                     properties:
-                      count:
-                        description: Count refers to upstream switches count
-                        type: integer
-                      switches:
+                      connections:
                         description: Switches refers to connected upstream switches
                         items:
                           description: NeighbourSpec defines switch connected to another
@@ -225,6 +222,9 @@ spec:
                           - chassisId
                           type: object
                         type: array
+                      count:
+                        description: Count refers to upstream switches count
+                        type: integer
                     type: object
                   role:
                     description: 'Role referring to switch''s role: leaf or spine'
@@ -233,13 +233,10 @@ spec:
                     - Spine
                     - Undefined
                     type: string
-                  southSwitches:
+                  southConnections:
                     description: SouthSwitches refers to down-level switch
                     properties:
-                      count:
-                        description: Count refers to upstream switches count
-                        type: integer
-                      switches:
+                      connections:
                         description: Switches refers to connected upstream switches
                         items:
                           description: NeighbourSpec defines switch connected to another
@@ -264,6 +261,9 @@ spec:
                           - chassisId
                           type: object
                         type: array
+                      count:
+                        description: Count refers to upstream switches count
+                        type: integer
                     type: object
                 type: object
               switchChassis:

@@ -1,8 +1,8 @@
 apiVersion: switch.onmetal.de/v1alpha1
 kind: SwitchAssignment
 metadata:
-  name: switchassignment-1950148
+  name: switchassignment-1950221
 spec:
-  chassisId: 68:21:5f:47:0b:6e
+  chassisId: 68:21:5f:47:0a:6e
   region: EU-West
   availabilityZone: A

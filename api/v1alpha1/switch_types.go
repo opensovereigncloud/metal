@@ -186,37 +186,25 @@ type SwitchStateSpec struct {
 	ConnectionLevel uint8 `json:"connectionLevel"`
 	// NorthSwitches refers to up-level switch
 	//+kubebuilder:validation:Optional
-	NorthConnections *NorthConnectionsSpec `json:"northSwitches,omitempty"`
+	NorthConnections *ConnectionsSpec `json:"northConnections,omitempty"`
 	// SouthSwitches refers to down-level switch
 	//+kubebuilder:validation:Optional
-	SouthConnections *SouthConnectionsSpec `json:"southSwitches,omitempty"`
+	SouthConnections *ConnectionsSpec `json:"southConnections,omitempty"`
 }
 
 // SwitchStatus defines the observed state of Switch
 type SwitchStatus struct{}
 
-// NorthConnectionsSpec defines upstream switches count and properties
+// ConnectionsSpec defines upstream switches count and properties
 //+kubebuilder:object:generate=true
-type NorthConnectionsSpec struct {
+type ConnectionsSpec struct {
 	// Count refers to upstream switches count
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:validation:default=0
 	Count int `json:"count"`
 	// Switches refers to connected upstream switches
 	//+kubebuilder:validation:Optional
-	Connections []NeighbourSpec `json:"switches"`
-}
-
-// SouthConnectionsSpec defines downstream switches count and properties
-//+kubebuilder:object:generate=true
-type SouthConnectionsSpec struct {
-	// Count refers to upstream switches count
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:default=0
-	Count int `json:"count"`
-	// Switches refers to connected upstream switches
-	//+kubebuilder:validation:Optional
-	Connections []NeighbourSpec `json:"switches"`
+	Connections []NeighbourSpec `json:"connections"`
 }
 
 // NeighbourSpec defines switch connected to another switch

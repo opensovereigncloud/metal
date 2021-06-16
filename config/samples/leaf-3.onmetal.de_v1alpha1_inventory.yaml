@@ -3,40 +3,40 @@ kind: Inventory
 metadata:
   generation: 1
   labels:
-    machine.onmetal.de/mac-address-eth0: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet0: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet4: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet8: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet12: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet16: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet20: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet24: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet28: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet32: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet36: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet40: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet44: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet48: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet52: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet56: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet60: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet64: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet68: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet72: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet76: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet80: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet84: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet88: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet92: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet96: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet100: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet104: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet108: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet112: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet116: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet120: 68-21-5f-47-11-6e
-    machine.onmetal.de/mac-address-ethernet124: 68-21-5f-47-11-6e
-  name: 7db70ddb-f23d-3d67-8b73-fb0dac5216ab
+    machine.onmetal.de/mac-address-eth0: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet0: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet4: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet8: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet12: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet16: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet20: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet24: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet28: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet32: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet36: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet40: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet44: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet48: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet52: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet56: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet60: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet64: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet68: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet72: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet76: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet80: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet84: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet88: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet92: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet96: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet100: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet104: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet108: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet112: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet116: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet120: 68-21-5f-47-13-6e
+    machine.onmetal.de/mac-address-ethernet124: 68-21-5f-47-13-6e
+  name: 3b033010-49b5-31ea-b958-885eb324f668
   namespace: default
 spec:
   blocks:
@@ -230,25 +230,50 @@ spec:
     debianVersion: "10.9"
     kernelVersion: 4.19.0-12-2-amd64
   host:
-    name: leaf-1.fra3.infra.onmetal.de
+    name: leaf-3.fra3.infra.onmetal.de
     type: Switch
   memory:
     total: 16716308480
   nics:
     count: 35
     nics:
+    - macAddress: 68:21:5f:47:13:6e
+      mtu: 9100
+      name: Ethernet8
+      speed: 100000
     - lldps:
       - {}
       - capabilities:
         - Bridge
         - Router
-        chassisId: 68:21:5f:47:0d:5a
+        chassisId: 68:21:5f:47:0c:5f
         portDescription: Ethernet8
         portId: Eth33/1
         systemDescription: 'Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1
           SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64'
-        systemName: spine-1-1.fra3.infra.onmetal.de
-      macAddress: 68:21:5f:47:11:6e
+        systemName: spine-1-4.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:13:6e
+      mtu: 9100
+      name: Ethernet4
+      ndps:
+      - {}
+      speed: 100000
+    - macAddress: 68:21:5f:47:13:6e
+      mtu: 9100
+      name: Ethernet12
+      speed: 100000
+    - lldps:
+      - {}
+      - capabilities:
+        - Bridge
+        - Router
+        chassisId: 68:21:5f:47:0b:5b
+        portDescription: Ethernet12
+        portId: Eth35/1
+        systemDescription: 'Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1
+          SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64'
+        systemName: spine-1-2.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet0
       ndps:
@@ -259,159 +284,134 @@ spec:
       - capabilities:
         - Bridge
         - Router
-        chassisId: 68:21:5f:47:0b:5b
-        portDescription: Ethernet8
-        portId: Eth33/1
-        systemDescription: 'Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1
-          SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64'
-        systemName: spine-1-2.fra3.infra.onmetal.de
-      macAddress: 68:21:5f:47:11:6e
-      mtu: 9100
-      name: Ethernet4
-      ndps:
-      - {}
-      speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
-      mtu: 9100
-      name: Ethernet8
-      speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
-      mtu: 9100
-      name: Ethernet12
-      speed: 100000
-    - lldps:
-      - {}
-      - capabilities:
-        - Bridge
-        - Router
         chassisId: 64:9d:99:15:56:1c
-        portDescription: Ethernet Port on unit 1, port 12
-        portId: Eth 1/12
+        portDescription: Ethernet Port on unit 1, port 34
+        portId: Eth 1/34
         systemDescription: S3900-48T4S
         systemName: mgmt-sw-1
-      macAddress: 68:21:5f:47:11:6e
+      macAddress: 68:21:5f:47:13:6e
       mtu: 1500
       name: eth0
       ndps:
       - {}
       pciAddress: 0000:0b:00.0
       speed: 1000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet100
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet104
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet108
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet112
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet116
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet120
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet124
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet16
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet20
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet24
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet28
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet32
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet36
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet40
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet44
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet48
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet52
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet56
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet60
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet64
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet68
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet72
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet76
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet80
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet84
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet88
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet92
       speed: 100000
-    - macAddress: 68:21:5f:47:11:6e
+    - macAddress: 68:21:5f:47:13:6e
       mtu: 9100
       name: Ethernet96
       speed: 100000
   system:
-    id: 7db70ddb-f23d-3d67-8b73-fb0dac5216ab
+    id: 3b033010-49b5-31ea-b958-885eb324f668
     manufacturer: Accton
     productSku: "1"
-    serialNumber: 772632X1950881
+    serialNumber: 772632X1950883
   virt:
     vmType: none

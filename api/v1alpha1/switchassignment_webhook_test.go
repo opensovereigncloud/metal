@@ -62,7 +62,6 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 					Namespace: SWANamespace,
 				},
 				Spec: SwitchAssignmentSpec{
-					Serial:           "999999",
 					ChassisID:        SWAInvalidChassisID,
 					Region:           "EU-West",
 					AvailabilityZone: "A",
@@ -87,8 +86,6 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 			})
 
 			By("Update SwitchAssignment resource")
-			cr.Spec.Serial = "000001"
-			Expect(k8sClient.Update(ctx, &cr)).ShouldNot(Succeed())
 			cr.Spec.Region = "EU-East"
 			Expect(k8sClient.Update(ctx, &cr)).ShouldNot(Succeed())
 			cr.Spec.AvailabilityZone = "B"
