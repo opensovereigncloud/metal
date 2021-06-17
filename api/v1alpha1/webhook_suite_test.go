@@ -20,13 +20,19 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"go/build"
+	"io/ioutil"
 	"net"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"golang.org/x/mod/modfile"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	//+kubebuilder:scaffold:imports
@@ -63,8 +69,28 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
+	inventoryGlobalPackagePath := reflect.TypeOf(inventoriesv1alpha1.Inventory{}).PkgPath()
+
+	goModData, err := ioutil.ReadFile(filepath.Join("..", "..", "go.mod"))
+	Expect(err).NotTo(HaveOccurred())
+
+	goModFile, err := modfile.Parse("", goModData, nil)
+	Expect(err).NotTo(HaveOccurred())
+
+	inventoryGlobalModulePath := ""
+	for _, req := range goModFile.Require {
+		if strings.HasPrefix(inventoryGlobalPackagePath, req.Mod.Path) {
+			inventoryGlobalModulePath = req.Mod.String()
+			break
+		}
+	}
+	Expect(inventoryGlobalModulePath).NotTo(BeZero())
+
+	inventoryGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", inventoryGlobalModulePath, "config", "crd", "bases")
+	switchGlobalCrdPath := filepath.Join("..", "..", "config", "crd", "bases")
+
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath},
 		ErrorIfCRDPathMissing: false,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
@@ -79,6 +105,8 @@ var _ = BeforeSuite(func() {
 	err = AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = inventoriesv1alpha1.AddToScheme(scheme)
+	Expect(err).NotTo(HaveOccurred())
 	err = admissionv1beta1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -101,6 +129,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = (&SwitchAssignment{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+	err = (&Switch{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook

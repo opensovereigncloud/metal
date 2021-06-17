@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
+    cert-manager.io/inject-ca-from: {{ .Values.namespace }}/{{ .Chart.Name }}{{ .Values.webhooks.cert.nameSuffix}}
   creationTimestamp: null
   name: {{ .Values.crd.switch.plural }}.{{ .Values.crd.switch.group }}
 spec:
@@ -314,6 +315,16 @@ spec:
       storage: true
       subresources:
         status: {}
+  conversion:
+    strategy: Webhook
+    webhook:
+      conversionReviewVersions: ["v1", "v1beta1"]
+      clientConfig:
+        service:
+          namespace: {{ .Values.namespace }}
+          name: {{ .Chart.Name }}{{ .Values.webhooks.service.nameSuffix }}
+          port: {{ .Values.webhooks.service.port}}
+          path: /convert
 status:
   acceptedNames:
     kind: ""

@@ -113,16 +113,6 @@ func switchResourceExists(name string, switches *switchv1alpha1.SwitchList) bool
 
 //getPreparedSwitch returns switch resource prepared for creation or an error.
 func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Switch, error) {
-	chassisId := ""
-	labels := map[string]string{}
-	if inv.Labels != nil {
-		labels = inv.Labels
-	}
-	label := getChassisId(inv.Spec.NICs.NICs)
-	if label != nil {
-		chassisId = label.(string)
-		labels[switchv1alpha1.LabelChassisId] = strings.ReplaceAll(label.(string), ":", "-")
-	}
 	interfaces := prepareInterfaces(inv.Spec.NICs.NICs)
 	southConnections, northConnections := getSwitchConnections(interfaces)
 
@@ -130,7 +120,6 @@ func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Swit
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      inv.Name,
 			Namespace: switchv1alpha1.CNamespace,
-			Labels:    labels,
 		},
 		Spec: switchv1alpha1.SwitchSpec{
 			Hostname:    inv.Spec.Host.Name,
@@ -146,7 +135,7 @@ func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Swit
 				Manufacturer: inv.Spec.System.Manufacturer,
 				SKU:          inv.Spec.System.ProductSKU,
 				Serial:       inv.Spec.System.SerialNumber,
-				ChassisID:    chassisId,
+				ChassisID:    getChassisId(inv.Spec.NICs.NICs),
 			},
 			Interfaces: interfaces,
 			ScanPorts:  false,
@@ -208,13 +197,13 @@ func countSwitchPorts(nics []inventoriesv1alpha1.NICSpec) uint64 {
 }
 
 //getChassisId returns chassis id value
-func getChassisId(nics []inventoriesv1alpha1.NICSpec) interface{} {
+func getChassisId(nics []inventoriesv1alpha1.NICSpec) string {
 	for _, nic := range nics {
 		if nic.Name == "eth0" {
 			return nic.MACAddress
 		}
 	}
-	return nil
+	return ""
 }
 
 //getSwitchConnections constructs switch's resource south and north
