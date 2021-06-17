@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
@@ -177,18 +176,6 @@ var _ = Describe("Switch controller", func() {
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
-			for _, sw := range list.Items {
-				Expect(sw.Spec.State.Role).Should(Equal(switchv1alpha1.CSpineRole))
-				if strings.HasPrefix(sw.Spec.Hostname, "spine-0") {
-					Expect(sw.Spec.State.ConnectionLevel).Should(Equal(uint8(0)))
-				}
-				if strings.HasPrefix(sw.Spec.Hostname, "spine-1") {
-					Expect(sw.Spec.State.ConnectionLevel).Should(Equal(uint8(0)))
-				}
-				if strings.HasPrefix(sw.Spec.Hostname, "leaf") {
-					Expect(sw.Spec.State.ConnectionLevel).Should(Equal(uint8(2)))
-				}
-			}
 		})
 	})
 })

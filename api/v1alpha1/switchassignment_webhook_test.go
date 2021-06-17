@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -84,12 +85,29 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 				}
 				return true
 			})
-
+			Expect(cr.Labels).Should(Equal(map[string]string{LabelChassisId: strings.ReplaceAll(cr.Spec.ChassisID, ":", "-")}))
+		})
+		It("Should not allow to update resource", func() {
 			By("Update SwitchAssignment resource")
+			ctx := context.Background()
+			cr := SwitchAssignment{
+				ObjectMeta: controllerRuntime.ObjectMeta{
+					Name:      "test-switch-assignment",
+					Namespace: SWANamespace,
+				},
+				Spec: SwitchAssignmentSpec{
+					ChassisID:        SWAValidChassisID,
+					Region:           "EU-West",
+					AvailabilityZone: "A",
+				},
+			}
+			Expect(k8sClient.Create(ctx, &cr)).Should(Succeed())
 			cr.Spec.Region = "EU-East"
-			Expect(k8sClient.Update(ctx, &cr)).ShouldNot(Succeed())
+			err := k8sClient.Update(ctx, &cr)
+			Expect(err).To(HaveOccurred())
 			cr.Spec.AvailabilityZone = "B"
-			Expect(k8sClient.Update(ctx, &cr)).ShouldNot(Succeed())
+			err = k8sClient.Update(ctx, &cr)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
