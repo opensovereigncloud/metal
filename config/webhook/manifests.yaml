@@ -13,6 +13,27 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-switch-onmetal-de-v1alpha1-switch
+  failurePolicy: Fail
+  name: mswitch.kb.io
+  rules:
+  - apiGroups:
+    - switch.onmetal.de
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - switches
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-switch-onmetal-de-v1alpha1-switchassignment
   failurePolicy: Fail
   name: mswitchassignment.kb.io
@@ -35,6 +56,27 @@ metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-switch-onmetal-de-v1alpha1-switch
+  failurePolicy: Fail
+  name: vswitch.kb.io
+  rules:
+  - apiGroups:
+    - switch.onmetal.de
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - switches
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   - v1beta1

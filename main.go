@@ -87,6 +87,11 @@ func main() {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&switchv1alpha1.SwitchAssignment{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "SwitchAssignment")
+			os.Exit(1)
+		}
+		if err = (&switchv1alpha1.Switch{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Switch")
+			os.Exit(1)
 		}
 	}
 

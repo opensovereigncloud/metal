@@ -12,6 +12,27 @@ webhooks:
       service:
         name: {{ .Chart.Name }}{{ .Values.webhooks.service.nameSuffix }}
         namespace: {{ .Values.namespace }}
+        path: /mutate-switch-onmetal-de-v1alpha1-switch
+    failurePolicy: Fail
+    name: mswitch.kb.io
+    rules:
+      - apiGroups:
+          - {{ .Values.crd.switch.group }}
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - {{ .Values.crd.switch.plural }}
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      service:
+        name: {{ .Chart.Name }}{{ .Values.webhooks.service.nameSuffix }}
+        namespace: {{ .Values.namespace }}
         path: /mutate-switch-onmetal-de-v1alpha1-switchassignment
     failurePolicy: Fail
     name: mswitchassignment.kb.io
@@ -35,6 +56,27 @@ metadata:
     cert-manager.io/inject-ca-from: {{ .Values.namespace }}/{{ .Chart.Name }}{{ .Values.webhooks.cert.nameSuffix}}
   name: {{ .Chart.Name }}-validating-webhook-configuration
 webhooks:
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      service:
+        name: {{ .Chart.Name }}{{ .Values.webhooks.service.nameSuffix }}
+        namespace: {{ .Values.namespace }}
+        path: /validate-switch-onmetal-de-v1alpha1-switch
+    failurePolicy: Fail
+    name: vswitch.kb.io
+    rules:
+      - apiGroups:
+          - {{ .Values.crd.switch.group }}
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - {{ .Values.crd.switch.plural }}
+    sideEffects: None
   - admissionReviewVersions:
       - v1
       - v1beta1
