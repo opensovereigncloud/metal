@@ -30,6 +30,8 @@ import (
 	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	networkglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
+	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/mod/modfile"
@@ -71,6 +73,7 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
+	// inventory CRD
 	inventoryGlobalPackagePath := reflect.TypeOf(inventoriesv1alpha1.Inventory{}).PkgPath()
 	goModData, err := ioutil.ReadFile(filepath.Join("..", "go.mod"))
 	Expect(err).NotTo(HaveOccurred())
@@ -84,12 +87,44 @@ var _ = BeforeSuite(func() {
 		}
 	}
 	Expect(inventoryGlobalModulePath).NotTo(BeZero())
-
 	inventoryGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", inventoryGlobalModulePath, "config", "crd", "bases")
+
+	// network-global CRD
+	networkGlobalPackagePath := reflect.TypeOf(networkglobalv1alpha1.NetworkGlobal{}).PkgPath()
+	goModData, err = ioutil.ReadFile(filepath.Join("..", "go.mod"))
+	Expect(err).NotTo(HaveOccurred())
+	goModFile, err = modfile.Parse("", goModData, nil)
+	Expect(err).NotTo(HaveOccurred())
+	networkGlobalModulePath := ""
+	for _, req := range goModFile.Require {
+		if strings.HasPrefix(networkGlobalPackagePath, req.Mod.Path) {
+			networkGlobalModulePath = req.Mod.String()
+			break
+		}
+	}
+	Expect(networkGlobalModulePath).NotTo(BeZero())
+	networkGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", networkGlobalModulePath, "config", "crd", "bases")
+
+	// subnet CRD
+	subnetGlobalPackagePath := reflect.TypeOf(subnetv1alpha1.Subnet{}).PkgPath()
+	goModData, err = ioutil.ReadFile(filepath.Join("..", "go.mod"))
+	Expect(err).NotTo(HaveOccurred())
+	goModFile, err = modfile.Parse("", goModData, nil)
+	Expect(err).NotTo(HaveOccurred())
+	subnetGlobalModulePath := ""
+	for _, req := range goModFile.Require {
+		if strings.HasPrefix(subnetGlobalPackagePath, req.Mod.Path) {
+			subnetGlobalModulePath = req.Mod.String()
+			break
+		}
+	}
+	Expect(networkGlobalModulePath).NotTo(BeZero())
+	subnetGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", subnetGlobalModulePath, "config", "crd", "bases")
+
 	switchGlobalCrdPath := filepath.Join("..", "config", "crd", "bases")
 
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath},
+		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath, networkGlobalCrdPath, subnetGlobalCrdPath},
 		ErrorIfCRDPathMissing: true,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "config", "webhook")},
@@ -105,6 +140,10 @@ var _ = BeforeSuite(func() {
 	err = switchv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = inventoriesv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = networkglobalv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	err = subnetv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
