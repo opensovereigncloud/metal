@@ -55,7 +55,6 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 	Context("On SwitchAssignment creation", func() {
 		It("Should not allow to pass invalid fields values", func() {
 			By("Create SwitchAssignment resource")
-			ctx := context.Background()
 
 			cr := SwitchAssignment{
 				ObjectMeta: controllerRuntime.ObjectMeta{

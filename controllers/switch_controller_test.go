@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
@@ -84,8 +85,6 @@ var _ = Describe("Switch controller", func() {
 	Context("Switch CR created", func() {
 		It("Should get role, connection level and subnet defined", func() {
 			By("SwitchAssignment CR installed")
-			ctx := context.Background()
-
 			switchAssignmentSamples := []string{
 				filepath.Join("..", "config", "samples", "assignment-1.onmetal.de_v1alpha1_switchassignment.yaml"),
 				filepath.Join("..", "config", "samples", "assignment-2.onmetal.de_v1alpha1_switchassignment.yaml"),
@@ -107,17 +106,18 @@ var _ = Describe("Switch controller", func() {
 
 				swa.Namespace = SwitchNamespace
 				Expect(k8sClient.Create(ctx, swa)).To(Succeed())
-				createdSwitchAssignment := &switchv1alpha1.SwitchAssignment{}
+				assignment := &switchv1alpha1.SwitchAssignment{}
 				Eventually(func() bool {
 					err := k8sClient.Get(ctx, types.NamespacedName{
 						Namespace: swa.Namespace,
 						Name:      swa.Name,
-					}, createdSwitchAssignment)
+					}, assignment)
 					if err != nil {
 						return false
 					}
 					return true
 				}, timeout, interval).Should(BeTrue())
+				Expect(assignment.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignment.Spec.ChassisID, ":", "-")}))
 			}
 
 			By("Switch CR installed")
@@ -158,24 +158,37 @@ var _ = Describe("Switch controller", func() {
 				}
 				inv.Namespace = DefaultNamespace
 				Expect(k8sClient.Create(ctx, inv)).To(Succeed())
-				createdSwitch := &switchv1alpha1.Switch{}
+				sw := &switchv1alpha1.Switch{}
 				Eventually(func() bool {
-					err := k8sClient.Get(ctx, swNamespacedName, createdSwitch)
+					err := k8sClient.Get(ctx, swNamespacedName, sw)
 					if err != nil {
 						return false
 					}
 					return true
 				}, timeout, interval).Should(BeTrue())
+				Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")}))
 			}
 
+			By("Switch CR reconciliation running")
 			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				err := k8sClient.List(ctx, list)
-				if err != nil {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
+			Expect(k8sClient.List(ctx, list)).Should(Succeed())
+			for _, sw := range list.Items {
+				Eventually(func() bool {
+					if sw.Spec.State.ConnectionLevel == 255 {
+						return false
+					}
+					if strings.HasPrefix(sw.Spec.Hostname, "spine-0") {
+						Expect(sw.Spec.State.ConnectionLevel).ShouldNot(Equal(0))
+					}
+					if strings.HasPrefix(sw.Spec.Hostname, "spine-1") {
+						Expect(sw.Spec.State.ConnectionLevel).ShouldNot(Equal(1))
+					}
+					if strings.HasPrefix(sw.Spec.Hostname, "leaf") {
+						Expect(sw.Spec.State.ConnectionLevel).ShouldNot(Equal(2))
+					}
+					return true
+				}, timeout, interval).Should(BeTrue())
+			}
 		})
 	})
 })

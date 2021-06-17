@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
@@ -55,7 +54,6 @@ var _ = Describe("Switch Webhook", func() {
 	Context("On Switch creation", func() {
 		It("Should set label", func() {
 			By("Create Switch resource")
-			ctx := context.Background()
 			sample := filepath.Join("..", "..", "config", "samples", "spine-0-1.onmetal.de_v1alpha1_switch.yaml")
 			rawInfo := make(map[string]interface{})
 			sw := &Switch{}
