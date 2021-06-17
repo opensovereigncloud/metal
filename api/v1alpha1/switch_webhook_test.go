@@ -24,20 +24,17 @@ import (
 	"strings"
 	"time"
 
-	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("Switch", func() {
+var _ = Describe("Switch Webhook", func() {
 	const (
-		SwitchNamespace  = "onmetal"
-		DefaultNamespace = "default"
-		timeout          = time.Second * 30
-		interval         = time.Millisecond * 250
+		SwitchNamespace = "onmetal"
+		timeout         = time.Second * 30
+		interval        = time.Millisecond * 250
 	)
 
 	AfterEach(func() {
@@ -53,52 +50,24 @@ var _ = Describe("Switch", func() {
 			}
 			return true
 		}, timeout, interval).Should(BeTrue())
-		Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
-		Eventually(func() bool {
-			list := &inventoriesv1alpha1.InventoryList{}
-			err := k8sClient.List(ctx, list)
-			if err != nil {
-				return false
-			}
-			if len(list.Items) > 0 {
-				return false
-			}
-			return true
-		}, timeout, interval).Should(BeTrue())
 	})
 
 	Context("On Switch creation", func() {
 		It("Should set label", func() {
 			By("Create Switch resource")
 			ctx := context.Background()
-
-			sample := filepath.Join("..", "config", "samples", "spine-0-1.onmetal.de_v1alpha1_inventory.yaml")
+			sample := filepath.Join("..", "..", "config", "samples", "spine-0-1.onmetal.de_v1alpha1_switch.yaml")
 			rawInfo := make(map[string]interface{})
-			inv := &inventoriesv1alpha1.Inventory{}
+			sw := &Switch{}
 			sampleBytes, err := ioutil.ReadFile(sample)
 			Expect(err).NotTo(HaveOccurred())
 			err = yaml.Unmarshal(sampleBytes, rawInfo)
-
 			data, err := json.Marshal(rawInfo)
 			Expect(err).NotTo(HaveOccurred())
-			err = json.Unmarshal(data, inv)
+			err = json.Unmarshal(data, sw)
 			Expect(err).NotTo(HaveOccurred())
-
-			swNamespacedName := types.NamespacedName{
-				Namespace: SwitchNamespace,
-				Name:      inv.Name,
-			}
-			inv.Namespace = DefaultNamespace
-			Expect(k8sClient.Create(ctx, inv)).To(Succeed())
-			createdSwitch := &Switch{}
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, swNamespacedName, createdSwitch)
-				if err != nil {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-			Expect(createdSwitch.Labels).Should(Equal(map[string]string{LabelChassisId: strings.ReplaceAll(createdSwitch.Spec.SwitchChassis.ChassisID, ":", "-")}))
+			Expect(k8sClient.Create(ctx, sw)).To(Succeed())
+			Expect(sw.Labels).Should(Equal(map[string]string{LabelChassisId: strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")}))
 		})
 	})
 })

@@ -44,7 +44,6 @@ webhooks:
     - v1alpha1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - switchassignments
   sideEffects: None
@@ -93,7 +92,6 @@ webhooks:
     apiVersions:
     - v1alpha1
     operations:
-    - CREATE
     - UPDATE
     resources:
     - switchassignments
