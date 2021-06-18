@@ -14,75 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package tests
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	networkglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
+	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
-var _ = Describe("Switch controller", func() {
-	const (
-		DefaultNamespace = "default"
-		SwitchNamespace  = "onmetal"
-		timeout          = time.Second * 30
-		interval         = time.Millisecond * 250
-	)
-
-	AfterEach(func() {
-		Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
-		Eventually(func() bool {
-			list := &inventoriesv1alpha1.InventoryList{}
-			err := k8sClient.List(ctx, list)
-			if err != nil {
-				return false
-			}
-			if len(list.Items) > 0 {
-				return false
-			}
-			return true
-		}, timeout, interval).Should(BeTrue())
-		Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(SwitchNamespace))).To(Succeed())
-		Eventually(func() bool {
-			list := &switchv1alpha1.SwitchList{}
-			err := k8sClient.List(ctx, list)
-			if err != nil {
-				return false
-			}
-			if len(list.Items) > 0 {
-				return false
-			}
-			return true
-		}, timeout, interval).Should(BeTrue())
-		Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.SwitchAssignment{}, client.InNamespace(SwitchNamespace))).To(Succeed())
-		Eventually(func() bool {
-			list := &switchv1alpha1.SwitchAssignmentList{}
-			err := k8sClient.List(ctx, list)
-			if err != nil {
-				return false
-			}
-			if len(list.Items) > 0 {
-				return false
-			}
-			return true
-		}, timeout, interval).Should(BeTrue())
-	})
-
-	Context("Switch CR created", func() {
-		It("Should get role, connection level and subnet defined", func() {
-			By("SwitchAssignment CR installed")
+var _ = Describe("Integration between operators", func() {
+	Context("Operators interaction", func() {
+		It("Prepare assignments", func() {
 			switchAssignmentSamples := []string{
 				filepath.Join("..", "config", "samples", "assignment-1.onmetal.de_v1alpha1_switchassignment.yaml"),
 				filepath.Join("..", "config", "samples", "assignment-2.onmetal.de_v1alpha1_switchassignment.yaml"),
@@ -102,7 +56,7 @@ var _ = Describe("Switch controller", func() {
 				err = json.Unmarshal(data, swa)
 				Expect(err).NotTo(HaveOccurred())
 
-				swa.Namespace = SwitchNamespace
+				swa.Namespace = OnmetalNamespace
 				Expect(k8sClient.Create(ctx, swa)).To(Succeed())
 				assignment := &switchv1alpha1.SwitchAssignment{}
 				Eventually(func() bool {
@@ -117,8 +71,53 @@ var _ = Describe("Switch controller", func() {
 				}, timeout, interval).Should(BeTrue())
 				Expect(assignment.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignment.Spec.ChassisID, ":", "-")}))
 			}
+		})
+		It("Prepare networks", func() {
+			ng := &networkglobalv1alpha1.NetworkGlobal{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      UnderlayNetwork,
+					Namespace: OnmetalNamespace,
+				},
+				Spec: networkglobalv1alpha1.NetworkGlobalSpec{
+					Description: "test network global",
+				},
+			}
+			Expect(k8sClient.Create(ctx, ng)).To(Succeed())
+			subnetCidr, err := networkglobalv1alpha1.CIDRFromString(SubnetCIDR)
+			Expect(err).NotTo(HaveOccurred())
+			subnet := &subnetv1alpha1.Subnet{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      SubnetName,
+					Namespace: OnmetalNamespace,
+				},
+				Spec: subnetv1alpha1.SubnetSpec{
+					CIDR:              *subnetCidr,
+					ParentSubnetName:  "",
+					NetworkGlobalName: UnderlayNetwork,
+					Regions:           []string{TestRegion},
+					AvailabilityZones: []string{TestAvailabilityZone},
+				},
+			}
+			Expect(k8sClient.Create(ctx, subnet)).To(Succeed())
 
-			By("Switch CR installed")
+			createdSubnet := &subnetv1alpha1.Subnet{}
+			subnetNamespacedName := types.NamespacedName{
+				Namespace: OnmetalNamespace,
+				Name:      SubnetName,
+			}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, subnetNamespacedName, createdSubnet)
+				if err != nil {
+					return false
+				}
+				if createdSubnet.Status.State != subnetv1alpha1.CFinishedSubnetState {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+		})
+		It("Prepare switches", func() {
+			By("Create inventories")
 			switchesSamples := []string{
 				filepath.Join("..", "config", "samples", "spine-0-1.onmetal.de_v1alpha1_inventory.yaml"),
 				filepath.Join("..", "config", "samples", "spine-0-2.onmetal.de_v1alpha1_inventory.yaml"),
@@ -151,7 +150,7 @@ var _ = Describe("Switch controller", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				swNamespacedName := types.NamespacedName{
-					Namespace: SwitchNamespace,
+					Namespace: OnmetalNamespace,
 					Name:      inv.Name,
 				}
 				inv.Namespace = DefaultNamespace
@@ -167,7 +166,7 @@ var _ = Describe("Switch controller", func() {
 				Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")}))
 			}
 
-			By("Switch CR reconciliation running")
+			By("Switches reconciliation running")
 			Eventually(func() bool {
 				list := &switchv1alpha1.SwitchList{}
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
@@ -183,6 +182,21 @@ var _ = Describe("Switch controller", func() {
 					}
 					if strings.HasPrefix(sw.Spec.Hostname, "leaf") {
 						Expect(sw.Spec.State.ConnectionLevel).ShouldNot(Equal(2))
+					}
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			By("Subnets defining")
+			Eventually(func() bool {
+				list := &switchv1alpha1.SwitchList{}
+				Expect(k8sClient.List(ctx, list)).Should(Succeed())
+				for _, sw := range list.Items {
+					if sw.Spec.SouthSubnetV4 == nil {
+						return false
+					}
+					if sw.Spec.SouthSubnetV4.CIDR == "" {
+						return false
 					}
 				}
 				return true

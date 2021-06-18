@@ -23,7 +23,6 @@ webhooks:
     - v1alpha1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - switches
   sideEffects: None
@@ -44,7 +43,6 @@ webhooks:
     - v1alpha1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - switchassignments
   sideEffects: None

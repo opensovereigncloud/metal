@@ -41,6 +41,7 @@ type SwitchAssignmentStatus struct{}
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=swa
+//+kubebuilder:printcolumn:name="Switch Chassis ID",type=string,JSONPath=`.spec.chassisId`,description="switch's chassis Id"
 //+kubebuilder:printcolumn:name="Region",type=string,JSONPath=`.spec.region`,description="switch's region"
 //+kubebuilder:printcolumn:name="Availability Zone",type=string,JSONPath=`.spec.availabilityZone`,description="switch's AZ"
 

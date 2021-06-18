@@ -18,6 +18,10 @@ spec:
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
+        - description: switch's chassis Id
+          jsonPath: .spec.chassisId
+          name: Switch Chassis ID
+          type: string
         - description: switch's region
           jsonPath: .spec.region
           name: Region

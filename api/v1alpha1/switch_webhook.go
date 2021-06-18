@@ -36,16 +36,20 @@ func (sw *Switch) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-//+kubebuilder:webhook:path=/mutate-switch-onmetal-de-v1alpha1-switch,mutating=true,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switches,verbs=create;update,versions=v1alpha1,name=mswitch.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/mutate-switch-onmetal-de-v1alpha1-switch,mutating=true,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switches,verbs=create,versions=v1alpha1,name=mswitch.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &Switch{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (sw *Switch) Default() {
 	switchLog.Info("default", "name", sw.Name)
-	sw.Labels = map[string]string{}
-	if sw.Spec.SwitchChassis.ChassisID != "" {
-		sw.Labels[LabelChassisId] = strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")
+	if sw.Labels == nil {
+		sw.Labels = map[string]string{}
+	}
+	if _, ok := sw.Labels[LabelChassisId]; !ok {
+		if sw.Spec.SwitchChassis.ChassisID != "" {
+			sw.Labels[LabelChassisId] = strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")
+		}
 	}
 }
 

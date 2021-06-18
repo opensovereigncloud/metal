@@ -22,7 +22,6 @@ webhooks:
           - v1alpha1
         operations:
           - CREATE
-          - UPDATE
         resources:
           - {{ .Values.crd.switch.plural }}
     sideEffects: None
@@ -43,7 +42,6 @@ webhooks:
           - v1alpha1
         operations:
           - CREATE
-          - UPDATE
         resources:
           - {{ .Values.crd.switchAssignment.plural }}
     sideEffects: None

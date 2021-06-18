@@ -23,7 +23,6 @@ import (
 	"net"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
@@ -145,7 +144,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 	}
-	updateSouthInterfacesAddresses(switchRes)
+	switchRes.UpdateSouthInterfacesAddresses()
 	r.updateNorthInterfacesAddresses(switchRes, ctx)
 
 	if !reflect.DeepEqual(oldRes, switchRes) {
@@ -316,20 +315,20 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 			if minConnLevel != 255 && minConnLevel < sw.Spec.State.ConnectionLevel {
 				sw.Spec.State.ConnectionLevel = minConnLevel + 1
 				northNeighboursMap := constructNeighboursFromSwitchList(switchNorthNeighbours)
-				updateNorthConnections(sw, northNeighboursMap)
+				sw.UpdateNorthConnections(northNeighboursMap)
 				ncm := map[string]struct{}{}
 				for _, conn := range sw.Spec.State.NorthConnections.Connections {
 					if _, ok := ncm[conn.ChassisID]; !ok {
 						ncm[conn.ChassisID] = struct{}{}
 					}
 				}
-				removeFromSouthConnections(sw, ncm)
+				sw.RemoveFromSouthConnections(ncm)
 				switchSouthNeighbours, err := r.findSouthNeighboursSwitches(sw, ctx)
 				if err != nil {
 					return err
 				}
 				southNeighboursMap := constructNeighboursFromSwitchList(switchSouthNeighbours.Items)
-				updateSouthConnections(sw, southNeighboursMap)
+				sw.UpdateSouthConnections(southNeighboursMap)
 				sw.Spec.State.NorthConnections.Count = len(sw.Spec.State.NorthConnections.Connections)
 				sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
 			}
@@ -526,54 +525,6 @@ func constructNeighboursFromSwitchList(swl []switchv1alpha1.Switch) map[string]s
 	return neighbours
 }
 
-//updateNorthConnections updates switch resource north connections list.
-func updateNorthConnections(sw *switchv1alpha1.Switch, ncm map[string]switchv1alpha1.NeighbourSpec) {
-	connections := make([]switchv1alpha1.NeighbourSpec, 0)
-	if sw.Spec.State.NorthConnections.Connections == nil || len(sw.Spec.State.NorthConnections.Connections) == 0 {
-		for _, value := range ncm {
-			connections = append(connections, value)
-		}
-	} else {
-		connections = sw.Spec.State.NorthConnections.Connections
-		for i, neighbour := range connections {
-			if _, ok := ncm[neighbour.ChassisID]; ok {
-				connections[i] = ncm[neighbour.ChassisID]
-			}
-		}
-	}
-	sw.Spec.State.NorthConnections.Connections = connections
-}
-
-//updateSouthConnections updates switch resource south connections list.
-func updateSouthConnections(sw *switchv1alpha1.Switch, ncm map[string]switchv1alpha1.NeighbourSpec) {
-	connections := make([]switchv1alpha1.NeighbourSpec, 0)
-	if sw.Spec.State.SouthConnections.Connections == nil || len(sw.Spec.State.SouthConnections.Connections) == 0 {
-		for _, value := range ncm {
-			connections = append(connections, value)
-		}
-	} else {
-		connections = sw.Spec.State.SouthConnections.Connections
-		for i, neighbour := range connections {
-			if _, ok := ncm[neighbour.ChassisID]; ok {
-				connections[i] = ncm[neighbour.ChassisID]
-			}
-		}
-	}
-	sw.Spec.State.SouthConnections.Connections = connections
-}
-
-//removeFromSouthConnections removes item from switch resource
-//south connections list if this item presents in north connections.
-func removeFromSouthConnections(sw *switchv1alpha1.Switch, ncm map[string]struct{}) {
-	connections := make([]switchv1alpha1.NeighbourSpec, 0)
-	for _, item := range sw.Spec.State.SouthConnections.Connections {
-		if _, ok := ncm[item.ChassisID]; !ok {
-			connections = append(connections, item)
-		}
-	}
-	sw.Spec.State.SouthConnections.Connections = connections
-}
-
 //getSuitableSubnet finds the subnet resource, that fits address
 //type, region, availability zones and addresses count. It returns
 //pointers to the CIDR and subnet resource objects or an error.
@@ -633,39 +584,6 @@ func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1a
 	return minSuitableNet
 }
 
-//updateSouthInterfacesAddresses sets IP addresses for switch
-//south interfaces according to switch south subnets values.
-func updateSouthInterfacesAddresses(sw *switchv1alpha1.Switch) {
-	interfaces := sw.GetSwitchPorts()
-	sort.Slice(interfaces, func(i, j int) bool {
-		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[i].Name, "Ethernet", ""))
-		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[j].Name, "Ethernet", ""))
-		return leftIndex < rightIndex
-	})
-	for _, iface := range interfaces {
-		if sw.Spec.SouthSubnetV4 != nil && iface.IPv4 == "" && iface.LLDPChassisID != "" {
-			for _, item := range sw.Spec.State.SouthConnections.Connections {
-				if item.ChassisID == iface.LLDPChassisID {
-					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV4.CIDR)
-					ifaceSubnet := getInterfaceSubnet(network, iface, subnetv1alpha1.CIPv4SubnetType)
-					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
-					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), switchv1alpha1.CIPv4InterfaceSubnetMask)
-				}
-			}
-		}
-		if sw.Spec.SouthSubnetV6 != nil && iface.IPv6 == "" && iface.LLDPChassisID != "" {
-			for _, item := range sw.Spec.State.SouthConnections.Connections {
-				if item.ChassisID == iface.LLDPChassisID {
-					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV6.CIDR)
-					ifaceSubnet := getInterfaceSubnet(network, iface, subnetv1alpha1.CIPv6SubnetType)
-					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
-					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), switchv1alpha1.CIPv6InterfaceSubnetMask)
-				}
-			}
-		}
-	}
-}
-
 //updateNorthInterfacesAddresses sets IP addresses for switch
 //north interfaces according to north switch subnets values.
 func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Switch, ctx context.Context) {
@@ -711,20 +629,5 @@ func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Swi
 				}
 			}
 		}
-	}
-}
-
-func getInterfaceSubnet(network *net.IPNet, iface *switchv1alpha1.InterfaceSpec, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
-	index, _ := strconv.Atoi(strings.ReplaceAll(iface.Name, "Ethernet", ""))
-	prefix, _ := network.Mask.Size()
-	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(addrType)-prefix, index)
-	return ifaceNet
-}
-
-func getInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int {
-	if addrType == subnetv1alpha1.CIPv4SubnetType {
-		return switchv1alpha1.CIPv4InterfaceSubnetMask
-	} else {
-		return switchv1alpha1.CIPv6InterfaceSubnetMask
 	}
 }
