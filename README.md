@@ -43,14 +43,15 @@ command to deploy it:
     make install-cert-manager
 
 ### Build and install
-In order to build and deploy, execute following command set, where:
-- <registry_name>: name of docker registry (i.e. `localhost:5000` for local registry)
-- <image_name>: name for docker image
-- <image_tag>: tag for docker image
-- <username>: username to access git
-- <access_token>: token to access git
+In order to build and deploy, execute following command set:
 
-
+    # used variables:
+    - <registry_name>: name of docker registry (i.e. `localhost:5000` for local registry)
+    - <image_name>: name for docker image
+    - <image_tag>: tag for docker image
+    - <username>: username to access git
+    - <access_token>: token to access git
+    
     # install crds. You also need to install k8s-inventory/inventory crds by yourself
     make install
     # build container and push to local registry
