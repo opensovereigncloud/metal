@@ -19,6 +19,7 @@ package tests
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net"
 	"path/filepath"
 	"strings"
 
@@ -200,8 +201,8 @@ var _ = Describe("Integration between operators", func() {
 			}
 
 			By("Switches reconciliation running")
+			list := &switchv1alpha1.SwitchList{}
 			Eventually(func() bool {
-				list := &switchv1alpha1.SwitchList{}
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
 					if sw.Spec.State.ConnectionLevel == 255 {
@@ -222,7 +223,6 @@ var _ = Describe("Integration between operators", func() {
 
 			By("Subnets defining")
 			Eventually(func() bool {
-				list := &switchv1alpha1.SwitchList{}
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
 					if sw.Spec.SouthSubnetV4 == nil || sw.Spec.SouthSubnetV6 == nil {
@@ -241,6 +241,31 @@ var _ = Describe("Integration between operators", func() {
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
+
+			Expect(checkTypesFunctions()).Should(BeTrue())
 		})
 	})
 })
+
+func checkTypesFunctions() bool {
+	targetNamespacedName := types.NamespacedName{
+		Namespace: OnmetalNamespace,
+		Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+	}
+	tgtSw := &switchv1alpha1.Switch{}
+	Expect(k8sClient.Get(ctx, targetNamespacedName, tgtSw)).Should(Succeed())
+
+	targetIpv4Mask := net.CIDRMask(23, 32)
+	targetIpv6Mask := net.CIDRMask(120, 128)
+
+	Expect(tgtSw.CheckNorthNeighboursDataUpdateNeeded()).Should(BeFalse())
+	Expect(tgtSw.CheckSouthNeighboursDataUpdateNeeded()).Should(BeFalse())
+	Expect(tgtSw.CheckMachinesConnected()).Should(BeFalse())
+	ipv4addressCount := tgtSw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
+	ipv6addressCount := tgtSw.GetAddressNeededCount(subnetv1alpha1.CIPv6SubnetType)
+	Expect(tgtSw.GetNeededMask(subnetv1alpha1.CIPv4SubnetType, float64(ipv4addressCount))).Should(Equal(targetIpv4Mask))
+	Expect(tgtSw.GetNeededMask(subnetv1alpha1.CIPv6SubnetType, float64(ipv6addressCount))).Should(Equal(targetIpv6Mask))
+	Expect(len(tgtSw.GetSwitchPorts())).Should(Equal(32))
+
+	return true
+}

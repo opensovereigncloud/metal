@@ -75,7 +75,7 @@ const (
 	SubnetNameV4         = "switch-subnet-v4"
 	SubnetNameV6         = "switch-subnet-v6"
 	SubnetIPv4CIDR       = "100.64.0.0/12"
-	SubnetIPv6CIDR       = "2001:db8:abcd:0012::0/12"
+	SubnetIPv6CIDR       = "2001:db8:abcd:0012::0/64"
 	TestRegion           = "EU-West"
 	TestAvailabilityZone = "A"
 )
