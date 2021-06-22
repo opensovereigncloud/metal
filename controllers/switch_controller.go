@@ -355,8 +355,7 @@ func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.
 		return err
 	}
 	if sw.Spec.SouthSubnetV4 == nil {
-		addressesCount := sw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
-		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv4SubnetType, regions, zones, addressesCount)
+		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv4SubnetType, regions, zones)
 		if err != nil {
 			return err
 		}
@@ -374,8 +373,7 @@ func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.
 		}
 	}
 	if sw.Spec.SouthSubnetV6 == nil {
-		addressCount := sw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
-		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv6SubnetType, regions, zones, addressCount)
+		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv6SubnetType, regions, zones)
 		if err != nil {
 			return err
 		}
@@ -533,17 +531,18 @@ func getSuitableSubnet(
 	subnetList *subnetv1alpha1.SubnetList,
 	addressType subnetv1alpha1.SubnetAddressType,
 	regions []string,
-	zones []string,
-	addressesNeeded int64) (*netglobalv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
+	zones []string) (*netglobalv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
 
+	addressesNeeded := sw.GetAddressNeededCount(addressType)
 	for _, sn := range subnetList.Items {
 		if sn.Spec.NetworkGlobalName == "underlay" &&
+			sn.Status.Type == addressType &&
 			reflect.DeepEqual(sn.Spec.Regions, regions) &&
 			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
 			addressesLeft := sn.Status.CapacityLeft
 			if sn.Status.Type == addressType && addressesLeft.CmpInt64(addressesNeeded) >= 0 {
 				minVacantCIDR := getMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)
-				mask := sw.GetNeededMask(subnetv1alpha1.CIPv4SubnetType, float64(addressesNeeded))
+				mask := sw.GetNeededMask(addressType, float64(addressesNeeded))
 				addr := minVacantCIDR.Net.IP
 				network := &net.IPNet{
 					IP:   addr,

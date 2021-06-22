@@ -72,6 +72,7 @@ var _ = Describe("Integration between operators", func() {
 				Expect(assignment.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignment.Spec.ChassisID, ":", "-")}))
 			}
 		})
+
 		It("Prepare networks", func() {
 			ng := &networkglobalv1alpha1.NetworkGlobal{
 				ObjectMeta: v1.ObjectMeta{
@@ -83,39 +84,71 @@ var _ = Describe("Integration between operators", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, ng)).To(Succeed())
-			subnetCidr, err := networkglobalv1alpha1.CIDRFromString(SubnetCIDR)
+			subnetCidrV4, err := networkglobalv1alpha1.CIDRFromString(SubnetIPv4CIDR)
 			Expect(err).NotTo(HaveOccurred())
-			subnet := &subnetv1alpha1.Subnet{
+			subnetV4 := &subnetv1alpha1.Subnet{
 				ObjectMeta: v1.ObjectMeta{
-					Name:      SubnetName,
+					Name:      SubnetNameV4,
 					Namespace: OnmetalNamespace,
 				},
 				Spec: subnetv1alpha1.SubnetSpec{
-					CIDR:              *subnetCidr,
+					CIDR:              *subnetCidrV4,
 					ParentSubnetName:  "",
 					NetworkGlobalName: UnderlayNetwork,
 					Regions:           []string{TestRegion},
 					AvailabilityZones: []string{TestAvailabilityZone},
 				},
 			}
-			Expect(k8sClient.Create(ctx, subnet)).To(Succeed())
-
-			createdSubnet := &subnetv1alpha1.Subnet{}
+			Expect(k8sClient.Create(ctx, subnetV4)).To(Succeed())
+			createdSubnetV4 := &subnetv1alpha1.Subnet{}
 			subnetNamespacedName := types.NamespacedName{
 				Namespace: OnmetalNamespace,
-				Name:      SubnetName,
+				Name:      SubnetNameV4,
 			}
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, subnetNamespacedName, createdSubnet)
+				err := k8sClient.Get(ctx, subnetNamespacedName, createdSubnetV4)
 				if err != nil {
 					return false
 				}
-				if createdSubnet.Status.State != subnetv1alpha1.CFinishedSubnetState {
+				if createdSubnetV4.Status.State != subnetv1alpha1.CFinishedSubnetState {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			subnetCidrV6, err := networkglobalv1alpha1.CIDRFromString(SubnetIPv6CIDR)
+			Expect(err).NotTo(HaveOccurred())
+			subnetV6 := &subnetv1alpha1.Subnet{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      SubnetNameV6,
+					Namespace: OnmetalNamespace,
+				},
+				Spec: subnetv1alpha1.SubnetSpec{
+					CIDR:              *subnetCidrV6,
+					ParentSubnetName:  "",
+					NetworkGlobalName: UnderlayNetwork,
+					Regions:           []string{TestRegion},
+					AvailabilityZones: []string{TestAvailabilityZone},
+				},
+			}
+			Expect(k8sClient.Create(ctx, subnetV6)).To(Succeed())
+			createdSubnetV6 := &subnetv1alpha1.Subnet{}
+			subnetNamespacedName = types.NamespacedName{
+				Namespace: OnmetalNamespace,
+				Name:      SubnetNameV6,
+			}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, subnetNamespacedName, createdSubnetV6)
+				if err != nil {
+					return false
+				}
+				if createdSubnetV6.Status.State != subnetv1alpha1.CFinishedSubnetState {
 					return false
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
 		})
+
 		It("Prepare switches", func() {
 			By("Create inventories")
 			switchesSamples := []string{
@@ -192,11 +225,18 @@ var _ = Describe("Integration between operators", func() {
 				list := &switchv1alpha1.SwitchList{}
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
-					if sw.Spec.SouthSubnetV4 == nil {
+					if sw.Spec.SouthSubnetV4 == nil || sw.Spec.SouthSubnetV6 == nil {
 						return false
 					}
-					if sw.Spec.SouthSubnetV4.CIDR == "" {
+					if sw.Spec.SouthSubnetV4.CIDR == "" || sw.Spec.SouthSubnetV6.CIDR == "" {
 						return false
+					}
+					for _, iface := range sw.GetSwitchPorts() {
+						if iface.LLDPChassisID != "" {
+							if iface.IPv4 == "" || iface.IPv6 == "" {
+								return false
+							}
+						}
 					}
 				}
 				return true

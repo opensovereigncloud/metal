@@ -33,6 +33,8 @@ import (
 	inventory "github.com/onmetal/k8s-inventory/controllers"
 	networkglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
 	networkglobal "github.com/onmetal/k8s-network-global/controllers"
+	sizev1alpha1 "github.com/onmetal/k8s-size/api/v1alpha1"
+	size "github.com/onmetal/k8s-size/controllers"
 	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
 	subnet "github.com/onmetal/k8s-subnet/controllers"
 	. "github.com/onsi/ginkgo"
@@ -70,8 +72,10 @@ const (
 	timeout              = time.Second * 30
 	interval             = time.Millisecond * 250
 	UnderlayNetwork      = "underlay"
-	SubnetName           = "switch-subnet"
-	SubnetCIDR           = "100.64.0.0/12"
+	SubnetNameV4         = "switch-subnet-v4"
+	SubnetNameV6         = "switch-subnet-v6"
+	SubnetIPv4CIDR       = "100.64.0.0/12"
+	SubnetIPv6CIDR       = "2001:db8:abcd:0012::0/12"
 	TestRegion           = "EU-West"
 	TestAvailabilityZone = "A"
 )
@@ -124,6 +128,23 @@ var _ = BeforeSuite(func() {
 	subnetGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", subnetGlobalModulePath, "config", "crd", "bases")
 	crdPaths = append(crdPaths, subnetGlobalCrdPath)
 
+	By("Set up size CRD paths")
+	sizeGlobalPackagePath := reflect.TypeOf(sizev1alpha1.Size{}).PkgPath()
+	goModData, err = ioutil.ReadFile(filepath.Join("..", "go.mod"))
+	Expect(err).NotTo(HaveOccurred())
+	goModFile, err = modfile.Parse("", goModData, nil)
+	Expect(err).NotTo(HaveOccurred())
+	sizeGlobalModulePath := ""
+	for _, req := range goModFile.Require {
+		if strings.HasPrefix(sizeGlobalPackagePath, req.Mod.Path) {
+			sizeGlobalModulePath = req.Mod.String()
+			break
+		}
+	}
+	Expect(sizeGlobalModulePath).NotTo(BeZero())
+	sizeGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", sizeGlobalModulePath, "config", "crd", "bases")
+	crdPaths = append(crdPaths, sizeGlobalCrdPath)
+
 	By("Set up inventory CRD paths")
 	inventoryGlobalPackagePath := reflect.TypeOf(inventoriesv1alpha1.Inventory{}).PkgPath()
 	goModData, err = ioutil.ReadFile(filepath.Join("..", "go.mod"))
@@ -161,6 +182,8 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	globalScheme := scheme.Scheme
+	err = sizev1alpha1.AddToScheme(globalScheme)
+	Expect(err).NotTo(HaveOccurred())
 	err = switchv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = inventoriesv1alpha1.AddToScheme(globalScheme)
@@ -175,6 +198,29 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: globalScheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+
+	By("Set up k8s-size manager")
+	sizeScheme := scheme.Scheme
+	err = sizev1alpha1.AddToScheme(sizeScheme)
+	Expect(err).NotTo(HaveOccurred())
+	k8sSizeManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             sizeScheme,
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+	})
+	Expect(err).ToNot(HaveOccurred())
+	err = (&size.SizeReconciler{
+		Client: k8sSizeManager.GetClient(),
+		Scheme: k8sSizeManager.GetScheme(),
+		Log:    ctrl.Log.WithName("k8s-size").WithName("size"),
+	}).SetupWithManager(k8sSizeManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		err = k8sSizeManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred())
+	}()
 
 	By("Set up k8s-inventory manager")
 	inventoryScheme := scheme.Scheme

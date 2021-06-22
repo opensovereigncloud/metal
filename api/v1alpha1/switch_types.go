@@ -322,28 +322,16 @@ func (sw *Switch) CheckNorthNeighboursDataUpdateNeeded() bool {
 //GetNeededMask calculates the minimum network mask needed to fit
 //switch's interfaces and needed IP addresses amount.
 func (sw *Switch) GetNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount float64) net.IPMask {
-	bits := uint8(0)
-	if addrType == subnetv1alpha1.CIPv4SubnetType {
-		addressesCount = float64(sw.GetAddressNeededCount(addrType))
-		bits = 32
-	}
-	if addrType == subnetv1alpha1.CIPv6SubnetType {
-		addressesCount = float64(sw.GetAddressNeededCount(addrType))
-		bits = 128
-	}
+	bits := 32
 	pow := 2.0
 	for math.Pow(2, pow) < addressesCount {
 		pow++
 	}
-	maskLength := bits - uint8(pow)
-	mask := (0xFFFFFFFF << (bits - maskLength)) & 0xFFFFFFFF
-	netMask := make([]byte, 0, 4)
-	for i := 1; i <= 4; i++ {
-		tmp := byte(mask >> (bits - 8) & 0xFF)
-		netMask = append(netMask, tmp)
-		bits -= 8
+	if addrType == subnetv1alpha1.CIPv6SubnetType {
+		bits = 128
 	}
-	return netMask
+	ones := bits - int(pow)
+	return net.CIDRMask(ones, bits)
 }
 
 //GetAddressNeededCount calculates the number of IP addresses
@@ -382,7 +370,7 @@ func (sw *Switch) UpdateSouthInterfacesAddresses() {
 			for _, item := range sw.Spec.State.SouthConnections.Connections {
 				if item.ChassisID == iface.LLDPChassisID {
 					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV4.CIDR)
-					ifaceSubnet := getInterfaceSubnet(network, iface, subnetv1alpha1.CIPv4SubnetType)
+					ifaceSubnet := iface.getInterfaceSubnet(network, subnetv1alpha1.CIPv4SubnetType)
 					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
 					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
 				}
@@ -392,9 +380,9 @@ func (sw *Switch) UpdateSouthInterfacesAddresses() {
 			for _, item := range sw.Spec.State.SouthConnections.Connections {
 				if item.ChassisID == iface.LLDPChassisID {
 					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV6.CIDR)
-					ifaceSubnet := getInterfaceSubnet(network, iface, subnetv1alpha1.CIPv6SubnetType)
+					ifaceSubnet := iface.getInterfaceSubnet(network, subnetv1alpha1.CIPv6SubnetType)
 					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
-					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
+					iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
 				}
 			}
 		}
@@ -449,7 +437,7 @@ func (sw *Switch) RemoveFromSouthConnections(ncm map[string]struct{}) {
 	sw.Spec.State.SouthConnections.Connections = connections
 }
 
-func getInterfaceSubnet(network *net.IPNet, iface *InterfaceSpec, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
+func (iface *InterfaceSpec) getInterfaceSubnet(network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
 	index, _ := strconv.Atoi(strings.ReplaceAll(iface.Name, "Ethernet", ""))
 	prefix, _ := network.Mask.Size()
 	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(addrType)-prefix, index)
