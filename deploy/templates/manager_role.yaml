@@ -4,13 +4,22 @@ metadata:
   name: "{{ .Chart.Name }}-manager-role"
 rules:
   - apiGroups:
-      - ""
+    - ipam.onmetal.de
     resources:
-      - configmaps
+      - subnets
     verbs:
       - get
       - list
+      - update
       - watch
+  - apiGroups:
+      - ipam.onmetal.de
+    resources:
+      - subnets/status
+    verbs:
+      - get
+      - patch
+      - update
   - apiGroups:
       - machine.onmetal.de
     resources:
@@ -19,44 +28,6 @@ rules:
       - get
       - list
       - watch
-  - apiGroups:
-      - machine.onmetal.de
-    resources:
-      - inventories/status
-    verbs:
-      - get
-  - apiGroups:
-      - machine.onmetal.de
-    resources:
-      - machines
-    verbs:
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - machine.onmetal.de
-    resources:
-      - machines/status
-    verbs:
-      - get
-  - apiGroups:
-      - machine.onmetal.de
-    resources:
-      - subnets
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - machine.onmetal.de
-    resources:
-      - subnets/status
-    verbs:
-      - get
-      - patch
-      - update
   - apiGroups:
       - {{ .Values.crd.switch.group }}
     resources:
