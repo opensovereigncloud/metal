@@ -27,7 +27,6 @@ import (
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-logr/logr"
-	netglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,7 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
@@ -446,7 +445,7 @@ func (r *SwitchReconciler) finalizeSwitch(sw *switchv1alpha1.Switch, ctx context
 			r.Log.Error(err, "failed to get subnet")
 			return err
 		}
-		cidrToRelease, err := netglobalv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV4.CIDR)
+		cidrToRelease, err := subnetv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV4.CIDR)
 		if err != nil {
 			r.Log.Error(err, "failed to get switch south network CIDR to release")
 			return err
@@ -476,7 +475,7 @@ func (r *SwitchReconciler) finalizeSwitch(sw *switchv1alpha1.Switch, ctx context
 			r.Log.Error(err, "failed to get subnet")
 			return err
 		}
-		cidrToRelease, err := netglobalv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV6.CIDR)
+		cidrToRelease, err := subnetv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV6.CIDR)
 		if err != nil {
 			r.Log.Error(err, "failed to get switch south network CIDR to release")
 			return err
@@ -531,11 +530,11 @@ func getSuitableSubnet(
 	subnetList *subnetv1alpha1.SubnetList,
 	addressType subnetv1alpha1.SubnetAddressType,
 	regions []string,
-	zones []string) (*netglobalv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
+	zones []string) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
 
 	addressesNeeded := sw.GetAddressNeededCount(addressType)
 	for _, sn := range subnetList.Items {
-		if sn.Spec.NetworkGlobalName == "underlay" &&
+		if sn.Spec.NetworkName == "underlay" &&
 			sn.Status.Type == addressType &&
 			reflect.DeepEqual(sn.Spec.Regions, regions) &&
 			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
@@ -548,7 +547,7 @@ func getSuitableSubnet(
 					IP:   addr,
 					Mask: mask,
 				}
-				cidrCandidate := &netglobalv1alpha1.CIDR{Net: network}
+				cidrCandidate := &subnetv1alpha1.CIDR{Net: network}
 				if sn.CanReserve(cidrCandidate) {
 					if err := sn.Reserve(cidrCandidate); err != nil {
 						return nil, nil, err
@@ -565,7 +564,7 @@ func getSuitableSubnet(
 //getMinimalVacantCIDR calculates the minimal suitable network
 //from the networks list provided as argument according to the
 //needed addresses count. It returns the pointer to the CIDR object.
-func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *netglobalv1alpha1.CIDR {
+func getMinimalVacantCIDR(vacant []subnetv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *subnetv1alpha1.CIDR {
 	zeroNetString := ""
 	if addressType == subnetv1alpha1.CIPv4SubnetType {
 		zeroNetString = switchv1alpha1.CIPv4ZeroNet
@@ -573,7 +572,7 @@ func getMinimalVacantCIDR(vacant []netglobalv1alpha1.CIDR, addressType subnetv1a
 		zeroNetString = switchv1alpha1.CIPv6ZeroNet
 	}
 	_, zeroNet, _ := net.ParseCIDR(zeroNetString)
-	minSuitableNet := netglobalv1alpha1.CIDRFromNet(zeroNet)
+	minSuitableNet := subnetv1alpha1.CIDRFromNet(zeroNet)
 	for _, cidr := range vacant {
 		if cidr.AddressCapacity().Cmp(minSuitableNet.AddressCapacity()) < 0 &&
 			cidr.AddressCapacity().Cmp(new(big.Int).SetInt64(addressesCount)) >= 0 {

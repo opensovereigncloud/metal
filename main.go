@@ -36,7 +36,7 @@ import (
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 
-	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
