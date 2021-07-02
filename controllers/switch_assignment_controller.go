@@ -38,7 +38,6 @@ type SwitchAssignmentReconciler struct {
 
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switchassignments,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=list;update
-//+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/status,verbs=update;patch
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to

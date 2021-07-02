@@ -1,5 +1,5 @@
-apiVersion: machine.onmetal.de/v1alpha1
-kind: NetworkGlobal
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: Network
 metadata:
   name: underlay
   namespace: onmetal
