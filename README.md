@@ -22,8 +22,7 @@ you also need to have [Docker](https://www.docker.com/) or its alternative insta
 Current operator depends on the following operators:
 - [onmetal/k8s-size](https://github.com/onmetal/k8s-size)
 - [onmetal/k8s-inventory](https://github.com/onmetal/k8s-inventory)
-- [onmetal/k8s-network-global](https://github.com/onmetal/k8s-network-global)
-- [onmetal/k8s-subnet](https://github.com/onmetal/k8s-subnet)
+- [onmetal/ipam](https://github.com/onmetal/ipam)
 
 ### Prepare environment
 If you have access to the docker registry and k8s installation that you can use for development purposes, you may skip

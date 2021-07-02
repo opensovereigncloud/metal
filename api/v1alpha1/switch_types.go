@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
-	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

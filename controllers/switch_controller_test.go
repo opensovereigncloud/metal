@@ -19,70 +19,24 @@ package controllers
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net"
 	"path/filepath"
 	"strings"
-	"time"
 
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
-var _ = Describe("Switch controller", func() {
-	const (
-		DefaultNamespace = "default"
-		SwitchNamespace  = "onmetal"
-		timeout          = time.Second * 30
-		interval         = time.Millisecond * 250
-	)
-
-	AfterEach(func() {
-		Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
-		Eventually(func() bool {
-			list := &inventoriesv1alpha1.InventoryList{}
-			err := k8sClient.List(ctx, list)
-			if err != nil {
-				return false
-			}
-			if len(list.Items) > 0 {
-				return false
-			}
-			return true
-		}, timeout, interval).Should(BeTrue())
-		Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(SwitchNamespace))).To(Succeed())
-		Eventually(func() bool {
-			list := &switchv1alpha1.SwitchList{}
-			err := k8sClient.List(ctx, list)
-			if err != nil {
-				return false
-			}
-			if len(list.Items) > 0 {
-				return false
-			}
-			return true
-		}, timeout, interval).Should(BeTrue())
-		Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.SwitchAssignment{}, client.InNamespace(SwitchNamespace))).To(Succeed())
-		Eventually(func() bool {
-			list := &switchv1alpha1.SwitchAssignmentList{}
-			err := k8sClient.List(ctx, list)
-			if err != nil {
-				return false
-			}
-			if len(list.Items) > 0 {
-				return false
-			}
-			return true
-		}, timeout, interval).Should(BeTrue())
-	})
-
-	Context("Switch CR created", func() {
-		It("Should get role, connection level and subnet defined", func() {
-			By("SwitchAssignment CR installed")
+var _ = Describe("Integration between operators", func() {
+	Context("Operators interaction", func() {
+		It("Prepare assignments", func() {
 			switchAssignmentSamples := []string{
 				filepath.Join("..", "config", "samples", "assignment-1.onmetal.de_v1alpha1_switchassignment.yaml"),
 				filepath.Join("..", "config", "samples", "assignment-2.onmetal.de_v1alpha1_switchassignment.yaml"),
@@ -102,7 +56,7 @@ var _ = Describe("Switch controller", func() {
 				err = json.Unmarshal(data, swa)
 				Expect(err).NotTo(HaveOccurred())
 
-				swa.Namespace = SwitchNamespace
+				swa.Namespace = OnmetalNamespace
 				Expect(k8sClient.Create(ctx, swa)).To(Succeed())
 				assignment := &switchv1alpha1.SwitchAssignment{}
 				Eventually(func() bool {
@@ -117,8 +71,10 @@ var _ = Describe("Switch controller", func() {
 				}, timeout, interval).Should(BeTrue())
 				Expect(assignment.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: strings.ReplaceAll(assignment.Spec.ChassisID, ":", "-")}))
 			}
+		})
 
-			By("Switch CR installed")
+		It("Prepare switches", func() {
+			By("Create inventories")
 			switchesSamples := []string{
 				filepath.Join("..", "config", "samples", "spine-0-1.onmetal.de_v1alpha1_inventory.yaml"),
 				filepath.Join("..", "config", "samples", "spine-0-2.onmetal.de_v1alpha1_inventory.yaml"),
@@ -151,7 +107,7 @@ var _ = Describe("Switch controller", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				swNamespacedName := types.NamespacedName{
-					Namespace: SwitchNamespace,
+					Namespace: OnmetalNamespace,
 					Name:      inv.Name,
 				}
 				inv.Namespace = DefaultNamespace
@@ -167,9 +123,9 @@ var _ = Describe("Switch controller", func() {
 				Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")}))
 			}
 
-			By("Switch CR reconciliation running")
+			By("Switches reconciliation running")
+			list := &switchv1alpha1.SwitchList{}
 			Eventually(func() bool {
-				list := &switchv1alpha1.SwitchList{}
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
 					if sw.Spec.State.ConnectionLevel == 255 {
@@ -188,5 +144,69 @@ var _ = Describe("Switch controller", func() {
 				return true
 			}, timeout, interval).Should(BeTrue())
 		})
+
+		It("Create V6 subnet", func() {
+			By("Subnets defining")
+			cidr, _ := subnetv1alpha1.CIDRFromString(SubnetIPv6CIDR)
+			subnetV6 := &subnetv1alpha1.Subnet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      SubnetNameV6,
+					Namespace: OnmetalNamespace,
+				},
+				Spec: subnetv1alpha1.SubnetSpec{
+					CIDR:              cidr,
+					NetworkName:       UnderlayNetwork,
+					Regions:           []string{TestRegion},
+					AvailabilityZones: []string{TestAvailabilityZone},
+				},
+			}
+			Expect(k8sClient.Create(ctx, subnetV6)).To(Succeed())
+
+			list := &switchv1alpha1.SwitchList{}
+			Eventually(func() bool {
+				Expect(k8sClient.List(ctx, list)).Should(Succeed())
+				for _, sw := range list.Items {
+					if sw.Spec.SouthSubnetV4 == nil || sw.Spec.SouthSubnetV6 == nil {
+						return false
+					}
+					if sw.Spec.SouthSubnetV4.CIDR == "" || sw.Spec.SouthSubnetV6.CIDR == "" {
+						return false
+					}
+					for _, iface := range sw.GetSwitchPorts() {
+						if iface.LLDPChassisID != "" {
+							if iface.IPv4 == "" || iface.IPv6 == "" {
+								return false
+							}
+						}
+					}
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			Expect(checkTypesFunctions()).Should(BeTrue())
+		})
 	})
 })
+
+func checkTypesFunctions() bool {
+	targetNamespacedName := types.NamespacedName{
+		Namespace: OnmetalNamespace,
+		Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+	}
+	tgtSw := &switchv1alpha1.Switch{}
+	Expect(k8sClient.Get(ctx, targetNamespacedName, tgtSw)).Should(Succeed())
+
+	targetIpv4Mask := net.CIDRMask(23, 32)
+	targetIpv6Mask := net.CIDRMask(120, 128)
+
+	Expect(tgtSw.CheckNorthNeighboursDataUpdateNeeded()).Should(BeFalse())
+	Expect(tgtSw.CheckSouthNeighboursDataUpdateNeeded()).Should(BeFalse())
+	Expect(tgtSw.CheckMachinesConnected()).Should(BeFalse())
+	ipv4addressCount := tgtSw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
+	ipv6addressCount := tgtSw.GetAddressNeededCount(subnetv1alpha1.CIPv6SubnetType)
+	Expect(tgtSw.GetNeededMask(subnetv1alpha1.CIPv4SubnetType, float64(ipv4addressCount))).Should(Equal(targetIpv4Mask))
+	Expect(tgtSw.GetNeededMask(subnetv1alpha1.CIPv6SubnetType, float64(ipv6addressCount))).Should(Equal(targetIpv6Mask))
+	Expect(len(tgtSw.GetSwitchPorts())).Should(Equal(32))
+
+	return true
+}

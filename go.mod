@@ -6,11 +6,10 @@ require (
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/go-logr/logr v0.4.0
 	github.com/google/uuid v1.2.0 // indirect
+	github.com/onmetal/ipam v0.0.0-20210630141217-3447d654272f
 	github.com/onmetal/k8s-inventory v0.0.0-20210519063844-3509e56a2416
-	github.com/onmetal/k8s-network-global v0.0.0-20210528142724-3da4d0e4351e
 	github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80
-	github.com/onmetal/k8s-subnet v0.0.0-20210609114747-2f4101a2caa5
-	github.com/onsi/ginkgo v1.15.1
+	github.com/onsi/ginkgo v1.16.1
 	github.com/onsi/gomega v1.11.0
 	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.16.0 // indirect

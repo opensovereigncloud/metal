@@ -29,13 +29,15 @@ import (
 	"testing"
 	"time"
 
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	subnet "github.com/onmetal/ipam/controllers"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
-	networkglobalv1alpha1 "github.com/onmetal/k8s-network-global/api/v1alpha1"
-	subnetv1alpha1 "github.com/onmetal/k8s-subnet/api/v1alpha1"
+	inventory "github.com/onmetal/k8s-inventory/controllers"
+	sizev1alpha1 "github.com/onmetal/k8s-size/api/v1alpha1"
+	size "github.com/onmetal/k8s-size/controllers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/mod/modfile"
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -53,6 +55,20 @@ import (
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+
+const (
+	DefaultNamespace     = "default"
+	OnmetalNamespace     = "onmetal"
+	timeout              = time.Second * 30
+	interval             = time.Millisecond * 250
+	UnderlayNetwork      = "underlay"
+	SubnetNameV4         = "switch-subnet-v4"
+	SubnetNameV6         = "switch-subnet-v6"
+	SubnetIPv4CIDR       = "100.64.0.0/12"
+	SubnetIPv6CIDR       = "2001:db8:1000:0012::0/64"
+	TestRegion           = "EU-West"
+	TestAvailabilityZone = "A"
+)
 
 var cfg *rest.Config
 var k8sClient client.Client
@@ -73,58 +89,13 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
-	// inventory CRD
-	inventoryGlobalPackagePath := reflect.TypeOf(inventoriesv1alpha1.Inventory{}).PkgPath()
-	goModData, err := ioutil.ReadFile(filepath.Join("..", "go.mod"))
-	Expect(err).NotTo(HaveOccurred())
-	goModFile, err := modfile.Parse("", goModData, nil)
-	Expect(err).NotTo(HaveOccurred())
-	inventoryGlobalModulePath := ""
-	for _, req := range goModFile.Require {
-		if strings.HasPrefix(inventoryGlobalPackagePath, req.Mod.Path) {
-			inventoryGlobalModulePath = req.Mod.String()
-			break
-		}
-	}
-	Expect(inventoryGlobalModulePath).NotTo(BeZero())
-	inventoryGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", inventoryGlobalModulePath, "config", "crd", "bases")
-
-	// network-global CRD
-	networkGlobalPackagePath := reflect.TypeOf(networkglobalv1alpha1.NetworkGlobal{}).PkgPath()
-	goModData, err = ioutil.ReadFile(filepath.Join("..", "go.mod"))
-	Expect(err).NotTo(HaveOccurred())
-	goModFile, err = modfile.Parse("", goModData, nil)
-	Expect(err).NotTo(HaveOccurred())
-	networkGlobalModulePath := ""
-	for _, req := range goModFile.Require {
-		if strings.HasPrefix(networkGlobalPackagePath, req.Mod.Path) {
-			networkGlobalModulePath = req.Mod.String()
-			break
-		}
-	}
-	Expect(networkGlobalModulePath).NotTo(BeZero())
-	networkGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", networkGlobalModulePath, "config", "crd", "bases")
-
-	// subnet CRD
-	subnetGlobalPackagePath := reflect.TypeOf(subnetv1alpha1.Subnet{}).PkgPath()
-	goModData, err = ioutil.ReadFile(filepath.Join("..", "go.mod"))
-	Expect(err).NotTo(HaveOccurred())
-	goModFile, err = modfile.Parse("", goModData, nil)
-	Expect(err).NotTo(HaveOccurred())
-	subnetGlobalModulePath := ""
-	for _, req := range goModFile.Require {
-		if strings.HasPrefix(subnetGlobalPackagePath, req.Mod.Path) {
-			subnetGlobalModulePath = req.Mod.String()
-			break
-		}
-	}
-	Expect(networkGlobalModulePath).NotTo(BeZero())
-	subnetGlobalCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", subnetGlobalModulePath, "config", "crd", "bases")
-
+	inventoryGlobalCrdPath := getCrdPath(inventoriesv1alpha1.Inventory{})
+	subnetGlobalCrdPath := getCrdPath(subnetv1alpha1.Subnet{})
+	sizeGlobalCrdPath := getCrdPath(sizev1alpha1.Size{})
 	switchGlobalCrdPath := filepath.Join("..", "config", "crd", "bases")
 
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath, networkGlobalCrdPath, subnetGlobalCrdPath},
+		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath, sizeGlobalCrdPath, subnetGlobalCrdPath},
 		ErrorIfCRDPathMissing: true,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "config", "webhook")},
@@ -135,26 +106,102 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = admissionv1beta1.AddToScheme(scheme.Scheme)
+	globalScheme := scheme.Scheme
+	err = sizev1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = switchv1alpha1.AddToScheme(scheme.Scheme)
+	err = switchv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = inventoriesv1alpha1.AddToScheme(scheme.Scheme)
+	err = inventoriesv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = networkglobalv1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = subnetv1alpha1.AddToScheme(scheme.Scheme)
+	err = subnetv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: globalScheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	By("Set up k8s-size manager")
+	sizeScheme := scheme.Scheme
+	err = sizev1alpha1.AddToScheme(sizeScheme)
+	Expect(err).NotTo(HaveOccurred())
+	k8sSizeManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             sizeScheme,
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+	})
+	Expect(err).ToNot(HaveOccurred())
+	err = (&size.SizeReconciler{
+		Client: k8sSizeManager.GetClient(),
+		Scheme: k8sSizeManager.GetScheme(),
+		Log:    ctrl.Log.WithName("k8s-size").WithName("size"),
+	}).SetupWithManager(k8sSizeManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		err = k8sSizeManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred())
+	}()
+
+	By("Set up k8s-inventory manager")
+	inventoryScheme := scheme.Scheme
+	err = inventoriesv1alpha1.AddToScheme(inventoryScheme)
+	Expect(err).NotTo(HaveOccurred())
+	k8sInventoryManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             inventoryScheme,
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+	})
+	Expect(err).ToNot(HaveOccurred())
+	err = (&inventory.InventoryReconciler{
+		Client: k8sInventoryManager.GetClient(),
+		Scheme: k8sInventoryManager.GetScheme(),
+		Log:    ctrl.Log.WithName("k8s-inventory").WithName("inventory"),
+	}).SetupWithManager(k8sInventoryManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		err = k8sInventoryManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred())
+	}()
+
+	By("Set up k8s-subnet manager")
+	subnetScheme := scheme.Scheme
+	err = subnetv1alpha1.AddToScheme(subnetScheme)
+	Expect(err).ToNot(HaveOccurred())
+
+	k8sSubnetManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             subnetScheme,
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&subnet.SubnetReconciler{
+		Client: k8sSubnetManager.GetClient(),
+		Scheme: k8sSubnetManager.GetScheme(),
+		Log:    ctrl.Log.WithName("k8s-subnet").WithName("subnet"),
+	}).SetupWithManager(k8sSubnetManager)
+	Expect(err).ToNot(HaveOccurred())
+	err = (&subnet.NetworkReconciler{
+		Client: k8sSubnetManager.GetClient(),
+		Scheme: k8sSubnetManager.GetScheme(),
+		Log:    ctrl.Log.WithName("k8s-subnet").WithName("network"),
+	}).SetupWithManager(k8sSubnetManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		err = k8sSubnetManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred())
+	}()
+
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme.Scheme,
+		Scheme:             globalScheme,
 		Host:               webhookInstallOptions.LocalServingHost,
 		Port:               webhookInstallOptions.LocalServingPort,
 		CertDir:            webhookInstallOptions.LocalServingCertDir,
@@ -192,6 +239,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
+		defer GinkgoRecover()
 		err = k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred())
 	}()
@@ -203,18 +251,111 @@ var _ = BeforeSuite(func() {
 		if err != nil {
 			return err
 		}
-		conn.Close()
+		_ = conn.Close()
 		return nil
 	}).Should(Succeed())
 
 	namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: switchv1alpha1.CNamespace}}
 	Expect(k8sClient.Create(ctx, namespace)).To(Succeed())
 
+	network := &subnetv1alpha1.Network{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      UnderlayNetwork,
+			Namespace: OnmetalNamespace,
+		},
+		Spec: subnetv1alpha1.NetworkSpec{
+			Description: "test underlay network",
+		},
+	}
+	Expect(k8sClient.Create(ctx, network)).To(Succeed())
+
+	cidr, _ := subnetv1alpha1.CIDRFromString(SubnetIPv4CIDR)
+	subnetV4 := &subnetv1alpha1.Subnet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      SubnetNameV4,
+			Namespace: OnmetalNamespace,
+		},
+		Spec: subnetv1alpha1.SubnetSpec{
+			CIDR:              cidr,
+			NetworkName:       UnderlayNetwork,
+			Regions:           []string{TestRegion},
+			AvailabilityZones: []string{TestAvailabilityZone},
+		},
+	}
+	Expect(k8sClient.Create(ctx, subnetV4)).To(Succeed())
+
 }, 60)
 
 var _ = AfterSuite(func() {
+	By("Remove test resources")
+	Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &inventoriesv1alpha1.InventoryList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &switchv1alpha1.SwitchList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.SwitchAssignment{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &switchv1alpha1.SwitchAssignmentList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+	Expect(k8sClient.DeleteAllOf(ctx, &subnetv1alpha1.Subnet{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &subnetv1alpha1.SubnetList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
 	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func getCrdPath(crdPackageScheme interface{}) string {
+	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
+	goModData, err := ioutil.ReadFile(filepath.Join("..", "go.mod"))
+	Expect(err).NotTo(HaveOccurred())
+	goModFile, err := modfile.Parse("", goModData, nil)
+	Expect(err).NotTo(HaveOccurred())
+	globalModulePath := ""
+	for _, req := range goModFile.Require {
+		if strings.HasPrefix(globalPackagePath, req.Mod.Path) {
+			globalModulePath = req.Mod.String()
+			break
+		}
+	}
+	Expect(globalModulePath).NotTo(BeZero())
+	return filepath.Join(build.Default.GOPATH, "pkg", "mod", globalModulePath, "config", "crd", "bases")
+}
