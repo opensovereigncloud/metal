@@ -263,13 +263,40 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
+//GetMinConnectionLevel calculates the minimum connection level
+//value among switches in the list provided as argument.
+func (swl *SwitchList) GetMinConnectionLevel() uint8 {
+	result := uint8(255)
+	for _, item := range swl.Items {
+		if item.Spec.State.ConnectionLevel < result {
+			result = item.Spec.State.ConnectionLevel
+		}
+	}
+	return result
+}
+
+//ConstructNeighboursFromSwitchList creates list of neighbours
+//specs from the list of switches.
+func (swl *SwitchList) ConstructNeighboursFromSwitchList() map[string]NeighbourSpec {
+	neighbours := map[string]NeighbourSpec{}
+	for _, item := range swl.Items {
+		neighbours[item.Spec.SwitchChassis.ChassisID] = NeighbourSpec{
+			Name:      item.Name,
+			Namespace: item.Namespace,
+			ChassisID: item.Spec.SwitchChassis.ChassisID,
+			Type:      CSwitchType,
+		}
+	}
+	return neighbours
+}
+
 //GetNorthSwitchConnection returns the list of switches
 //that should be set as north connections.
-func (sw *Switch) GetNorthSwitchConnection(swList []Switch) []Switch {
-	result := make([]Switch, 0)
+func (sw *Switch) GetNorthSwitchConnection(swList []Switch) *SwitchList {
+	result := &SwitchList{}
 	for _, obj := range swList {
 		if sw.checkSwitchInSouthConnections(obj) {
-			result = append(result, obj)
+			result.Items = append(result.Items, obj)
 		}
 	}
 	return result
@@ -291,28 +318,6 @@ func (sw *Switch) checkSwitchInSouthConnections(obj Switch) bool {
 func (sw *Switch) CheckMachinesConnected() bool {
 	for _, iface := range sw.Spec.Interfaces {
 		if iface.Neighbour == CMachineType {
-			return true
-		}
-	}
-	return false
-}
-
-//CheckSouthNeighboursDataUpdateNeeded checks whether all
-//south neighbours specifications are fulfilled or not.
-func (sw *Switch) CheckSouthNeighboursDataUpdateNeeded() bool {
-	for _, item := range sw.Spec.State.SouthConnections.Connections {
-		if item.Name == "" || item.Namespace == "" {
-			return true
-		}
-	}
-	return false
-}
-
-//CheckNorthNeighboursDataUpdateNeeded checks whether all
-////north neighbours specifications are fulfilled or not.
-func (sw *Switch) CheckNorthNeighboursDataUpdateNeeded() bool {
-	for _, item := range sw.Spec.State.NorthConnections.Connections {
-		if item.Name == "" || item.Namespace == "" {
 			return true
 		}
 	}
@@ -389,24 +394,6 @@ func (sw *Switch) UpdateSouthInterfacesAddresses() {
 	}
 }
 
-//UpdateSouthConnections updates switch resource south connections list.
-func (sw *Switch) UpdateSouthConnections(ncm map[string]NeighbourSpec) {
-	connections := make([]NeighbourSpec, 0)
-	if sw.Spec.State.SouthConnections.Connections == nil || len(sw.Spec.State.SouthConnections.Connections) == 0 {
-		for _, value := range ncm {
-			connections = append(connections, value)
-		}
-	} else {
-		connections = sw.Spec.State.SouthConnections.Connections
-		for i, neighbour := range connections {
-			if _, ok := ncm[neighbour.ChassisID]; ok {
-				connections[i] = ncm[neighbour.ChassisID]
-			}
-		}
-	}
-	sw.Spec.State.SouthConnections.Connections = connections
-}
-
 //UpdateNorthConnections updates switch resource north connections list.
 func (sw *Switch) UpdateNorthConnections(ncm map[string]NeighbourSpec) {
 	connections := make([]NeighbourSpec, 0)
@@ -440,14 +427,6 @@ func (sw *Switch) RemoveFromSouthConnections(ncm map[string]struct{}) {
 func (iface *InterfaceSpec) getInterfaceSubnet(network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
 	index, _ := strconv.Atoi(strings.ReplaceAll(iface.Name, "Ethernet", ""))
 	prefix, _ := network.Mask.Size()
-	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(addrType)-prefix, index)
+	ifaceNet, _ := gocidr.Subnet(network, GetInterfaceSubnetMaskLength(addrType)-prefix, index)
 	return ifaceNet
-}
-
-func getInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int {
-	if addrType == subnetv1alpha1.CIPv4SubnetType {
-		return CIPv4InterfaceSubnetMask
-	} else {
-		return CIPv6InterfaceSubnetMask
-	}
 }

@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"net"
 	"reflect"
 	"sort"
@@ -119,22 +118,12 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	switch switchRes.Spec.State.ConnectionLevel {
-	case 0:
-		southSwitchList, err := r.findSouthNeighboursSwitches(switchRes, ctx)
-		if err != nil {
-			log.Error(err, "failed to get south switch neighbours")
-			return ctrl.Result{}, err
-		}
-		neighboursMap := constructNeighboursFromSwitchList(southSwitchList.Items)
-		connections := switchRes.Spec.State.SouthConnections.Connections
-		for i, neighbour := range connections {
-			if _, ok := neighboursMap[neighbour.ChassisID]; ok {
-				connections[i] = neighboursMap[neighbour.ChassisID]
-			}
-		}
-		switchRes.Spec.State.SouthConnections.Connections = connections
-	default:
+	if err := r.fillSouthConnections(switchRes, ctx); err != nil {
+		log.Error(err, "failed to get south switch neighbours")
+		return ctrl.Result{}, err
+	}
+
+	if switchRes.Spec.State.ConnectionLevel != 0 {
 		if err := r.updateConnectionLevel(switchRes, ctx); err != nil {
 			log.Error(err, "failed to update switch connection level")
 			return ctrl.Result{}, err
@@ -306,11 +295,11 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 	for _, connLevel := range keys {
 		switches := connectionLevelMap[connLevel]
 		switchNorthNeighbours := sw.GetNorthSwitchConnection(switches)
-		if len(switchNorthNeighbours) > 0 {
-			minConnLevel := getMinConnectionLevel(switchNorthNeighbours)
+		if len(switchNorthNeighbours.Items) > 0 {
+			minConnLevel := switchNorthNeighbours.GetMinConnectionLevel()
 			if minConnLevel != 255 && minConnLevel < sw.Spec.State.ConnectionLevel {
 				sw.Spec.State.ConnectionLevel = minConnLevel + 1
-				northNeighboursMap := constructNeighboursFromSwitchList(switchNorthNeighbours)
+				northNeighboursMap := switchNorthNeighbours.ConstructNeighboursFromSwitchList()
 				sw.UpdateNorthConnections(northNeighboursMap)
 				ncm := map[string]struct{}{}
 				for _, conn := range sw.Spec.State.NorthConnections.Connections {
@@ -319,12 +308,7 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 					}
 				}
 				sw.RemoveFromSouthConnections(ncm)
-				switchSouthNeighbours, err := r.findSouthNeighboursSwitches(sw, ctx)
-				if err != nil {
-					return err
-				}
-				southNeighboursMap := constructNeighboursFromSwitchList(switchSouthNeighbours.Items)
-				sw.UpdateSouthConnections(southNeighboursMap)
+				r.moveNeighbours(sw, swList, ctx)
 				sw.Spec.State.NorthConnections.Count = len(sw.Spec.State.NorthConnections.Connections)
 				sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
 			}
@@ -336,11 +320,11 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 //defineSubnets process related resources to define switch's
 //"south" subnets. Returns an error.
 func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.Context) error {
-	topLevelSwitch := r.GetTopLevelSwitch(sw, ctx)
+	topLevelSwitch := r.getTopLevelSwitch(sw, ctx)
 	if topLevelSwitch == nil {
 		return nil
 	}
-	relatedAssignment := r.GetRelatedAssignment(topLevelSwitch, ctx)
+	relatedAssignment := r.getRelatedAssignment(topLevelSwitch, ctx)
 	if relatedAssignment == nil {
 		return nil
 	}
@@ -389,9 +373,9 @@ func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.
 	return nil
 }
 
-//GetTopLevelSwitch recursively searches for top level switch
+//getTopLevelSwitch recursively searches for top level switch
 //related to the target switch.
-func (r *SwitchReconciler) GetTopLevelSwitch(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.Switch {
+func (r *SwitchReconciler) getTopLevelSwitch(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.Switch {
 	if sw.Spec.State.NorthConnections != nil && sw.Spec.State.NorthConnections.Count != 0 {
 		nextLevelSwitch := &switchv1alpha1.Switch{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
@@ -400,7 +384,7 @@ func (r *SwitchReconciler) GetTopLevelSwitch(sw *switchv1alpha1.Switch, ctx cont
 		}, nextLevelSwitch); err != nil {
 			return nil
 		}
-		return r.GetTopLevelSwitch(nextLevelSwitch, ctx)
+		return r.getTopLevelSwitch(nextLevelSwitch, ctx)
 	}
 	if sw.Spec.State.ConnectionLevel == 0 {
 		return sw
@@ -408,9 +392,9 @@ func (r *SwitchReconciler) GetTopLevelSwitch(sw *switchv1alpha1.Switch, ctx cont
 	return nil
 }
 
-//GetRelatedAssignment searches for switch assignment resource
+//getRelatedAssignment searches for switch assignment resource
 //related to target top level switch.
-func (r *SwitchReconciler) GetRelatedAssignment(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.SwitchAssignment {
+func (r *SwitchReconciler) getRelatedAssignment(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.SwitchAssignment {
 	swaList := &switchv1alpha1.SwitchAssignmentList{}
 	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: sw.Labels[switchv1alpha1.LabelChassisId]})
 	opts := &client.ListOptions{
@@ -492,33 +476,6 @@ func (r *SwitchReconciler) finalizeSwitch(sw *switchv1alpha1.Switch, ctx context
 	return nil
 }
 
-//getMinConnectionLevel calculates the minimum connection level
-//value among switches in the list provided as argument.
-func getMinConnectionLevel(switchList []switchv1alpha1.Switch) uint8 {
-	result := uint8(255)
-	for _, item := range switchList {
-		if item.Spec.State.ConnectionLevel < result {
-			result = item.Spec.State.ConnectionLevel
-		}
-	}
-	return result
-}
-
-//constructNeighboursFromSwitchList creates list of neighbours
-//specs from the list of switches.
-func constructNeighboursFromSwitchList(swl []switchv1alpha1.Switch) map[string]switchv1alpha1.NeighbourSpec {
-	neighbours := map[string]switchv1alpha1.NeighbourSpec{}
-	for _, item := range swl {
-		neighbours[item.Spec.SwitchChassis.ChassisID] = switchv1alpha1.NeighbourSpec{
-			Name:      item.Name,
-			Namespace: item.Namespace,
-			ChassisID: item.Spec.SwitchChassis.ChassisID,
-			Type:      switchv1alpha1.CSwitchType,
-		}
-	}
-	return neighbours
-}
-
 //getSuitableSubnet finds the subnet resource, that fits address
 //type, region, availability zones and addresses count. It returns
 //pointers to the CIDR and subnet resource objects or an error.
@@ -537,7 +494,7 @@ func getSuitableSubnet(
 			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
 			addressesLeft := sn.Status.CapacityLeft
 			if sn.Status.Type == addressType && addressesLeft.CmpInt64(addressesNeeded) >= 0 {
-				minVacantCIDR := getMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)
+				minVacantCIDR := switchv1alpha1.GetMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)
 				mask := sw.GetNeededMask(addressType, float64(addressesNeeded))
 				addr := minVacantCIDR.Net.IP
 				network := &net.IPNet{
@@ -556,27 +513,6 @@ func getSuitableSubnet(
 		}
 	}
 	return nil, nil, nil
-}
-
-//getMinimalVacantCIDR calculates the minimal suitable network
-//from the networks list provided as argument according to the
-//needed addresses count. It returns the pointer to the CIDR object.
-func getMinimalVacantCIDR(vacant []subnetv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *subnetv1alpha1.CIDR {
-	zeroNetString := ""
-	if addressType == subnetv1alpha1.CIPv4SubnetType {
-		zeroNetString = switchv1alpha1.CIPv4ZeroNet
-	} else {
-		zeroNetString = switchv1alpha1.CIPv6ZeroNet
-	}
-	_, zeroNet, _ := net.ParseCIDR(zeroNetString)
-	minSuitableNet := subnetv1alpha1.CIDRFromNet(zeroNet)
-	for _, cidr := range vacant {
-		if cidr.AddressCapacity().Cmp(minSuitableNet.AddressCapacity()) < 0 &&
-			cidr.AddressCapacity().Cmp(new(big.Int).SetInt64(addressesCount)) >= 0 {
-			minSuitableNet = &cidr
-		}
-	}
-	return minSuitableNet
 }
 
 //updateNorthInterfacesAddresses sets IP addresses for switch
@@ -625,4 +561,52 @@ func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Swi
 			}
 		}
 	}
+}
+
+func (r *SwitchReconciler) moveNeighbours(obj *switchv1alpha1.Switch, list *switchv1alpha1.SwitchList, ctx context.Context) {
+	northNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
+	southNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
+	for _, item := range list.Items {
+		for _, conn := range obj.Spec.State.NorthConnections.Connections {
+			if conn.Name == item.Name {
+				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel-1 {
+					northNeighbours = append(northNeighbours, conn)
+				}
+				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel+1 {
+					southNeighbours = append(southNeighbours, conn)
+				}
+			}
+		}
+		for _, conn := range obj.Spec.State.SouthConnections.Connections {
+			if conn.Name == item.Name {
+				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel+1 {
+					southNeighbours = append(southNeighbours, conn)
+				}
+				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel-1 {
+					northNeighbours = append(northNeighbours, conn)
+				}
+				if item.Spec.State.ConnectionLevel == 255 {
+					southNeighbours = append(southNeighbours, conn)
+				}
+			}
+		}
+	}
+	obj.Spec.State.NorthConnections.Connections = northNeighbours
+	obj.Spec.State.SouthConnections.Connections = southNeighbours
+}
+
+func (r *SwitchReconciler) fillSouthConnections(obj *switchv1alpha1.Switch, ctx context.Context) error {
+	southSwitchList, err := r.findSouthNeighboursSwitches(obj, ctx)
+	if err != nil {
+		return err
+	}
+	neighboursMap := southSwitchList.ConstructNeighboursFromSwitchList()
+	connections := obj.Spec.State.SouthConnections.Connections
+	for i, neighbour := range connections {
+		if _, ok := neighboursMap[neighbour.ChassisID]; ok {
+			connections[i] = neighboursMap[neighbour.ChassisID]
+		}
+	}
+	obj.Spec.State.SouthConnections.Connections = connections
+	return nil
 }

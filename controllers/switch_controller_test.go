@@ -199,8 +199,6 @@ func checkTypesFunctions() bool {
 	targetIpv4Mask := net.CIDRMask(23, 32)
 	targetIpv6Mask := net.CIDRMask(120, 128)
 
-	Expect(tgtSw.CheckNorthNeighboursDataUpdateNeeded()).Should(BeFalse())
-	Expect(tgtSw.CheckSouthNeighboursDataUpdateNeeded()).Should(BeFalse())
 	Expect(tgtSw.CheckMachinesConnected()).Should(BeFalse())
 	ipv4addressCount := tgtSw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
 	ipv6addressCount := tgtSw.GetAddressNeededCount(subnetv1alpha1.CIPv6SubnetType)
