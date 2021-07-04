@@ -16,7 +16,13 @@ limitations under the License.
 
 package v1alpha1
 
-import "time"
+import (
+	"math/big"
+	"net"
+	"time"
+
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+)
 
 const (
 	CLabelPrefix    = "switch.onmetal.de/"
@@ -51,3 +57,32 @@ const (
 )
 
 var LabelChassisId = CLabelPrefix + CLabelChassisId
+
+func GetInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int {
+	if addrType == subnetv1alpha1.CIPv4SubnetType {
+		return CIPv4InterfaceSubnetMask
+	} else {
+		return CIPv6InterfaceSubnetMask
+	}
+}
+
+//GetMinimalVacantCIDR calculates the minimal suitable network
+//from the networks list provided as argument according to the
+//needed addresses count. It returns the pointer to the CIDR object.
+func GetMinimalVacantCIDR(vacant []subnetv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *subnetv1alpha1.CIDR {
+	zeroNetString := ""
+	if addressType == subnetv1alpha1.CIPv4SubnetType {
+		zeroNetString = CIPv4ZeroNet
+	} else {
+		zeroNetString = CIPv6ZeroNet
+	}
+	_, zeroNet, _ := net.ParseCIDR(zeroNetString)
+	minSuitableNet := subnetv1alpha1.CIDRFromNet(zeroNet)
+	for _, cidr := range vacant {
+		if cidr.AddressCapacity().Cmp(minSuitableNet.AddressCapacity()) < 0 &&
+			cidr.AddressCapacity().Cmp(new(big.Int).SetInt64(addressesCount)) >= 0 {
+			minSuitableNet = &cidr
+		}
+	}
+	return minSuitableNet
+}
