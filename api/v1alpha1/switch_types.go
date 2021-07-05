@@ -66,6 +66,14 @@ type SwitchSpec struct {
 	//State referring to current switch state
 	//kubebuilder:validation:Optional
 	State *SwitchStateSpec `json:"state"`
+	//Role referring to switch's role: leaf or spine
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:Enum=Leaf;Spine;Undefined
+	Role string `json:"role,omitempty"`
+	// ConnectionLevel refers the level of the connection
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:default=255
+	ConnectionLevel uint8 `json:"connectionLevel"`
 }
 
 //LocationSpec defines location details
@@ -177,14 +185,6 @@ type InterfaceSpec struct {
 
 // SwitchStateSpec defines current connection state of the Switch
 type SwitchStateSpec struct {
-	//Role referring to switch's role: leaf or spine
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=Leaf;Spine;Undefined
-	Role string `json:"role,omitempty"`
-	// ConnectionLevel refers the level of the connection
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:default=255
-	ConnectionLevel uint8 `json:"connectionLevel"`
 	// NorthSwitches refers to up-level switch
 	//+kubebuilder:validation:Optional
 	NorthConnections *ConnectionsSpec `json:"northConnections,omitempty"`
@@ -230,10 +230,10 @@ type NeighbourSpec struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=sw
 //+kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.hostname`,description="Switch's hostname"
-//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.state.role`,description="switch's role"
+//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.role`,description="switch's role"
 //+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.switchDistro.os`,description="OS running on switch"
 //+kubebuilder:printcolumn:name="SwitchPorts",type=integer,JSONPath=`.spec.switchPorts`,description="Total amount of non-management network interfaces"
-//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.spec.state.connectionLevel`,description="Vertical level of switch connection"
+//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.spec.connectionLevel`,description="Vertical level of switch connection"
 //+kubebuilder:printcolumn:name="SouthSubnetV4",type=string,JSONPath=`.spec.southSubnetV4.cidr`,description="South IPv4 subnet"
 //+kubebuilder:printcolumn:name="SouthSubnetV6",type=string,JSONPath=`.spec.southSubnetV6.cidr`,description="South IPv6 subnet"
 //+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.spec.scanPorts`,description="Request for scan ports"
@@ -265,8 +265,8 @@ func init() {
 func (swl *SwitchList) GetMinConnectionLevel() uint8 {
 	result := uint8(255)
 	for _, item := range swl.Items {
-		if item.Spec.State.ConnectionLevel < result {
-			result = item.Spec.State.ConnectionLevel
+		if item.Spec.ConnectionLevel < result {
+			result = item.Spec.ConnectionLevel
 		}
 	}
 	return result
@@ -426,9 +426,54 @@ func (sw *Switch) RemoveFromSouthConnections(ncm map[string]struct{}) {
 	sw.Spec.State.SouthConnections.Connections = connections
 }
 
+func (sw *Switch) MoveNeighbours(list *SwitchList) {
+	northNeighbours := make([]NeighbourSpec, 0)
+	southNeighbours := make([]NeighbourSpec, 0)
+	for _, item := range list.Items {
+		for _, conn := range sw.Spec.State.NorthConnections.Connections {
+			if conn.Name == item.Name {
+				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
+					northNeighbours = append(northNeighbours, conn)
+				}
+				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel+1 {
+					southNeighbours = append(southNeighbours, conn)
+				}
+			}
+		}
+		for _, conn := range sw.Spec.State.SouthConnections.Connections {
+			if conn.Name == item.Name {
+				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel+1 {
+					southNeighbours = append(southNeighbours, conn)
+				}
+				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
+					northNeighbours = append(northNeighbours, conn)
+				}
+				if item.Spec.ConnectionLevel == 255 {
+					southNeighbours = append(southNeighbours, conn)
+				}
+			}
+		}
+	}
+	sw.Spec.State.NorthConnections.Connections = northNeighbours
+	sw.Spec.State.SouthConnections.Connections = southNeighbours
+}
+
 func (iface *InterfaceSpec) getInterfaceSubnet(name string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
 	index, _ := strconv.Atoi(strings.ReplaceAll(name, "Ethernet", ""))
 	prefix, _ := network.Mask.Size()
 	ifaceNet, _ := gocidr.Subnet(network, GetInterfaceSubnetMaskLength(addrType)-prefix, index)
 	return ifaceNet
+}
+
+func (iface *InterfaceSpec) RequestAddress(addrType subnetv1alpha1.SubnetAddressType) net.IP {
+	addr := net.IP{}
+	switch addrType {
+	case subnetv1alpha1.CIPv4SubnetType:
+		_, cidr, _ := net.ParseCIDR(iface.IPv4)
+		addr, _ = gocidr.Host(cidr, 2)
+	case subnetv1alpha1.CIPv6SubnetType:
+		_, cidr, _ := net.ParseCIDR(iface.IPv6)
+		addr, _ = gocidr.Host(cidr, 1)
+	}
+	return addr
 }

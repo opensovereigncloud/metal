@@ -48,12 +48,12 @@ spec:
       neighbour: Switch
   ports: 5
   scanPorts: true
+  connectionLevel: 255
+  role: Spine
   state:
-    connectionLevel: 255
     northConnections:
       connections: []
       count: 0
-    role: Spine
     southConnections:
       connections:
       - chassisId: 68:21:5f:47:0d:5a

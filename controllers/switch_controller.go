@@ -102,14 +102,8 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		controllerutil.AddFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer)
 	}
 
-	switch switchRes.Spec.State.Role {
-	case switchv1alpha1.CUndefinedRole:
-		switchRes.Spec.State.Role = switchv1alpha1.CSpineRole
-		fallthrough
-	case switchv1alpha1.CSpineRole:
-		if switchRes.CheckMachinesConnected() {
-			switchRes.Spec.State.Role = switchv1alpha1.CLeafRole
-		}
+	if switchRes.CheckMachinesConnected() {
+		switchRes.Spec.Role = switchv1alpha1.CLeafRole
 	}
 
 	if switchRes.Spec.SouthSubnetV4 == nil || switchRes.Spec.SouthSubnetV6 == nil {
@@ -123,7 +117,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if switchRes.Spec.State.ConnectionLevel != 0 {
+	if switchRes.Spec.ConnectionLevel != 0 {
 		if err := r.updateConnectionLevel(switchRes, ctx); err != nil {
 			log.Error(err, "failed to update switch connection level")
 			return ctrl.Result{}, err
@@ -281,11 +275,11 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 	connectionLevelMap := map[uint8][]switchv1alpha1.Switch{}
 	keys := make([]uint8, 0)
 	for _, item := range swList.Items {
-		if _, ok := connectionLevelMap[item.Spec.State.ConnectionLevel]; !ok {
-			connectionLevelMap[item.Spec.State.ConnectionLevel] = []switchv1alpha1.Switch{item}
-			keys = append(keys, item.Spec.State.ConnectionLevel)
+		if _, ok := connectionLevelMap[item.Spec.ConnectionLevel]; !ok {
+			connectionLevelMap[item.Spec.ConnectionLevel] = []switchv1alpha1.Switch{item}
+			keys = append(keys, item.Spec.ConnectionLevel)
 		} else {
-			connectionLevelMap[item.Spec.State.ConnectionLevel] = append(connectionLevelMap[item.Spec.State.ConnectionLevel], item)
+			connectionLevelMap[item.Spec.ConnectionLevel] = append(connectionLevelMap[item.Spec.ConnectionLevel], item)
 		}
 	}
 	sort.Slice(keys, func(i, j int) bool {
@@ -297,8 +291,8 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 		switchNorthNeighbours := sw.GetNorthSwitchConnection(switches)
 		if len(switchNorthNeighbours.Items) > 0 {
 			minConnLevel := switchNorthNeighbours.GetMinConnectionLevel()
-			if minConnLevel != 255 && minConnLevel < sw.Spec.State.ConnectionLevel {
-				sw.Spec.State.ConnectionLevel = minConnLevel + 1
+			if minConnLevel != 255 && minConnLevel < sw.Spec.ConnectionLevel {
+				sw.Spec.ConnectionLevel = minConnLevel + 1
 				northNeighboursMap := switchNorthNeighbours.ConstructNeighboursFromSwitchList()
 				sw.UpdateNorthConnections(northNeighboursMap)
 				ncm := map[string]struct{}{}
@@ -308,7 +302,7 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 					}
 				}
 				sw.RemoveFromSouthConnections(ncm)
-				r.moveNeighbours(sw, swList, ctx)
+				sw.MoveNeighbours(swList)
 				sw.Spec.State.NorthConnections.Count = len(sw.Spec.State.NorthConnections.Connections)
 				sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
 			}
@@ -386,7 +380,7 @@ func (r *SwitchReconciler) getTopLevelSwitch(sw *switchv1alpha1.Switch, ctx cont
 		}
 		return r.getTopLevelSwitch(nextLevelSwitch, ctx)
 	}
-	if sw.Spec.State.ConnectionLevel == 0 {
+	if sw.Spec.ConnectionLevel == 0 {
 		return sw
 	}
 	return nil
@@ -561,38 +555,6 @@ func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Swi
 			}
 		}
 	}
-}
-
-func (r *SwitchReconciler) moveNeighbours(obj *switchv1alpha1.Switch, list *switchv1alpha1.SwitchList, ctx context.Context) {
-	northNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
-	southNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
-	for _, item := range list.Items {
-		for _, conn := range obj.Spec.State.NorthConnections.Connections {
-			if conn.Name == item.Name {
-				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel-1 {
-					northNeighbours = append(northNeighbours, conn)
-				}
-				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel+1 {
-					southNeighbours = append(southNeighbours, conn)
-				}
-			}
-		}
-		for _, conn := range obj.Spec.State.SouthConnections.Connections {
-			if conn.Name == item.Name {
-				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel+1 {
-					southNeighbours = append(southNeighbours, conn)
-				}
-				if item.Spec.State.ConnectionLevel == obj.Spec.State.ConnectionLevel-1 {
-					northNeighbours = append(northNeighbours, conn)
-				}
-				if item.Spec.State.ConnectionLevel == 255 {
-					southNeighbours = append(southNeighbours, conn)
-				}
-			}
-		}
-	}
-	obj.Spec.State.NorthConnections.Connections = northNeighbours
-	obj.Spec.State.SouthConnections.Connections = southNeighbours
 }
 
 func (r *SwitchReconciler) fillSouthConnections(obj *switchv1alpha1.Switch, ctx context.Context) error {

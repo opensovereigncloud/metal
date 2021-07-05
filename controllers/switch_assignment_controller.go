@@ -71,8 +71,8 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{RequeueAfter: switchv1alpha1.CAssignmentRequeueInterval}, nil
 	} else {
 		targetSwitch := &switchesList.Items[0]
-		targetSwitch.Spec.State.ConnectionLevel = 0
-		targetSwitch.Spec.State.Role = switchv1alpha1.CSpineRole
+		targetSwitch.Spec.ConnectionLevel = 0
+		targetSwitch.Spec.Role = switchv1alpha1.CSpineRole
 		if err := r.Update(ctx, targetSwitch); err != nil {
 			log.Error(err, "unable to update switch resource status", "name", types.NamespacedName{
 				Namespace: targetSwitch.Namespace,
