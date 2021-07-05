@@ -21,11 +21,18 @@ import (
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
@@ -71,6 +78,9 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{RequeueAfter: switchv1alpha1.CAssignmentRequeueInterval}, nil
 	} else {
 		targetSwitch := &switchesList.Items[0]
+		if targetSwitch.Spec.ConnectionLevel == 0 {
+			return ctrl.Result{}, nil
+		}
 		targetSwitch.Spec.ConnectionLevel = 0
 		targetSwitch.Spec.Role = switchv1alpha1.CSpineRole
 		if err := r.Update(ctx, targetSwitch); err != nil {
@@ -89,5 +99,41 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 func (r *SwitchAssignmentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1alpha1.SwitchAssignment{}).
+		Watches(&source.Kind{Type: &switchv1alpha1.Switch{}}, handler.Funcs{
+			DeleteFunc: r.handleSwitchDelete(mgr.GetScheme(), &switchv1alpha1.SwitchAssignmentList{}),
+		}).
 		Complete(r)
+}
+
+//handleSwitchDelete handler for UpdateEvent for switch resources
+func (r *SwitchAssignmentReconciler) handleSwitchDelete(scheme *runtime.Scheme, ro runtime.Object) func(event.DeleteEvent, workqueue.RateLimitingInterface) {
+	return func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+		err := enqueueAssignmentReconcileRequest(r.Client, r.Log, scheme, q, ro)
+		if err != nil {
+			r.Log.Error(err, "error triggering switch reconciliation on connections update")
+		}
+	}
+}
+
+func enqueueAssignmentReconcileRequest(c client.Client, log logr.Logger, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
+	ctx := context.Background()
+	list := &unstructured.UnstructuredList{}
+	gvk, err := apiutil.GVKForObject(ro, scheme)
+	if err != nil {
+		log.Error(err, "unable to get gvk")
+		return err
+	}
+	list.SetGroupVersionKind(gvk)
+	if err = c.List(ctx, list); err != nil {
+		log.Error(err, "unable to get list of items")
+		return err
+	}
+	for _, item := range list.Items {
+		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+			Namespace: item.GetNamespace(),
+			Name:      item.GetName(),
+		}})
+		return nil
+	}
+	return nil
 }
