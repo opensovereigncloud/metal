@@ -75,8 +75,7 @@ spec:
                 description: Hostname
                 type: string
               interfaces:
-                description: Interfaces referring to details about network interfaces
-                items:
+                additionalProperties:
                   description: InterfaceSpec defines switch's network interface details
                   properties:
                     fec:
@@ -111,9 +110,6 @@ spec:
                     macAddress:
                       description: MACAddress referring to interface's MAC address
                       type: string
-                    name:
-                      description: Name referring to interface's name
-                      type: string
                     neighbour:
                       description: Neighbour referring to neighbour type
                       enum:
@@ -121,7 +117,8 @@ spec:
                       - Switch
                       type: string
                   type: object
-                type: array
+                description: Interfaces referring to details about network interfaces
+                type: object
               location:
                 description: Location referring to the switch location
                 properties:

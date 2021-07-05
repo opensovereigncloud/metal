@@ -148,11 +148,11 @@ func getPreparedSwitch(inv *inventoriesv1alpha1.Inventory) (*switchv1alpha1.Swit
 }
 
 //prepareInterfaces returns list of interfaces specifications.
-func prepareInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.InterfaceSpec {
-	interfaces := make([]*switchv1alpha1.InterfaceSpec, 0)
+func prepareInterfaces(nics []inventoriesv1alpha1.NICSpec) map[string]*switchv1alpha1.InterfaceSpec {
+	interfaces := make(map[string]*switchv1alpha1.InterfaceSpec)
 	for _, nic := range nics {
 		iface := buildInterface(&nic)
-		interfaces = append(interfaces, iface)
+		interfaces[nic.Name] = iface
 	}
 	return interfaces
 }
@@ -160,7 +160,6 @@ func prepareInterfaces(nics []inventoriesv1alpha1.NICSpec) []*switchv1alpha1.Int
 //buildInterface constructs switch's interface specification.
 func buildInterface(nic *inventoriesv1alpha1.NICSpec) *switchv1alpha1.InterfaceSpec {
 	iface := &switchv1alpha1.InterfaceSpec{
-		Name:       nic.Name,
 		MACAddress: nic.MACAddress,
 		Lanes:      Lanes[nic.Speed],
 	}
@@ -205,13 +204,13 @@ func getChassisId(nics []inventoriesv1alpha1.NICSpec) string {
 
 //getSwitchConnections constructs switch's resource south and north
 //connections specifications.
-func getSwitchConnections(interfaces []*switchv1alpha1.InterfaceSpec) (*switchv1alpha1.ConnectionsSpec, *switchv1alpha1.ConnectionsSpec) {
+func getSwitchConnections(interfaces map[string]*switchv1alpha1.InterfaceSpec) (*switchv1alpha1.ConnectionsSpec, *switchv1alpha1.ConnectionsSpec) {
 	switchNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
 	machinesNeighbours := make([]switchv1alpha1.NeighbourSpec, 0)
-	for _, iface := range interfaces {
+	for name, iface := range interfaces {
 		switch iface.Neighbour {
 		case switchv1alpha1.CSwitchType:
-			if !strings.HasPrefix(iface.Name, "eth") {
+			if !strings.HasPrefix(name, "eth") {
 				switchNeighbours = append(switchNeighbours, switchv1alpha1.NeighbourSpec{
 					ChassisID: iface.LLDPChassisID,
 					Type:      switchv1alpha1.CSwitchType,

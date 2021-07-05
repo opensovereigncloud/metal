@@ -6,131 +6,47 @@ metadata:
 spec:
   hostname: spine-0-1.fra3.infra.onmetal.de
   interfaces:
-  - lanes: 4
-    lldpChassisId: 68:21:5f:47:0d:5a
-    lldpPortDescription: Ethernet0
-    lldpPortId: Eth29/1
-    lldpSystemName: spine-1-1.fra3.infra.onmetal.de
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet0
-    neighbour: Switch
-  - lanes: 4
-    lldpChassisId: 68:21:5f:47:0b:18
-    lldpPortDescription: Ethernet0
-    lldpPortId: Eth29/1
-    lldpSystemName: spine-1-5.fra3.infra.onmetal.de
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet12
-    neighbour: Switch
-  - lanes: 4
-    lldpChassisId: 68:21:5f:47:0b:5b
-    lldpPortDescription: Ethernet0
-    lldpPortId: Eth29/1
-    lldpSystemName: spine-1-2.fra3.infra.onmetal.de
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet4
-    neighbour: Switch
-  - lanes: 4
-    lldpChassisId: 68:21:5f:47:0a:5a
-    lldpPortDescription: Ethernet0
-    lldpPortId: Eth29/1
-    lldpSystemName: spine-1-3.fra3.infra.onmetal.de
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet8
-    neighbour: Switch
-  - lanes: 1
-    lldpChassisId: 64:9d:99:15:56:1c
-    lldpPortDescription: Ethernet Port on unit 1, port 44
-    lldpPortId: Eth 1/44
-    lldpSystemName: mgmt-sw-1
-    macAddress: 68:21:5f:47:0d:6e
-    name: eth0
-    neighbour: Switch
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet100
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet104
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet108
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet112
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet116
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet120
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet124
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet16
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet20
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet24
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet28
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet32
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet36
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet40
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet44
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet48
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet52
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet56
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet60
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet64
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet68
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet72
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet76
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet80
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet84
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet88
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet92
-  - lanes: 4
-    macAddress: 68:21:5f:47:0d:6e
-    name: Ethernet96
-  ports: 35
+    Ethernet0:
+      lanes: 4
+      lldpChassisId: 68:21:5f:47:0d:5a
+      lldpPortDescription: Ethernet0
+      lldpPortId: Eth29/1
+      lldpSystemName: spine-1-1.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:0d:6e
+      neighbour: Switch
+    Ethernet12:
+      lanes: 4
+      lldpChassisId: 68:21:5f:47:0b:18
+      lldpPortDescription: Ethernet0
+      lldpPortId: Eth29/1
+      lldpSystemName: spine-1-5.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:0d:6e
+      neighbour: Switch
+    Ethernet4:
+      lanes: 4
+      lldpChassisId: 68:21:5f:47:0b:5b
+      lldpPortDescription: Ethernet0
+      lldpPortId: Eth29/1
+      lldpSystemName: spine-1-2.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:0d:6e
+      neighbour: Switch
+    Ethernet8:
+      lanes: 4
+      lldpChassisId: 68:21:5f:47:0a:5a
+      lldpPortDescription: Ethernet0
+      lldpPortId: Eth29/1
+      lldpSystemName: spine-1-3.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:0d:6e
+      neighbour: Switch
+    eth0:
+      lanes: 1
+      lldpChassisId: 64:9d:99:15:56:1c
+      lldpPortDescription: Ethernet Port on unit 1, port 44
+      lldpPortId: Eth 1/44
+      lldpSystemName: mgmt-sw-1
+      macAddress: 68:21:5f:47:0d:6e
+      neighbour: Switch
+  ports: 5
   scanPorts: true
   state:
     connectionLevel: 255
@@ -166,4 +82,4 @@ spec:
     asic: broadcom
     os: SONiC
     version: 7145582a
-  switchPorts: 32
+  switchPorts: 4

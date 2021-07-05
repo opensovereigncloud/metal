@@ -58,7 +58,7 @@ type SwitchSpec struct {
 	SouthSubnetV6 *SwitchSubnetSpec `json:"southSubnetV6,omitempty"`
 	//Interfaces referring to details about network interfaces
 	//+kubebuilder:validation:Optional
-	Interfaces []*InterfaceSpec `json:"interfaces,omitempty"`
+	Interfaces map[string]*InterfaceSpec `json:"interfaces,omitempty"`
 	//ScanPorts flag determining whether scanning of ports is requested
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:default=true
@@ -152,9 +152,6 @@ type InterfaceSpec struct {
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:validation:Enum=Machine;Switch
 	Neighbour string `json:"neighbour,omitempty"`
-	//Name referring to interface's name
-	//+kubebuilder:validation:Optional
-	Name string `json:"name,omitempty"`
 	//MACAddress referring to interface's MAC address
 	//+kubebuilder:validation:Optional
 	MACAddress string `json:"macAddress,omitempty"`
@@ -351,11 +348,11 @@ func (sw *Switch) GetAddressNeededCount(addrType subnetv1alpha1.SubnetAddressTyp
 
 //GetSwitchPorts returns list of interface specifications only
 //for switch ports (without management interfaces)
-func (sw *Switch) GetSwitchPorts() []*InterfaceSpec {
-	result := make([]*InterfaceSpec, 0, sw.Spec.SwitchPorts)
-	for _, item := range sw.Spec.Interfaces {
-		if strings.HasPrefix(item.Name, "Ethernet") {
-			result = append(result, item)
+func (sw *Switch) GetSwitchPorts() map[string]*InterfaceSpec {
+	result := make(map[string]*InterfaceSpec)
+	for name, item := range sw.Spec.Interfaces {
+		if strings.HasPrefix(name, "Ethernet") {
+			result[name] = item
 		}
 	}
 	return result
@@ -365,17 +362,22 @@ func (sw *Switch) GetSwitchPorts() []*InterfaceSpec {
 //south interfaces according to switch south subnets values.
 func (sw *Switch) UpdateSouthInterfacesAddresses() {
 	interfaces := sw.GetSwitchPorts()
-	sort.Slice(interfaces, func(i, j int) bool {
-		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[i].Name, "Ethernet", ""))
-		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[j].Name, "Ethernet", ""))
+	names := make([]string, 0, len(interfaces))
+	for name := range interfaces {
+		names = append(names, name)
+	}
+	sort.Slice(names, func(i, j int) bool {
+		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(names[i], "Ethernet", ""))
+		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(names[j], "Ethernet", ""))
 		return leftIndex < rightIndex
 	})
-	for _, iface := range interfaces {
+	for _, name := range names {
+		iface := interfaces[name]
 		if sw.Spec.SouthSubnetV4 != nil && iface.IPv4 == "" && iface.LLDPChassisID != "" {
 			for _, item := range sw.Spec.State.SouthConnections.Connections {
 				if item.ChassisID == iface.LLDPChassisID {
 					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV4.CIDR)
-					ifaceSubnet := iface.getInterfaceSubnet(network, subnetv1alpha1.CIPv4SubnetType)
+					ifaceSubnet := iface.getInterfaceSubnet(name, network, subnetv1alpha1.CIPv4SubnetType)
 					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
 					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
 				}
@@ -385,7 +387,7 @@ func (sw *Switch) UpdateSouthInterfacesAddresses() {
 			for _, item := range sw.Spec.State.SouthConnections.Connections {
 				if item.ChassisID == iface.LLDPChassisID {
 					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV6.CIDR)
-					ifaceSubnet := iface.getInterfaceSubnet(network, subnetv1alpha1.CIPv6SubnetType)
+					ifaceSubnet := iface.getInterfaceSubnet(name, network, subnetv1alpha1.CIPv6SubnetType)
 					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
 					iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
 				}
@@ -424,8 +426,8 @@ func (sw *Switch) RemoveFromSouthConnections(ncm map[string]struct{}) {
 	sw.Spec.State.SouthConnections.Connections = connections
 }
 
-func (iface *InterfaceSpec) getInterfaceSubnet(network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
-	index, _ := strconv.Atoi(strings.ReplaceAll(iface.Name, "Ethernet", ""))
+func (iface *InterfaceSpec) getInterfaceSubnet(name string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
+	index, _ := strconv.Atoi(strings.ReplaceAll(name, "Ethernet", ""))
 	prefix, _ := network.Mask.Size()
 	ifaceNet, _ := gocidr.Subnet(network, GetInterfaceSubnetMaskLength(addrType)-prefix, index)
 	return ifaceNet
