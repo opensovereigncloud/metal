@@ -128,17 +128,17 @@ var _ = Describe("Integration between operators", func() {
 			Eventually(func() bool {
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
-					if sw.Spec.State.ConnectionLevel == 255 {
+					if sw.Spec.ConnectionLevel == 255 {
 						return false
 					}
 					if strings.HasPrefix(sw.Spec.Hostname, "spine-0") {
-						Expect(sw.Spec.State.ConnectionLevel).ShouldNot(Equal(0))
+						Expect(sw.Spec.ConnectionLevel).ShouldNot(Equal(0))
 					}
 					if strings.HasPrefix(sw.Spec.Hostname, "spine-1") {
-						Expect(sw.Spec.State.ConnectionLevel).ShouldNot(Equal(1))
+						Expect(sw.Spec.ConnectionLevel).ShouldNot(Equal(1))
 					}
 					if strings.HasPrefix(sw.Spec.Hostname, "leaf") {
-						Expect(sw.Spec.State.ConnectionLevel).ShouldNot(Equal(2))
+						Expect(sw.Spec.ConnectionLevel).ShouldNot(Equal(2))
 					}
 				}
 				return true

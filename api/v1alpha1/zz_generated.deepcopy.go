@@ -312,13 +312,17 @@ func (in *SwitchSpec) DeepCopyInto(out *SwitchSpec) {
 	}
 	if in.Interfaces != nil {
 		in, out := &in.Interfaces, &out.Interfaces
-		*out = make([]*InterfaceSpec, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
+		*out = make(map[string]*InterfaceSpec, len(*in))
+		for key, val := range *in {
+			var outVal *InterfaceSpec
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
 				*out = new(InterfaceSpec)
 				**out = **in
 			}
+			(*out)[key] = outVal
 		}
 	}
 	if in.State != nil {
