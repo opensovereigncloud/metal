@@ -28,9 +28,8 @@ const (
 	CLabelPrefix    = "switch.onmetal.de/"
 	CLabelChassisId = "chassisId"
 
-	CUndefinedRole = "Undefined"
-	CLeafRole      = "Leaf"
-	CSpineRole     = "Spine"
+	CLeafRole  = "Leaf"
+	CSpineRole = "Spine"
 
 	CMachineType = "Machine"
 	CSwitchType  = "Switch"

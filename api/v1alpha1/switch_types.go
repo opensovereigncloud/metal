@@ -68,7 +68,7 @@ type SwitchSpec struct {
 	State *SwitchStateSpec `json:"state"`
 	//Role referring to switch's role: leaf or spine
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=Leaf;Spine;Undefined
+	//+kubebuilder:validation:Enum=Leaf;Spine
 	Role string `json:"role,omitempty"`
 	// ConnectionLevel refers the level of the connection
 	//+kubebuilder:validation:Optional

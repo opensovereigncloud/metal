@@ -24,7 +24,7 @@ spec:
       name: Hostname
       type: string
     - description: switch's role
-      jsonPath: .spec.state.role
+      jsonPath: .spec.role
       name: Role
       type: string
     - description: OS running on switch
@@ -36,7 +36,7 @@ spec:
       name: SwitchPorts
       type: integer
     - description: Vertical level of switch connection
-      jsonPath: .spec.state.connectionLevel
+      jsonPath: .spec.connectionLevel
       name: ConnectionLevel
       type: integer
     - description: South IPv4 subnet
@@ -148,7 +148,6 @@ spec:
                 enum:
                 - Leaf
                 - Spine
-                - Undefined
                 type: string
               scanPorts:
                 default: true

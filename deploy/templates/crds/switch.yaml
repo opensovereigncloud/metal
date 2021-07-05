@@ -23,7 +23,7 @@ spec:
           name: Hostname
           type: string
         - description: switch's role
-          jsonPath: .spec.state.role
+          jsonPath: .spec.role
           name: Role
           type: string
         - description: OS running on switch
@@ -35,7 +35,7 @@ spec:
           name: SwitchPorts
           type: integer
         - description: Vertical level of switch connection
-          jsonPath: .spec.state.connectionLevel
+          jsonPath: .spec.connectionLevel
           name: ConnectionLevel
           type: integer
         - description: South IPv4 subnet
@@ -70,12 +70,15 @@ spec:
             spec:
               description: SwitchSpec defines the desired state of Switch
               properties:
+                connectionLevel:
+                  default: 255
+                  description: ConnectionLevel refers the level of the connection
+                  type: integer
                 hostname:
                   description: Hostname
                   type: string
                 interfaces:
-                  description: Interfaces referring to details about network interfaces
-                  items:
+                  additionalProperties:
                     description: InterfaceSpec defines switch's network interface details
                     properties:
                       fec:
@@ -110,9 +113,6 @@ spec:
                       macAddress:
                         description: MACAddress referring to interface's MAC address
                         type: string
-                      name:
-                        description: Name referring to interface's name
-                        type: string
                       neighbour:
                         description: Neighbour referring to neighbour type
                         enum:
@@ -120,7 +120,8 @@ spec:
                           - Switch
                         type: string
                     type: object
-                  type: array
+                  description: Interfaces referring to details about network interfaces
+                  type: object
                 location:
                   description: Location referring to the switch location
                   properties:
@@ -141,6 +142,12 @@ spec:
                   description: Ports referring to network interfaces total count
                   format: int64
                   type: integer
+                role:
+                  description: 'Role referring to switch''s role: leaf or spine'
+                  enum:
+                    - Leaf
+                    - Spine
+                  type: string
                 scanPorts:
                   default: true
                   description: ScanPorts flag determining whether scanning of ports
@@ -189,10 +196,6 @@ spec:
                 state:
                   description: State referring to current switch state
                   properties:
-                    connectionLevel:
-                      default: 255
-                      description: ConnectionLevel refers the level of the connection
-                      type: integer
                     northConnections:
                       description: NorthSwitches refers to up-level switch
                       properties:
@@ -225,13 +228,6 @@ spec:
                           description: Count refers to upstream switches count
                           type: integer
                       type: object
-                    role:
-                      description: 'Role referring to switch''s role: leaf or spine'
-                      enum:
-                        - Leaf
-                        - Spine
-                        - Undefined
-                      type: string
                     southConnections:
                       description: SouthSwitches refers to down-level switch
                       properties:
