@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"math/big"
 	"net"
+	"strings"
 	"time"
 
 	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
@@ -49,7 +50,8 @@ const (
 
 	CNamespace = "onmetal"
 
-	CSwitchFinalizer = "switches.switch.onmetal.de/finalizer"
+	CSwitchFinalizer           = "switches.switch.onmetal.de/finalizer"
+	CSwitchAssignmentFinalizer = "switchassignments.switch.onmetal.de/finalizer"
 
 	CIPv4InterfaceSubnetMask = 30
 	CIPv6InterfaceSubnetMask = 127
@@ -84,4 +86,8 @@ func GetMinimalVacantCIDR(vacant []subnetv1alpha1.CIDR, addressType subnetv1alph
 		}
 	}
 	return minSuitableNet
+}
+
+func MacToLabel(mac string) string {
+	return strings.ReplaceAll(mac, ":", "-")
 }

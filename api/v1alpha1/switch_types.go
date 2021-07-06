@@ -287,12 +287,47 @@ func (swl *SwitchList) ConstructNeighboursFromSwitchList() map[string]NeighbourS
 	return neighbours
 }
 
+func (swl *SwitchList) BuildConnectionsMap() (map[uint8][]Switch, []uint8) {
+	connectionsMap := map[uint8][]Switch{}
+	keys := make([]uint8, 0)
+	for _, item := range swl.Items {
+		if _, ok := connectionsMap[item.Spec.ConnectionLevel]; !ok {
+			connectionsMap[item.Spec.ConnectionLevel] = []Switch{item}
+			keys = append(keys, item.Spec.ConnectionLevel)
+		} else {
+			connectionsMap[item.Spec.ConnectionLevel] = append(connectionsMap[item.Spec.ConnectionLevel], item)
+		}
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	return connectionsMap, keys
+}
+
+func (swl *SwitchList) FillConnections(sw *Switch) {
+	for _, item := range swl.Items {
+		if &item != sw {
+			if sw.switchInAnyConnections(item) {
+				if !item.switchInAnyConnections(*sw) {
+					sw.Spec.State.SouthConnections.Connections = append(sw.Spec.State.SouthConnections.Connections, NeighbourSpec{
+						Name:      item.Name,
+						Namespace: item.Namespace,
+						ChassisID: item.Spec.SwitchChassis.ChassisID,
+						Type:      CSwitchType,
+					})
+				}
+			}
+		}
+	}
+	sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
+}
+
 //GetNorthSwitchConnection returns the list of switches
 //that should be set as north connections.
 func (sw *Switch) GetNorthSwitchConnection(swList []Switch) *SwitchList {
 	result := &SwitchList{}
 	for _, obj := range swList {
-		if sw.checkSwitchInSouthConnections(obj) {
+		if sw.switchInSouthConnections(obj) {
 			result.Items = append(result.Items, obj)
 		}
 	}
@@ -301,13 +336,26 @@ func (sw *Switch) GetNorthSwitchConnection(swList []Switch) *SwitchList {
 
 //checkSwitchInSouthConnections checks whether switch objects
 //is in south connections list.
-func (sw *Switch) checkSwitchInSouthConnections(obj Switch) bool {
-	for _, conn := range obj.Spec.State.SouthConnections.Connections {
+func (sw *Switch) switchInSouthConnections(src Switch) bool {
+	for _, conn := range src.Spec.State.SouthConnections.Connections {
 		if sw.Spec.SwitchChassis.ChassisID == conn.ChassisID {
 			return true
 		}
 	}
 	return false
+}
+
+func (sw *Switch) switchInNorthConnections(src Switch) bool {
+	for _, conn := range src.Spec.State.NorthConnections.Connections {
+		if sw.Spec.SwitchChassis.ChassisID == conn.ChassisID {
+			return true
+		}
+	}
+	return false
+}
+
+func (sw *Switch) switchInAnyConnections(src Switch) bool {
+	return sw.switchInSouthConnections(src) && sw.switchInNorthConnections(src)
 }
 
 //CheckMachinesConnected checks whether any machine is
@@ -373,7 +421,7 @@ func (sw *Switch) UpdateSouthInterfacesAddresses() {
 	})
 	for _, name := range names {
 		iface := interfaces[name]
-		if sw.Spec.SouthSubnetV4 != nil && iface.IPv4 == "" && iface.LLDPChassisID != "" {
+		if sw.Spec.SouthSubnetV4 != nil && iface.LLDPChassisID != "" {
 			for _, item := range sw.Spec.State.SouthConnections.Connections {
 				if item.ChassisID == iface.LLDPChassisID {
 					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV4.CIDR)
@@ -383,7 +431,7 @@ func (sw *Switch) UpdateSouthInterfacesAddresses() {
 				}
 			}
 		}
-		if sw.Spec.SouthSubnetV6 != nil && iface.IPv6 == "" && iface.LLDPChassisID != "" {
+		if sw.Spec.SouthSubnetV6 != nil && iface.LLDPChassisID != "" {
 			for _, item := range sw.Spec.State.SouthConnections.Connections {
 				if item.ChassisID == iface.LLDPChassisID {
 					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV6.CIDR)
@@ -429,33 +477,53 @@ func (sw *Switch) RemoveFromSouthConnections(ncm map[string]struct{}) {
 func (sw *Switch) MoveNeighbours(list *SwitchList) {
 	northNeighbours := make([]NeighbourSpec, 0)
 	southNeighbours := make([]NeighbourSpec, 0)
-	for _, item := range list.Items {
-		for _, conn := range sw.Spec.State.NorthConnections.Connections {
-			if conn.Name == item.Name {
-				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
-					northNeighbours = append(northNeighbours, conn)
-				}
-				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel+1 {
-					southNeighbours = append(southNeighbours, conn)
+	if sw.Spec.ConnectionLevel == 0 {
+		southNeighbours = append(southNeighbours, sw.Spec.State.NorthConnections.Connections...)
+		southNeighbours = append(southNeighbours, sw.Spec.State.SouthConnections.Connections...)
+	} else {
+		for _, item := range list.Items {
+			for _, conn := range sw.Spec.State.NorthConnections.Connections {
+				if conn.Name == item.Name {
+					if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
+						northNeighbours = append(northNeighbours, conn)
+					}
+					if item.Spec.ConnectionLevel >= sw.Spec.ConnectionLevel+1 {
+						southNeighbours = append(southNeighbours, conn)
+					}
 				}
 			}
-		}
-		for _, conn := range sw.Spec.State.SouthConnections.Connections {
-			if conn.Name == item.Name {
-				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel+1 {
-					southNeighbours = append(southNeighbours, conn)
-				}
-				if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
-					northNeighbours = append(northNeighbours, conn)
-				}
-				if item.Spec.ConnectionLevel == 255 {
-					southNeighbours = append(southNeighbours, conn)
+			for _, conn := range sw.Spec.State.SouthConnections.Connections {
+				if conn.Name == item.Name {
+					if item.Spec.ConnectionLevel >= sw.Spec.ConnectionLevel+1 {
+						southNeighbours = append(southNeighbours, conn)
+					}
+					if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
+						northNeighbours = append(northNeighbours, conn)
+					}
 				}
 			}
 		}
 	}
 	sw.Spec.State.NorthConnections.Connections = northNeighbours
 	sw.Spec.State.SouthConnections.Connections = southNeighbours
+}
+
+func (sw *Switch) FlushAddresses() {
+	for _, iface := range sw.Spec.Interfaces {
+		iface.IPv4 = ""
+		iface.IPv6 = ""
+	}
+}
+
+func (sw *Switch) AddressAssigned() bool {
+	for _, iface := range sw.Spec.Interfaces {
+		if iface.LLDPChassisID != "" {
+			if iface.IPv4 == "" || iface.IPv6 == "" {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (iface *InterfaceSpec) getInterfaceSubnet(name string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
@@ -469,9 +537,15 @@ func (iface *InterfaceSpec) RequestAddress(addrType subnetv1alpha1.SubnetAddress
 	addr := net.IP{}
 	switch addrType {
 	case subnetv1alpha1.CIPv4SubnetType:
+		if iface.IPv4 == "" {
+			return nil
+		}
 		_, cidr, _ := net.ParseCIDR(iface.IPv4)
 		addr, _ = gocidr.Host(cidr, 2)
 	case subnetv1alpha1.CIPv6SubnetType:
+		if iface.IPv6 == "" {
+			return nil
+		}
 		_, cidr, _ := net.ParseCIDR(iface.IPv6)
 		addr, _ = gocidr.Host(cidr, 1)
 	}

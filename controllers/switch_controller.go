@@ -21,10 +21,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
-	"sort"
-	"strings"
 
-	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -117,12 +114,12 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if switchRes.Spec.ConnectionLevel != 0 {
-		if err := r.updateConnectionLevel(switchRes, ctx); err != nil {
-			log.Error(err, "failed to update switch connection level")
-			return ctrl.Result{}, err
-		}
+	if err := r.updateConnectionLevel(switchRes, ctx); err != nil {
+		log.Error(err, "failed to update switch connection level")
+		return ctrl.Result{}, err
 	}
+
+	switchRes.FlushAddresses()
 	switchRes.UpdateSouthInterfacesAddresses()
 	r.updateNorthInterfacesAddresses(switchRes, ctx)
 
@@ -133,7 +130,10 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if switchRes.Spec.SouthSubnetV4 == nil || switchRes.Spec.SouthSubnetV6 == nil {
+	if !switchRes.AddressAssigned() {
+		return ctrl.Result{RequeueAfter: switchv1alpha1.CSwitchRequeueInterval}, nil
+	}
+	if !r.NeighboursOk(switchRes, ctx) {
 		return ctrl.Result{RequeueAfter: switchv1alpha1.CSwitchRequeueInterval}, nil
 	}
 
@@ -191,7 +191,9 @@ func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *run
 			continue
 		}
 		if obj.Spec.State.SouthConnections != nil {
-			for _, neighbour := range obj.Spec.State.SouthConnections.Connections {
+			connections := obj.Spec.State.SouthConnections.Connections
+			connections = append(connections, obj.Spec.State.NorthConnections.Connections...)
+			for _, neighbour := range connections {
 				if neighbour.Name != "" && neighbour.Namespace != "" && neighbour.Type == switchv1alpha1.CSwitchType {
 					q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 						Namespace: neighbour.Namespace,
@@ -211,7 +213,7 @@ func (r *SwitchReconciler) findSouthNeighboursSwitches(switchRes *switchv1alpha1
 	connectionsChassisIds := make([]string, 0, len(switchRes.Spec.State.SouthConnections.Connections))
 	for _, item := range switchRes.Spec.State.SouthConnections.Connections {
 		if item.Type == switchv1alpha1.CSwitchType {
-			connectionsChassisIds = append(connectionsChassisIds, strings.ReplaceAll(item.ChassisID, ":", "-"))
+			connectionsChassisIds = append(connectionsChassisIds, switchv1alpha1.MacToLabel(item.ChassisID))
 		}
 	}
 	if len(connectionsChassisIds) == 0 {
@@ -241,7 +243,7 @@ func (r *SwitchReconciler) findNorthNeighboursSwitches(switchRes *switchv1alpha1
 	connectionsChassisIds := make([]string, 0, len(switchRes.Spec.State.NorthConnections.Connections))
 	for _, item := range switchRes.Spec.State.NorthConnections.Connections {
 		if item.Type == switchv1alpha1.CSwitchType {
-			connectionsChassisIds = append(connectionsChassisIds, strings.ReplaceAll(item.ChassisID, ":", "-"))
+			connectionsChassisIds = append(connectionsChassisIds, switchv1alpha1.MacToLabel(item.ChassisID))
 		}
 	}
 	if len(connectionsChassisIds) == 0 {
@@ -271,43 +273,34 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 	if err := r.Client.List(ctx, swList); err != nil {
 		return err
 	}
-
-	connectionLevelMap := map[uint8][]switchv1alpha1.Switch{}
-	keys := make([]uint8, 0)
-	for _, item := range swList.Items {
-		if _, ok := connectionLevelMap[item.Spec.ConnectionLevel]; !ok {
-			connectionLevelMap[item.Spec.ConnectionLevel] = []switchv1alpha1.Switch{item}
-			keys = append(keys, item.Spec.ConnectionLevel)
-		} else {
-			connectionLevelMap[item.Spec.ConnectionLevel] = append(connectionLevelMap[item.Spec.ConnectionLevel], item)
-		}
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-
-	for _, connLevel := range keys {
-		switches := connectionLevelMap[connLevel]
-		switchNorthNeighbours := sw.GetNorthSwitchConnection(switches)
-		if len(switchNorthNeighbours.Items) > 0 {
-			minConnLevel := switchNorthNeighbours.GetMinConnectionLevel()
-			if minConnLevel != 255 && minConnLevel < sw.Spec.ConnectionLevel {
-				sw.Spec.ConnectionLevel = minConnLevel + 1
-				northNeighboursMap := switchNorthNeighbours.ConstructNeighboursFromSwitchList()
-				sw.UpdateNorthConnections(northNeighboursMap)
-				ncm := map[string]struct{}{}
-				for _, conn := range sw.Spec.State.NorthConnections.Connections {
-					if _, ok := ncm[conn.ChassisID]; !ok {
-						ncm[conn.ChassisID] = struct{}{}
+	if sw.Spec.ConnectionLevel == 0 {
+		sw.MoveNeighbours(swList)
+	} else {
+		swList.FillConnections(sw)
+		connectionsMap, keys := swList.BuildConnectionsMap()
+		for _, connLevel := range keys {
+			switches := connectionsMap[connLevel]
+			switchNorthNeighbours := sw.GetNorthSwitchConnection(switches)
+			if len(switchNorthNeighbours.Items) > 0 {
+				minConnLevel := switchNorthNeighbours.GetMinConnectionLevel()
+				if minConnLevel != 255 && minConnLevel < sw.Spec.ConnectionLevel {
+					sw.Spec.ConnectionLevel = minConnLevel + 1
+					northNeighboursMap := switchNorthNeighbours.ConstructNeighboursFromSwitchList()
+					sw.UpdateNorthConnections(northNeighboursMap)
+					ncm := map[string]struct{}{}
+					for _, conn := range sw.Spec.State.NorthConnections.Connections {
+						if _, ok := ncm[conn.ChassisID]; !ok {
+							ncm[conn.ChassisID] = struct{}{}
+						}
 					}
+					sw.RemoveFromSouthConnections(ncm)
+					sw.MoveNeighbours(swList)
 				}
-				sw.RemoveFromSouthConnections(ncm)
-				sw.MoveNeighbours(swList)
-				sw.Spec.State.NorthConnections.Count = len(sw.Spec.State.NorthConnections.Connections)
-				sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
 			}
 		}
 	}
+	sw.Spec.State.NorthConnections.Count = len(sw.Spec.State.NorthConnections.Connections)
+	sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
 	return nil
 }
 
@@ -515,8 +508,6 @@ func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Swi
 	if sw.Spec.State.NorthConnections.Count > 0 {
 		for _, item := range sw.Spec.State.NorthConnections.Connections {
 			northSwitch := &switchv1alpha1.Switch{}
-			northIPv4Subnet := &net.IPNet{}
-			northIPv6Subnet := &net.IPNet{}
 			if item.Name != "" && item.Namespace != "" {
 				if err := r.Client.Get(ctx, types.NamespacedName{
 					Namespace: item.Namespace,
@@ -529,28 +520,18 @@ func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Swi
 					}
 					continue
 				}
-				// got north switch resource
-				for _, iface := range northSwitch.Spec.Interfaces {
-					if iface.LLDPChassisID == sw.Spec.SwitchChassis.ChassisID {
-						if iface.IPv4 != "" {
-							_, northIPv4Subnet, _ = net.ParseCIDR(iface.IPv4)
-						}
-						if iface.IPv6 != "" {
-							_, northIPv6Subnet, _ = net.ParseCIDR(iface.IPv6)
-						}
-						break
-					}
-				}
 			}
 			for _, iface := range sw.Spec.Interfaces {
 				if iface.LLDPChassisID == northSwitch.Spec.SwitchChassis.ChassisID {
-					if addr, err := gocidr.Host(northIPv4Subnet, 2); err == nil {
-						iface.IPv4 = fmt.Sprintf("%s/%d", addr.String(), switchv1alpha1.CIPv4InterfaceSubnetMask)
+					peerIface := northSwitch.Spec.Interfaces[iface.LLDPPortDescription]
+					ipv4Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv4SubnetType)
+					ipv6Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv6SubnetType)
+					if ipv4Addr != nil {
+						iface.IPv4 = fmt.Sprintf("%s/%d", ipv4Addr.String(), switchv1alpha1.CIPv4InterfaceSubnetMask)
 					}
-					if addr, err := gocidr.Host(northIPv6Subnet, 1); err == nil {
-						iface.IPv6 = fmt.Sprintf("%s/%d", addr.String(), switchv1alpha1.CIPv6InterfaceSubnetMask)
+					if ipv6Addr != nil {
+						iface.IPv6 = fmt.Sprintf("%s/%d", ipv6Addr.String(), switchv1alpha1.CIPv6InterfaceSubnetMask)
 					}
-					break
 				}
 			}
 		}
@@ -571,4 +552,24 @@ func (r *SwitchReconciler) fillSouthConnections(obj *switchv1alpha1.Switch, ctx 
 	}
 	obj.Spec.State.SouthConnections.Connections = connections
 	return nil
+}
+
+func (r *SwitchReconciler) NeighboursOk(sw *switchv1alpha1.Switch, ctx context.Context) bool {
+	list := &switchv1alpha1.SwitchList{}
+	if err := r.List(ctx, list); err != nil {
+		return false
+	}
+	for _, item := range list.Items {
+		for _, conn := range sw.Spec.State.NorthConnections.Connections {
+			if conn.ChassisID == item.Spec.SwitchChassis.ChassisID && item.Spec.ConnectionLevel != sw.Spec.ConnectionLevel-1 {
+				return false
+			}
+		}
+		for _, conn := range sw.Spec.State.SouthConnections.Connections {
+			if conn.ChassisID == item.Spec.SwitchChassis.ChassisID && item.Spec.ConnectionLevel != sw.Spec.ConnectionLevel+1 {
+				return false
+			}
+		}
+	}
+	return true
 }

@@ -17,8 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"strings"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -48,7 +46,7 @@ func (sw *Switch) Default() {
 	}
 	if _, ok := sw.Labels[LabelChassisId]; !ok {
 		if sw.Spec.SwitchChassis.ChassisID != "" {
-			sw.Labels[LabelChassisId] = strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")
+			sw.Labels[LabelChassisId] = MacToLabel(sw.Spec.SwitchChassis.ChassisID)
 		}
 	}
 }

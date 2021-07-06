@@ -17,8 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"strings"
-
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,7 +49,7 @@ func (swa *SwitchAssignment) Default() {
 		swa.Labels = map[string]string{}
 	}
 	if _, ok := swa.Labels[LabelChassisId]; !ok {
-		swa.Labels[LabelChassisId] = strings.ReplaceAll(swa.Spec.ChassisID, ":", "-")
+		swa.Labels[LabelChassisId] = MacToLabel(swa.Spec.ChassisID)
 	}
 }
 
