@@ -130,10 +130,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if !switchRes.AddressAssigned() {
-		return ctrl.Result{RequeueAfter: switchv1alpha1.CSwitchRequeueInterval}, nil
-	}
-	if !r.NeighboursOk(switchRes, ctx) {
+	if !switchRes.AddressAssigned() || !r.neighboursOk(switchRes, ctx) {
 		return ctrl.Result{RequeueAfter: switchv1alpha1.CSwitchRequeueInterval}, nil
 	}
 
@@ -236,36 +233,6 @@ func (r *SwitchReconciler) findSouthNeighboursSwitches(switchRes *switchv1alpha1
 	return swList, nil
 }
 
-//findNorthNeighboursSwitches returns a SwitchList resource, that includes
-//"upstream" switches or an error.
-func (r *SwitchReconciler) findNorthNeighboursSwitches(switchRes *switchv1alpha1.Switch, ctx context.Context) (*switchv1alpha1.SwitchList, error) {
-	swList := &switchv1alpha1.SwitchList{}
-	connectionsChassisIds := make([]string, 0, len(switchRes.Spec.State.NorthConnections.Connections))
-	for _, item := range switchRes.Spec.State.NorthConnections.Connections {
-		if item.Type == switchv1alpha1.CSwitchType {
-			connectionsChassisIds = append(connectionsChassisIds, switchv1alpha1.MacToLabel(item.ChassisID))
-		}
-	}
-	if len(connectionsChassisIds) == 0 {
-		return swList, nil
-	}
-
-	labelsReq, err := labels.NewRequirement(switchv1alpha1.LabelChassisId, selection.In, connectionsChassisIds)
-	if err != nil {
-		return nil, err
-	}
-	selector := labels.NewSelector()
-	selector = selector.Add(*labelsReq)
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Limit:         1000,
-	}
-	if err := r.Client.List(ctx, swList, opts); err != nil {
-		return nil, err
-	}
-	return swList, nil
-}
-
 //updateConnectionLevel calculates switch's connection level,
 //basing on neighbours connection levels. Returns an error.
 func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx context.Context) error {
@@ -293,8 +260,8 @@ func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx 
 							ncm[conn.ChassisID] = struct{}{}
 						}
 					}
-					sw.RemoveFromSouthConnections(ncm)
 					sw.MoveNeighbours(swList)
+					sw.RemoveFromSouthConnections(ncm)
 				}
 			}
 		}
@@ -554,7 +521,7 @@ func (r *SwitchReconciler) fillSouthConnections(obj *switchv1alpha1.Switch, ctx 
 	return nil
 }
 
-func (r *SwitchReconciler) NeighboursOk(sw *switchv1alpha1.Switch, ctx context.Context) bool {
+func (r *SwitchReconciler) neighboursOk(sw *switchv1alpha1.Switch, ctx context.Context) bool {
 	list := &switchv1alpha1.SwitchList{}
 	if err := r.List(ctx, list); err != nil {
 		return false
