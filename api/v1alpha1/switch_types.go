@@ -509,14 +509,14 @@ func (sw *Switch) MoveNeighbours(list *SwitchList) {
 }
 
 func (sw *Switch) FlushAddresses() {
-	for _, iface := range sw.Spec.Interfaces {
+	for _, iface := range sw.GetSwitchPorts() {
 		iface.IPv4 = ""
 		iface.IPv6 = ""
 	}
 }
 
 func (sw *Switch) AddressAssigned() bool {
-	for _, iface := range sw.Spec.Interfaces {
+	for _, iface := range sw.GetSwitchPorts() {
 		if iface.LLDPChassisID != "" {
 			if iface.IPv4 == "" || iface.IPv6 == "" {
 				return false

@@ -198,6 +198,7 @@ func checkTypesFunctions() bool {
 
 	targetIpv4Mask := net.CIDRMask(23, 32)
 	targetIpv6Mask := net.CIDRMask(120, 128)
+	testIface := tgtSw.Spec.Interfaces["Ethernet12"]
 
 	Expect(tgtSw.CheckMachinesConnected()).Should(BeFalse())
 	ipv4addressCount := tgtSw.GetAddressNeededCount(subnetv1alpha1.CIPv4SubnetType)
@@ -205,6 +206,9 @@ func checkTypesFunctions() bool {
 	Expect(tgtSw.GetNeededMask(subnetv1alpha1.CIPv4SubnetType, float64(ipv4addressCount))).Should(Equal(targetIpv4Mask))
 	Expect(tgtSw.GetNeededMask(subnetv1alpha1.CIPv6SubnetType, float64(ipv6addressCount))).Should(Equal(targetIpv6Mask))
 	Expect(len(tgtSw.GetSwitchPorts())).Should(Equal(32))
+	Expect(tgtSw.AddressAssigned()).To(BeTrue())
+	Expect(testIface.RequestAddress(subnetv1alpha1.CIPv4SubnetType)).NotTo(BeNil())
+	Expect(testIface.RequestAddress(subnetv1alpha1.CIPv6SubnetType)).NotTo(BeNil())
 
 	return true
 }
