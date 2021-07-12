@@ -18,16 +18,13 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"net"
-	"reflect"
 
 	"github.com/go-logr/logr"
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -39,8 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
@@ -67,8 +62,8 @@ type SwitchReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
 func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("switch", req.NamespacedName)
-	switchRes := &switchv1alpha1.Switch{}
-	if err := r.Get(ctx, req.NamespacedName, switchRes); err != nil {
+	res := &switchv1alpha1.Switch{}
+	if err := r.Get(ctx, req.NamespacedName, res); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("requested switch resource not found", "name", req.NamespacedName)
 			return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -77,61 +72,93 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if switchRes.DeletionTimestamp != nil {
-		if controllerutil.ContainsFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer) {
-			if err := r.finalizeSwitch(switchRes, ctx); err != nil {
-				log.Error(err, "failed to finalize switch")
-				return ctrl.Result{}, err
-			}
-
-			controllerutil.RemoveFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer)
-			if err := r.Client.Update(ctx, switchRes); err != nil {
-				log.Error(err, "failed to update switch resource on finalizer removal")
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
+	if res.DeletionTimestamp != nil {
+		return r.finalize(ctx, res)
 	}
 
-	oldRes := switchRes.DeepCopy()
-
-	if !controllerutil.ContainsFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer) {
-		controllerutil.AddFinalizer(switchRes, switchv1alpha1.CSwitchFinalizer)
-	}
-
-	if switchRes.CheckMachinesConnected() {
-		switchRes.Spec.Role = switchv1alpha1.CLeafRole
-	}
-
-	if switchRes.Spec.SouthSubnetV4 == nil || switchRes.Spec.SouthSubnetV6 == nil {
-		if err := r.defineSubnets(switchRes, ctx); err != nil {
-			log.Info("unable to define subnet(s)", "error", err.Error())
-		}
-	}
-
-	if err := r.fillSouthConnections(switchRes, ctx); err != nil {
-		log.Error(err, "failed to get south switch neighbours")
-		return ctrl.Result{}, err
-	}
-
-	if err := r.updateConnectionLevel(switchRes, ctx); err != nil {
-		log.Error(err, "failed to update switch connection level")
-		return ctrl.Result{}, err
-	}
-
-	switchRes.FlushAddresses()
-	switchRes.UpdateSouthInterfacesAddresses()
-	r.updateNorthInterfacesAddresses(switchRes, ctx)
-
-	if !reflect.DeepEqual(oldRes, switchRes) {
-		if err := r.Client.Update(ctx, switchRes); err != nil {
+	if !controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchFinalizer) {
+		controllerutil.AddFinalizer(res, switchv1alpha1.CSwitchFinalizer)
+		if err := r.Update(ctx, res); err != nil {
 			log.Error(err, "failed to update switch resource")
 			return ctrl.Result{}, err
 		}
 	}
 
-	if !switchRes.AddressAssigned() || !r.neighboursOk(switchRes, ctx) {
-		return ctrl.Result{RequeueAfter: switchv1alpha1.CSwitchRequeueInterval}, nil
+	list := &switchv1alpha1.SwitchList{}
+	if err := r.List(ctx, list); err != nil {
+		log.Error(err, "failed to list switch resources")
+		return ctrl.Result{}, err
+	}
+
+	if !res.InterfacesUpdated(list) {
+		res.UpdateInterfaces(list)
+		if err := r.Update(ctx, res); err != nil {
+			log.Error(err, "failed to update resource")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if res.Status.State == switchv1alpha1.EmptyString {
+		res.FillStatusOnCreate()
+		if err := r.Status().Update(ctx, res); err != nil {
+			r.Log.Error(err, "failed to set status on resource creation", "name", res.NamespacedName())
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	swa, err := r.findAssignment(ctx, res)
+	if err != nil {
+		log.Error(err, "failed to lookup for related switch assignment resource")
+		return ctrl.Result{}, err
+	}
+	if swa != nil {
+		if swa.Status.State != switchv1alpha1.StateFinished {
+			swa.FillStatus(switchv1alpha1.StateFinished, &switchv1alpha1.LinkedSwitchSpec{
+				Name:      res.Name,
+				Namespace: res.Namespace,
+			})
+			if err = r.Status().Update(ctx, swa); err != nil {
+				r.Log.Error(err, "failed to update resource", "kind", swa.Kind, "name", swa.NamespacedName())
+				return ctrl.Result{}, err
+			}
+			res.Status.ConnectionLevel = 0
+		}
+	}
+
+	ok := res.PeersProcessingFinished(list, swa)
+	if ok {
+		res.Status.State = switchv1alpha1.StateDefineAddresses
+		if list.AllConnectionsOk() {
+			if res.AddressesDefined() {
+				res.Status.State = switchv1alpha1.StateFinished
+			} else {
+				if err := r.defineSubnets(ctx, res); err != nil {
+					log.Error(err, "failed to define south subnets")
+					return ctrl.Result{}, err
+				}
+				res.UpdateSouthInterfacesAddresses()
+				res.UpdateNorthInterfacesAddresses(list)
+				if err := r.Update(ctx, res); err != nil {
+					log.Error(err, "failed to update resource")
+					return ctrl.Result{}, err
+				}
+			}
+		}
+	} else {
+		res.Status.State = switchv1alpha1.StateDefinePeers
+		res.UpdatePeersData(list)
+		res.UpdateConnectionLevel(list)
+	}
+
+	if err := r.Status().Update(ctx, res); err != nil {
+		log.Error(err, "failed to update resource status")
+		return ctrl.Result{}, err
+	}
+
+	if res.Status.State != switchv1alpha1.StateFinished {
+		return ctrl.Result{RequeueAfter: switchv1alpha1.CRequeueInterval}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -141,25 +168,63 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1alpha1.Switch{}).
+		Watches(&source.Kind{Type: &switchv1alpha1.SwitchAssignment{}}, handler.Funcs{
+			UpdateFunc: r.handleAssignmentUpdate(),
+		}).
 		Watches(&source.Kind{Type: &switchv1alpha1.Switch{}}, handler.Funcs{
 			UpdateFunc: r.handleSwitchUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchList{}),
 		}).
 		Complete(r)
 }
 
-//handleSwitchUpdate handler for UpdateEvent for switch resources
-func (r *SwitchReconciler) handleSwitchUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
+func (r *SwitchReconciler) handleAssignmentUpdate() func(event.UpdateEvent, workqueue.RateLimitingInterface) {
 	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-		err := enqueueSwitchReconcileRequest(r.Client, r.Log, scheme, q, ro)
-		if err != nil {
-			r.Log.Error(err, "error triggering switch reconciliation on connections update")
+		oldRes := e.ObjectOld.(*switchv1alpha1.SwitchAssignment)
+		updRes := e.ObjectNew.(*switchv1alpha1.SwitchAssignment)
+		if err := r.enqueueOnAssignmentUpdate(context.Background(), oldRes, updRes, q); err != nil {
+			r.Log.Error(err, "failed to trigger reconciliation")
 		}
 	}
 }
 
-//enqueueSwitchReconcileRequest adds related switch resources
-//to the reconciliation queue
-func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
+func (r *SwitchReconciler) handleSwitchUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
+	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+		err := enqueueOnSwitchUpdate(r.Client, r.Log, scheme, q, ro)
+		if err != nil {
+			r.Log.Error(err, "error triggering switch reconciliation on update")
+		}
+	}
+}
+
+func (r *SwitchReconciler) enqueueOnAssignmentUpdate(
+	ctx context.Context,
+	oldRes *switchv1alpha1.SwitchAssignment,
+	updRes *switchv1alpha1.SwitchAssignment,
+	q workqueue.RateLimitingInterface) error {
+
+	if !controllerutil.ContainsFinalizer(oldRes, switchv1alpha1.CSwitchAssignmentFinalizer) {
+		return nil
+	}
+	if updRes.Status.State == switchv1alpha1.StateFinished {
+		return nil
+	}
+	list := &switchv1alpha1.SwitchList{}
+	opts, err := updRes.GetListFilter()
+	if err != nil {
+		return err
+	}
+	if err := r.List(ctx, list, opts); err != nil {
+		return err
+	}
+	if len(list.Items) == 0 {
+		return nil
+	}
+	obj := &list.Items[0]
+	q.Add(reconcile.Request{NamespacedName: obj.NamespacedName()})
+	return nil
+}
+
+func enqueueOnSwitchUpdate(c client.Client, log logr.Logger, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
 	ctx := context.Background()
 	list := &unstructured.UnstructuredList{}
 	gvk, err := apiutil.GVKForObject(ro, scheme)
@@ -173,133 +238,125 @@ func enqueueSwitchReconcileRequest(c client.Client, log logr.Logger, scheme *run
 		return err
 	}
 	for _, item := range list.Items {
-		obj := &switchv1alpha1.Switch{}
-		err := c.Get(ctx, types.NamespacedName{
+		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 			Namespace: item.GetNamespace(),
 			Name:      item.GetName(),
-		}, obj)
-		if err != nil {
-			if !apierrors.IsNotFound(err) {
-				log.Error(err, "failed to get switch resource", "name", types.NamespacedName{
-					Namespace: item.GetNamespace(),
-					Name:      item.GetName(),
-				})
-			}
-			continue
-		}
-		if obj.Spec.State.SouthConnections != nil {
-			connections := obj.Spec.State.SouthConnections.Connections
-			connections = append(connections, obj.Spec.State.NorthConnections.Connections...)
-			for _, neighbour := range connections {
-				if neighbour.Name != "" && neighbour.Namespace != "" && neighbour.Type == switchv1alpha1.CSwitchType {
-					q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-						Namespace: neighbour.Namespace,
-						Name:      neighbour.Name,
-					}})
-				}
-			}
-		}
+		}})
 	}
 	return nil
 }
 
-//findSouthNeighboursSwitches returns a SwitchList resource, that includes
-//"downstream" switches or an error.
-func (r *SwitchReconciler) findSouthNeighboursSwitches(switchRes *switchv1alpha1.Switch, ctx context.Context) (*switchv1alpha1.SwitchList, error) {
-	swList := &switchv1alpha1.SwitchList{}
-	connectionsChassisIds := make([]string, 0, len(switchRes.Spec.State.SouthConnections.Connections))
-	for _, item := range switchRes.Spec.State.SouthConnections.Connections {
-		if item.Type == switchv1alpha1.CSwitchType {
-			connectionsChassisIds = append(connectionsChassisIds, switchv1alpha1.MacToLabel(item.ChassisID))
+func (r *SwitchReconciler) finalize(ctx context.Context, res *switchv1alpha1.Switch) (ctrl.Result, error) {
+	if controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchFinalizer) {
+		res.FlushStatusOnDelete()
+		if err := r.Status().Update(ctx, res); err != nil {
+			r.Log.Error(err, "failed to finalize resource", "name", res.NamespacedName())
+			return ctrl.Result{}, err
+		}
+
+		swa, err := r.findAssignment(ctx, res)
+		if err != nil {
+			r.Log.Error(err, "failed to lookup for related switch assignment resource",
+				"gvk", res.GroupVersionKind(), "name", res.NamespacedName())
+		}
+		if swa != nil {
+			swa.FillStatus(switchv1alpha1.StatePending, &switchv1alpha1.LinkedSwitchSpec{})
+			if err := r.Status().Update(ctx, swa); err != nil {
+				r.Log.Error(err, "failed to set status on resource creation",
+					"gvk", swa.GroupVersionKind(), "name", swa.NamespacedName())
+			}
+		}
+
+		if res.Spec.SouthSubnetV4 != nil {
+			subnet := &subnetv1alpha1.Subnet{}
+			if err := r.Get(ctx, types.NamespacedName{
+				Namespace: res.Spec.SouthSubnetV4.ParentSubnet.Namespace,
+				Name:      res.Spec.SouthSubnetV4.ParentSubnet.Name,
+			}, subnet); err != nil {
+				r.Log.Error(err, "failed to get subnet resource")
+			} else {
+				_, network, _ := net.ParseCIDR(res.Spec.SouthSubnetV4.CIDR)
+				_ = subnet.Release(&subnetv1alpha1.CIDR{Net: network})
+				if err := r.Status().Update(ctx, subnet); err != nil {
+					r.Log.Error(err, "failed to update subnet status on reservation release")
+				}
+			}
+		}
+		if res.Spec.SouthSubnetV6 != nil {
+			subnet := &subnetv1alpha1.Subnet{}
+			if err := r.Get(ctx, types.NamespacedName{
+				Namespace: res.Spec.SouthSubnetV6.ParentSubnet.Namespace,
+				Name:      res.Spec.SouthSubnetV6.ParentSubnet.Name,
+			}, subnet); err != nil {
+				r.Log.Error(err, "failed to get subnet resource")
+			} else {
+				_, network, _ := net.ParseCIDR(res.Spec.SouthSubnetV6.CIDR)
+				_ = subnet.Release(&subnetv1alpha1.CIDR{Net: network})
+				if err := r.Status().Update(ctx, subnet); err != nil {
+					r.Log.Error(err, "failed to update subnet status on reservation release")
+				}
+			}
+		}
+
+		controllerutil.RemoveFinalizer(res, switchv1alpha1.CSwitchFinalizer)
+		if err := r.Update(ctx, res); err != nil {
+			r.Log.Error(err, "failed to update resource on finalizer removal",
+				"gvk", res.GroupVersionKind(), "name", res.NamespacedName())
+			return ctrl.Result{}, err
 		}
 	}
-	if len(connectionsChassisIds) == 0 {
-		return swList, nil
-	}
+	return ctrl.Result{}, nil
+}
 
-	labelsReq, err := labels.NewRequirement(switchv1alpha1.LabelChassisId, selection.In, connectionsChassisIds)
+func (r *SwitchReconciler) findAssignment(ctx context.Context, sw *switchv1alpha1.Switch) (*switchv1alpha1.SwitchAssignment, error) {
+	opts, err := sw.GetListFilter()
 	if err != nil {
 		return nil, err
 	}
-	selector := labels.NewSelector()
-	selector = selector.Add(*labelsReq)
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Limit:         1000,
-	}
-	if err := r.Client.List(ctx, swList, opts); err != nil {
+	list := &switchv1alpha1.SwitchAssignmentList{}
+	if err := r.List(ctx, list, opts); err != nil {
 		return nil, err
 	}
-	return swList, nil
+	if len(list.Items) == 0 {
+		return nil, nil
+	}
+	return &list.Items[0], nil
 }
 
-//updateConnectionLevel calculates switch's connection level,
-//basing on neighbours connection levels. Returns an error.
-func (r *SwitchReconciler) updateConnectionLevel(sw *switchv1alpha1.Switch, ctx context.Context) error {
+func (r *SwitchReconciler) defineSubnets(ctx context.Context, sw *switchv1alpha1.Switch) error {
+	swaList := &switchv1alpha1.SwitchAssignmentList{}
 	swList := &switchv1alpha1.SwitchList{}
-	if err := r.Client.List(ctx, swList); err != nil {
+	if err := r.List(ctx, swaList); err != nil {
 		return err
 	}
-	if sw.Spec.ConnectionLevel == 0 {
-		sw.MoveNeighbours(swList)
-	} else {
-		swList.FillConnections(sw)
-		connectionsMap, keys := swList.BuildConnectionsMap()
-		for _, connLevel := range keys {
-			switches := connectionsMap[connLevel]
-			switchNorthNeighbours := sw.GetNorthSwitchConnection(switches)
-			if len(switchNorthNeighbours.Items) > 0 {
-				minConnLevel := switchNorthNeighbours.GetMinConnectionLevel()
-				if minConnLevel != 255 && minConnLevel < sw.Spec.ConnectionLevel {
-					sw.Spec.ConnectionLevel = minConnLevel + 1
-					northNeighboursMap := switchNorthNeighbours.ConstructNeighboursFromSwitchList()
-					sw.UpdateNorthConnections(northNeighboursMap)
-					ncm := map[string]struct{}{}
-					for _, conn := range sw.Spec.State.NorthConnections.Connections {
-						if _, ok := ncm[conn.ChassisID]; !ok {
-							ncm[conn.ChassisID] = struct{}{}
-						}
-					}
-					sw.MoveNeighbours(swList)
-					sw.RemoveFromSouthConnections(ncm)
-				}
-			}
-		}
+	if err := r.List(ctx, swList); err != nil {
+		return err
 	}
-	sw.Spec.State.NorthConnections.Count = len(sw.Spec.State.NorthConnections.Connections)
-	sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
-	return nil
-}
 
-//defineSubnets process related resources to define switch's
-//"south" subnets. Returns an error.
-func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.Context) error {
-	topLevelSwitch := r.getTopLevelSwitch(sw, ctx)
-	if topLevelSwitch == nil {
-		return nil
+	regions := make([]string, 0)
+	zones := make([]string, 0)
+	swa := &switchv1alpha1.SwitchAssignment{}
+	if sw.Status.ConnectionLevel == 0 {
+		swa, _ = r.findAssignment(ctx, sw)
+	} else {
+		topLevelSwitch := swList.GetTopLevelSwitch()
+		swa, _ = r.findAssignment(ctx, topLevelSwitch)
 	}
-	relatedAssignment := r.getRelatedAssignment(topLevelSwitch, ctx)
-	if relatedAssignment == nil {
-		return nil
-	}
-	regions := []string{relatedAssignment.Spec.Region}
-	zones := []string{relatedAssignment.Spec.AvailabilityZone}
-	subnetList := &subnetv1alpha1.SubnetList{}
-	if err := r.Client.List(ctx, subnetList); err != nil {
+	regions = append(regions, swa.Spec.Region)
+	zones = append(zones, swa.Spec.AvailabilityZone)
+	subnets := &subnetv1alpha1.SubnetList{}
+	if err := r.Client.List(ctx, subnets); err != nil {
 		return err
 	}
 	if sw.Spec.SouthSubnetV4 == nil {
-		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv4SubnetType, regions, zones)
+		cidr, sn, err := sw.GetSuitableSubnet(subnets, subnetv1alpha1.CIPv4SubnetType, regions, zones)
 		if err != nil {
 			return err
 		}
 		if cidr != nil && sn != nil {
 			sw.Spec.SouthSubnetV4 = &switchv1alpha1.SwitchSubnetSpec{
-				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{
-					Namespace: sn.Namespace,
-					Name:      sn.Name,
-				},
-				CIDR: cidr.String(),
+				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{Namespace: sn.Namespace, Name: sn.Name},
+				CIDR:         cidr.String(),
 			}
 			if err := r.Status().Update(ctx, sn); err != nil {
 				return err
@@ -307,17 +364,14 @@ func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.
 		}
 	}
 	if sw.Spec.SouthSubnetV6 == nil {
-		cidr, sn, err := getSuitableSubnet(sw, subnetList, subnetv1alpha1.CIPv6SubnetType, regions, zones)
+		cidr, sn, err := sw.GetSuitableSubnet(subnets, subnetv1alpha1.CIPv6SubnetType, regions, zones)
 		if err != nil {
 			return err
 		}
 		if cidr != nil && sn != nil {
 			sw.Spec.SouthSubnetV6 = &switchv1alpha1.SwitchSubnetSpec{
-				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{
-					Namespace: sn.Namespace,
-					Name:      sn.Name,
-				},
-				CIDR: cidr.String(),
+				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{Namespace: sn.Namespace, Name: sn.Name},
+				CIDR:         cidr.String(),
 			}
 			if err := r.Status().Update(ctx, sn); err != nil {
 				return err
@@ -325,218 +379,4 @@ func (r *SwitchReconciler) defineSubnets(sw *switchv1alpha1.Switch, ctx context.
 		}
 	}
 	return nil
-}
-
-//getTopLevelSwitch recursively searches for top level switch
-//related to the target switch.
-func (r *SwitchReconciler) getTopLevelSwitch(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.Switch {
-	if sw.Spec.State.NorthConnections != nil && sw.Spec.State.NorthConnections.Count != 0 {
-		nextLevelSwitch := &switchv1alpha1.Switch{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Namespace: sw.Spec.State.NorthConnections.Connections[0].Namespace,
-			Name:      sw.Spec.State.NorthConnections.Connections[0].Name,
-		}, nextLevelSwitch); err != nil {
-			return nil
-		}
-		return r.getTopLevelSwitch(nextLevelSwitch, ctx)
-	}
-	if sw.Spec.ConnectionLevel == 0 {
-		return sw
-	}
-	return nil
-}
-
-//getRelatedAssignment searches for switch assignment resource
-//related to target top level switch.
-func (r *SwitchReconciler) getRelatedAssignment(sw *switchv1alpha1.Switch, ctx context.Context) *switchv1alpha1.SwitchAssignment {
-	swaList := &switchv1alpha1.SwitchAssignmentList{}
-	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: sw.Labels[switchv1alpha1.LabelChassisId]})
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Limit:         1000,
-	}
-	if err := r.List(ctx, swaList, opts); err != nil {
-		r.Log.Error(err, "unable to get switch assignments list")
-	}
-	if len(swaList.Items) == 0 {
-		return nil
-	}
-	return &swaList.Items[0]
-}
-
-//finalizeSwitch prepare environment for switch resource deletion
-//by updating related resources. Returns an error.
-func (r *SwitchReconciler) finalizeSwitch(sw *switchv1alpha1.Switch, ctx context.Context) error {
-	if sw.Spec.SouthSubnetV4 != nil {
-		subnetV4 := &subnetv1alpha1.Subnet{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Namespace: sw.Spec.SouthSubnetV4.ParentSubnet.Namespace,
-			Name:      sw.Spec.SouthSubnetV4.ParentSubnet.Name,
-		}, subnetV4); err != nil {
-			if apierrors.IsNotFound(err) {
-				r.Log.Error(err, "subnet not found")
-				return nil
-			}
-			r.Log.Error(err, "failed to get subnet")
-			return err
-		}
-		cidrToRelease, err := subnetv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV4.CIDR)
-		if err != nil {
-			r.Log.Error(err, "failed to get switch south network CIDR to release")
-			return err
-		}
-		if subnetV4.CanRelease(cidrToRelease) {
-			err := subnetV4.Release(cidrToRelease)
-			if err != nil {
-				r.Log.Error(err, "failed to release switch south network CIDR")
-				return err
-			}
-			if err := r.Status().Update(ctx, subnetV4); err != nil {
-				r.Log.Error(err, "failed to update subnet status")
-				return err
-			}
-		}
-	}
-	if sw.Spec.SouthSubnetV6 != nil {
-		subnetV6 := &subnetv1alpha1.Subnet{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Namespace: sw.Spec.SouthSubnetV6.ParentSubnet.Namespace,
-			Name:      sw.Spec.SouthSubnetV6.ParentSubnet.Name,
-		}, subnetV6); err != nil {
-			if apierrors.IsNotFound(err) {
-				r.Log.Error(err, "subnet not found")
-				return nil
-			}
-			r.Log.Error(err, "failed to get subnet")
-			return err
-		}
-		cidrToRelease, err := subnetv1alpha1.CIDRFromString(sw.Spec.SouthSubnetV6.CIDR)
-		if err != nil {
-			r.Log.Error(err, "failed to get switch south network CIDR to release")
-			return err
-		}
-		if subnetV6.CanRelease(cidrToRelease) {
-			err := subnetV6.Release(cidrToRelease)
-			if err != nil {
-				r.Log.Error(err, "failed to release switch south network CIDR")
-				return err
-			}
-			if err := r.Status().Update(ctx, subnetV6); err != nil {
-				r.Log.Error(err, "failed to update subnet status")
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-//getSuitableSubnet finds the subnet resource, that fits address
-//type, region, availability zones and addresses count. It returns
-//pointers to the CIDR and subnet resource objects or an error.
-func getSuitableSubnet(
-	sw *switchv1alpha1.Switch,
-	subnetList *subnetv1alpha1.SubnetList,
-	addressType subnetv1alpha1.SubnetAddressType,
-	regions []string,
-	zones []string) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
-
-	addressesNeeded := sw.GetAddressNeededCount(addressType)
-	for _, sn := range subnetList.Items {
-		if sn.Spec.NetworkName == "underlay" &&
-			sn.Status.Type == addressType &&
-			reflect.DeepEqual(sn.Spec.Regions, regions) &&
-			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
-			addressesLeft := sn.Status.CapacityLeft
-			if sn.Status.Type == addressType && addressesLeft.CmpInt64(addressesNeeded) >= 0 {
-				minVacantCIDR := switchv1alpha1.GetMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)
-				mask := sw.GetNeededMask(addressType, float64(addressesNeeded))
-				addr := minVacantCIDR.Net.IP
-				network := &net.IPNet{
-					IP:   addr,
-					Mask: mask,
-				}
-				cidrCandidate := &subnetv1alpha1.CIDR{Net: network}
-				if sn.CanReserve(cidrCandidate) {
-					if err := sn.Reserve(cidrCandidate); err != nil {
-						return nil, nil, err
-					} else {
-						return cidrCandidate, &sn, nil
-					}
-				}
-			}
-		}
-	}
-	return nil, nil, nil
-}
-
-//updateNorthInterfacesAddresses sets IP addresses for switch
-//north interfaces according to north switch subnets values.
-func (r *SwitchReconciler) updateNorthInterfacesAddresses(sw *switchv1alpha1.Switch, ctx context.Context) {
-	if sw.Spec.State.NorthConnections.Count > 0 {
-		for _, item := range sw.Spec.State.NorthConnections.Connections {
-			northSwitch := &switchv1alpha1.Switch{}
-			if item.Name != "" && item.Namespace != "" {
-				if err := r.Client.Get(ctx, types.NamespacedName{
-					Namespace: item.Namespace,
-					Name:      item.Name,
-				}, northSwitch); err != nil {
-					if apierrors.IsNotFound(err) {
-						item.Namespace = ""
-						item.Name = ""
-						continue
-					}
-					continue
-				}
-			}
-			for _, iface := range sw.Spec.Interfaces {
-				if iface.LLDPChassisID == northSwitch.Spec.SwitchChassis.ChassisID {
-					peerIface := northSwitch.Spec.Interfaces[iface.LLDPPortDescription]
-					ipv4Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv4SubnetType)
-					ipv6Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv6SubnetType)
-					if ipv4Addr != nil {
-						iface.IPv4 = fmt.Sprintf("%s/%d", ipv4Addr.String(), switchv1alpha1.CIPv4InterfaceSubnetMask)
-					}
-					if ipv6Addr != nil {
-						iface.IPv6 = fmt.Sprintf("%s/%d", ipv6Addr.String(), switchv1alpha1.CIPv6InterfaceSubnetMask)
-					}
-				}
-			}
-		}
-	}
-}
-
-func (r *SwitchReconciler) fillSouthConnections(obj *switchv1alpha1.Switch, ctx context.Context) error {
-	southSwitchList, err := r.findSouthNeighboursSwitches(obj, ctx)
-	if err != nil {
-		return err
-	}
-	neighboursMap := southSwitchList.ConstructNeighboursFromSwitchList()
-	connections := obj.Spec.State.SouthConnections.Connections
-	for i, neighbour := range connections {
-		if _, ok := neighboursMap[neighbour.ChassisID]; ok {
-			connections[i] = neighboursMap[neighbour.ChassisID]
-		}
-	}
-	obj.Spec.State.SouthConnections.Connections = connections
-	return nil
-}
-
-func (r *SwitchReconciler) neighboursOk(sw *switchv1alpha1.Switch, ctx context.Context) bool {
-	list := &switchv1alpha1.SwitchList{}
-	if err := r.List(ctx, list); err != nil {
-		return false
-	}
-	for _, item := range list.Items {
-		for _, conn := range sw.Spec.State.NorthConnections.Connections {
-			if conn.ChassisID == item.Spec.SwitchChassis.ChassisID && item.Spec.ConnectionLevel != sw.Spec.ConnectionLevel-1 {
-				return false
-			}
-		}
-		for _, conn := range sw.Spec.State.SouthConnections.Connections {
-			if conn.ChassisID == item.Spec.SwitchChassis.ChassisID && item.Spec.ConnectionLevel != sw.Spec.ConnectionLevel+1 {
-				return false
-			}
-		}
-	}
-	return true
 }

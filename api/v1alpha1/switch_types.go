@@ -18,16 +18,28 @@ package v1alpha1
 
 import (
 	"fmt"
-	"math"
 	"net"
+	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type State string
+type Role string
+type PeerType string
+
+//ConnectionsMap
+//+kubebuilder:object:generate=false
+type ConnectionsMap map[uint8][]Switch
 
 //SwitchSpec defines the desired state of Switch
 //+kubebuilder:object:generate=true
@@ -38,42 +50,29 @@ type SwitchSpec struct {
 	//Location referring to the switch location
 	//+kubebuilder:validation:Optional
 	Location *LocationSpec `json:"location,omitempty"`
-	//Ports referring to network interfaces total count
+	//TotalPorts referring to network interfaces total count
 	//+kubebuilder:validation:Required
-	Ports uint64 `json:"ports"`
+	TotalPorts uint64 `json:"totalPorts"`
 	//SwitchPorts referring to non-management network interfaces count
 	//+kubebuilder:validation:Required
 	SwitchPorts uint64 `json:"switchPorts"`
 	//SwitchDistro referring to switch OS information
 	//+kubebuilder:validation:Optional
-	SwitchDistro *SwitchDistroSpec `json:"switchDistro,omitempty"`
+	Distro *SwitchDistroSpec `json:"distro,omitempty"`
 	//SwitchChassis referring to switch hardware information
 	//+kubebuilder:validation:Required
-	SwitchChassis *SwitchChassisSpec `json:"switchChassis"`
-	//SouthSubnet referring to south IPv4 subnet
-	//+kubebuilder:validation:Optional
-	SouthSubnetV4 *SwitchSubnetSpec `json:"southSubnetV4,omitempty"`
-	//SouthSubnet referring to south IPv6 subnet
-	//+kubebuilder:validation:Optional
-	SouthSubnetV6 *SwitchSubnetSpec `json:"southSubnetV6,omitempty"`
+	Chassis *SwitchChassisSpec `json:"chassis"`
 	//Interfaces referring to details about network interfaces
 	//+kubebuilder:validation:Optional
 	Interfaces map[string]*InterfaceSpec `json:"interfaces,omitempty"`
-	//ScanPorts flag determining whether scanning of ports is requested
+	//SouthSubnet referring to south IPv4 subnet
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:default=true
-	ScanPorts bool `json:"scanPorts,omitempty"`
-	//State referring to current switch state
-	//kubebuilder:validation:Optional
-	State *SwitchStateSpec `json:"state"`
-	//Role referring to switch's role: leaf or spine
+	//+nullable
+	SouthSubnetV4 *SwitchSubnetSpec `json:"southSubnetV4,omitempty"`
+	//SouthSubnet referring to south IPv6 subnet
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=Leaf;Spine
-	Role string `json:"role,omitempty"`
-	// ConnectionLevel refers the level of the connection
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:default=255
-	ConnectionLevel uint8 `json:"connectionLevel"`
+	//+nullable
+	SouthSubnetV6 *SwitchSubnetSpec `json:"southSubnetV6,omitempty"`
 }
 
 //LocationSpec defines location details
@@ -156,87 +155,105 @@ type InterfaceSpec struct {
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:validation:Enum=None;BaseR;RS
 	FEC string `json:"fec,omitempty"`
-	//Neighbour referring to neighbour type
+	//MacAddress referring to interface's MAC address
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=Machine;Switch
-	Neighbour string `json:"neighbour,omitempty"`
-	//MACAddress referring to interface's MAC address
-	//+kubebuilder:validation:Optional
-	MACAddress string `json:"macAddress,omitempty"`
+	MacAddress string `json:"macAddress,omitempty"`
 	//IPv4 referring to interface's IPv4 address
 	//+kubebuilder:validation:Optional
 	IPv4 string `json:"ipv4,omitempty"`
 	//IPv6 referring to interface's IPv6 address
 	//+kubebuilder:validation:Optional
 	IPv6 string `json:"ipv6,omitempty"`
-	//LLDPSystemName
+	//PeerType referring to neighbour type
 	//+kubebuilder:validation:Optional
-	LLDPSystemName string `json:"lldpSystemName,omitempty"`
-	//LLDPChassisID
+	//+kubebuilder:validation:Enum=Machine;Switch
+	PeerType PeerType `json:"peerType,omitempty"`
+	//PeerSystemName
 	//+kubebuilder:validation:Optional
-	LLDPChassisID string `json:"lldpChassisId,omitempty"`
-	//LLDPPortID
+	PeerSystemName string `json:"peerSystemName,omitempty"`
+	//PeerChassisID
 	//+kubebuilder:validation:Optional
-	LLDPPortID string `json:"lldpPortId,omitempty"`
-	//LLDPPortDescription
+	PeerChassisID string `json:"peerChassisId,omitempty"`
+	//PeerPortID
 	//+kubebuilder:validation:Optional
-	LLDPPortDescription string `json:"lldpPortDescription,omitempty"`
+	PeerPortID string `json:"peerPortId,omitempty"`
+	//PeerPortDescription
+	//+kubebuilder:validation:Optional
+	PeerPortDescription string `json:"peerPortDescription,omitempty"`
+	//Ndp flag defines whether ndp data received from neighbour and it is in Reachable state
+	//+kubebuilder:validation:default=false
+	Ndp bool `json:"ndp"`
 }
 
-// SwitchStateSpec defines current connection state of the Switch
-type SwitchStateSpec struct {
+// SwitchStatus defines the observed state of Switch
+type SwitchStatus struct {
+	//Role referring to switch's role: leaf or spine
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Enum=Leaf;Spine
+	Role Role `json:"role"`
+	// ConnectionLevel refers the level of the connection
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Minimum=0
+	//+kubebuilder:validation:Maximum=255
+	ConnectionLevel uint8 `json:"connectionLevel"`
 	// NorthSwitches refers to up-level switch
 	//+kubebuilder:validation:Optional
 	NorthConnections *ConnectionsSpec `json:"northConnections,omitempty"`
 	// SouthSwitches refers to down-level switch
 	//+kubebuilder:validation:Optional
 	SouthConnections *ConnectionsSpec `json:"southConnections,omitempty"`
+	//State referring to current switch state
+	//kubebuilder:validation:Enum=Finished;Deleting;Define peers;Define addresses
+	State State `json:"state"`
+	//ScanPorts flag determining whether scanning of ports is requested
+	//+kubebuilder:validation:Required
+	ScanPorts bool `json:"scanPorts"`
 }
-
-// SwitchStatus defines the observed state of Switch
-type SwitchStatus struct{}
 
 // ConnectionsSpec defines upstream switches count and properties
 //+kubebuilder:object:generate=true
 type ConnectionsSpec struct {
 	// Count refers to upstream switches count
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:default=0
 	Count int `json:"count"`
-	// Switches refers to connected upstream switches
+	// Peers refers to connected upstream switches
 	//+kubebuilder:validation:Optional
-	Connections []NeighbourSpec `json:"connections"`
+	Peers map[string]*PeerSpec `json:"peers"`
 }
 
-// NeighbourSpec defines switch connected to another switch
+// PeerSpec defines switch connected to another switch
 //+kubebuilder:object:generate=true
-type NeighbourSpec struct {
+type PeerSpec struct {
 	// Name refers to switch's name
 	//+kubebuilder:validation:Optional
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 	// Namespace refers to switch's namespace
 	//+kubebuilder:validation:Optional
-	Namespace string `json:"namespace"`
+	Namespace string `json:"namespace,omitempty"`
 	// ChassisID refers to switch's chassis id
 	//+kubebuilder:validation:Required
 	ChassisID string `json:"chassisId"`
 	//Type referring to neighbour type
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:validation:Enum=Machine;Switch
-	Type string `json:"type,omitempty"`
+	Type PeerType `json:"type,omitempty"`
+	//PortName
+	//+kubebuilder:validation:Optional
+	PortName string `json:"portName,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=sw
 //+kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.hostname`,description="Switch's hostname"
-//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.spec.role`,description="switch's role"
-//+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.switchDistro.os`,description="OS running on switch"
+//+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.distro.os`,description="OS running on switch"
 //+kubebuilder:printcolumn:name="SwitchPorts",type=integer,JSONPath=`.spec.switchPorts`,description="Total amount of non-management network interfaces"
-//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.spec.connectionLevel`,description="Vertical level of switch connection"
+//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.status.role`,description="switch's role"
+//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.status.connectionLevel`,description="Vertical level of switch connection"
 //+kubebuilder:printcolumn:name="SouthSubnetV4",type=string,JSONPath=`.spec.southSubnetV4.cidr`,description="South IPv4 subnet"
 //+kubebuilder:printcolumn:name="SouthSubnetV6",type=string,JSONPath=`.spec.southSubnetV6.cidr`,description="South IPv6 subnet"
-//+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.spec.scanPorts`,description="Request for scan ports"
+//+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.status.scanPorts`,description="Request for scan ports"
+//+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Switch processing state"
 
 // Switch is the Schema for the switches API
 type Switch struct {
@@ -260,42 +277,28 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
-//GetMinConnectionLevel calculates the minimum connection level
-//value among switches in the list provided as argument.
-func (swl *SwitchList) GetMinConnectionLevel() uint8 {
-	result := uint8(255)
-	for _, item := range swl.Items {
-		if item.Spec.ConnectionLevel < result {
-			result = item.Spec.ConnectionLevel
+func (in *ConnectionsMap) topLevelSpinesDefined() bool {
+	if switches, ok := (*in)[0]; !ok {
+		return false
+	} else {
+		for _, sw := range switches {
+			if sw.Status.State == EmptyString {
+				return false
+			}
 		}
 	}
-	return result
+	return true
 }
 
-//ConstructNeighboursFromSwitchList creates list of neighbours
-//specs from the list of switches.
-func (swl *SwitchList) ConstructNeighboursFromSwitchList() map[string]NeighbourSpec {
-	neighbours := map[string]NeighbourSpec{}
-	for _, item := range swl.Items {
-		neighbours[item.Spec.SwitchChassis.ChassisID] = NeighbourSpec{
-			Name:      item.Name,
-			Namespace: item.Namespace,
-			ChassisID: item.Spec.SwitchChassis.ChassisID,
-			Type:      CSwitchType,
-		}
-	}
-	return neighbours
-}
-
-func (swl *SwitchList) BuildConnectionsMap() (map[uint8][]Switch, []uint8) {
-	connectionsMap := map[uint8][]Switch{}
+func (in *SwitchList) buildConnectionMap() (ConnectionsMap, []uint8) {
+	connectionsMap := make(ConnectionsMap)
 	keys := make([]uint8, 0)
-	for _, item := range swl.Items {
-		if _, ok := connectionsMap[item.Spec.ConnectionLevel]; !ok {
-			connectionsMap[item.Spec.ConnectionLevel] = []Switch{item}
-			keys = append(keys, item.Spec.ConnectionLevel)
+	for _, item := range in.Items {
+		if _, ok := connectionsMap[item.Status.ConnectionLevel]; !ok {
+			connectionsMap[item.Status.ConnectionLevel] = []Switch{item}
+			keys = append(keys, item.Status.ConnectionLevel)
 		} else {
-			connectionsMap[item.Spec.ConnectionLevel] = append(connectionsMap[item.Spec.ConnectionLevel], item)
+			connectionsMap[item.Status.ConnectionLevel] = append(connectionsMap[item.Status.ConnectionLevel], item)
 		}
 	}
 	sort.Slice(keys, func(i, j int) bool {
@@ -304,221 +307,460 @@ func (swl *SwitchList) BuildConnectionsMap() (map[uint8][]Switch, []uint8) {
 	return connectionsMap, keys
 }
 
-func (swl *SwitchList) FillConnections(sw *Switch) {
-	for _, item := range swl.Items {
-		if &item != sw {
-			if sw.switchInAnyConnections(item) {
-				if !item.switchInAnyConnections(*sw) {
-					sw.Spec.State.SouthConnections.Connections = append(sw.Spec.State.SouthConnections.Connections, NeighbourSpec{
-						Name:      item.Name,
-						Namespace: item.Namespace,
-						ChassisID: item.Spec.SwitchChassis.ChassisID,
-						Type:      CSwitchType,
-					})
-				}
-			}
-		}
-	}
-	sw.Spec.State.SouthConnections.Count = len(sw.Spec.State.SouthConnections.Connections)
-}
-
-//GetNorthSwitchConnection returns the list of switches
-//that should be set as north connections.
-func (sw *Switch) GetNorthSwitchConnection(swList []Switch) *SwitchList {
-	result := &SwitchList{}
-	for _, obj := range swList {
-		if sw.switchInSouthConnections(obj) {
-			result.Items = append(result.Items, obj)
+func (in *SwitchList) minimumConnectionLevel() uint8 {
+	result := uint8(255)
+	for _, item := range in.Items {
+		if item.Status.ConnectionLevel < result {
+			result = item.Status.ConnectionLevel
 		}
 	}
 	return result
 }
 
-//checkSwitchInSouthConnections checks whether switch objects
-//is in south connections list.
-func (sw *Switch) switchInSouthConnections(src Switch) bool {
-	for _, conn := range src.Spec.State.SouthConnections.Connections {
-		if sw.Spec.SwitchChassis.ChassisID == conn.ChassisID {
-			return true
+func (in *SwitchList) GetTopLevelSwitch() *Switch {
+	connectionsMap, _ := in.buildConnectionMap()
+	if switches, ok := connectionsMap[0]; ok {
+		return &switches[0]
+	}
+	return nil
+}
+
+func (in *SwitchList) AllConnectionsOk() bool {
+	for _, sw := range in.Items {
+		if sw.Status.State == StateDefinePeers {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
-func (sw *Switch) switchInNorthConnections(src Switch) bool {
-	for _, conn := range src.Spec.State.NorthConnections.Connections {
-		if sw.Spec.SwitchChassis.ChassisID == conn.ChassisID {
-			return true
+func (in *Switch) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: in.Namespace,
+		Name:      in.Name,
+	}
+}
+
+func (in *Switch) Prepare(src *inventoriesv1alpha1.Inventory) {
+	interfaces, switchPorts := prepareInterfaces(src.Spec.NICs.NICs)
+	in.ObjectMeta = metav1.ObjectMeta{
+		Name:      src.Name,
+		Namespace: CNamespace,
+	}
+	in.Spec = SwitchSpec{
+		Hostname:    src.Spec.Host.Name,
+		Location:    &LocationSpec{},
+		TotalPorts:  src.Spec.NICs.Count,
+		SwitchPorts: switchPorts,
+		Distro: &SwitchDistroSpec{
+			OS:      CSonicSwitchOs,
+			Version: src.Spec.Distro.CommitId,
+			ASIC:    src.Spec.Distro.AsicType,
+		},
+		Chassis: &SwitchChassisSpec{
+			Manufacturer: src.Spec.System.Manufacturer,
+			SKU:          src.Spec.System.ProductSKU,
+			Serial:       src.Spec.System.SerialNumber,
+			ChassisID:    getChassisId(src.Spec.NICs.NICs),
+		},
+		Interfaces: interfaces,
+	}
+}
+
+func (in *Switch) UpdateInterfaces(swl *SwitchList) {
+	for inf, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID == EmptyString && data.Ndp {
+			for _, item := range swl.Items {
+				for peerInf, peerInfData := range item.Spec.Interfaces {
+					if peerInfData.PeerChassisID == in.Spec.Chassis.ChassisID && peerInfData.PeerPortDescription == inf {
+						data.PeerChassisID = item.Spec.Chassis.ChassisID
+						data.PeerType = SwitchType
+						data.PeerPortDescription = peerInf
+						data.PeerSystemName = item.Spec.Hostname
+					}
+				}
+			}
 		}
 	}
-	return false
 }
 
-func (sw *Switch) switchInAnyConnections(src Switch) bool {
-	return sw.switchInSouthConnections(src) && sw.switchInNorthConnections(src)
-}
-
-//CheckMachinesConnected checks whether any machine is
-//connected to the switch.
-func (sw *Switch) CheckMachinesConnected() bool {
-	for _, iface := range sw.Spec.Interfaces {
-		if iface.Neighbour == CMachineType {
-			return true
+func (in *Switch) InterfacesUpdated(swl *SwitchList) bool {
+	for inf, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID == EmptyString && data.Ndp {
+			for _, item := range swl.Items {
+				for _, peerInfData := range item.Spec.Interfaces {
+					if peerInfData.PeerChassisID == in.Spec.Chassis.ChassisID && peerInfData.PeerPortDescription == inf {
+						return false
+					}
+				}
+			}
 		}
 	}
-	return false
+	return true
 }
 
-//GetNeededMask calculates the minimum network mask needed to fit
-//switch's interfaces and needed IP addresses amount.
-func (sw *Switch) GetNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount float64) net.IPMask {
-	bits := 32
-	pow := 2.0
-	for math.Pow(2, pow) < addressesCount {
-		pow++
-	}
-	if addrType == subnetv1alpha1.CIPv6SubnetType {
-		bits = 128
-	}
-	ones := bits - int(pow)
-	return net.CIDRMask(ones, bits)
-}
-
-//GetAddressNeededCount calculates the number of IP addresses
-//needed for switch's interfaces.
-func (sw *Switch) GetAddressNeededCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
-	if addrType == subnetv1alpha1.CIPv4SubnetType {
-		return int64(sw.Spec.SwitchPorts * CIPv4AddressesPerPort)
-	} else {
-		return int64(sw.Spec.SwitchPorts * CIPv6AddressesPerPort)
-	}
-}
-
-//GetSwitchPorts returns list of interface specifications only
-//for switch ports (without management interfaces)
-func (sw *Switch) GetSwitchPorts() map[string]*InterfaceSpec {
-	result := make(map[string]*InterfaceSpec)
-	for name, item := range sw.Spec.Interfaces {
-		if strings.HasPrefix(name, "Ethernet") {
-			result[name] = item
+func (in *Switch) getBaseConnections() map[string]*PeerSpec {
+	result := make(map[string]*PeerSpec)
+	for name, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(name, "Ethernet") && data.PeerChassisID != EmptyString {
+			result[name] = &PeerSpec{
+				Name:      EmptyString,
+				Namespace: EmptyString,
+				ChassisID: data.PeerChassisID,
+				Type:      data.PeerType,
+				PortName:  data.PeerPortDescription,
+			}
 		}
 	}
 	return result
 }
 
-//UpdateSouthInterfacesAddresses sets IP addresses for switch
-//south interfaces according to switch south subnets values.
-func (sw *Switch) UpdateSouthInterfacesAddresses() {
-	interfaces := sw.GetSwitchPorts()
-	names := make([]string, 0, len(interfaces))
-	for name := range interfaces {
-		names = append(names, name)
+func (in *Switch) getRole(peers map[string]*PeerSpec) Role {
+	for _, data := range peers {
+		if data.Type == MachineType {
+			return LeafRole
+		}
 	}
-	sort.Slice(names, func(i, j int) bool {
-		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(names[i], "Ethernet", ""))
-		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(names[j], "Ethernet", ""))
-		return leftIndex < rightIndex
-	})
-	for _, name := range names {
-		iface := interfaces[name]
-		if sw.Spec.SouthSubnetV4 != nil && iface.LLDPChassisID != "" {
-			for _, item := range sw.Spec.State.SouthConnections.Connections {
-				if item.ChassisID == iface.LLDPChassisID {
-					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV4.CIDR)
-					ifaceSubnet := iface.getInterfaceSubnet(name, network, subnetv1alpha1.CIPv4SubnetType)
-					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
-					iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
+	return SpineRole
+}
+
+func (in *Switch) FillStatusOnCreate() {
+	peers := in.getBaseConnections()
+	in.Status = SwitchStatus{
+		Role:            in.getRole(peers),
+		ConnectionLevel: 255,
+		NorthConnections: &ConnectionsSpec{
+			Count: 0,
+			Peers: make(map[string]*PeerSpec),
+		},
+		SouthConnections: &ConnectionsSpec{
+			Count: len(peers),
+			Peers: peers,
+		},
+		State:     StateDefinePeers,
+		ScanPorts: false,
+	}
+}
+
+func (in *Switch) FlushStatusOnDelete() {
+	in.Status.ConnectionLevel = 255
+	in.Status.NorthConnections = &ConnectionsSpec{
+		Count: 0,
+		Peers: make(map[string]*PeerSpec),
+	}
+	in.Status.SouthConnections = &ConnectionsSpec{
+		Count: 0,
+		Peers: make(map[string]*PeerSpec),
+	}
+	in.Status.State = StateDeleting
+	in.Status.ScanPorts = false
+}
+
+func (in *Switch) GetListFilter() (*client.ListOptions, error) {
+	labelsReq, err := labels.NewRequirement(LabelChassisId, selection.In, []string{MacToLabel(in.Spec.Chassis.ChassisID)})
+	if err != nil {
+		return nil, err
+	}
+	selector := labels.NewSelector()
+	selector = selector.Add(*labelsReq)
+	opts := &client.ListOptions{
+		LabelSelector: selector,
+		Limit:         100,
+	}
+	return opts, nil
+}
+
+func (in *Switch) UpdatePeersData(list *SwitchList) {
+	for name, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(name, "Ethernet") && data.PeerChassisID != EmptyString {
+			_, found := in.Status.NorthConnections.Peers[name]
+			if !found {
+				for _, item := range list.Items {
+					if item.Spec.Chassis.ChassisID == data.PeerChassisID {
+						in.Status.SouthConnections.Peers[name] = &PeerSpec{
+							Name:      item.Name,
+							Namespace: item.Namespace,
+							ChassisID: data.PeerChassisID,
+							Type:      data.PeerType,
+							PortName:  data.PeerPortDescription,
+						}
+					}
 				}
 			}
 		}
-		if sw.Spec.SouthSubnetV6 != nil && iface.LLDPChassisID != "" {
-			for _, item := range sw.Spec.State.SouthConnections.Connections {
-				if item.ChassisID == iface.LLDPChassisID {
-					_, network, _ := net.ParseCIDR(sw.Spec.SouthSubnetV6.CIDR)
-					ifaceSubnet := iface.getInterfaceSubnet(name, network, subnetv1alpha1.CIPv6SubnetType)
-					ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
-					iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
-				}
-			}
-		}
 	}
 }
 
-//UpdateNorthConnections updates switch resource north connections list.
-func (sw *Switch) UpdateNorthConnections(ncm map[string]NeighbourSpec) {
-	connections := make([]NeighbourSpec, 0)
-	if sw.Spec.State.NorthConnections.Connections == nil || len(sw.Spec.State.NorthConnections.Connections) == 0 {
-		for _, value := range ncm {
-			connections = append(connections, value)
+func (in *Switch) movePeers(list *SwitchList) {
+	if in.Status.ConnectionLevel == 0 {
+		for name, data := range in.Status.NorthConnections.Peers {
+			in.Status.SouthConnections.Peers[name] = data
+			delete(in.Status.NorthConnections.Peers, name)
 		}
-	} else {
-		connections = sw.Spec.State.NorthConnections.Connections
-		for i, neighbour := range connections {
-			if _, ok := ncm[neighbour.ChassisID]; ok {
-				connections[i] = ncm[neighbour.ChassisID]
-			}
-		}
-	}
-	sw.Spec.State.NorthConnections.Connections = connections
-}
-
-//RemoveFromSouthConnections removes item from switch resource
-//south connections list if this item presents in north connections.
-func (sw *Switch) RemoveFromSouthConnections(ncm map[string]struct{}) {
-	connections := make([]NeighbourSpec, 0)
-	for _, item := range sw.Spec.State.SouthConnections.Connections {
-		if _, ok := ncm[item.ChassisID]; !ok {
-			connections = append(connections, item)
-		}
-	}
-	sw.Spec.State.SouthConnections.Connections = connections
-}
-
-func (sw *Switch) MoveNeighbours(list *SwitchList) {
-	northNeighbours := make([]NeighbourSpec, 0)
-	southNeighbours := make([]NeighbourSpec, 0)
-	if sw.Spec.ConnectionLevel == 0 {
-		southNeighbours = append(southNeighbours, sw.Spec.State.NorthConnections.Connections...)
-		southNeighbours = append(southNeighbours, sw.Spec.State.SouthConnections.Connections...)
 	} else {
 		for _, item := range list.Items {
-			for _, conn := range sw.Spec.State.NorthConnections.Connections {
-				if conn.Name == item.Name {
-					if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
-						northNeighbours = append(northNeighbours, conn)
-					}
-					if item.Spec.ConnectionLevel >= sw.Spec.ConnectionLevel+1 {
-						southNeighbours = append(southNeighbours, conn)
+			for name, data := range in.Status.SouthConnections.Peers {
+				if data.ChassisID == item.Spec.Chassis.ChassisID {
+					if item.Status.ConnectionLevel < in.Status.ConnectionLevel {
+						in.Status.NorthConnections.Peers[name] = data
+						delete(in.Status.SouthConnections.Peers, name)
 					}
 				}
 			}
-			for _, conn := range sw.Spec.State.SouthConnections.Connections {
-				if conn.Name == item.Name {
-					if item.Spec.ConnectionLevel >= sw.Spec.ConnectionLevel+1 {
-						southNeighbours = append(southNeighbours, conn)
-					}
-					if item.Spec.ConnectionLevel == sw.Spec.ConnectionLevel-1 {
-						northNeighbours = append(northNeighbours, conn)
+			for name, data := range in.Status.NorthConnections.Peers {
+				if data.ChassisID == item.Spec.Chassis.ChassisID {
+					if item.Status.ConnectionLevel > in.Status.ConnectionLevel {
+						in.Status.SouthConnections.Peers[name] = data
+						delete(in.Status.NorthConnections.Peers, name)
 					}
 				}
 			}
 		}
 	}
-	sw.Spec.State.NorthConnections.Connections = northNeighbours
-	sw.Spec.State.SouthConnections.Connections = southNeighbours
 }
 
-func (sw *Switch) FlushAddresses() {
-	for _, iface := range sw.GetSwitchPorts() {
-		iface.IPv4 = ""
-		iface.IPv6 = ""
+func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
+	connectionsMap, keys := list.buildConnectionMap()
+	if !connectionsMap.topLevelSpinesDefined() {
+		return
+	}
+	if in.Status.ConnectionLevel == 0 {
+		in.movePeers(list)
+	} else {
+		for _, connectionLevel := range keys {
+			switches := connectionsMap[connectionLevel]
+			northPeers := in.getPeers(switches)
+			if len(northPeers.Items) > 0 {
+				minConnectionLevel := northPeers.minimumConnectionLevel()
+				if minConnectionLevel != 255 && minConnectionLevel < in.Status.ConnectionLevel {
+					in.Status.ConnectionLevel = minConnectionLevel + 1
+					in.updateNorthPeers(northPeers)
+					in.movePeers(list)
+				}
+			}
+		}
+	}
+	in.Status.NorthConnections.Count = len(in.Status.NorthConnections.Peers)
+	in.Status.SouthConnections.Count = len(in.Status.SouthConnections.Peers)
+}
+
+func (in *Switch) getPeers(list []Switch) *SwitchList {
+	result := &SwitchList{}
+	for _, item := range list {
+		for _, data := range in.Spec.Interfaces {
+			if data.PeerChassisID == item.Spec.Chassis.ChassisID {
+				result.Items = append(result.Items, item)
+			}
+		}
+	}
+	return result
+}
+
+func (in *Switch) updateNorthPeers(list *SwitchList) {
+	for _, item := range list.Items {
+		for name, data := range item.Spec.Interfaces {
+			if data.PeerChassisID == in.Spec.Chassis.ChassisID {
+				in.Status.NorthConnections.Peers[data.PeerPortDescription] = &PeerSpec{
+					Name:      item.Name,
+					Namespace: item.Namespace,
+					ChassisID: item.Spec.Chassis.ChassisID,
+					Type:      SwitchType,
+					PortName:  name,
+				}
+			}
+		}
 	}
 }
 
-func (sw *Switch) AddressAssigned() bool {
-	for _, iface := range sw.GetSwitchPorts() {
-		if iface.LLDPChassisID != "" {
-			if iface.IPv4 == "" || iface.IPv6 == "" {
+func (in *Switch) updateSouthPeers(list *SwitchList) {
+	for _, item := range list.Items {
+		for name, data := range item.Spec.Interfaces {
+			if data.PeerChassisID == in.Spec.Chassis.ChassisID {
+				in.Status.SouthConnections.Peers[data.PeerPortDescription] = &PeerSpec{
+					Name:      item.Name,
+					Namespace: item.Namespace,
+					ChassisID: item.Spec.Chassis.ChassisID,
+					Type:      SwitchType,
+					PortName:  name,
+				}
+			}
+		}
+	}
+}
+
+func (in *Switch) PeersProcessingFinished(swl *SwitchList, swa *SwitchAssignment) bool {
+	if swa != nil && in.Status.ConnectionLevel != 0 {
+		return false
+	}
+	if in.Status.ConnectionLevel == 255 {
+		return false
+	}
+	if !in.peersOk() || !in.connectionsOk(swl) {
+		return false
+	}
+	return true
+}
+
+func (in *Switch) peersOk() bool {
+	for inf, peer := range in.Status.SouthConnections.Peers {
+		if peer.Name == EmptyString {
+			return false
+		}
+		if _, ok := in.Status.NorthConnections.Peers[inf]; ok {
+			return false
+		}
+	}
+	for inf, peer := range in.Status.NorthConnections.Peers {
+		if peer.Name == EmptyString {
+			return false
+		}
+		if _, ok := in.Status.SouthConnections.Peers[inf]; ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (in *Switch) connectionsOk(list *SwitchList) bool {
+	if in.Status.ConnectionLevel == 0 && in.Status.NorthConnections.Count != 0 {
+		return false
+	}
+	for _, item := range list.Items {
+		for _, peer := range in.Status.NorthConnections.Peers {
+			if peer.ChassisID == item.Spec.Chassis.ChassisID {
+				if !item.switchInSouthPeers(in) {
+					return false
+				}
+				if in.Status.ConnectionLevel != item.Status.ConnectionLevel+1 {
+					return false
+				}
+			}
+		}
+		for _, peer := range in.Status.SouthConnections.Peers {
+			if peer.ChassisID == item.Spec.Chassis.ChassisID {
+				if !item.switchInNorthPeers(in) {
+					return false
+				}
+				if in.Status.ConnectionLevel != item.Status.ConnectionLevel-1 {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func (in *Switch) switchInSouthPeers(tgt *Switch) bool {
+	if in.Status.SouthConnections == nil {
+		return false
+	}
+	for _, peer := range in.Status.SouthConnections.Peers {
+		if peer.ChassisID == tgt.Spec.Chassis.ChassisID {
+			return true
+		}
+	}
+	return false
+}
+
+func (in *Switch) switchInNorthPeers(tgt *Switch) bool {
+	if in.Status.NorthConnections == nil {
+		return false
+	}
+	for _, peer := range in.Status.NorthConnections.Peers {
+		if peer.ChassisID == tgt.Spec.Chassis.ChassisID {
+			return true
+		}
+	}
+	return false
+}
+
+func (in *Switch) GetSuitableSubnet(
+	subnets *subnetv1alpha1.SubnetList,
+	addressType subnetv1alpha1.SubnetAddressType,
+	regions []string,
+	zones []string) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
+
+	addressesNeeded := in.getAddressNeededCount(addressType)
+	for _, sn := range subnets.Items {
+		if sn.Spec.NetworkName == "underlay" &&
+			sn.Status.Type == addressType &&
+			reflect.DeepEqual(sn.Spec.Regions, regions) &&
+			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
+			addressesLeft := sn.Status.CapacityLeft
+			if sn.Status.Type == addressType && addressesLeft.CmpInt64(addressesNeeded) >= 0 {
+				minVacantCIDR := getMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)
+				mask := getNeededMask(addressType, float64(addressesNeeded))
+				addr := minVacantCIDR.Net.IP
+				network := &net.IPNet{
+					IP:   addr,
+					Mask: mask,
+				}
+				cidrCandidate := &subnetv1alpha1.CIDR{Net: network}
+				if sn.CanReserve(cidrCandidate) {
+					if err := sn.Reserve(cidrCandidate); err != nil {
+						return nil, nil, err
+					} else {
+						return cidrCandidate, &sn, nil
+					}
+				}
+			}
+		}
+	}
+	return nil, nil, nil
+}
+
+func (in *Switch) getAddressNeededCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
+	if addrType == subnetv1alpha1.CIPv4SubnetType {
+		return int64(in.Spec.SwitchPorts * CIPv4AddressesPerPort)
+	} else {
+		return int64(in.Spec.SwitchPorts * CIPv6AddressesPerPort)
+	}
+}
+
+func (in *Switch) UpdateSouthInterfacesAddresses() {
+	if in.Spec.SouthSubnetV4 != nil {
+		_, network, _ := net.ParseCIDR(in.Spec.SouthSubnetV4.CIDR)
+		for inf := range in.Status.SouthConnections.Peers {
+			iface := in.Spec.Interfaces[inf]
+			ifaceSubnet := getInterfaceSubnet(inf, network, subnetv1alpha1.CIPv4SubnetType)
+			ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
+			iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
+		}
+	}
+	if in.Spec.SouthSubnetV6 != nil {
+		_, network, _ := net.ParseCIDR(in.Spec.SouthSubnetV6.CIDR)
+		for inf := range in.Status.SouthConnections.Peers {
+			iface := in.Spec.Interfaces[inf]
+			ifaceSubnet := getInterfaceSubnet(inf, network, subnetv1alpha1.CIPv6SubnetType)
+			ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
+			iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
+		}
+	}
+}
+
+func (in *Switch) UpdateNorthInterfacesAddresses(swl *SwitchList) {
+	for inf, peer := range in.Status.NorthConnections.Peers {
+		for _, item := range swl.Items {
+			if peer.ChassisID == item.Spec.Chassis.ChassisID {
+				iface := in.Spec.Interfaces[inf]
+				peerIface := item.Spec.Interfaces[peer.PortName]
+				ipv4Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv4SubnetType)
+				ipv6Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv6SubnetType)
+				if ipv4Addr != nil {
+					iface.IPv4 = fmt.Sprintf("%s/%d", ipv4Addr.String(), CIPv4InterfaceSubnetMask)
+				}
+				if ipv6Addr != nil {
+					iface.IPv6 = fmt.Sprintf("%s/%d", ipv6Addr.String(), CIPv6InterfaceSubnetMask)
+				}
+			}
+		}
+	}
+}
+
+func (in *Switch) AddressesDefined() bool {
+	for inf, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID != EmptyString {
+			if data.IPv4 == EmptyString || data.IPv6 == EmptyString {
 				return false
 			}
 		}
@@ -526,27 +768,20 @@ func (sw *Switch) AddressAssigned() bool {
 	return true
 }
 
-func (iface *InterfaceSpec) getInterfaceSubnet(name string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
-	index, _ := strconv.Atoi(strings.ReplaceAll(name, "Ethernet", ""))
-	prefix, _ := network.Mask.Size()
-	ifaceNet, _ := gocidr.Subnet(network, GetInterfaceSubnetMaskLength(addrType)-prefix, index)
-	return ifaceNet
-}
-
-func (iface *InterfaceSpec) RequestAddress(addrType subnetv1alpha1.SubnetAddressType) net.IP {
+func (in *InterfaceSpec) RequestAddress(addrType subnetv1alpha1.SubnetAddressType) net.IP {
 	addr := net.IP{}
 	switch addrType {
 	case subnetv1alpha1.CIPv4SubnetType:
-		if iface.IPv4 == "" {
+		if in.IPv4 == EmptyString {
 			return nil
 		}
-		_, cidr, _ := net.ParseCIDR(iface.IPv4)
+		_, cidr, _ := net.ParseCIDR(in.IPv4)
 		addr, _ = gocidr.Host(cidr, 2)
 	case subnetv1alpha1.CIPv6SubnetType:
-		if iface.IPv6 == "" {
+		if in.IPv6 == EmptyString {
 			return nil
 		}
-		_, cidr, _ := net.ParseCIDR(iface.IPv6)
+		_, cidr, _ := net.ParseCIDR(in.IPv6)
 		addr, _ = gocidr.Host(cidr, 1)
 	}
 	return addr

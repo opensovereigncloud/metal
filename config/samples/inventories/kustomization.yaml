@@ -1,0 +1,17 @@
+resources:
+  - leaf-1.onmetal.de_v1alpha1_inventory.yaml
+  - leaf-2.onmetal.de_v1alpha1_inventory.yaml
+  - leaf-3.onmetal.de_v1alpha1_inventory.yaml
+  - leaf-4.onmetal.de_v1alpha1_inventory.yaml
+  - leaf-5.onmetal.de_v1alpha1_inventory.yaml
+  - leaf-6.onmetal.de_v1alpha1_inventory.yaml
+  - leaf-7.onmetal.de_v1alpha1_inventory.yaml
+  - spine-0-1.onmetal.de_v1alpha1_inventory.yaml
+  - spine-0-2.onmetal.de_v1alpha1_inventory.yaml
+  - spine-0-3.onmetal.de_v1alpha1_inventory.yaml
+  - spine-1-1.onmetal.de_v1alpha1_inventory.yaml
+  - spine-1-2.onmetal.de_v1alpha1_inventory.yaml
+  - spine-1-3.onmetal.de_v1alpha1_inventory.yaml
+  - spine-1-4.onmetal.de_v1alpha1_inventory.yaml
+  - spine-1-5.onmetal.de_v1alpha1_inventory.yaml
+  - spine-1-6.onmetal.de_v1alpha1_inventory.yaml

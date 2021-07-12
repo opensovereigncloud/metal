@@ -54,7 +54,7 @@ var _ = Describe("Switch Webhook", func() {
 	Context("On Switch creation", func() {
 		It("Should set label", func() {
 			By("Create Switch resource")
-			sample := filepath.Join("..", "..", "config", "samples", "spine-0-1.onmetal.de_v1alpha1_switch.yaml")
+			sample := filepath.Join("..", "..", "config", "samples", "switches", "spine-0-1.fra3.infra.onmetal.de.yaml")
 			rawInfo := make(map[string]interface{})
 			sw := &Switch{}
 			sampleBytes, err := ioutil.ReadFile(sample)
@@ -65,7 +65,7 @@ var _ = Describe("Switch Webhook", func() {
 			err = json.Unmarshal(data, sw)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(k8sClient.Create(ctx, sw)).To(Succeed())
-			Expect(sw.Labels).Should(Equal(map[string]string{LabelChassisId: strings.ReplaceAll(sw.Spec.SwitchChassis.ChassisID, ":", "-")}))
+			Expect(sw.Labels).Should(Equal(map[string]string{LabelChassisId: strings.ReplaceAll(sw.Spec.Chassis.ChassisID, ":", "-")}))
 		})
 	})
 })

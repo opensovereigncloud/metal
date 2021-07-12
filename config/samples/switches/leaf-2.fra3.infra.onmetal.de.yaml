@@ -1,0 +1,204 @@
+apiVersion: switch.onmetal.de/v1alpha1
+kind: Switch
+metadata:
+  name: 1c422324-067b-3620-86e3-6c91ef7c9a8d
+  namespace: onmetal
+spec:
+  chassis:
+    chassisId: 68:21:5f:47:12:6e
+    manufacturer: Accton
+    serial: 772632X1950882
+    sku: "1"
+  distro:
+    asic: broadcom
+    os: SONiC
+    version: 7145582a
+  hostname: leaf-2.fra3.infra.onmetal.de
+  interfaces:
+    Ethernet0:
+      ipv4: 100.79.236.50/30
+      ipv6: 2001:db8:1000:12:ffff:ff80:0:19/127
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+      peerChassisId: 68:21:5f:47:0d:5a
+      peerPortDescription: Ethernet12
+      peerPortId: Eth35/1
+      peerSystemName: spine-1-1.fra3.infra.onmetal.de
+      peerType: Switch
+    Ethernet4:
+      ipv4: 100.79.232.34/30
+      ipv6: 2001:db8:1000:12:ffff:ff00:0:11/127
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+      peerChassisId: 68:21:5f:47:0a:5a
+      peerPortDescription: Ethernet8
+      peerPortId: Eth33/1
+      peerSystemName: spine-1-3.fra3.infra.onmetal.de
+      peerType: Switch
+    Ethernet8:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet12:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet16:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet20:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet24:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet28:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet32:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet36:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet40:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet44:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet48:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet52:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet56:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet60:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet64:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet68:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet72:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet76:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet80:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet84:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet88:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet92:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet96:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet100:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet104:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet108:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet112:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet116:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet120:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    Ethernet124:
+      lanes: 4
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+    eth0:
+      lanes: 1
+      macAddress: 68:21:5f:47:12:6e
+      ndp: false
+      peerChassisId: 64:9d:99:15:56:1c
+      peerPortDescription: Ethernet Port on unit 1, port 22
+      peerPortId: Eth 1/22
+      peerSystemName: mgmt-sw-1
+      peerType: Switch
+  location: {}
+  southSubnetV4:
+    cidr: 100.79.226.0/23
+    parentSubnet:
+      name: subnet-sample-v4
+      namespace: onmetal
+  southSubnetV6:
+    cidr: 2001:db8:1000:12:ffff:fffc::/120
+    parentSubnet:
+      name: subnet-sample-v6
+      namespace: onmetal
+  switchPorts: 32
+  totalPorts: 35
+status:
+  connectionLevel: 2
+  northConnections:
+    count: 2
+    peers:
+      Ethernet0:
+        chassisId: 68:21:5f:47:0d:5a
+        name: b9a234a5-416b-3d49-a4f8-65b6f30c8ee5
+        namespace: onmetal
+        portName: Ethernet12
+        type: Switch
+      Ethernet4:
+        chassisId: 68:21:5f:47:0a:5a
+        name: 17992b5f-3b63-3b26-b002-edb9248931d6
+        namespace: onmetal
+        portName: Ethernet8
+        type: Switch
+  role: Spine
+  scanPorts: false
+  southConnections:
+    count: 0
+    peers: {}
+  state: Finished

@@ -4,7 +4,7 @@ metadata:
   name: "{{ .Chart.Name }}-manager-role"
 rules:
   - apiGroups:
-    - ipam.onmetal.de
+      - ipam.onmetal.de
     resources:
       - subnets
     verbs:
@@ -45,6 +45,18 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+      - {{ .Values.crd.switchAssignment.group }}
+    resources:
+      - {{ .Values.crd.switchAssignment.plural }}/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - {{ .Values.crd.switchAssignment.group }}
+    resources:
+      - {{ .Values.crd.switchAssignment.plural }}/status
+    verbs:
+      - update
   - apiGroups:
       - {{ .Values.crd.switch.group }}
     resources:

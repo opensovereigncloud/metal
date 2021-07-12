@@ -59,7 +59,7 @@ import (
 const (
 	DefaultNamespace     = "default"
 	OnmetalNamespace     = "onmetal"
-	timeout              = time.Second * 60
+	timeout              = time.Second * 45
 	interval             = time.Millisecond * 250
 	UnderlayNetwork      = "underlay"
 	SubnetNameV4         = "switch-subnet-v4"

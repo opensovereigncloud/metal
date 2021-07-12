@@ -18,23 +18,13 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
@@ -46,8 +36,8 @@ type SwitchAssignmentReconciler struct {
 }
 
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switchassignments,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=switch.onmetal.de,resources=switchassignments/status,verbs=update
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switchassignments/finalizers,verbs=update
-//+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=list;update
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -56,70 +46,33 @@ type SwitchAssignmentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
 func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("switchAssignment", req.NamespacedName)
-	assignmentRes := &switchv1alpha1.SwitchAssignment{}
-	err := r.Get(ctx, req.NamespacedName, assignmentRes)
-	if err != nil {
+	log := r.Log.WithValues("switch assignment", req.NamespacedName)
+	res := &switchv1alpha1.SwitchAssignment{}
+	if err := r.Get(ctx, req.NamespacedName, res); err != nil {
 		if apierrors.IsNotFound(err) {
-			log.Error(err, "requested switch assignment resource not found", "name", req.NamespacedName)
-			return ctrl.Result{}, nil
+			log.Info("requested resource not found")
+		} else {
+			log.Error(err, "failed to get requested resource")
 		}
-		log.Error(err, "unable to get switchAssignment resource", "name", req.NamespacedName)
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if assignmentRes.DeletionTimestamp != nil {
-		if controllerutil.ContainsFinalizer(assignmentRes, switchv1alpha1.CSwitchAssignmentFinalizer) {
-			if err := r.finalizeSwitchAssignment(assignmentRes, ctx); err != nil {
-				log.Error(err, "failed to finalize switchAssignment")
-				return ctrl.Result{}, err
-			}
-
-			controllerutil.RemoveFinalizer(assignmentRes, switchv1alpha1.CSwitchAssignmentFinalizer)
-			if err := r.Client.Update(ctx, assignmentRes); err != nil {
-				log.Error(err, "failed to update switchAssignment resource on finalizer removal")
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
+	if res.DeletionTimestamp != nil {
+		return r.finalize(ctx, res)
 	}
 
-	oldRes := assignmentRes.DeepCopy()
-
-	if !controllerutil.ContainsFinalizer(assignmentRes, switchv1alpha1.CSwitchAssignmentFinalizer) {
-		controllerutil.AddFinalizer(assignmentRes, switchv1alpha1.CSwitchAssignmentFinalizer)
-	}
-
-	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(assignmentRes.Spec.ChassisID)})
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Limit:         1000,
-	}
-	switchesList := &switchv1alpha1.SwitchList{}
-	if err := r.List(ctx, switchesList, opts); err != nil {
-		log.Error(err, "unable to get switches list")
-	}
-	if len(switchesList.Items) == 0 {
-		return ctrl.Result{RequeueAfter: switchv1alpha1.CAssignmentRequeueInterval}, nil
-	} else {
-		targetSwitch := &switchesList.Items[0]
-		if targetSwitch.Spec.ConnectionLevel == 0 {
-			return ctrl.Result{}, nil
-		}
-		targetSwitch.Spec.ConnectionLevel = 0
-		targetSwitch.Spec.Role = switchv1alpha1.CSpineRole
-		if err := r.Update(ctx, targetSwitch); err != nil {
-			log.Error(err, "unable to update switch resource status", "name", types.NamespacedName{
-				Namespace: targetSwitch.Namespace,
-				Name:      targetSwitch.Name,
-			})
+	if !controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer) {
+		controllerutil.AddFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer)
+		if err := r.Update(ctx, res); err != nil {
+			log.Error(err, "failed to update switchAssignment resource")
 			return ctrl.Result{}, err
 		}
 	}
 
-	if !reflect.DeepEqual(oldRes, assignmentRes) {
-		if err := r.Client.Update(ctx, assignmentRes); err != nil {
-			log.Error(err, "failed to update switchAssignment resource")
+	if res.Status.State == switchv1alpha1.EmptyString {
+		res.FillStatus(switchv1alpha1.StatePending, &switchv1alpha1.LinkedSwitchSpec{})
+		if err := r.Status().Update(ctx, res); err != nil {
+			log.Error(err, "failed to set status on resource creation", "name", res.NamespacedName())
 			return ctrl.Result{}, err
 		}
 	}
@@ -131,66 +84,22 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 func (r *SwitchAssignmentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1alpha1.SwitchAssignment{}).
-		Watches(&source.Kind{Type: &switchv1alpha1.Switch{}}, handler.Funcs{
-			DeleteFunc: r.handleSwitchDelete(mgr.GetScheme(), &switchv1alpha1.SwitchAssignmentList{}),
-		}).
 		Complete(r)
 }
 
-//handleSwitchDelete handler for UpdateEvent for switch resources
-func (r *SwitchAssignmentReconciler) handleSwitchDelete(scheme *runtime.Scheme, ro runtime.Object) func(event.DeleteEvent, workqueue.RateLimitingInterface) {
-	return func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
-		err := enqueueAssignmentReconcileRequest(r.Client, r.Log, scheme, q, ro)
-		if err != nil {
-			r.Log.Error(err, "error triggering switch reconciliation on connections update")
+func (r *SwitchAssignmentReconciler) finalize(ctx context.Context, res *switchv1alpha1.SwitchAssignment) (ctrl.Result, error) {
+	if controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer) {
+		res.FillStatus(switchv1alpha1.StateDeleting, &switchv1alpha1.LinkedSwitchSpec{})
+		if err := r.Status().Update(ctx, res); err != nil {
+			r.Log.Error(err, "failed to finalize resource", "name", res.NamespacedName())
+			return ctrl.Result{}, err
+		}
+
+		controllerutil.RemoveFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer)
+		if err := r.Update(ctx, res); err != nil {
+			r.Log.Error(err, "failed to update resource on finalizer removal", "name", res.NamespacedName())
+			return ctrl.Result{}, err
 		}
 	}
-}
-
-func enqueueAssignmentReconcileRequest(c client.Client, log logr.Logger, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
-	ctx := context.Background()
-	list := &unstructured.UnstructuredList{}
-	gvk, err := apiutil.GVKForObject(ro, scheme)
-	if err != nil {
-		log.Error(err, "unable to get gvk")
-		return err
-	}
-	list.SetGroupVersionKind(gvk)
-	if err = c.List(ctx, list); err != nil {
-		log.Error(err, "unable to get list of items")
-		return err
-	}
-	for _, item := range list.Items {
-		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
-			Namespace: item.GetNamespace(),
-			Name:      item.GetName(),
-		}})
-		return nil
-	}
-	return nil
-}
-
-func (r *SwitchAssignmentReconciler) finalizeSwitchAssignment(swa *switchv1alpha1.SwitchAssignment, ctx context.Context) error {
-	selector := labels.SelectorFromSet(labels.Set{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(swa.Spec.ChassisID)})
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Limit:         1000,
-	}
-	switchesList := &switchv1alpha1.SwitchList{}
-	if err := r.List(ctx, switchesList, opts); err != nil {
-		r.Log.Error(err, "unable to get switches list")
-	}
-
-	if len(switchesList.Items) > 0 {
-		targetSwitch := &switchesList.Items[0]
-		targetSwitch.Spec.ConnectionLevel = 255
-		if err := r.Update(ctx, targetSwitch); err != nil {
-			r.Log.Error(err, "unable to update switch resource status", "name", types.NamespacedName{
-				Namespace: targetSwitch.Namespace,
-				Name:      targetSwitch.Name,
-			})
-			return err
-		}
-	}
-	return nil
+	return ctrl.Result{}, nil
 }

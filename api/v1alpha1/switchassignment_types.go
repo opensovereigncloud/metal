@@ -18,6 +18,10 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // SwitchAssignmentSpec defines the desired state of SwitchAssignment
@@ -36,7 +40,19 @@ type SwitchAssignmentSpec struct {
 }
 
 // SwitchAssignmentStatus defines the observed state of SwitchAssignment
-type SwitchAssignmentStatus struct{}
+type SwitchAssignmentStatus struct {
+	//+kubebuilder:validation:Enum=Pending;Finished;Deleting;Creating
+	State State `json:"state"`
+	//+kubebuilder:validation:Optional
+	Switch *LinkedSwitchSpec `json:"switch"`
+}
+
+type LinkedSwitchSpec struct {
+	//+kubebuilder:validation:Optional
+	Name string `json:"name,omitempty"`
+	//+kubebuilder:validation:Optional
+	Namespace string `json:"namespace,omitempty"`
+}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
@@ -44,6 +60,7 @@ type SwitchAssignmentStatus struct{}
 //+kubebuilder:printcolumn:name="Switch Chassis ID",type=string,JSONPath=`.spec.chassisId`,description="switch's chassis Id"
 //+kubebuilder:printcolumn:name="Region",type=string,JSONPath=`.spec.region`,description="switch's region"
 //+kubebuilder:printcolumn:name="Availability Zone",type=string,JSONPath=`.spec.availabilityZone`,description="switch's AZ"
+//+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Assignment state"
 
 // SwitchAssignment is the Schema for the switch assignments API
 type SwitchAssignment struct {
@@ -65,4 +82,30 @@ type SwitchAssignmentList struct {
 
 func init() {
 	SchemeBuilder.Register(&SwitchAssignment{}, &SwitchAssignmentList{})
+}
+
+func (in *SwitchAssignment) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: in.Namespace,
+		Name:      in.Name,
+	}
+}
+
+func (in *SwitchAssignment) FillStatus(state State, relatedSwitch *LinkedSwitchSpec) {
+	in.Status.State = state
+	in.Status.Switch = relatedSwitch
+}
+
+func (in *SwitchAssignment) GetListFilter() (*client.ListOptions, error) {
+	labelsReq, err := labels.NewRequirement(LabelChassisId, selection.In, []string{MacToLabel(in.Spec.ChassisID)})
+	if err != nil {
+		return nil, err
+	}
+	selector := labels.NewSelector()
+	selector = selector.Add(*labelsReq)
+	opts := &client.ListOptions{
+		LabelSelector: selector,
+		Limit:         100,
+	}
+	return opts, nil
 }

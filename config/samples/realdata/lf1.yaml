@@ -1,0 +1,732 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Inventory
+metadata:
+  labels:
+    machine.onmetal.de/mac-address-68215f47166e: ""
+    machine.onmetal.de/mac-address-68215f47166f: ""
+    machine.onmetal.de/mac-address-68215f471670: ""
+  name: b9a234a5-416b-3d49-a4f8-65b6f30c8ee5
+  namespace: default
+spec:
+  blocks:
+    blocks:
+    - model: TS64GMTS400
+      name: sda
+      rotational: false
+      size: 64023257088
+      system: ATA
+      type: SCSI
+    capacity: 64023257088
+    count: 1
+  cpus:
+    cores: 4
+    cpus:
+    - addressSizes: 46 bits physical, 48 bits virtual
+      bogoMips: 4399490m
+      bugs:
+      - cpu_meltdown
+      - itlb_multihit
+      - l1tf
+      - mds
+      - spec_store_bypass
+      - spectre_v1
+      - spectre_v2
+      - swapgs
+      - taa
+      cacheAlignment: 64
+      cacheSize: 6144 KB
+      clFlushSize: 64
+      cores: 4
+      cpuIdLevel: 20
+      family: "6"
+      flags:
+      - 3dnowprefetch
+      - abm
+      - acpi
+      - adx
+      - aes
+      - aperfmperf
+      - apic
+      - arat
+      - arch_perfmon
+      - avx
+      - avx2
+      - bmi1
+      - bmi2
+      - bts
+      - cat_l3
+      - cdp_l3
+      - clflush
+      - cmov
+      - constant_tsc
+      - cpuid
+      - cpuid_fault
+      - cqm
+      - cqm_llc
+      - cqm_mbm_local
+      - cqm_mbm_total
+      - cqm_occup_llc
+      - cx16
+      - cx8
+      - dca
+      - de
+      - ds_cpl
+      - dtes64
+      - dtherm
+      - dts
+      - epb
+      - ept
+      - ept_ad
+      - erms
+      - est
+      - f16c
+      - flexpriority
+      - fma
+      - fpu
+      - fsgsbase
+      - fxsr
+      - hle
+      - ht
+      - ibpb
+      - ibrs
+      - intel_ppin
+      - intel_pt
+      - invpcid
+      - invpcid_single
+      - lahf_lm
+      - lm
+      - mca
+      - mce
+      - mmx
+      - monitor
+      - movbe
+      - msr
+      - mtrr
+      - nonstop_tsc
+      - nopl
+      - nx
+      - pae
+      - pat
+      - pbe
+      - pcid
+      - pclmulqdq
+      - pdcm
+      - pdpe1gb
+      - pebs
+      - pge
+      - pln
+      - pni
+      - popcnt
+      - pse
+      - pse36
+      - pti
+      - pts
+      - rdrand
+      - rdseed
+      - rdt_a
+      - rdtscp
+      - rep_good
+      - rtm
+      - sdbg
+      - sep
+      - smap
+      - smep
+      - smx
+      - ss
+      - sse
+      - sse2
+      - sse4_1
+      - sse4_2
+      - ssse3
+      - stibp
+      - syscall
+      - tm
+      - tm2
+      - tpr_shadow
+      - tsc
+      - tsc_adjust
+      - tsc_deadline_timer
+      - vme
+      - vmx
+      - vnmi
+      - vpid
+      - x2apic
+      - xsave
+      - xsaveopt
+      - xtopology
+      - xtpr
+      fpu: true
+      fpuException: true
+      logicalIds:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      mhz: "1159.243"
+      microcode: "0x7000012"
+      model: "86"
+      modelName: Intel(R) Xeon(R) CPU D-1518 @ 2.20GHz
+      siblings: 8
+      stepping: "3"
+      vendorId: GenuineIntel
+      wp: true
+    sockets: 1
+    threads: 8
+  distro:
+    asicType: broadcom
+    buildDate: Tue Feb  9 07:27:07 UTC 2021
+    buildNumber: 134
+    buildVersion: Edgecore-SONiC_20210209_051110_ec202006_134
+    commitId: ab8fa0e4
+    debianVersion: "10.8"
+    kernelVersion: 4.19.0-6-2-amd64
+  host:
+    name: lf1.fra3.infra.onmetal.de
+    type: Switch
+  memory:
+    total: 16716300288
+  nics:
+    count: 113
+    nics:
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet0
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3a54
+        macAddress: 1c:34:da:57:3a:54
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet1
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b04
+        macAddress: 1c:34:da:57:3b:04
+        state: Stale
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet10
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet100
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet101
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet102
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet103
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet104
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet108
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet11
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b48
+        macAddress: 1c:34:da:57:3b:48
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet112
+      ndps:
+      - {}
+      - ipAddress: fe80::6a21:5fff:fe47:d6e
+        macAddress: 68:21:5f:47:0d:6e
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet116
+      ndps:
+      - {}
+      - ipAddress: fe80::6a21:5fff:fe47:176e
+        macAddress: 68:21:5f:47:17:6e
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet12
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b00
+        macAddress: 1c:34:da:57:3b:00
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet120
+      ndps:
+      - {}
+      - ipAddress: fe80::6a21:5fff:fe47:d6e
+        macAddress: 68:21:5f:47:0d:6e
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet124
+      ndps:
+      - {}
+      - ipAddress: fe80::6a21:5fff:fe47:176e
+        macAddress: 68:21:5f:47:17:6e
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet13
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b0c
+        macAddress: 1c:34:da:57:3b:0c
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet14
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3aa8
+        macAddress: 1c:34:da:57:3a:a8
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet15
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3a78
+        macAddress: 1c:34:da:57:3a:78
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet16
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3a00
+        macAddress: 1c:34:da:57:3a:00
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet17
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b08
+        macAddress: 1c:34:da:57:3b:08
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet18
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3bc8
+        macAddress: 1c:34:da:57:3b:c8
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet19
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3a20
+        macAddress: 1c:34:da:57:3a:20
+        state: Stale
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet2
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3bc0
+        macAddress: 1c:34:da:57:3b:c0
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet20
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b38
+        macAddress: 1c:34:da:57:3b:38
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet21
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3bb4
+        macAddress: 1c:34:da:57:3b:b4
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet22
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet23
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3bc4
+        macAddress: 1c:34:da:57:3b:c4
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet24
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet25
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b10
+        macAddress: 1c:34:da:57:3b:10
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet26
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3af4
+        macAddress: 1c:34:da:57:3a:f4
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet27
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3afc
+        macAddress: 1c:34:da:57:3a:fc
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet28
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:39f8
+        macAddress: 1c:34:da:57:39:f8
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet29
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3a08
+        macAddress: 1c:34:da:57:3a:08
+        state: Stale
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet3
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3bb8
+        macAddress: 1c:34:da:57:3b:b8
+        state: Stale
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet30
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3bd0
+        macAddress: 1c:34:da:57:3b:d0
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet31
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3bbc
+        macAddress: 1c:34:da:57:3b:bc
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet32
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet33
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet34
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet35
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet36
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet37
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet38
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet39
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet4
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3aa4
+        macAddress: 1c:34:da:57:3a:a4
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet40
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet41
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet42
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet43
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet44
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet45
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet46
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet47
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet48
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet49
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet5
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3a60
+        macAddress: 1c:34:da:57:3a:60
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet50
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet51
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet52
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet53
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet54
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet55
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet56
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet57
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet58
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet59
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet6
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b3c
+        macAddress: 1c:34:da:57:3b:3c
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet60
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet61
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet62
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet63
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet64
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet65
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet66
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet67
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet68
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet69
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet7
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b50
+        macAddress: 1c:34:da:57:3b:50
+        state: Stale
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet70
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet71
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet72
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet73
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet74
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet75
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet76
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet77
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet78
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet79
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet8
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet80
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet81
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet82
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet83
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet84
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet85
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet86
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet87
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet88
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet89
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet9
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe57:3b44
+        macAddress: 1c:34:da:57:3b:44
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet90
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet91
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet92
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet93
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet94
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet95
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet96
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe40:d952
+        macAddress: 1c:34:da:40:d9:52
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet97
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe40:d772
+        macAddress: 1c:34:da:40:d7:72
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet98
+      ndps:
+      - {}
+      - ipAddress: fe80::1e34:daff:fe40:d76a
+        macAddress: 1c:34:da:40:d7:6a
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 9216
+      name: Ethernet99
+      ndps:
+      - {}
+      - ipAddress: fe80::ba59:9fff:fef0:7d2c
+        macAddress: b8:59:9f:f0:7d:2c
+        state: Reachable
+    - macAddress: 68:21:5f:47:16:6e
+      mtu: 1500
+      name: eth0
+      ndps:
+      - {}
+      - ipAddress: fe80::14c0:b3ff:fe9b:f642
+        macAddress: 16:c0:b3:9b:f6:42
+        state: Stale
+      - ipAddress: fe80::f4f3:72ff:feea:ce09
+        macAddress: f6:f3:72:ea:ce:09
+        state: Stale
+      pciAddress: 0000:0b:00.0
+      speed: 1000
+    - macAddress: 68:21:5f:47:16:6f
+      mtu: 1500
+      name: eth1
+      pciAddress: "0000:05:00.0"
+    - macAddress: 68:21:5f:47:16:70
+      mtu: 1500
+      name: eth2
+      pciAddress: "0000:05:00.1"
+  system:
+    id: b9a234a5-416b-3d49-a4f8-65b6f30c8ee5
+    manufacturer: Accton
+    productSku: "1"
+    serialNumber: 772632X1950124
+  virt:
+    vmType: none

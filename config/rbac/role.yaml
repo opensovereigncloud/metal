@@ -51,6 +51,18 @@ rules:
 - apiGroups:
   - switch.onmetal.de
   resources:
+  - switchassignments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switchassignments/status
+  verbs:
+  - update
+- apiGroups:
+  - switch.onmetal.de
+  resources:
   - switches
   verbs:
   - create

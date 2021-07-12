@@ -1,0 +1,4 @@
+resources:
+  - network_sample.yaml
+  - subnet_sample_v4.yaml
+  - subnet_sample_v6.yaml

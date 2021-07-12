@@ -26,9 +26,9 @@ import (
 // log is for logging in this package.
 var switchLog = logf.Log.WithName("switch-resource")
 
-func (sw *Switch) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Switch) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(sw).
+		For(in).
 		Complete()
 }
 
@@ -39,14 +39,14 @@ func (sw *Switch) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Defaulter = &Switch{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (sw *Switch) Default() {
-	switchLog.Info("default", "name", sw.Name)
-	if sw.Labels == nil {
-		sw.Labels = map[string]string{}
+func (in *Switch) Default() {
+	switchLog.Info("default", "name", in.Name)
+	if in.Labels == nil {
+		in.Labels = map[string]string{}
 	}
-	if _, ok := sw.Labels[LabelChassisId]; !ok {
-		if sw.Spec.SwitchChassis.ChassisID != "" {
-			sw.Labels[LabelChassisId] = MacToLabel(sw.Spec.SwitchChassis.ChassisID)
+	if _, ok := in.Labels[LabelChassisId]; !ok {
+		if in.Spec.Chassis.ChassisID != EmptyString {
+			in.Labels[LabelChassisId] = MacToLabel(in.Spec.Chassis.ChassisID)
 		}
 	}
 }
@@ -57,19 +57,19 @@ func (sw *Switch) Default() {
 var _ webhook.Validator = &Switch{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (sw *Switch) ValidateCreate() error {
-	switchLog.Info("validate create", "name", sw.Name)
+func (in *Switch) ValidateCreate() error {
+	switchLog.Info("validate create", "name", in.Name)
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (sw *Switch) ValidateUpdate(old runtime.Object) error {
-	switchLog.Info("validate update", "name", sw.Name)
+func (in *Switch) ValidateUpdate(old runtime.Object) error {
+	switchLog.Info("validate update", "name", in.Name)
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (sw *Switch) ValidateDelete() error {
-	switchLog.Info("validate delete", "name", sw.Name)
+func (in *Switch) ValidateDelete() error {
+	switchLog.Info("validate delete", "name", in.Name)
 	return nil
 }

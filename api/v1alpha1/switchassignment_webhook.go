@@ -30,26 +30,24 @@ import (
 // log is for logging in this package.
 var switchAssignmentLog = logf.Log.WithName("switchassignment-resource")
 
-func (swa *SwitchAssignment) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *SwitchAssignment) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(swa).
+		For(in).
 		Complete()
 }
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 //+kubebuilder:webhook:path=/mutate-switch-onmetal-de-v1alpha1-switchassignment,mutating=true,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switchassignments,verbs=create,versions=v1alpha1,name=mswitchassignment.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &SwitchAssignment{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (swa *SwitchAssignment) Default() {
-	switchAssignmentLog.Info("default", "name", swa.Name)
-	if swa.Labels == nil {
-		swa.Labels = map[string]string{}
+func (in *SwitchAssignment) Default() {
+	switchAssignmentLog.Info("default", "name", in.Name)
+	if in.Labels == nil {
+		in.Labels = map[string]string{}
 	}
-	if _, ok := swa.Labels[LabelChassisId]; !ok {
-		swa.Labels[LabelChassisId] = MacToLabel(swa.Spec.ChassisID)
+	if _, ok := in.Labels[LabelChassisId]; !ok {
+		in.Labels[LabelChassisId] = MacToLabel(in.Spec.ChassisID)
 	}
 }
 
@@ -59,14 +57,14 @@ func (swa *SwitchAssignment) Default() {
 var _ webhook.Validator = &SwitchAssignment{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (swa *SwitchAssignment) ValidateCreate() error {
+func (in *SwitchAssignment) ValidateCreate() error {
 	//switchAssignmentLog.Info("validate create", "name", swa.Name)
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (swa *SwitchAssignment) ValidateUpdate(old runtime.Object) error {
-	switchAssignmentLog.Info("validate update", "name", swa.Name)
+func (in *SwitchAssignment) ValidateUpdate(old runtime.Object) error {
+	switchAssignmentLog.Info("validate update", "name", in.Name)
 
 	oldSwitchAssignment, ok := old.(*SwitchAssignment)
 	if !ok {
@@ -74,28 +72,28 @@ func (swa *SwitchAssignment) ValidateUpdate(old runtime.Object) error {
 	}
 
 	var allErrors field.ErrorList
-	if oldSwitchAssignment.Spec.ChassisID != swa.Spec.ChassisID {
-		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.chassisId"), swa.Spec.ChassisID, "Chassis ID change disallowed"))
+	if oldSwitchAssignment.Spec.ChassisID != in.Spec.ChassisID {
+		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.chassisId"), in.Spec.ChassisID, "Chassis ID change disallowed"))
 	}
-	if oldSwitchAssignment.Spec.Region != swa.Spec.Region {
-		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.region"), swa.Spec.Region, "Region change disallowed"))
+	if oldSwitchAssignment.Spec.Region != in.Spec.Region {
+		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.region"), in.Spec.Region, "Region change disallowed"))
 	}
-	if oldSwitchAssignment.Spec.AvailabilityZone != swa.Spec.AvailabilityZone {
-		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.availabilityZone"), swa.Spec.AvailabilityZone, "Availability Zone change disallowed"))
+	if oldSwitchAssignment.Spec.AvailabilityZone != in.Spec.AvailabilityZone {
+		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.availabilityZone"), in.Spec.AvailabilityZone, "Availability Zone change disallowed"))
 	}
 
 	if len(allErrors) > 0 {
 		return apierrors.NewInvalid(schema.GroupKind{
 			Group: GroupVersion.Group,
 			Kind:  "SwitchAssignment",
-		}, swa.Name, allErrors)
+		}, in.Name, allErrors)
 	}
 
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (swa *SwitchAssignment) ValidateDelete() error {
+func (in *SwitchAssignment) ValidateDelete() error {
 	//switchAssignmentLog.Info("validate delete", "name", swa.Name)
 
 	return nil
