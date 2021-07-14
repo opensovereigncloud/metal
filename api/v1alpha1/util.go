@@ -22,7 +22,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"time"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
@@ -52,8 +51,6 @@ const (
 	CSonicSwitchOs     = "SONiC"
 	CStationCapability = "Station"
 	CNdpStateReachable = "Reachable"
-
-	CRequeueInterval = time.Duration(2) * time.Second
 
 	CIPv4ZeroNet             = "0.0.0.0/0"
 	CIPv6ZeroNet             = "::/0"
@@ -120,6 +117,9 @@ func prepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 }
 
 func definePeerType(data inventoriesv1alpha1.LLDPSpec) PeerType {
+	if len(data.Capabilities) == 0 {
+		return MachineType
+	}
 	for _, c := range data.Capabilities {
 		if c == CStationCapability {
 			return MachineType

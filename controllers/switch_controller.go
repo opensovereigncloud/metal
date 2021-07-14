@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"net"
 
 	"github.com/go-logr/logr"
@@ -203,22 +202,10 @@ func (r *SwitchReconciler) enqueueOnSubnetUpdate(src *subnetv1alpha1.Subnet, sch
 		return err
 	}
 	for _, item := range list.Items {
-		data, err := json.Marshal(item)
-		if err != nil {
-			r.Log.Error(err, "unable to marshal data")
-			return err
-		}
-		obj := &switchv1alpha1.Switch{}
-		err = json.Unmarshal(data, obj)
-		if err != nil {
-			r.Log.Error(err, "unable to unmarshal data")
-			return err
-		}
-		if obj.Spec.SouthSubnetV4 == nil && src.Status.Type == subnetv1alpha1.CIPv4SubnetType ||
-			obj.Spec.SouthSubnetV6 == nil && src.Status.Type == subnetv1alpha1.CIPv6SubnetType {
-
-			q.Add(reconcile.Request{NamespacedName: obj.NamespacedName()})
-		}
+		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+			Namespace: item.GetNamespace(),
+			Name:      item.GetName(),
+		}})
 	}
 	return nil
 }

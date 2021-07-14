@@ -459,21 +459,23 @@ func (in *Switch) updateSouthPeers(list *SwitchList) {
 
 // Checks whether all stored peers are unique and fully defined.
 // Return true if so, false otherwise.
-func (in *Switch) peersOk() bool {
-	for inf, peer := range in.Status.SouthConnections.Peers {
-		if peer.Name == EmptyString {
-			return false
+func (in *Switch) peersOk(swl *SwitchList) bool {
+	for _, sw := range swl.Items {
+		for inf, peer := range in.Status.SouthConnections.Peers {
+			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == EmptyString {
+				return false
+			}
+			if _, ok := in.Status.NorthConnections.Peers[inf]; ok {
+				return false
+			}
 		}
-		if _, ok := in.Status.NorthConnections.Peers[inf]; ok {
-			return false
-		}
-	}
-	for inf, peer := range in.Status.NorthConnections.Peers {
-		if peer.Name == EmptyString {
-			return false
-		}
-		if _, ok := in.Status.SouthConnections.Peers[inf]; ok {
-			return false
+		for inf, peer := range in.Status.NorthConnections.Peers {
+			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == EmptyString {
+				return false
+			}
+			if _, ok := in.Status.SouthConnections.Peers[inf]; ok {
+				return false
+			}
 		}
 	}
 	return true
@@ -734,7 +736,7 @@ func (in *Switch) PeersProcessingFinished(swl *SwitchList, swa *SwitchAssignment
 	if in.Status.ConnectionLevel == 255 {
 		return false
 	}
-	if !in.peersOk() || !in.connectionsOk(swl) {
+	if !in.peersOk(swl) || !in.connectionsOk(swl) {
 		return false
 	}
 	return true

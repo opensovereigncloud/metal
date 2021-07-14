@@ -2,5 +2,5 @@ apiVersion: v2
 name: onmetal-switch
 description: A Helm chart for Gardener Onmetal switch operator
 type: application
-version: 0.9.0
-appVersion: "0.9.0"
+version: 0.9.1
+appVersion: "0.9.1"
