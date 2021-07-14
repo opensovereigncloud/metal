@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 
 	"github.com/go-logr/logr"
@@ -40,12 +41,18 @@ import (
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
+type Background struct {
+	switches   *switchv1alpha1.SwitchList
+	assignment *switchv1alpha1.SwitchAssignment
+}
+
 // SwitchReconciler reconciles a Switch object
 type SwitchReconciler struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Log        logr.Logger
+	Scheme     *runtime.Scheme
+	Recorder   record.EventRecorder
+	Background *Background
 }
 
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=get;list;watch;create;update;patch;delete
@@ -72,96 +79,17 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	if err := r.prepareBackground(ctx, res); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	processor := switchProcessor{}
 	if res.DeletionTimestamp != nil {
-		return r.finalize(ctx, res)
-	}
-
-	if !controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchFinalizer) {
-		controllerutil.AddFinalizer(res, switchv1alpha1.CSwitchFinalizer)
-		if err := r.Update(ctx, res); err != nil {
-			log.Error(err, "failed to update switch resource")
-			return ctrl.Result{}, err
-		}
-	}
-
-	list := &switchv1alpha1.SwitchList{}
-	if err := r.List(ctx, list); err != nil {
-		log.Error(err, "failed to list switch resources")
-		return ctrl.Result{}, err
-	}
-
-	if !res.InterfacesUpdated(list) {
-		res.UpdateInterfaces(list)
-		if err := r.Update(ctx, res); err != nil {
-			log.Error(err, "failed to update resource")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
-
-	if res.Status.State == switchv1alpha1.EmptyString {
-		res.FillStatusOnCreate()
-		if err := r.Status().Update(ctx, res); err != nil {
-			r.Log.Error(err, "failed to set status on resource creation", "name", res.NamespacedName())
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
-
-	swa, err := r.findAssignment(ctx, res)
-	if err != nil {
-		log.Error(err, "failed to lookup for related switch assignment resource")
-		return ctrl.Result{}, err
-	}
-	if swa != nil {
-		if swa.Status.State != switchv1alpha1.StateFinished {
-			swa.FillStatus(switchv1alpha1.StateFinished, &switchv1alpha1.LinkedSwitchSpec{
-				Name:      res.Name,
-				Namespace: res.Namespace,
-			})
-			if err = r.Status().Update(ctx, swa); err != nil {
-				r.Log.Error(err, "failed to update resource", "kind", swa.Kind, "name", swa.NamespacedName())
-				return ctrl.Result{}, err
-			}
-			res.Status.ConnectionLevel = 0
-		}
-	}
-
-	ok := res.PeersProcessingFinished(list, swa)
-	if ok {
-		res.Status.State = switchv1alpha1.StateDefineAddresses
-		if list.AllConnectionsOk() {
-			if res.AddressesDefined() {
-				res.Status.State = switchv1alpha1.StateFinished
-			} else {
-				if err := r.defineSubnets(ctx, res); err != nil {
-					log.Error(err, "failed to define south subnets")
-					return ctrl.Result{}, err
-				}
-				res.UpdateSouthInterfacesAddresses()
-				res.UpdateNorthInterfacesAddresses(list)
-				if err := r.Update(ctx, res); err != nil {
-					log.Error(err, "failed to update resource")
-					return ctrl.Result{}, err
-				}
-			}
-		}
+		processor.startPoint = &deletionStep{}
 	} else {
-		res.Status.State = switchv1alpha1.StateDefinePeers
-		res.UpdatePeersData(list)
-		res.UpdateConnectionLevel(list)
+		processor.startPoint = &preparationStep{}
 	}
-
-	if err := r.Status().Update(ctx, res); err != nil {
-		log.Error(err, "failed to update resource status")
-		return ctrl.Result{}, err
-	}
-
-	if res.Status.State != switchv1alpha1.StateFinished {
-		return ctrl.Result{RequeueAfter: switchv1alpha1.CRequeueInterval}, nil
-	}
-
-	return ctrl.Result{}, nil
+	return processor.launch(res, r, ctx)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -173,6 +101,9 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		}).
 		Watches(&source.Kind{Type: &switchv1alpha1.Switch{}}, handler.Funcs{
 			UpdateFunc: r.handleSwitchUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchList{}),
+		}).
+		Watches(&source.Kind{Type: &subnetv1alpha1.Subnet{}}, handler.Funcs{
+			UpdateFunc: r.handleSubnetUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchList{}),
 		}).
 		Complete(r)
 }
@@ -189,8 +120,16 @@ func (r *SwitchReconciler) handleAssignmentUpdate() func(event.UpdateEvent, work
 
 func (r *SwitchReconciler) handleSwitchUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
 	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-		err := enqueueOnSwitchUpdate(r.Client, r.Log, scheme, q, ro)
-		if err != nil {
+		if err := r.enqueueOnSwitchUpdate(scheme, q, ro); err != nil {
+			r.Log.Error(err, "error triggering switch reconciliation on update")
+		}
+	}
+}
+
+func (r *SwitchReconciler) handleSubnetUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
+	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+		updRes := e.ObjectNew.(*subnetv1alpha1.Subnet)
+		if err := r.enqueueOnSubnetUpdate(updRes, scheme, q, ro); err != nil {
 			r.Log.Error(err, "error triggering switch reconciliation on update")
 		}
 	}
@@ -224,17 +163,17 @@ func (r *SwitchReconciler) enqueueOnAssignmentUpdate(
 	return nil
 }
 
-func enqueueOnSwitchUpdate(c client.Client, log logr.Logger, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
+func (r *SwitchReconciler) enqueueOnSwitchUpdate(scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
 	ctx := context.Background()
 	list := &unstructured.UnstructuredList{}
 	gvk, err := apiutil.GVKForObject(ro, scheme)
 	if err != nil {
-		log.Error(err, "unable to get gvk")
+		r.Log.Error(err, "unable to get gvk")
 		return err
 	}
 	list.SetGroupVersionKind(gvk)
-	if err := c.List(ctx, list); err != nil {
-		log.Error(err, "unable to get list of items")
+	if err := r.List(ctx, list); err != nil {
+		r.Log.Error(err, "unable to get list of items")
 		return err
 	}
 	for _, item := range list.Items {
@@ -246,12 +185,50 @@ func enqueueOnSwitchUpdate(c client.Client, log logr.Logger, scheme *runtime.Sch
 	return nil
 }
 
-func (r *SwitchReconciler) finalize(ctx context.Context, res *switchv1alpha1.Switch) (ctrl.Result, error) {
+func (r *SwitchReconciler) enqueueOnSubnetUpdate(src *subnetv1alpha1.Subnet, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
+	if src.Status.State != subnetv1alpha1.CFinishedSubnetState {
+		return nil
+	}
+
+	ctx := context.Background()
+	list := &unstructured.UnstructuredList{}
+	gvk, err := apiutil.GVKForObject(ro, scheme)
+	if err != nil {
+		r.Log.Error(err, "unable to get gvk")
+		return err
+	}
+	list.SetGroupVersionKind(gvk)
+	if err := r.List(ctx, list); err != nil {
+		r.Log.Error(err, "unable to get list of items")
+		return err
+	}
+	for _, item := range list.Items {
+		data, err := json.Marshal(item)
+		if err != nil {
+			r.Log.Error(err, "unable to marshal data")
+			return err
+		}
+		obj := &switchv1alpha1.Switch{}
+		err = json.Unmarshal(data, obj)
+		if err != nil {
+			r.Log.Error(err, "unable to unmarshal data")
+			return err
+		}
+		if obj.Spec.SouthSubnetV4 == nil && src.Status.Type == subnetv1alpha1.CIPv4SubnetType ||
+			obj.Spec.SouthSubnetV6 == nil && src.Status.Type == subnetv1alpha1.CIPv6SubnetType {
+
+			q.Add(reconcile.Request{NamespacedName: obj.NamespacedName()})
+		}
+	}
+	return nil
+}
+
+func (r *SwitchReconciler) finalize(ctx context.Context, res *switchv1alpha1.Switch) error {
 	if controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchFinalizer) {
 		res.FlushStatusOnDelete()
 		if err := r.Status().Update(ctx, res); err != nil {
 			r.Log.Error(err, "failed to finalize resource", "name", res.NamespacedName())
-			return ctrl.Result{}, err
+			return err
 		}
 
 		swa, err := r.findAssignment(ctx, res)
@@ -302,10 +279,10 @@ func (r *SwitchReconciler) finalize(ctx context.Context, res *switchv1alpha1.Swi
 		if err := r.Update(ctx, res); err != nil {
 			r.Log.Error(err, "failed to update resource on finalizer removal",
 				"gvk", res.GroupVersionKind(), "name", res.NamespacedName())
-			return ctrl.Result{}, err
+			return err
 		}
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 func (r *SwitchReconciler) findAssignment(ctx context.Context, sw *switchv1alpha1.Switch) (*switchv1alpha1.SwitchAssignment, error) {
@@ -323,27 +300,20 @@ func (r *SwitchReconciler) findAssignment(ctx context.Context, sw *switchv1alpha
 	return &list.Items[0], nil
 }
 
-func (r *SwitchReconciler) defineSubnets(ctx context.Context, sw *switchv1alpha1.Switch) error {
-	swaList := &switchv1alpha1.SwitchAssignmentList{}
-	swList := &switchv1alpha1.SwitchList{}
-	if err := r.List(ctx, swaList); err != nil {
-		return err
-	}
-	if err := r.List(ctx, swList); err != nil {
-		return err
-	}
+func (r *SwitchReconciler) defineSubnets(
+	ctx context.Context,
+	sw *switchv1alpha1.Switch,
+	list *switchv1alpha1.SwitchList,
+	assignment *switchv1alpha1.SwitchAssignment) error {
 
 	regions := make([]string, 0)
 	zones := make([]string, 0)
-	swa := &switchv1alpha1.SwitchAssignment{}
-	if sw.Status.ConnectionLevel == 0 {
-		swa, _ = r.findAssignment(ctx, sw)
-	} else {
-		topLevelSwitch := swList.GetTopLevelSwitch()
-		swa, _ = r.findAssignment(ctx, topLevelSwitch)
+	if assignment == nil {
+		topLevelSwitch := list.GetTopLevelSwitch()
+		assignment, _ = r.findAssignment(ctx, topLevelSwitch)
 	}
-	regions = append(regions, swa.Spec.Region)
-	zones = append(zones, swa.Spec.AvailabilityZone)
+	regions = append(regions, assignment.Spec.Region)
+	zones = append(zones, assignment.Spec.AvailabilityZone)
 	subnets := &subnetv1alpha1.SubnetList{}
 	if err := r.Client.List(ctx, subnets); err != nil {
 		return err
@@ -378,5 +348,29 @@ func (r *SwitchReconciler) defineSubnets(ctx context.Context, sw *switchv1alpha1
 			}
 		}
 	}
+	return nil
+}
+
+func (r *SwitchReconciler) prepareBackground(ctx context.Context, sw *switchv1alpha1.Switch) error {
+	if r.Background == nil {
+		r.Background = &Background{
+			switches:   nil,
+			assignment: nil,
+		}
+	}
+
+	list := &switchv1alpha1.SwitchList{}
+	if err := r.List(ctx, list); err != nil {
+		r.Log.Error(err, "failed to list switch resources")
+		return err
+	}
+	r.Background.switches = list
+
+	swa, err := r.findAssignment(ctx, sw)
+	if err != nil {
+		r.Log.Error(err, "failed to lookup for related switch assignment resource")
+		return err
+	}
+	r.Background.assignment = swa
 	return nil
 }

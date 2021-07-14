@@ -84,6 +84,8 @@ func init() {
 	SchemeBuilder.Register(&SwitchAssignment{}, &SwitchAssignmentList{})
 }
 
+// NamespacedName returns assignment's name and namespace as
+// built-in type.
 func (in *SwitchAssignment) NamespacedName() types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: in.Namespace,
@@ -91,11 +93,13 @@ func (in *SwitchAssignment) NamespacedName() types.NamespacedName {
 	}
 }
 
+// FillStatus fills resource status with provided values
 func (in *SwitchAssignment) FillStatus(state State, relatedSwitch *LinkedSwitchSpec) {
 	in.Status.State = state
 	in.Status.Switch = relatedSwitch
 }
 
+// GetListFilter builds list options object
 func (in *SwitchAssignment) GetListFilter() (*client.ListOptions, error) {
 	labelsReq, err := labels.NewRequirement(LabelChassisId, selection.In, []string{MacToLabel(in.Spec.ChassisID)})
 	if err != nil {

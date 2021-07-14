@@ -277,6 +277,9 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
+// Determines whether Switch resources with connection
+// level equals to zero already exists.
+// Return true if exists, false otherwise.
 func (in *ConnectionsMap) topLevelSpinesDefined() bool {
 	if switches, ok := (*in)[0]; !ok {
 		return false
@@ -290,6 +293,10 @@ func (in *ConnectionsMap) topLevelSpinesDefined() bool {
 	return true
 }
 
+// Creates map with switches' connection levels as keys
+// and slices of Switch resources as values.
+// Return ConnectionsMap and sorted slice of existing
+// connection levels.
 func (in *SwitchList) buildConnectionMap() (ConnectionsMap, []uint8) {
 	connectionsMap := make(ConnectionsMap)
 	keys := make([]uint8, 0)
@@ -307,6 +314,7 @@ func (in *SwitchList) buildConnectionMap() (ConnectionsMap, []uint8) {
 	return connectionsMap, keys
 }
 
+// Returns minimal existing connection level value.
 func (in *SwitchList) minimumConnectionLevel() uint8 {
 	result := uint8(255)
 	for _, item := range in.Items {
@@ -317,6 +325,9 @@ func (in *SwitchList) minimumConnectionLevel() uint8 {
 	return result
 }
 
+// GetTopLevelSwitch searches for Switch resource with
+// connection level equals to zero in ConnectionsMap.
+// Return nil in case Switch was not found.
 func (in *SwitchList) GetTopLevelSwitch() *Switch {
 	connectionsMap, _ := in.buildConnectionMap()
 	if switches, ok := connectionsMap[0]; ok {
@@ -325,6 +336,9 @@ func (in *SwitchList) GetTopLevelSwitch() *Switch {
 	return nil
 }
 
+// AllConnectionsOk checks whether all Switch resources
+// in SwitchList has determined their peer connections.
+// Return false if not.
 func (in *SwitchList) AllConnectionsOk() bool {
 	for _, sw := range in.Items {
 		if sw.Status.State == StateDefinePeers {
@@ -334,71 +348,10 @@ func (in *SwitchList) AllConnectionsOk() bool {
 	return true
 }
 
-func (in *Switch) NamespacedName() types.NamespacedName {
-	return types.NamespacedName{
-		Namespace: in.Namespace,
-		Name:      in.Name,
-	}
-}
-
-func (in *Switch) Prepare(src *inventoriesv1alpha1.Inventory) {
-	interfaces, switchPorts := prepareInterfaces(src.Spec.NICs.NICs)
-	in.ObjectMeta = metav1.ObjectMeta{
-		Name:      src.Name,
-		Namespace: CNamespace,
-	}
-	in.Spec = SwitchSpec{
-		Hostname:    src.Spec.Host.Name,
-		Location:    &LocationSpec{},
-		TotalPorts:  src.Spec.NICs.Count,
-		SwitchPorts: switchPorts,
-		Distro: &SwitchDistroSpec{
-			OS:      CSonicSwitchOs,
-			Version: src.Spec.Distro.CommitId,
-			ASIC:    src.Spec.Distro.AsicType,
-		},
-		Chassis: &SwitchChassisSpec{
-			Manufacturer: src.Spec.System.Manufacturer,
-			SKU:          src.Spec.System.ProductSKU,
-			Serial:       src.Spec.System.SerialNumber,
-			ChassisID:    getChassisId(src.Spec.NICs.NICs),
-		},
-		Interfaces: interfaces,
-	}
-}
-
-func (in *Switch) UpdateInterfaces(swl *SwitchList) {
-	for inf, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID == EmptyString && data.Ndp {
-			for _, item := range swl.Items {
-				for peerInf, peerInfData := range item.Spec.Interfaces {
-					if peerInfData.PeerChassisID == in.Spec.Chassis.ChassisID && peerInfData.PeerPortDescription == inf {
-						data.PeerChassisID = item.Spec.Chassis.ChassisID
-						data.PeerType = SwitchType
-						data.PeerPortDescription = peerInf
-						data.PeerSystemName = item.Spec.Hostname
-					}
-				}
-			}
-		}
-	}
-}
-
-func (in *Switch) InterfacesUpdated(swl *SwitchList) bool {
-	for inf, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID == EmptyString && data.Ndp {
-			for _, item := range swl.Items {
-				for _, peerInfData := range item.Spec.Interfaces {
-					if peerInfData.PeerChassisID == in.Spec.Chassis.ChassisID && peerInfData.PeerPortDescription == inf {
-						return false
-					}
-				}
-			}
-		}
-	}
-	return true
-}
-
+// Constructs map of PeerSpec objects based on stored
+// Switch interfaces.
+// Return map where interface name is a key and PeerSpec
+// is a value.
 func (in *Switch) getBaseConnections() map[string]*PeerSpec {
 	result := make(map[string]*PeerSpec)
 	for name, data := range in.Spec.Interfaces {
@@ -415,6 +368,7 @@ func (in *Switch) getBaseConnections() map[string]*PeerSpec {
 	return result
 }
 
+// Defines the Switch role according to existing peers
 func (in *Switch) getRole(peers map[string]*PeerSpec) Role {
 	for _, data := range peers {
 		if data.Type == MachineType {
@@ -424,73 +378,8 @@ func (in *Switch) getRole(peers map[string]*PeerSpec) Role {
 	return SpineRole
 }
 
-func (in *Switch) FillStatusOnCreate() {
-	peers := in.getBaseConnections()
-	in.Status = SwitchStatus{
-		Role:            in.getRole(peers),
-		ConnectionLevel: 255,
-		NorthConnections: &ConnectionsSpec{
-			Count: 0,
-			Peers: make(map[string]*PeerSpec),
-		},
-		SouthConnections: &ConnectionsSpec{
-			Count: len(peers),
-			Peers: peers,
-		},
-		State:     StateDefinePeers,
-		ScanPorts: false,
-	}
-}
-
-func (in *Switch) FlushStatusOnDelete() {
-	in.Status.ConnectionLevel = 255
-	in.Status.NorthConnections = &ConnectionsSpec{
-		Count: 0,
-		Peers: make(map[string]*PeerSpec),
-	}
-	in.Status.SouthConnections = &ConnectionsSpec{
-		Count: 0,
-		Peers: make(map[string]*PeerSpec),
-	}
-	in.Status.State = StateDeleting
-	in.Status.ScanPorts = false
-}
-
-func (in *Switch) GetListFilter() (*client.ListOptions, error) {
-	labelsReq, err := labels.NewRequirement(LabelChassisId, selection.In, []string{MacToLabel(in.Spec.Chassis.ChassisID)})
-	if err != nil {
-		return nil, err
-	}
-	selector := labels.NewSelector()
-	selector = selector.Add(*labelsReq)
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Limit:         100,
-	}
-	return opts, nil
-}
-
-func (in *Switch) UpdatePeersData(list *SwitchList) {
-	for name, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(name, "Ethernet") && data.PeerChassisID != EmptyString {
-			_, found := in.Status.NorthConnections.Peers[name]
-			if !found {
-				for _, item := range list.Items {
-					if item.Spec.Chassis.ChassisID == data.PeerChassisID {
-						in.Status.SouthConnections.Peers[name] = &PeerSpec{
-							Name:      item.Name,
-							Namespace: item.Namespace,
-							ChassisID: data.PeerChassisID,
-							Type:      data.PeerType,
-							PortName:  data.PeerPortDescription,
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
+// Moves peers between south and north peer lists
+// according to changes in peers connection levels.
 func (in *Switch) movePeers(list *SwitchList) {
 	if in.Status.ConnectionLevel == 0 {
 		for name, data := range in.Status.NorthConnections.Peers {
@@ -519,31 +408,9 @@ func (in *Switch) movePeers(list *SwitchList) {
 	}
 }
 
-func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
-	connectionsMap, keys := list.buildConnectionMap()
-	if !connectionsMap.topLevelSpinesDefined() {
-		return
-	}
-	if in.Status.ConnectionLevel == 0 {
-		in.movePeers(list)
-	} else {
-		for _, connectionLevel := range keys {
-			switches := connectionsMap[connectionLevel]
-			northPeers := in.getPeers(switches)
-			if len(northPeers.Items) > 0 {
-				minConnectionLevel := northPeers.minimumConnectionLevel()
-				if minConnectionLevel != 255 && minConnectionLevel < in.Status.ConnectionLevel {
-					in.Status.ConnectionLevel = minConnectionLevel + 1
-					in.updateNorthPeers(northPeers)
-					in.movePeers(list)
-				}
-			}
-		}
-	}
-	in.Status.NorthConnections.Count = len(in.Status.NorthConnections.Peers)
-	in.Status.SouthConnections.Count = len(in.Status.SouthConnections.Peers)
-}
-
+// Determines what Switch resources are the known
+// peers for current Switch.
+// Return SwitchList containing peers.
 func (in *Switch) getPeers(list []Switch) *SwitchList {
 	result := &SwitchList{}
 	for _, item := range list {
@@ -556,6 +423,7 @@ func (in *Switch) getPeers(list []Switch) *SwitchList {
 	return result
 }
 
+// Rewrites stored north peers info with fully defined PeerSpec
 func (in *Switch) updateNorthPeers(list *SwitchList) {
 	for _, item := range list.Items {
 		for name, data := range item.Spec.Interfaces {
@@ -572,6 +440,7 @@ func (in *Switch) updateNorthPeers(list *SwitchList) {
 	}
 }
 
+// Rewrites stored south peers info with fully defined PeerSpec
 func (in *Switch) updateSouthPeers(list *SwitchList) {
 	for _, item := range list.Items {
 		for name, data := range item.Spec.Interfaces {
@@ -588,19 +457,8 @@ func (in *Switch) updateSouthPeers(list *SwitchList) {
 	}
 }
 
-func (in *Switch) PeersProcessingFinished(swl *SwitchList, swa *SwitchAssignment) bool {
-	if swa != nil && in.Status.ConnectionLevel != 0 {
-		return false
-	}
-	if in.Status.ConnectionLevel == 255 {
-		return false
-	}
-	if !in.peersOk() || !in.connectionsOk(swl) {
-		return false
-	}
-	return true
-}
-
+// Checks whether all stored peers are unique and fully defined.
+// Return true if so, false otherwise.
 func (in *Switch) peersOk() bool {
 	for inf, peer := range in.Status.SouthConnections.Peers {
 		if peer.Name == EmptyString {
@@ -621,6 +479,11 @@ func (in *Switch) peersOk() bool {
 	return true
 }
 
+// Checks whether all stored peers defined correctly: north
+// peers should have connection level less by one than current
+// Switch, south peers should have connection level greater by
+// one than current switch.
+// Return true if peers defined correctly, false otherwise.
 func (in *Switch) connectionsOk(list *SwitchList) bool {
 	if in.Status.ConnectionLevel == 0 && in.Status.NorthConnections.Count != 0 {
 		return false
@@ -650,6 +513,8 @@ func (in *Switch) connectionsOk(list *SwitchList) bool {
 	return true
 }
 
+// Checks whether Switch provided as argument is in the south
+// peers of current Switch.
 func (in *Switch) switchInSouthPeers(tgt *Switch) bool {
 	if in.Status.SouthConnections == nil {
 		return false
@@ -662,6 +527,8 @@ func (in *Switch) switchInSouthPeers(tgt *Switch) bool {
 	return false
 }
 
+// Checks whether Switch provided as argument is in the north
+// peers of current Switch.
 func (in *Switch) switchInNorthPeers(tgt *Switch) bool {
 	if in.Status.NorthConnections == nil {
 		return false
@@ -674,6 +541,210 @@ func (in *Switch) switchInNorthPeers(tgt *Switch) bool {
 	return false
 }
 
+// Defines the amount of needed ip addresses according to the
+// number of switch ports and address type (IPv4 or IPv6).
+func (in *Switch) getAddressNeededCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
+	if addrType == subnetv1alpha1.CIPv4SubnetType {
+		return int64(in.Spec.SwitchPorts * CIPv4AddressesPerPort)
+	} else {
+		return int64(in.Spec.SwitchPorts * CIPv6AddressesPerPort)
+	}
+}
+
+// NamespacedName returns switch's name and namespace as
+// built-in type.
+func (in *Switch) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: in.Namespace,
+		Name:      in.Name,
+	}
+}
+
+// Prepare constructs Switch resource for creation from
+// provided Inventory resource.
+func (in *Switch) Prepare(src *inventoriesv1alpha1.Inventory) {
+	interfaces, switchPorts := prepareInterfaces(src.Spec.NICs.NICs)
+	in.ObjectMeta = metav1.ObjectMeta{
+		Name:      src.Name,
+		Namespace: CNamespace,
+	}
+	in.Spec = SwitchSpec{
+		Hostname:    src.Spec.Host.Name,
+		Location:    &LocationSpec{},
+		TotalPorts:  src.Spec.NICs.Count,
+		SwitchPorts: switchPorts,
+		Distro: &SwitchDistroSpec{
+			OS:      CSonicSwitchOs,
+			Version: src.Spec.Distro.CommitId,
+			ASIC:    src.Spec.Distro.AsicType,
+		},
+		Chassis: &SwitchChassisSpec{
+			Manufacturer: src.Spec.System.Manufacturer,
+			SKU:          src.Spec.System.ProductSKU,
+			Serial:       src.Spec.System.SerialNumber,
+			ChassisID:    getChassisId(src.Spec.NICs.NICs),
+		},
+		Interfaces: interfaces,
+	}
+}
+
+// UpdateInterfaces fills in missing, due to absent LLDPs,
+// but existing NDPs, data in switch interfaces, if it's
+// peer has LLDP data about current Switch.
+func (in *Switch) UpdateInterfaces(swl *SwitchList) {
+	for inf, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID == EmptyString && data.Ndp {
+			for _, item := range swl.Items {
+				for peerInf, peerInfData := range item.Spec.Interfaces {
+					if peerInfData.PeerChassisID == in.Spec.Chassis.ChassisID && peerInfData.PeerPortDescription == inf {
+						data.PeerChassisID = item.Spec.Chassis.ChassisID
+						data.PeerType = SwitchType
+						data.PeerPortDescription = peerInf
+						data.PeerSystemName = item.Spec.Hostname
+					}
+				}
+			}
+		}
+	}
+}
+
+// InterfacesUpdated checks whether interfaces data is
+// missing or not.
+func (in *Switch) InterfacesUpdated(swl *SwitchList) bool {
+	for inf, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID == EmptyString && data.Ndp {
+			for _, item := range swl.Items {
+				for _, peerInfData := range item.Spec.Interfaces {
+					if peerInfData.PeerChassisID == in.Spec.Chassis.ChassisID && peerInfData.PeerPortDescription == inf {
+						return false
+					}
+				}
+			}
+		}
+	}
+	return true
+}
+
+// FillStatusOnCreate fills Switch status on resource creation.
+func (in *Switch) FillStatusOnCreate() {
+	peers := in.getBaseConnections()
+	in.Status = SwitchStatus{
+		Role:            in.getRole(peers),
+		ConnectionLevel: 255,
+		NorthConnections: &ConnectionsSpec{
+			Count: 0,
+			Peers: make(map[string]*PeerSpec),
+		},
+		SouthConnections: &ConnectionsSpec{
+			Count: len(peers),
+			Peers: peers,
+		},
+		State:     StateDefinePeers,
+		ScanPorts: false,
+	}
+}
+
+// FlushStatusOnDelete flushes Switch status on resource deletion.
+func (in *Switch) FlushStatusOnDelete() {
+	in.Status.ConnectionLevel = 255
+	in.Status.NorthConnections = &ConnectionsSpec{
+		Count: 0,
+		Peers: make(map[string]*PeerSpec),
+	}
+	in.Status.SouthConnections = &ConnectionsSpec{
+		Count: 0,
+		Peers: make(map[string]*PeerSpec),
+	}
+	in.Status.State = StateDeleting
+	in.Status.ScanPorts = false
+}
+
+// GetListFilter builds list options object
+func (in *Switch) GetListFilter() (*client.ListOptions, error) {
+	labelsReq, err := labels.NewRequirement(LabelChassisId, selection.In, []string{MacToLabel(in.Spec.Chassis.ChassisID)})
+	if err != nil {
+		return nil, err
+	}
+	selector := labels.NewSelector()
+	selector = selector.Add(*labelsReq)
+	opts := &client.ListOptions{
+		LabelSelector: selector,
+		Limit:         100,
+	}
+	return opts, nil
+}
+
+// UpdatePeersData rewrites existing south peers data
+// with fully filled PeerSpec according to info stored
+// in interfaces specs.
+func (in *Switch) UpdatePeersData(list *SwitchList) {
+	for name, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(name, "Ethernet") && data.PeerChassisID != EmptyString {
+			_, found := in.Status.NorthConnections.Peers[name]
+			if !found {
+				for _, item := range list.Items {
+					if item.Spec.Chassis.ChassisID == data.PeerChassisID {
+						in.Status.SouthConnections.Peers[name] = &PeerSpec{
+							Name:      item.Name,
+							Namespace: item.Namespace,
+							ChassisID: data.PeerChassisID,
+							Type:      data.PeerType,
+							PortName:  data.PeerPortDescription,
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// UpdateConnectionLevel updates switch's connection level
+// and peers info.
+func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
+	connectionsMap, keys := list.buildConnectionMap()
+	if !connectionsMap.topLevelSpinesDefined() {
+		return
+	}
+	if in.Status.ConnectionLevel == 0 {
+		in.movePeers(list)
+	} else {
+		for _, connectionLevel := range keys {
+			switches := connectionsMap[connectionLevel]
+			northPeers := in.getPeers(switches)
+			if len(northPeers.Items) > 0 {
+				minConnectionLevel := northPeers.minimumConnectionLevel()
+				if minConnectionLevel != 255 && minConnectionLevel < in.Status.ConnectionLevel {
+					in.Status.ConnectionLevel = minConnectionLevel + 1
+					in.updateNorthPeers(northPeers)
+					in.movePeers(list)
+				}
+			}
+		}
+	}
+	in.Status.NorthConnections.Count = len(in.Status.NorthConnections.Peers)
+	in.Status.SouthConnections.Count = len(in.Status.SouthConnections.Peers)
+}
+
+// PeersProcessingFinished checks whether peers are
+// correctly determined for all existing switches.
+func (in *Switch) PeersProcessingFinished(swl *SwitchList, swa *SwitchAssignment) bool {
+	if swa != nil && in.Status.ConnectionLevel != 0 {
+		return false
+	}
+	if in.Status.ConnectionLevel == 255 {
+		return false
+	}
+	if !in.peersOk() || !in.connectionsOk(swl) {
+		return false
+	}
+	return true
+}
+
+// GetSuitableSubnet looks up for subnet resource, that fits
+// with number of parameters as region, availability zone,
+// amount of available addresses and address type, to reserve
+// CIDR for Switch.
+// Returns suitable CIDR and subnet or error.
 func (in *Switch) GetSuitableSubnet(
 	subnets *subnetv1alpha1.SubnetList,
 	addressType subnetv1alpha1.SubnetAddressType,
@@ -709,14 +780,8 @@ func (in *Switch) GetSuitableSubnet(
 	return nil, nil, nil
 }
 
-func (in *Switch) getAddressNeededCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
-	if addrType == subnetv1alpha1.CIPv4SubnetType {
-		return int64(in.Spec.SwitchPorts * CIPv4AddressesPerPort)
-	} else {
-		return int64(in.Spec.SwitchPorts * CIPv6AddressesPerPort)
-	}
-}
-
+// UpdateSouthInterfacesAddresses defines addresses for
+// switch interfaces according to the switch's south subnets.
 func (in *Switch) UpdateSouthInterfacesAddresses() {
 	if in.Spec.SouthSubnetV4 != nil {
 		_, network, _ := net.ParseCIDR(in.Spec.SouthSubnetV4.CIDR)
@@ -738,6 +803,9 @@ func (in *Switch) UpdateSouthInterfacesAddresses() {
 	}
 }
 
+// UpdateNorthInterfacesAddresses defines addresses for
+// switch interfaces, that are connected to upstream switches,
+// according to the peers' interfaces addresses.
 func (in *Switch) UpdateNorthInterfacesAddresses(swl *SwitchList) {
 	for inf, peer := range in.Status.NorthConnections.Peers {
 		for _, item := range swl.Items {
@@ -757,6 +825,8 @@ func (in *Switch) UpdateNorthInterfacesAddresses(swl *SwitchList) {
 	}
 }
 
+// AddressesDefined checks whether ip addresses defined
+// for all used switch interfaces.
 func (in *Switch) AddressesDefined() bool {
 	for inf, data := range in.Spec.Interfaces {
 		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID != EmptyString {
@@ -768,6 +838,8 @@ func (in *Switch) AddressesDefined() bool {
 	return true
 }
 
+// RequestAddress returns the IP address next for the
+// IP address of the interface.
 func (in *InterfaceSpec) RequestAddress(addrType subnetv1alpha1.SubnetAddressType) net.IP {
 	addr := net.IP{}
 	switch addrType {

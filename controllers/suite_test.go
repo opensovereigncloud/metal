@@ -40,6 +40,7 @@ import (
 	"golang.org/x/mod/modfile"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -283,6 +284,13 @@ var _ = BeforeSuite(func() {
 		},
 	}
 	Expect(k8sClient.Create(ctx, subnetV4)).To(Succeed())
+	Eventually(func() bool {
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: SubnetNameV4, Namespace: OnmetalNamespace}, subnetV4)).Should(Succeed())
+		if subnetV4.Status.State != subnetv1alpha1.CFinishedSubnetState {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
 
 }, 60)
 

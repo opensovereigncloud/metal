@@ -206,7 +206,7 @@ var _ = Describe("Integration between operators", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should update south v6 subnet", func() {
+		It("Should update south v6 subnet and define addresses", func() {
 			By("Subnets defining")
 			cidr, _ := subnetv1alpha1.CIDRFromString(SubnetIPv6CIDR)
 			subnetV6 := &subnetv1alpha1.Subnet{
@@ -222,12 +222,22 @@ var _ = Describe("Integration between operators", func() {
 				},
 			}
 			Expect(k8sClient.Create(ctx, subnetV6)).To(Succeed())
+			Eventually(func() bool {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: SubnetNameV6, Namespace: OnmetalNamespace}, subnetV6)).Should(Succeed())
+				if subnetV6.Status.State != subnetv1alpha1.CFinishedSubnetState {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
 
 			list := &switchv1alpha1.SwitchList{}
 			Eventually(func() bool {
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
-					if sw.Spec.SouthSubnetV4 == nil || sw.Spec.SouthSubnetV6 == nil {
+					if sw.Spec.SouthSubnetV4 == nil {
+						return false
+					}
+					if sw.Spec.SouthSubnetV6 == nil {
 						return false
 					}
 					if !sw.AddressesDefined() {
