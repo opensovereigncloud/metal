@@ -565,7 +565,7 @@ func (in *Switch) NamespacedName() types.NamespacedName {
 // Prepare constructs Switch resource for creation from
 // provided Inventory resource.
 func (in *Switch) Prepare(src *inventoriesv1alpha1.Inventory) {
-	interfaces, switchPorts := prepareInterfaces(src.Spec.NICs.NICs)
+	interfaces, switchPorts := PrepareInterfaces(src.Spec.NICs.NICs)
 	in.ObjectMeta = metav1.ObjectMeta{
 		Name:      src.Name,
 		Namespace: CNamespace,
@@ -838,6 +838,76 @@ func (in *Switch) AddressesDefined() bool {
 		}
 	}
 	return true
+}
+
+// UpdateInterfacesFromInventory fulfills switch's interfaces
+// data according to updated inventory data
+func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpec) {
+	for inf := range in.Spec.Interfaces {
+		if _, ok := updated[inf]; !ok {
+			delete(in.Spec.Interfaces, inf)
+			delete(in.Status.SouthConnections.Peers, inf)
+			delete(in.Status.NorthConnections.Peers, inf)
+		}
+	}
+	for inf, data := range updated {
+		stored, ok := in.Spec.Interfaces[inf]
+		if !ok {
+			in.Spec.Interfaces[inf] = data
+		} else {
+			stored.PeerType = data.PeerType
+			stored.PeerChassisID = data.PeerChassisID
+			stored.PeerSystemName = data.PeerSystemName
+			stored.PeerPortID = data.PeerPortID
+			stored.PeerPortDescription = data.PeerPortDescription
+			stored.Ndp = data.Ndp
+		}
+	}
+}
+
+// PeersUpdateNeeded checks whether interfaces data
+// was updated and peers info needed update.
+func (in *Switch) PeersUpdateNeeded() bool {
+	for name, data := range in.Spec.Interfaces {
+		if strings.HasPrefix(name, "Ethernet") && data.PeerChassisID != EmptyString {
+			_, northPeer := in.Status.NorthConnections.Peers[name]
+			_, southPeer := in.Status.SouthConnections.Peers[name]
+			if !northPeer && !southPeer {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// UpdatePeersInfo updates peers data and switch role
+// according to connected peers.
+func (in *Switch) UpdatePeersInfo() {
+	machinesConnected := false
+	for name, data := range in.Spec.Interfaces {
+		_, northPeer := in.Status.NorthConnections.Peers[name]
+		_, southPeer := in.Status.SouthConnections.Peers[name]
+		if northPeer || southPeer {
+			continue
+		}
+		if strings.HasPrefix(name, "Ethernet") && data.PeerChassisID != EmptyString {
+			in.Status.SouthConnections.Peers[name] = &PeerSpec{
+				Name:      EmptyString,
+				Namespace: EmptyString,
+				ChassisID: data.PeerChassisID,
+				Type:      data.PeerType,
+				PortName:  data.PeerPortDescription,
+			}
+			if data.PeerType == MachineType {
+				machinesConnected = true
+			}
+		}
+	}
+	if machinesConnected {
+		in.Status.Role = LeafRole
+	} else {
+		in.Status.Role = SpineRole
+	}
 }
 
 // RequestAddress returns the IP address next for the

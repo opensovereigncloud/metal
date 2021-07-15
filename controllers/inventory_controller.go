@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
@@ -50,8 +51,8 @@ type InventoryReconciler struct {
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("inventory", req.NamespacedName)
 
-	inventory := &inventoriesv1alpha1.Inventory{}
-	if err := r.Get(ctx, req.NamespacedName, inventory); err != nil {
+	res := &inventoriesv1alpha1.Inventory{}
+	if err := r.Get(ctx, req.NamespacedName, res); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("requested resource not found")
 		} else {
@@ -61,15 +62,28 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	sw := &switchv1alpha1.Switch{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: switchv1alpha1.CNamespace, Name: inventory.Name}, sw); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Namespace: switchv1alpha1.CNamespace, Name: res.Name}, sw); err != nil {
 		if apierrors.IsNotFound(err) {
-			sw.Prepare(inventory)
+			sw.Prepare(res)
 			if err := r.Client.Create(ctx, sw); err != nil {
 				r.Log.Error(err, "failed to create switch resource", "name", sw.NamespacedName())
 				return ctrl.Result{}, err
 			}
+		} else {
+			log.Error(err, "failed to lookup for switch resource")
+			return ctrl.Result{}, err
 		}
 	}
+
+	interfaces, _ := switchv1alpha1.PrepareInterfaces(res.Spec.NICs.NICs)
+	if !reflect.DeepEqual(interfaces, sw.Spec.Interfaces) {
+		sw.UpdateInterfacesFromInventory(interfaces)
+		if err := r.Update(ctx, sw); err != nil {
+			r.Log.Error(err, "failed to update switch interfaces", "name", sw.NamespacedName())
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 

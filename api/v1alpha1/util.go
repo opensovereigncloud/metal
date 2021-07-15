@@ -85,7 +85,7 @@ func getChassisId(nics []inventoriesv1alpha1.NICSpec) string {
 	return EmptyString
 }
 
-func prepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*InterfaceSpec, uint64) {
+func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*InterfaceSpec, uint64) {
 	result := make(map[string]*InterfaceSpec)
 	switchPorts := uint64(0)
 	for _, nic := range nics {

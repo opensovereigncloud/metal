@@ -251,6 +251,57 @@ var _ = Describe("Integration between operators", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
+		It("Should update switch interfaces and peers on inventory update", func() {
+			inv := &inventoriesv1alpha1.Inventory{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: DefaultNamespace,
+				Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
+			}, inv)).Should(Succeed())
+			updatedInfIndex := 0
+			updatedInf := inventoriesv1alpha1.NICSpec{}
+			for i, nic := range inv.Spec.NICs.NICs {
+				if nic.Name == "Ethernet124" {
+					updatedInfIndex = i
+					updatedInf = *nic.DeepCopy()
+				}
+			}
+			updatedInf.NDPs = []inventoriesv1alpha1.NDPSpec{}
+			updatedInf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
+			updatedInf.LLDPs = append(updatedInf.LLDPs, inventoriesv1alpha1.LLDPSpec{})
+			updatedInf.LLDPs = append(updatedInf.LLDPs, inventoriesv1alpha1.LLDPSpec{
+				ChassisID:         "1c:34:da:57:3b:44",
+				SystemName:        "Fake",
+				SystemDescription: "Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64",
+				PortID:            "lan0",
+				PortDescription:   "lan0",
+				Capabilities:      []inventoriesv1alpha1.LLDPCapabilities{switchv1alpha1.CStationCapability},
+			})
+			inv.Spec.NICs.NICs[updatedInfIndex] = updatedInf
+			Expect(k8sClient.Update(ctx, inv)).Should(Succeed())
+
+			sw := &switchv1alpha1.Switch{}
+			Eventually(func() bool {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: OnmetalNamespace,
+					Name:      inv.Name,
+				}, sw)).Should(Succeed())
+				if _, ok := sw.Status.SouthConnections.Peers["Ethernet124"]; !ok {
+					return false
+				}
+				if sw.Spec.Interfaces["Ethernet124"].IPv4 == switchv1alpha1.EmptyString ||
+					sw.Spec.Interfaces["Ethernet124"].IPv6 == switchv1alpha1.EmptyString {
+					return false
+				}
+				if sw.Status.State != switchv1alpha1.StateFinished {
+					return false
+				}
+				if sw.Status.Role != switchv1alpha1.LeafRole {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+		})
+
 		It("Should update related resources on switch delete", func() {
 			Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
 			Eventually(func() bool {

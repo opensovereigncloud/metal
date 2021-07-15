@@ -67,14 +67,14 @@ type SwitchReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
 func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("switch", req.NamespacedName)
+	log := r.Log.WithValues("name", req.NamespacedName)
 	res := &switchv1alpha1.Switch{}
 	if err := r.Get(ctx, req.NamespacedName, res); err != nil {
 		if apierrors.IsNotFound(err) {
-			log.Info("requested switch resource not found", "name", req.NamespacedName)
+			log.Info("requested switch resource not found")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
-		log.Error(err, "failed to get switch resource", "name", req.NamespacedName)
+		log.Error(err, "failed to get switch resource")
 		return ctrl.Result{}, err
 	}
 
@@ -112,15 +112,15 @@ func (r *SwitchReconciler) handleAssignmentUpdate() func(event.UpdateEvent, work
 		oldRes := e.ObjectOld.(*switchv1alpha1.SwitchAssignment)
 		updRes := e.ObjectNew.(*switchv1alpha1.SwitchAssignment)
 		if err := r.enqueueOnAssignmentUpdate(context.Background(), oldRes, updRes, q); err != nil {
-			r.Log.Error(err, "failed to trigger reconciliation")
+			r.Log.Error(err, "failed to trigger reconciliation on switchAssignment resource update")
 		}
 	}
 }
 
 func (r *SwitchReconciler) handleSwitchUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
 	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-		if err := r.enqueueOnSwitchUpdate(scheme, q, ro); err != nil {
-			r.Log.Error(err, "error triggering switch reconciliation on update")
+		if err := r.enqueueOnSwitchUpdate(context.Background(), scheme, q, ro); err != nil {
+			r.Log.Error(err, "failed to trigger reconciliation on switch resource update")
 		}
 	}
 }
@@ -128,8 +128,8 @@ func (r *SwitchReconciler) handleSwitchUpdate(scheme *runtime.Scheme, ro runtime
 func (r *SwitchReconciler) handleSubnetUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
 	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 		updRes := e.ObjectNew.(*subnetv1alpha1.Subnet)
-		if err := r.enqueueOnSubnetUpdate(updRes, scheme, q, ro); err != nil {
-			r.Log.Error(err, "error triggering switch reconciliation on update")
+		if err := r.enqueueOnSubnetUpdate(context.Background(), updRes, scheme, q, ro); err != nil {
+			r.Log.Error(err, "failed to trigger reconciliation on subnet resource update")
 		}
 	}
 }
@@ -162,8 +162,13 @@ func (r *SwitchReconciler) enqueueOnAssignmentUpdate(
 	return nil
 }
 
-func (r *SwitchReconciler) enqueueOnSwitchUpdate(scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
-	ctx := context.Background()
+func (r *SwitchReconciler) enqueueOnSwitchUpdate(
+	ctx context.Context,
+	scheme *runtime.Scheme,
+	q workqueue.RateLimitingInterface,
+	ro runtime.Object) error {
+	context.Background()
+
 	list := &unstructured.UnstructuredList{}
 	gvk, err := apiutil.GVKForObject(ro, scheme)
 	if err != nil {
@@ -184,12 +189,16 @@ func (r *SwitchReconciler) enqueueOnSwitchUpdate(scheme *runtime.Scheme, q workq
 	return nil
 }
 
-func (r *SwitchReconciler) enqueueOnSubnetUpdate(src *subnetv1alpha1.Subnet, scheme *runtime.Scheme, q workqueue.RateLimitingInterface, ro runtime.Object) error {
+func (r *SwitchReconciler) enqueueOnSubnetUpdate(
+	ctx context.Context,
+	src *subnetv1alpha1.Subnet,
+	scheme *runtime.Scheme,
+	q workqueue.RateLimitingInterface,
+	ro runtime.Object) error {
+
 	if src.Status.State != subnetv1alpha1.CFinishedSubnetState {
 		return nil
 	}
-
-	ctx := context.Background()
 	list := &unstructured.UnstructuredList{}
 	gvk, err := apiutil.GVKForObject(ro, scheme)
 	if err != nil {
@@ -275,10 +284,12 @@ func (r *SwitchReconciler) finalize(ctx context.Context, res *switchv1alpha1.Swi
 func (r *SwitchReconciler) findAssignment(ctx context.Context, sw *switchv1alpha1.Switch) (*switchv1alpha1.SwitchAssignment, error) {
 	opts, err := sw.GetListFilter()
 	if err != nil {
+		r.Log.Error(err, "failed to construct list options object")
 		return nil, err
 	}
 	list := &switchv1alpha1.SwitchAssignmentList{}
 	if err := r.List(ctx, list, opts); err != nil {
+		r.Log.Error(err, "failed to list resources", "gvk", list.GroupVersionKind().String())
 		return nil, err
 	}
 	if len(list.Items) == 0 {
@@ -297,7 +308,17 @@ func (r *SwitchReconciler) defineSubnets(
 	zones := make([]string, 0)
 	if assignment == nil {
 		topLevelSwitch := list.GetTopLevelSwitch()
-		assignment, _ = r.findAssignment(ctx, topLevelSwitch)
+		if topLevelSwitch == nil {
+			return nil
+		}
+		swa, err := r.findAssignment(ctx, topLevelSwitch)
+		if err != nil {
+			return err
+		}
+		if swa == nil {
+			return nil
+		}
+		assignment = swa
 	}
 	regions = append(regions, assignment.Spec.Region)
 	zones = append(zones, assignment.Spec.AvailabilityZone)
@@ -348,14 +369,16 @@ func (r *SwitchReconciler) prepareBackground(ctx context.Context, sw *switchv1al
 
 	list := &switchv1alpha1.SwitchList{}
 	if err := r.List(ctx, list); err != nil {
-		r.Log.Error(err, "failed to list switch resources")
+		r.Log.Error(err, "failed to list resources", "gvk", list.GroupVersionKind().String())
 		return err
 	}
 	r.Background.switches = list
 
 	swa, err := r.findAssignment(ctx, sw)
 	if err != nil {
-		r.Log.Error(err, "failed to lookup for related switch assignment resource")
+		r.Log.Error(err, "failed to get related assignment resource",
+			"gvk", sw.GroupVersionKind().String(),
+			"name", sw.NamespacedName())
 		return err
 	}
 	r.Background.assignment = swa

@@ -42,6 +42,7 @@ type step struct {
 type preparationStep step
 type interfacesStep step
 type creationStep step
+type peersUpdateStep step
 type assignmentStep step
 type connectionsStep step
 type subnetsStep step
@@ -58,7 +59,9 @@ func (p *deletionStep) getNext() processorStep {
 
 func (p *deletionStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	if err := r.finalize(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to finalize resource", "name", obj.NamespacedName())
+		r.Log.Error(err, "failed to finalize resource",
+			"gvk", obj.GroupVersionKind().String(),
+			"name", obj.NamespacedName())
 		return err
 	}
 	return nil
@@ -72,7 +75,9 @@ func (p *specUpdateState) getNext() processorStep {
 
 func (p *specUpdateState) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	if err := r.Update(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to update resource", "name", obj.NamespacedName())
+		r.Log.Error(err, "failed to update resource",
+			"gvk", obj.GroupVersionKind().String(),
+			"name", obj.NamespacedName())
 		return err
 	}
 	return nil
@@ -86,7 +91,9 @@ func (p *statusUpdateStep) getNext() processorStep {
 
 func (p *statusUpdateStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	if err := r.Status().Update(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to update resource status", "name", obj.NamespacedName())
+		r.Log.Error(err, "failed to update resource status",
+			"gvk", obj.GroupVersionKind().String(),
+			"name", obj.NamespacedName())
 		return err
 	}
 	return nil
@@ -142,7 +149,26 @@ func (p *creationStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, 
 		p.setNext(&statusUpdateStep{})
 		return nil
 	}
+	if obj.PeersUpdateNeeded() {
+		p.setNext(&peersUpdateStep{})
+		return nil
+	}
 	p.setNext(&assignmentStep{})
+	return nil
+}
+
+func (p *peersUpdateStep) setNext(next processorStep) {
+	p.next = next
+}
+
+func (p *peersUpdateStep) getNext() processorStep {
+	return p.next
+}
+
+func (p *peersUpdateStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
+	obj.Status.State = switchv1alpha1.StateDefinePeers
+	obj.UpdatePeersInfo()
+	p.setNext(&statusUpdateStep{})
 	return nil
 }
 
@@ -162,7 +188,9 @@ func (p *assignmentStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler
 				Namespace: obj.Namespace,
 			})
 			if err := r.Status().Update(ctx, r.Background.assignment); err != nil {
-				r.Log.Error(err, "failed to update resource", "kind", r.Background.assignment.Kind, "name", r.Background.assignment.NamespacedName())
+				r.Log.Error(err, "failed to update resource",
+					"gvk", r.Background.assignment.GroupVersionKind().String(),
+					"name", r.Background.assignment.NamespacedName())
 				return err
 			}
 			obj.Status.ConnectionLevel = 0
@@ -216,7 +244,9 @@ func (p *subnetsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, c
 		}
 	} else {
 		if err := r.defineSubnets(ctx, obj, r.Background.switches, r.Background.assignment); err != nil {
-			r.Log.Error(err, "failed to define south subnets")
+			r.Log.Error(err, "failed to define south subnets",
+				"gvk", obj.GroupVersionKind().String(),
+				"name", obj.NamespacedName())
 			return err
 		}
 		p.setNext(&addressesStep{})
