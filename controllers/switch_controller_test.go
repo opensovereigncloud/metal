@@ -243,7 +243,7 @@ var _ = Describe("Integration between operators", func() {
 					if !sw.AddressesDefined() {
 						return false
 					}
-					if sw.Status.State != switchv1alpha1.StateFinished {
+					if sw.Status.State != switchv1alpha1.StateReady {
 						return false
 					}
 				}
@@ -292,7 +292,7 @@ var _ = Describe("Integration between operators", func() {
 					sw.Spec.Interfaces["Ethernet124"].IPv6 == switchv1alpha1.EmptyString {
 					return false
 				}
-				if sw.Status.State != switchv1alpha1.StateFinished {
+				if sw.Status.State != switchv1alpha1.StateReady {
 					return false
 				}
 				if sw.Status.Role != switchv1alpha1.LeafRole {
@@ -451,7 +451,7 @@ var _ = Describe("Integration between operators", func() {
 							return false
 						}
 					}
-					if sw.Status.State != switchv1alpha1.StateFinished {
+					if sw.Status.State != switchv1alpha1.StateReady {
 						return false
 					}
 				}

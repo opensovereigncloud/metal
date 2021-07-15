@@ -28,12 +28,18 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 )
 
+type State string
+type Role string
+type PeerType string
+
 const (
-	StatePending         State = "Pending"
-	StateDefinePeers     State = "Define peers"
-	StateDefineAddresses State = "Define addresses"
-	StateFinished        State = "Finished"
-	StateDeleting        State = "Deleting"
+	StatePending      State = "Pending"
+	StateInitializing State = "Initializing"
+	StateDiscovery    State = "Discovery"
+	StateConfiguring  State = "Configuring"
+	StateReady        State = "Ready"
+	StateFinished     State = "Finished"
+	StateDeleting     State = "Deleting"
 
 	LeafRole  Role = "Leaf"
 	SpineRole Role = "Spine"

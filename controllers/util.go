@@ -166,7 +166,7 @@ func (p *peersUpdateStep) getNext() processorStep {
 }
 
 func (p *peersUpdateStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
-	obj.Status.State = switchv1alpha1.StateDefinePeers
+	obj.Status.State = switchv1alpha1.StateDiscovery
 	obj.UpdatePeersInfo()
 	p.setNext(&statusUpdateStep{})
 	return nil
@@ -211,14 +211,14 @@ func (p *connectionsStep) getNext() processorStep {
 func (p *connectionsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	ok := obj.PeersProcessingFinished(r.Background.switches, r.Background.assignment)
 	if ok {
-		obj.Status.State = switchv1alpha1.StateDefineAddresses
+		obj.Status.State = switchv1alpha1.StateConfiguring
 		if r.Background.switches.AllConnectionsOk() {
 			p.setNext(&subnetsStep{})
 			return nil
 		}
 		p.setNext(&statusUpdateStep{})
 	} else {
-		obj.Status.State = switchv1alpha1.StateDefinePeers
+		obj.Status.State = switchv1alpha1.StateDiscovery
 		obj.UpdatePeersData(r.Background.switches)
 		obj.UpdateConnectionLevel(r.Background.switches)
 		p.setNext(&statusUpdateStep{})
@@ -237,8 +237,8 @@ func (p *subnetsStep) getNext() processorStep {
 
 func (p *subnetsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	if obj.AddressesDefined() {
-		if obj.Status.State != switchv1alpha1.StateFinished {
-			obj.Status.State = switchv1alpha1.StateFinished
+		if obj.Status.State != switchv1alpha1.StateReady {
+			obj.Status.State = switchv1alpha1.StateReady
 			p.setNext(&statusUpdateStep{})
 			return nil
 		}

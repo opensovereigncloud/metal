@@ -33,10 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type State string
-type Role string
-type PeerType string
-
 //ConnectionsMap
 //+kubebuilder:object:generate=false
 type ConnectionsMap map[uint8][]Switch
@@ -341,7 +337,7 @@ func (in *SwitchList) GetTopLevelSwitch() *Switch {
 // Return false if not.
 func (in *SwitchList) AllConnectionsOk() bool {
 	for _, sw := range in.Items {
-		if sw.Status.State == StateDefinePeers {
+		if sw.Status.State == StateDiscovery {
 			return false
 		}
 	}
@@ -641,7 +637,7 @@ func (in *Switch) FillStatusOnCreate() {
 			Count: len(peers),
 			Peers: peers,
 		},
-		State:     StateDefinePeers,
+		State:     StateInitializing,
 		ScanPorts: false,
 	}
 }
