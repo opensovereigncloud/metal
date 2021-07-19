@@ -21,7 +21,6 @@ import (
 
 	"github.com/d4l3k/messagediff"
 	"github.com/go-logr/logr"
-	"github.com/onmetal/k8s-size/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -72,7 +71,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	limit := int64(1000)
 
 	for {
-		sizeList := &v1alpha1.SizeList{}
+		sizeList := &machinev1alpha1.SizeList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     limit,

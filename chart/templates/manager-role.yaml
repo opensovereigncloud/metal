@@ -2,11 +2,13 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ include "chart.fullname" . }}-manager-role
+  labels:
+  {{- include "chart.labels" . | nindent 4 }}
 rules:
   - apiGroups:
-      - {{ .Values.crd.group }}
+      - {{ .Values.crd.aggregate.group }}
     resources:
-      - {{ .Values.crd.plural }}
+      - {{ .Values.crd.aggregate.plural }}
     verbs:
       - create
       - delete
@@ -16,15 +18,67 @@ rules:
       - update
       - watch
   - apiGroups:
-      - {{ .Values.crd.group }}
+      - {{ .Values.crd.aggregate.group }}
     resources:
-      - {{ .Values.crd.plural }}/finalizers
+      - {{ .Values.crd.aggregate.plural }}/finalizers
     verbs:
       - update
   - apiGroups:
-      - {{ .Values.crd.group }}
+      - {{ .Values.crd.aggregate.group }}
     resources:
-      - {{ .Values.crd.plural }}/status
+      - {{ .Values.crd.aggregate.plural }}/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - {{ .Values.crd.inventory.group }}
+    resources:
+      - {{ .Values.crd.inventory.plural }}
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - {{ .Values.crd.inventory.group }}
+    resources:
+      - {{ .Values.crd.inventory.plural }}/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - {{ .Values.crd.inventory.group }}
+    resources:
+      - {{ .Values.crd.inventory.plural }}/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - {{ .Values.crd.size.group }}
+    resources:
+      - {{ .Values.crd.size.plural }}
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - {{ .Values.crd.size.plural }}
+    resources:
+      - {{ .Values.crd.size.plural }}/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - {{ .Values.crd.size.plural }}
+    resources:
+      - {{ .Values.crd.size.plural }}/status
     verbs:
       - get
       - patch

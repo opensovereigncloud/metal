@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -408,7 +410,7 @@ type DistroSpec struct {
 // InventoryStatus defines the observed state of Inventory
 // +kubebuilder:object:generate=true
 type InventoryStatus struct {
-	// No additional state required for now
+	Computed map[string]json.RawMessage `json:"computed,omitempty"`
 }
 
 // Inventory is the Schema for the inventories API

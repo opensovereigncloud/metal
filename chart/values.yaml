@@ -42,9 +42,24 @@ service:
   port: 8443
 
 crd:
-  group: machine.onmetal.de
-  plural: inventories
-  singular: inventory
-  kind: Inventory
-  listKind: InventoryList
-  scope: Namespaced
+  inventory:
+    group: machine.onmetal.de
+    plural: inventories
+    singular: inventory
+    kind: Inventory
+    listKind: InventoryList
+    scope: Namespaced
+  size:
+    group: machine.onmetal.de
+    plural: sizes
+    singular: size
+    kind: Size
+    listKind: SizeList
+    scope: Namespaced
+  aggregate:
+    group: machine.onmetal.de
+    plural: aggregates
+    singular: aggregate
+    kind: Aggregate
+    listKind: AggregateList
+    scope: Namespaced

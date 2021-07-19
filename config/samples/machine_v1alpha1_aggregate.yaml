@@ -1,0 +1,7 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Aggregate
+metadata:
+  name: aggregate-sample
+spec:
+  # Add fields here
+  foo: bar

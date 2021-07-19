@@ -9,6 +9,32 @@ rules:
 - apiGroups:
   - machine.onmetal.de
   resources:
+  - aggregates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - aggregates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - aggregates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
   - inventories
   verbs:
   - create
@@ -28,6 +54,32 @@ rules:
   - machine.onmetal.de
   resources:
   - inventories/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - sizes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - sizes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - sizes/status
   verbs:
   - get
   - patch

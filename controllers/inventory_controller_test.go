@@ -12,8 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	sizev1alpha1 "github.com/onmetal/k8s-size/api/v1alpha1"
-
 	inventoryv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 )
 
@@ -31,16 +29,16 @@ var _ = Describe("Inventory controller", func() {
 			By("Sizes are installed")
 			ctx := context.Background()
 
-			sizeShouldMatch := sizev1alpha1.Size{
+			sizeShouldMatch := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "should-match",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.cores",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(2, 0),
 							},
 						},
@@ -48,16 +46,16 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			sizeAlreadyMatched := sizev1alpha1.Size{
+			sizeAlreadyMatched := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "already-matched",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.threads",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(4, 0),
 							},
 						},
@@ -65,16 +63,16 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			sizeShouldNotMatch := sizev1alpha1.Size{
+			sizeShouldNotMatch := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "should-not-match",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.cores",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(8, 0),
 							},
 						},
@@ -82,16 +80,16 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			sizeShouldUnmatch := sizev1alpha1.Size{
+			sizeShouldUnmatch := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "should-unmatch",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.threads",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(16, 0),
 							},
 						},
@@ -99,7 +97,7 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			testSizes := []sizev1alpha1.Size{
+			testSizes := []inventoryv1alpha1.Size{
 				sizeShouldMatch,
 				sizeAlreadyMatched,
 				sizeShouldNotMatch,
@@ -111,7 +109,7 @@ var _ = Describe("Inventory controller", func() {
 			}
 
 			Eventually(func() bool {
-				sizeList := &sizev1alpha1.SizeList{}
+				sizeList := &inventoryv1alpha1.SizeList{}
 				err := k8sClient.List(ctx, sizeList)
 				if err != nil {
 					return false
