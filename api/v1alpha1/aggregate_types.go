@@ -17,16 +17,18 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type AggregateItem struct {
 	// SourcePath is a path in Inventory spec aggregate will be applied to
 	// +kubebuilder:validation:Required
-	SourcePath string `json:"sourcePath"`
+	SourcePath JSONPath `json:"sourcePath"`
 	// TargetPath is a path in Inventory status `computed` field
 	// +kubebuilder:validation:Required
-	TargetPath string `json:"targetPath"`
+	TargetPath JSONPath `json:"targetPath"`
 	// Aggregate defines whether collection values should be aggregated
 	// for constraint checks, in case if path defines selector for collection
 	// +kubebuilder:validation:Optional
@@ -67,4 +69,9 @@ type AggregateList struct {
 
 func init() {
 	SchemeBuilder.Register(&Aggregate{}, &AggregateList{})
+}
+
+func (in *Aggregate) Compute(inventory *Inventory) json.RawMessage {
+
+	return nil
 }

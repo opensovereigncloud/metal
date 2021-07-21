@@ -44,8 +44,8 @@ var _ = Describe("Aggregate client", func() {
 				Spec: v1alpha1.AggregateSpec{
 					Aggregates: []v1alpha1.AggregateItem{
 						{
-							SourcePath: "spec.cpus",
-							TargetPath: "status.computed.cpus.cpuCount",
+							SourcePath: *v1alpha1.JSONPathFromString("spec.cpus"),
+							TargetPath: *v1alpha1.JSONPathFromString("status.computed.cpus.cpuCount"),
 							Aggregate:  v1alpha1.CCountAggregateType,
 						},
 					},
@@ -77,7 +77,7 @@ var _ = Describe("Aggregate client", func() {
 			<-finished
 
 			By("Updating Aggregate")
-			createdAggregate.Spec.Aggregates[0].SourcePath = "spec.nets"
+			createdAggregate.Spec.Aggregates[0].SourcePath = *v1alpha1.JSONPathFromString("spec.nets")
 			go func() {
 				defer GinkgoRecover()
 				updatedAggregate, err := client.Update(ctx, createdAggregate, v1.UpdateOptions{})
@@ -142,8 +142,8 @@ var _ = Describe("Aggregate client", func() {
 				Spec: v1alpha1.AggregateSpec{
 					Aggregates: []v1alpha1.AggregateItem{
 						{
-							SourcePath: "a.b.c",
-							TargetPath: "q.w.e",
+							SourcePath: *v1alpha1.JSONPathFromString("a.b.c"),
+							TargetPath: *v1alpha1.JSONPathFromString("q.w.e"),
 							Aggregate:  v1alpha1.CSumAggregateType,
 						},
 					},

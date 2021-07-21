@@ -113,6 +113,36 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		continueToken = sizeList.Continue
 	}
 
+	continueToken = ""
+
+	for {
+		aggregateList := &machinev1alpha1.AggregateList{}
+		opts := &client.ListOptions{
+			Namespace: req.Namespace,
+			Limit:     limit,
+			Continue:  continueToken,
+		}
+
+		err := r.List(ctx, aggregateList, opts)
+		if err != nil {
+			log.Error(err, "unable to get aggregate resource list", "namespace", req.Namespace)
+			return ctrl.Result{}, err
+		}
+
+		for _, aggregate := range aggregateList.Items {
+			aggregatedValues := aggregate.Compute(inv)
+			inv.Status.Computed[aggregate.Name] = aggregatedValues
+		}
+
+		if aggregateList.Continue == "" ||
+			aggregateList.RemainingItemCount == nil ||
+			*aggregateList.RemainingItemCount == 0 {
+			break
+		}
+
+		continueToken = aggregateList.Continue
+	}
+
 	err = r.Update(ctx, inv)
 	if err != nil {
 		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)

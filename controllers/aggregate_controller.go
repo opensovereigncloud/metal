@@ -18,13 +18,21 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+)
+
+const (
+	CAggregateFinalizer = "aggregate.machine.onmetal.de/finalizer"
 )
 
 // AggregateReconciler reconciles a Aggregate object
@@ -48,9 +56,86 @@ type AggregateReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *AggregateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("aggregate", req.NamespacedName)
+	log := r.Log.WithValues("aggregate", req.NamespacedName)
 
-	// your logic here
+	aggregate := &machinev1alpha1.Aggregate{}
+	err := r.Get(ctx, req.NamespacedName, aggregate)
+	if apierrors.IsNotFound(err) {
+		log.Error(err, "requested aggregate resource not found", "name", req.NamespacedName)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	if err != nil {
+		log.Error(err, "unable to get aggregate resource", "name", req.NamespacedName)
+		return ctrl.Result{}, err
+	}
+
+	if aggregate.GetDeletionTimestamp() != nil {
+		if controllerutil.ContainsFinalizer(aggregate, CAggregateFinalizer) {
+			if err := r.finalizeAggregate(ctx, req, log, aggregate); err != nil {
+				log.Error(err, "unable to finalize aggregate resource", "name", req.NamespacedName)
+				return ctrl.Result{}, err
+			}
+
+			controllerutil.RemoveFinalizer(aggregate, CAggregateFinalizer)
+			err := r.Update(ctx, aggregate)
+			if err != nil {
+				log.Error(err, "unable to update aggregate resource on finalizer removal", "name", req.NamespacedName)
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if !controllerutil.ContainsFinalizer(aggregate, CAggregateFinalizer) {
+		controllerutil.AddFinalizer(aggregate, CAggregateFinalizer)
+		err = r.Update(ctx, aggregate)
+		if err != nil {
+			log.Error(err, "unable to update aggregate resource with finalizer", "name", req.NamespacedName)
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	continueToken := ""
+	for {
+		inventoryList := &machinev1alpha1.InventoryList{}
+		opts := &client.ListOptions{
+			Namespace: req.Namespace,
+			Limit:     CPageLimit,
+			Continue:  continueToken,
+		}
+		err := r.List(ctx, inventoryList, opts)
+		if err != nil {
+			log.Error(err, "unable to get inventory resource list", "namespace", req.Namespace)
+			return ctrl.Result{}, err
+		}
+
+		for _, inventory := range inventoryList.Items {
+			inventoryNamespacedName := types.NamespacedName{
+				Namespace: inventory.Namespace,
+				Name:      inventory.Name,
+			}
+
+			aggregatedValues := aggregate.Compute(&inventory)
+			if inventory.Status.Computed == nil {
+				inventory.Status.Computed = make(map[string]json.RawMessage)
+			}
+			inventory.Status.Computed[aggregate.Name] = aggregatedValues
+
+			if err := r.Update(ctx, &inventory); err != nil {
+				log.Error(err, "unable to update inventory resource", "inventory", inventoryNamespacedName)
+				return ctrl.Result{}, err
+			}
+		}
+
+		if inventoryList.Continue == "" ||
+			inventoryList.RemainingItemCount == nil ||
+			*inventoryList.RemainingItemCount == 0 {
+			break
+		}
+
+		continueToken = inventoryList.Continue
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -60,4 +145,53 @@ func (r *AggregateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&machinev1alpha1.Aggregate{}).
 		Complete(r)
+}
+
+func (r *AggregateReconciler) finalizeAggregate(ctx context.Context, req ctrl.Request, log logr.Logger, aggregate *machinev1alpha1.Aggregate) error {
+	continueToken := ""
+	aggregateKey := aggregate.Name
+
+	for {
+		inventoryList := &machinev1alpha1.InventoryList{}
+		opts := &client.ListOptions{
+			Namespace: req.Namespace,
+			Limit:     CPageLimit,
+			Continue:  continueToken,
+		}
+		err := r.List(ctx, inventoryList, opts)
+		if err != nil {
+			log.Error(err, "unable to get inventory resource list", "namespace", req.Namespace)
+			return err
+		}
+
+		for _, inventory := range inventoryList.Items {
+			_, ok := inventory.Status.Computed[aggregateKey]
+			if !ok {
+				continue
+			}
+
+			inventoryNamespacedName := types.NamespacedName{
+				Namespace: inventory.Namespace,
+				Name:      inventory.Name,
+			}
+			log.Info("inventory contains aggregate, removing on finalize", "aggregate", req.NamespacedName, "inventory", inventoryNamespacedName)
+
+			delete(inventory.Status.Computed, aggregateKey)
+
+			if err := r.Update(ctx, &inventory); err != nil {
+				log.Error(err, "unable to update inventory resource", "inventory", inventoryNamespacedName)
+				return err
+			}
+		}
+
+		if inventoryList.Continue == "" ||
+			inventoryList.RemainingItemCount == nil ||
+			*inventoryList.RemainingItemCount == 0 {
+			break
+		}
+
+		continueToken = inventoryList.Continue
+	}
+
+	return nil
 }

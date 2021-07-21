@@ -28,3 +28,24 @@ webhooks:
         resources:
           - {{ .Values.crd.size.plural }}
     sideEffects: None
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /validate-{{ .Values.crd.aggregate.group | replace "." "-" }}-v1alpha1-{{ .Values.crd.aggregate.singular }}
+    failurePolicy: Fail
+    name: v{{ .Values.crd.aggregate.singular }}.kb.io
+    rules:
+      - apiGroups:
+          - {{ .Values.crd.aggregate.group }}
+        apiVersions:
+          - v1alpha1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - {{ .Values.crd.aggregate.plural }}
+    sideEffects: None
