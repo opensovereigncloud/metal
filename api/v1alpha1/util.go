@@ -20,6 +20,7 @@ import (
 	"math"
 	"math/big"
 	"net"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -49,7 +50,9 @@ const (
 )
 
 const (
-	EmptyString = ""
+	EmptyString       = ""
+	SwitchPortPrefix  = "Ethernet"
+	PortChannelPrefix = "PortChannel"
 
 	CLabelPrefix    = "switch.onmetal.de/"
 	CLabelChassisId = "chassisId"
@@ -73,13 +76,14 @@ const (
 
 var LabelChassisId = CLabelPrefix + CLabelChassisId
 
-var Lanes = map[uint32]uint8{
-	1000:   1,
-	10000:  1,
-	25000:  1,
-	40000:  4,
-	50000:  2,
-	100000: 4,
+func getMinInterfaceIndex(interfaces []string) int {
+	sort.Slice(interfaces, func(i, j int) bool {
+		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[i], SwitchPortPrefix, EmptyString))
+		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[j], SwitchPortPrefix, EmptyString))
+		return leftIndex < rightIndex
+	})
+	minIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[0], SwitchPortPrefix, EmptyString))
+	return minIndex
 }
 
 func getChassisId(nics []inventoriesv1alpha1.NICSpec) string {
@@ -96,8 +100,10 @@ func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 	switchPorts := uint64(0)
 	for _, nic := range nics {
 		spec := &InterfaceSpec{
-			Lanes:      Lanes[nic.Speed],
+			Lanes:      nic.Lanes,
 			MacAddress: nic.MACAddress,
+			Speed:      nic.Speed,
+			FEC:        nic.ActiveFEC,
 		}
 		if len(nic.LLDPs) > 1 {
 			data := nic.LLDPs[1]
@@ -107,15 +113,8 @@ func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 			spec.PeerPortID = data.PortID
 			spec.PeerPortDescription = data.PortDescription
 		}
-		if len(nic.NDPs) > 1 {
-			for _, data := range nic.NDPs {
-				if data.State == CNdpStateReachable {
-					spec.Ndp = true
-				}
-			}
-		}
 		result[nic.Name] = spec
-		if strings.HasPrefix(nic.Name, "Ethernet") {
+		if strings.HasPrefix(nic.Name, SwitchPortPrefix) {
 			switchPorts += 1
 		}
 	}
@@ -177,7 +176,7 @@ func getNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount flo
 }
 
 func getInterfaceSubnet(name string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
-	index, _ := strconv.Atoi(strings.ReplaceAll(name, "Ethernet", EmptyString))
+	index, _ := strconv.Atoi(strings.ReplaceAll(name, SwitchPortPrefix, EmptyString))
 	prefix, _ := network.Mask.Size()
 	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(addrType)-prefix, index)
 	return ifaceNet

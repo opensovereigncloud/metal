@@ -20,7 +20,7 @@ spec:
       ipv6: 2001:db8:1000:12:ffff:ff80:0:11/127
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
       peerChassisId: 68:21:5f:47:0d:5a
       peerPortDescription: Ethernet8
       peerPortId: Eth33/1
@@ -31,7 +31,7 @@ spec:
       ipv6: 2001:db8:1000:12:ffff:ffe0:0:11/127
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
       peerChassisId: 68:21:5f:47:0b:5b
       peerPortDescription: Ethernet8
       peerPortId: Eth33/1
@@ -40,143 +40,133 @@ spec:
     Ethernet8:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet12:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet16:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet20:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet24:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet28:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet32:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet36:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet40:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet44:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet48:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet52:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet56:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet60:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet64:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet68:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet72:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet76:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet80:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet84:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet88:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet92:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet96:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet100:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet104:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet108:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet112:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet116:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet120:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     Ethernet124:
       lanes: 4
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 100000
     eth0:
       lanes: 1
       macAddress: 68:21:5f:47:11:6e
-      ndp: false
+      speed: 1000
       peerChassisId: 64:9d:99:15:56:1c
       peerPortDescription: Ethernet Port on unit 1, port 12
       peerPortId: Eth 1/12
       peerSystemName: mgmt-sw-1
       peerType: Switch
-  location: {}
-  southSubnetV4:
-    cidr: 100.79.248.0/23
-    parentSubnet:
-      name: subnet-sample-v4
-      namespace: onmetal
-  southSubnetV6:
-    cidr: 2001:db8:1000:12:ffff::/120
-    parentSubnet:
-      name: subnet-sample-v6
-      namespace: onmetal
+  location: { }
   switchPorts: 32
   totalPorts: 35
 status:
@@ -200,5 +190,15 @@ status:
   scanPorts: false
   southConnections:
     count: 0
-    peers: {}
+    peers: { }
+  southSubnetV4:
+    cidr: 100.79.248.0/23
+    parentSubnet:
+      name: subnet-sample-v4
+      namespace: onmetal
+  southSubnetV6:
+    cidr: 2001:db8:1000:12:ffff::/120
+    parentSubnet:
+      name: subnet-sample-v6
+      namespace: onmetal
   state: Finished

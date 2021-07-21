@@ -185,7 +185,7 @@ var _ = Describe("Integration between operators", func() {
 			Eventually(func() bool {
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
-					if sw.Spec.SouthSubnetV4 == nil {
+					if sw.Status.SouthSubnetV4 == nil {
 						return false
 					}
 				}
@@ -234,13 +234,7 @@ var _ = Describe("Integration between operators", func() {
 			Eventually(func() bool {
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
-					if sw.Spec.SouthSubnetV4 == nil {
-						return false
-					}
-					if sw.Spec.SouthSubnetV6 == nil {
-						return false
-					}
-					if !sw.AddressesDefined() {
+					if !sw.SubnetsOk() {
 						return false
 					}
 					if sw.Status.State != switchv1alpha1.StateReady {
@@ -286,10 +280,6 @@ var _ = Describe("Integration between operators", func() {
 					Name:      inv.Name,
 				}, sw)).Should(Succeed())
 				if _, ok := sw.Status.SouthConnections.Peers["Ethernet124"]; !ok {
-					return false
-				}
-				if sw.Spec.Interfaces["Ethernet124"].IPv4 == switchv1alpha1.EmptyString ||
-					sw.Spec.Interfaces["Ethernet124"].IPv6 == switchv1alpha1.EmptyString {
 					return false
 				}
 				if sw.Status.State != switchv1alpha1.StateReady {
@@ -450,6 +440,9 @@ var _ = Describe("Integration between operators", func() {
 						if sw.Status.ConnectionLevel != 1 {
 							return false
 						}
+					}
+					if len(sw.Status.LAGs) != 2 {
+						return false
 					}
 					if sw.Status.State != switchv1alpha1.StateReady {
 						return false

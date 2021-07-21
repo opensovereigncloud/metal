@@ -221,12 +221,6 @@ func (r *SwitchReconciler) enqueueOnSubnetUpdate(
 
 func (r *SwitchReconciler) finalize(ctx context.Context, res *switchv1alpha1.Switch) error {
 	if controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchFinalizer) {
-		res.FlushStatusOnDelete()
-		if err := r.Status().Update(ctx, res); err != nil {
-			r.Log.Error(err, "failed to finalize resource", "name", res.NamespacedName())
-			return err
-		}
-
 		swa, err := r.findAssignment(ctx, res)
 		if err != nil {
 			r.Log.Error(err, "failed to lookup for related switch assignment resource",
@@ -240,30 +234,30 @@ func (r *SwitchReconciler) finalize(ctx context.Context, res *switchv1alpha1.Swi
 			}
 		}
 
-		if res.Spec.SouthSubnetV4 != nil {
+		if res.Status.SouthSubnetV4 != nil {
 			subnet := &subnetv1alpha1.Subnet{}
 			if err := r.Get(ctx, types.NamespacedName{
-				Namespace: res.Spec.SouthSubnetV4.ParentSubnet.Namespace,
-				Name:      res.Spec.SouthSubnetV4.ParentSubnet.Name,
+				Namespace: res.Status.SouthSubnetV4.ParentSubnet.Namespace,
+				Name:      res.Status.SouthSubnetV4.ParentSubnet.Name,
 			}, subnet); err != nil {
 				r.Log.Error(err, "failed to get subnet resource")
 			} else {
-				_, network, _ := net.ParseCIDR(res.Spec.SouthSubnetV4.CIDR)
+				_, network, _ := net.ParseCIDR(res.Status.SouthSubnetV4.CIDR)
 				_ = subnet.Release(&subnetv1alpha1.CIDR{Net: network})
 				if err := r.Status().Update(ctx, subnet); err != nil {
 					r.Log.Error(err, "failed to update subnet status on reservation release")
 				}
 			}
 		}
-		if res.Spec.SouthSubnetV6 != nil {
+		if res.Status.SouthSubnetV6 != nil {
 			subnet := &subnetv1alpha1.Subnet{}
 			if err := r.Get(ctx, types.NamespacedName{
-				Namespace: res.Spec.SouthSubnetV6.ParentSubnet.Namespace,
-				Name:      res.Spec.SouthSubnetV6.ParentSubnet.Name,
+				Namespace: res.Status.SouthSubnetV6.ParentSubnet.Namespace,
+				Name:      res.Status.SouthSubnetV6.ParentSubnet.Name,
 			}, subnet); err != nil {
 				r.Log.Error(err, "failed to get subnet resource")
 			} else {
-				_, network, _ := net.ParseCIDR(res.Spec.SouthSubnetV6.CIDR)
+				_, network, _ := net.ParseCIDR(res.Status.SouthSubnetV6.CIDR)
 				_ = subnet.Release(&subnetv1alpha1.CIDR{Net: network})
 				if err := r.Status().Update(ctx, subnet); err != nil {
 					r.Log.Error(err, "failed to update subnet status on reservation release")
@@ -326,13 +320,13 @@ func (r *SwitchReconciler) defineSubnets(
 	if err := r.Client.List(ctx, subnets); err != nil {
 		return err
 	}
-	if sw.Spec.SouthSubnetV4 == nil {
+	if sw.Status.SouthSubnetV4 == nil {
 		cidr, sn, err := sw.GetSuitableSubnet(subnets, subnetv1alpha1.CIPv4SubnetType, regions, zones)
 		if err != nil {
 			return err
 		}
 		if cidr != nil && sn != nil {
-			sw.Spec.SouthSubnetV4 = &switchv1alpha1.SwitchSubnetSpec{
+			sw.Status.SouthSubnetV4 = &switchv1alpha1.SwitchSubnetSpec{
 				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{Namespace: sn.Namespace, Name: sn.Name},
 				CIDR:         cidr.String(),
 			}
@@ -341,13 +335,13 @@ func (r *SwitchReconciler) defineSubnets(
 			}
 		}
 	}
-	if sw.Spec.SouthSubnetV6 == nil {
+	if sw.Status.SouthSubnetV6 == nil {
 		cidr, sn, err := sw.GetSuitableSubnet(subnets, subnetv1alpha1.CIPv6SubnetType, regions, zones)
 		if err != nil {
 			return err
 		}
 		if cidr != nil && sn != nil {
-			sw.Spec.SouthSubnetV6 = &switchv1alpha1.SwitchSubnetSpec{
+			sw.Status.SouthSubnetV6 = &switchv1alpha1.SwitchSubnetSpec{
 				ParentSubnet: &switchv1alpha1.ParentSubnetSpec{Namespace: sn.Namespace, Name: sn.Name},
 				CIDR:         cidr.String(),
 			}

@@ -40,7 +40,6 @@ type step struct {
 }
 
 type preparationStep step
-type interfacesStep step
 type creationStep step
 type peersUpdateStep step
 type assignmentStep step
@@ -110,24 +109,6 @@ func (p *preparationStep) getNext() processorStep {
 func (p *preparationStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	if !controllerutil.ContainsFinalizer(obj, switchv1alpha1.CSwitchFinalizer) {
 		controllerutil.AddFinalizer(obj, switchv1alpha1.CSwitchFinalizer)
-		p.setNext(&specUpdateState{})
-		return nil
-	}
-	p.setNext(&interfacesStep{})
-	return nil
-}
-
-func (p *interfacesStep) setNext(next processorStep) {
-	p.next = next
-}
-
-func (p *interfacesStep) getNext() processorStep {
-	return p.next
-}
-
-func (p *interfacesStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
-	if !obj.InterfacesUpdated(r.Background.switches) {
-		obj.UpdateInterfaces(r.Background.switches)
 		p.setNext(&specUpdateState{})
 		return nil
 	}
@@ -211,6 +192,7 @@ func (p *connectionsStep) getNext() processorStep {
 func (p *connectionsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	ok := obj.PeersProcessingFinished(r.Background.switches, r.Background.assignment)
 	if ok {
+		obj.DefinePortChannels()
 		obj.Status.State = switchv1alpha1.StateConfiguring
 		if r.Background.switches.AllConnectionsOk() {
 			p.setNext(&subnetsStep{})
@@ -236,12 +218,17 @@ func (p *subnetsStep) getNext() processorStep {
 }
 
 func (p *subnetsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
-	if obj.AddressesDefined() {
-		if obj.Status.State != switchv1alpha1.StateReady {
-			obj.Status.State = switchv1alpha1.StateReady
+	if obj.SubnetsOk() {
+		if obj.AddressesDefined() {
+			obj.FillPortChannelsAddresses()
+			if obj.Status.State != switchv1alpha1.StateReady {
+				obj.Status.State = switchv1alpha1.StateReady
+			}
 			p.setNext(&statusUpdateStep{})
 			return nil
 		}
+		p.setNext(&addressesStep{})
+		return nil
 	} else {
 		if err := r.defineSubnets(ctx, obj, r.Background.switches, r.Background.assignment); err != nil {
 			r.Log.Error(err, "failed to define south subnets",
@@ -249,9 +236,8 @@ func (p *subnetsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, c
 				"name", obj.NamespacedName())
 			return err
 		}
-		p.setNext(&addressesStep{})
-		return nil
 	}
+	p.setNext(&statusUpdateStep{})
 	return nil
 }
 

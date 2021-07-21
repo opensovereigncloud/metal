@@ -254,6 +254,7 @@ spec:
       ndps:
       - {}
       speed: 100000
+      lanes: 4
     - lldps:
       - {}
       - capabilities:
@@ -271,6 +272,7 @@ spec:
       ndps:
       - {}
       speed: 100000
+      lanes: 4
     - lldps:
       - {}
       - capabilities:
@@ -288,6 +290,7 @@ spec:
       ndps:
       - {}
       speed: 100000
+      lanes: 4
     - lldps:
       - {}
       - capabilities:
@@ -305,6 +308,7 @@ spec:
       ndps:
       - {}
       speed: 100000
+      lanes: 4
     - lldps:
       - {}
       - capabilities:
@@ -322,118 +326,147 @@ spec:
       - {}
       pciAddress: 0000:0b:00.0
       speed: 1000
+      lanes: 1
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet100
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet104
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet108
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet112
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet116
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet120
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet124
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet16
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet20
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet24
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet28
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet32
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet36
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet40
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet44
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet48
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet52
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet56
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet60
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet64
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet68
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet72
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet76
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet80
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet84
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet88
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet92
       speed: 100000
+      lanes: 4
     - macAddress: 68:21:5f:47:0a:6f
       mtu: 9100
       name: Ethernet96
       speed: 100000
+      lanes: 4
   system:
     id: 7dc0d671-79cb-3394-b1de-e9eeb6dd6340
     manufacturer: Accton

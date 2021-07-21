@@ -367,9 +367,10 @@ github.com/olekukonko/tablewriter v0.0.0-20170122224234-a0225b3f23b5/go.mod h1:v
 github.com/onmetal/ipam v0.0.0-20210630141217-3447d654272f h1:E4+SFFCEzi0ubmePJ4fLMwAVS17ns0HrDzWdHBuX/PA=
 github.com/onmetal/ipam v0.0.0-20210630141217-3447d654272f/go.mod h1:kdGfibHfb9Yqfna1Vos3ukuY5cHkBt4sqnLR5H5ZBHk=
 github.com/onmetal/k8s-inventory v0.0.0-20210226103223-f5b3c3dfc868/go.mod h1:v61fLKQcraI8tE4o0vHXgBIUY1GNON11nmfd+ws80pk=
+github.com/onmetal/k8s-inventory v0.0.0-20210421045428-4acba6361891 h1:QSJwuNYruf2ZMR3jpQwqIECkXYlA6QNW+sjMM5hmzvM=
 github.com/onmetal/k8s-inventory v0.0.0-20210421045428-4acba6361891/go.mod h1:kAqOlvPeZHSYsJudk0/Hdih5vgjgdg0B+7xEUupvSzo=
-github.com/onmetal/k8s-inventory v0.0.0-20210519063844-3509e56a2416 h1:NGQc/DsgcutZuZsh5x45NOYBzA9yYgLEmk9yKdmKM2k=
-github.com/onmetal/k8s-inventory v0.0.0-20210519063844-3509e56a2416/go.mod h1:IssnyW/sb+AvPd6Rb8NZvCf6lcVsEQNSIZJQyOJQYuM=
+github.com/onmetal/k8s-inventory v0.0.0-20210720145134-83062b14be6f h1:46gMcoOMPQTqoWHBWy6SRq0JFCfEjQ9ZIS9euJIA0sw=
+github.com/onmetal/k8s-inventory v0.0.0-20210720145134-83062b14be6f/go.mod h1:IssnyW/sb+AvPd6Rb8NZvCf6lcVsEQNSIZJQyOJQYuM=
 github.com/onmetal/k8s-size v0.0.0-20210330130030-0e28c9bdd1bf/go.mod h1:PZTjc0RgegODQKp8ca6r9Gg21tQZCvPM51F8z/se4ys=
 github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80 h1:4ltuaLe4p9bxO7Y2FC+w3dAAOwknJpLt8YS1pJloNKg=
 github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80/go.mod h1:Pi09ghndU/+zKuyDrCzribl4OUWhsV6r1qHy8EVmrOY=

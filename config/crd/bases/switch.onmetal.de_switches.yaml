@@ -76,33 +76,33 @@ spec:
             description: SwitchSpec defines the desired state of Switch
             properties:
               chassis:
-                description: SwitchChassis referring to switch hardware information
+                description: SwitchChassis refers to switch hardware information
                 properties:
                   chassisId:
-                    description: ChassisID referring to switch chassis ID advertising
+                    description: ChassisID refers to switch chassis ID advertising
                       via LLDP
                     type: string
                   manufacturer:
-                    description: Manufacturer referring to switch chassis manufacturer
+                    description: Manufacturer refers to switch chassis manufacturer
                     type: string
                   serial:
-                    description: Serial referring to switch chassis serial number
+                    description: Serial refers to switch chassis serial number
                     type: string
                   sku:
                     description: SKU
                     type: string
                 type: object
               distro:
-                description: SwitchDistro referring to switch OS information
+                description: SwitchDistro refers to switch OS information
                 properties:
                   asic:
                     description: ASIC
                     type: string
                   os:
-                    description: OS referring to switch operating system
+                    description: OS refers to switch operating system
                     type: string
                   version:
-                    description: Version referring to switch OS version
+                    description: Version refers to switch OS version
                     type: string
                 type: object
               hostname:
@@ -113,29 +113,25 @@ spec:
                   description: InterfaceSpec defines switch's network interface details
                   properties:
                     fec:
-                      description: FEC referring to error correction method
+                      description: FEC refers to error correction method
                       enum:
-                      - None
-                      - BaseR
-                      - RS
+                      - none
+                      - rs
+                      - fc
                       type: string
                     ipv4:
-                      description: IPv4 referring to interface's IPv4 address
+                      description: IPv4 refers to interface's IPv4 address
                       type: string
                     ipv6:
-                      description: IPv6 referring to interface's IPv6 address
+                      description: IPv6 refers to interface's IPv6 address
                       type: string
                     lanes:
-                      description: Lanes referring to how many lanes are used by the
+                      description: Lanes refers to how many lanes are used by the
                         interface based on it's speed
                       type: integer
                     macAddress:
-                      description: MacAddress referring to interface's MAC address
+                      description: MacAddress refers to interface's MAC address
                       type: string
-                    ndp:
-                      description: Ndp flag defines whether ndp data received from
-                        neighbour and it is in Reachable state
-                      type: boolean
                     peerChassisId:
                       description: PeerChassisID
                       type: string
@@ -149,81 +145,43 @@ spec:
                       description: PeerSystemName
                       type: string
                     peerType:
-                      description: PeerType referring to neighbour type
+                      description: PeerType refers to neighbour type
                       enum:
                       - Machine
                       - Switch
                       type: string
+                    speed:
+                      description: Speed refers to current interface speed
+                      format: int32
+                      type: integer
                   required:
-                  - ndp
+                  - speed
                   type: object
-                description: Interfaces referring to details about network interfaces
+                description: Interfaces refers to details about network interfaces
                 type: object
               location:
-                description: Location referring to the switch location
+                description: Location refers to the switch location
                 properties:
                   hu:
-                    description: HU referring to height in units
+                    description: HU refers to height in units
                     type: integer
                   rack:
-                    description: Rack referring to rack number
+                    description: Rack refers to rack number
                     type: integer
                   room:
-                    description: Room referring to room name
+                    description: Room refers to room name
                     type: string
                   row:
-                    description: Row referring to row number
+                    description: Row refers to row number
                     type: integer
                 type: object
-              southSubnetV4:
-                description: SouthSubnet referring to south IPv4 subnet
-                nullable: true
-                properties:
-                  cidr:
-                    description: CIDR referring to the assigned subnet
-                    type: string
-                  parentSubnet:
-                    description: ParentSubnet referring to the subnet resource namespaced
-                      name where CIDR was booked
-                    properties:
-                      name:
-                        description: Name referring to the subnet resource name where
-                          CIDR was booked
-                        type: string
-                      namespace:
-                        description: Namespace referring to the subnet resource name
-                          where CIDR was booked
-                        type: string
-                    type: object
-                type: object
-              southSubnetV6:
-                description: SouthSubnet referring to south IPv6 subnet
-                nullable: true
-                properties:
-                  cidr:
-                    description: CIDR referring to the assigned subnet
-                    type: string
-                  parentSubnet:
-                    description: ParentSubnet referring to the subnet resource namespaced
-                      name where CIDR was booked
-                    properties:
-                      name:
-                        description: Name referring to the subnet resource name where
-                          CIDR was booked
-                        type: string
-                      namespace:
-                        description: Namespace referring to the subnet resource name
-                          where CIDR was booked
-                        type: string
-                    type: object
-                type: object
               switchPorts:
-                description: SwitchPorts referring to non-management network interfaces
+                description: SwitchPorts refers to non-management network interfaces
                   count
                 format: int64
                 type: integer
               totalPorts:
-                description: TotalPorts referring to network interfaces total count
+                description: TotalPorts refers to network interfaces total count
                 format: int64
                 type: integer
             required:
@@ -240,6 +198,31 @@ spec:
                 maximum: 255
                 minimum: 0
                 type: integer
+              lags:
+                additionalProperties:
+                  description: LagSpec defines link aggregation config
+                  properties:
+                    fallback:
+                      description: Fallback refers to fallback flag
+                      type: boolean
+                    ipv4:
+                      description: IPv4 refers to interface's IPv4 address
+                      type: string
+                    ipv6:
+                      description: IPv6 refers to interface's IPv6 address
+                      type: string
+                    members:
+                      description: Members refers to the aggregation members names
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - fallback
+                  - members
+                  type: object
+                description: LAGs refers to existing link aggregations
+                nullable: true
+                type: object
               northConnections:
                 description: NorthSwitches refers to up-level switch
                 properties:
@@ -263,7 +246,7 @@ spec:
                           description: PortName
                           type: string
                         type:
-                          description: Type referring to neighbour type
+                          description: Type refers to neighbour type
                           enum:
                           - Machine
                           - Switch
@@ -275,7 +258,7 @@ spec:
                     type: object
                 type: object
               role:
-                description: 'Role referring to switch''s role: leaf or spine'
+                description: 'Role refers to switch''s role: leaf or spine'
                 enum:
                 - Leaf
                 - Spine
@@ -307,7 +290,7 @@ spec:
                           description: PortName
                           type: string
                         type:
-                          description: Type referring to neighbour type
+                          description: Type refers to neighbour type
                           enum:
                           - Machine
                           - Switch
@@ -318,8 +301,50 @@ spec:
                     description: Peers refers to connected upstream switches
                     type: object
                 type: object
+              southSubnetV4:
+                description: SouthSubnet refers to south IPv4 subnet
+                nullable: true
+                properties:
+                  cidr:
+                    description: CIDR refers to the assigned subnet
+                    type: string
+                  parentSubnet:
+                    description: ParentSubnet refers to the subnet resource namespaced
+                      name where CIDR was booked
+                    properties:
+                      name:
+                        description: Name refers to the subnet resource name where
+                          CIDR was booked
+                        type: string
+                      namespace:
+                        description: Namespace refers to the subnet resource name
+                          where CIDR was booked
+                        type: string
+                    type: object
+                type: object
+              southSubnetV6:
+                description: SouthSubnet refers to south IPv6 subnet
+                nullable: true
+                properties:
+                  cidr:
+                    description: CIDR refers to the assigned subnet
+                    type: string
+                  parentSubnet:
+                    description: ParentSubnet refers to the subnet resource namespaced
+                      name where CIDR was booked
+                    properties:
+                      name:
+                        description: Name refers to the subnet resource name where
+                          CIDR was booked
+                        type: string
+                      namespace:
+                        description: Namespace refers to the subnet resource name
+                          where CIDR was booked
+                        type: string
+                    type: object
+                type: object
               state:
-                description: State referring to current switch state
+                description: State refers to current switch state
                 type: string
             required:
             - connectionLevel
