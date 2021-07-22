@@ -617,6 +617,45 @@ func (in *Switch) portsFitLAG(members []string) bool {
 	return true
 }
 
+// Checks whether specified port is in port channel.
+// Returns name of the port channel and true in case
+// port is a member of port channel, otherwise empty
+// string and false.
+func (in *Switch) portInLAG(name string) (string, bool) {
+	for lag, data := range in.Status.LAGs {
+		for _, member := range data.Members {
+			if member == name {
+				return lag, true
+			}
+		}
+	}
+	return EmptyString, false
+}
+
+// Checks whether listed ports fits for aggregation
+// conditions: all of them have to have the same speed
+// and amount of used lines.
+func (in *Switch) portsFitLAG(members []string) bool {
+	initLanes := uint8(0)
+	initSpeed := uint32(0)
+	for _, member := range members {
+		nic := in.Spec.Interfaces[member]
+		if initLanes == 0 {
+			initLanes = nic.Lanes
+		}
+		if initSpeed == 0 {
+			initSpeed = nic.Speed
+		}
+		if nic.Lanes != initLanes {
+			return false
+		}
+		if nic.Speed != initSpeed {
+			return false
+		}
+	}
+	return true
+}
+
 // NamespacedName returns switch's name and namespace as
 // built-in type.
 func (in *Switch) NamespacedName() types.NamespacedName {
