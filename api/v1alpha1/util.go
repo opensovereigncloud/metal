@@ -59,12 +59,11 @@ const (
 
 	CSonicSwitchOs     = "SONiC"
 	CStationCapability = "Station"
-	CNdpStateReachable = "Reachable"
 
 	CIPv4ZeroNet             = "0.0.0.0/0"
 	CIPv6ZeroNet             = "::/0"
-	CIPv4AddressesPerPort    = 16
-	CIPv6AddressesPerPort    = 8
+	CIPv4AddressesPerLane    = 4
+	CIPv6AddressesPerLane    = 2
 	CIPv4InterfaceSubnetMask = 30
 	CIPv6InterfaceSubnetMask = 127
 

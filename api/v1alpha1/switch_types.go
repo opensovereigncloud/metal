@@ -560,13 +560,22 @@ func (in *Switch) switchInNorthPeers(tgt *Switch) bool {
 }
 
 // Defines the amount of needed ip addresses according to the
-// number of switch ports and address type (IPv4 or IPv6).
-func (in *Switch) getAddressNeededCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
-	if addrType == subnetv1alpha1.CIPv4SubnetType {
-		return int64(in.Spec.SwitchPorts * CIPv4AddressesPerPort)
-	} else {
-		return int64(in.Spec.SwitchPorts * CIPv6AddressesPerPort)
+// number of switch ports, used lanes and address type (IPv4 or IPv6).
+func (in *Switch) getAddressCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
+	count := int64(0)
+	multiplier := uint8(0)
+	switch addrType {
+	case subnetv1alpha1.CIPv4SubnetType:
+		multiplier = CIPv4AddressesPerLane
+	case subnetv1alpha1.CIPv6SubnetType:
+		multiplier = CIPv6AddressesPerLane
 	}
+	for inf, portData := range in.Spec.Interfaces {
+		if strings.HasPrefix(inf, SwitchPortPrefix) {
+			count += int64(portData.Lanes * multiplier)
+		}
+	}
+	return count
 }
 
 // Checks whether specified port is in port channel.
@@ -759,7 +768,7 @@ func (in *Switch) GetSuitableSubnet(
 	regions []string,
 	zones []string) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
 
-	addressesNeeded := in.getAddressNeededCount(addressType)
+	addressesNeeded := in.getAddressCount(addressType)
 	for _, sn := range subnets.Items {
 		if sn.Spec.NetworkName == "underlay" &&
 			sn.Status.Type == addressType &&
