@@ -103,6 +103,7 @@ func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 			MacAddress: nic.MACAddress,
 			Speed:      nic.Speed,
 			FEC:        nic.ActiveFEC,
+			MTU:        nic.MTU,
 		}
 		if len(nic.LLDPs) > 1 {
 			data := nic.LLDPs[1]

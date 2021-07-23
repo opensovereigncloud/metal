@@ -132,6 +132,10 @@ spec:
                     macAddress:
                       description: MacAddress refers to interface's MAC address
                       type: string
+                    mtu:
+                      description: MTU is refers to Maximum Transmission Unit
+                      minimum: 1
+                      type: integer
                     peerChassisId:
                       description: PeerChassisID
                       type: string

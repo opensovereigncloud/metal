@@ -139,6 +139,10 @@ type InterfaceSpec struct {
 	//Speed refers to current interface speed
 	//+kubebuilder:Validation:Required
 	Speed uint32 `json:"speed"`
+	// MTU is refers to Maximum Transmission Unit
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum=1
+	MTU uint16 `json:"mtu,omitempty"`
 	//Lanes refers to how many lanes are used by the interface based on it's speed
 	//+kubebuilder:validation:Optional
 	Lanes uint8 `json:"lanes,omitempty"`
@@ -599,6 +603,7 @@ func (in *Switch) portInLAG(name string) (string, bool) {
 func (in *Switch) portsFitLAG(members []string) bool {
 	initLanes := uint8(0)
 	initSpeed := uint32(0)
+	initMTU := uint16(0)
 	for _, member := range members {
 		nic := in.Spec.Interfaces[member]
 		if initLanes == 0 {
@@ -607,10 +612,16 @@ func (in *Switch) portsFitLAG(members []string) bool {
 		if initSpeed == 0 {
 			initSpeed = nic.Speed
 		}
+		if initMTU == 0 {
+			initMTU = nic.MTU
+		}
 		if nic.Lanes != initLanes {
 			return false
 		}
 		if nic.Speed != initSpeed {
+			return false
+		}
+		if nic.MTU != initMTU {
 			return false
 		}
 	}
