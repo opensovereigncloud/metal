@@ -954,6 +954,33 @@ func (in *Switch) AddressesDefined() bool {
 	return true
 }
 
+// AddressesOk checks whether ip addresses defined for
+// "north" interfaces are in the same subnet with
+// addresses defined for peer's interfaces with which
+// they are interconnected.
+func (in *Switch) AddressesOk(swl *SwitchList) bool {
+	for inf, peer := range in.Status.NorthConnections.Peers {
+		for _, sw := range swl.Items {
+			if sw.Name == peer.Name {
+				peerNic := sw.Spec.Interfaces[peer.PortName]
+				localNic := in.Spec.Interfaces[inf]
+				_, peerV4Net, _ := net.ParseCIDR(peerNic.IPv4)
+				_, localV4Net, _ := net.ParseCIDR(localNic.IPv4)
+				if !reflect.DeepEqual(peerV4Net, localV4Net) {
+					return false
+				}
+				_, peerV6Net, _ := net.ParseCIDR(peerNic.IPv6)
+				_, localV6Net, _ := net.ParseCIDR(localNic.IPv6)
+				if !reflect.DeepEqual(peerV6Net, localV6Net) {
+					return false
+				}
+			}
+			break
+		}
+	}
+	return true
+}
+
 // DefinePortChannels defines possible port channels
 func (in *Switch) DefinePortChannels() {
 	portChannels := make(map[string]*LagSpec)

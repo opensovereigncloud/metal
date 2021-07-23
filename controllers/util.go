@@ -220,12 +220,14 @@ func (p *subnetsStep) getNext() processorStep {
 func (p *subnetsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	if obj.SubnetsOk() {
 		if obj.AddressesDefined() {
-			obj.FillPortChannelsAddresses()
-			if obj.Status.State != switchv1alpha1.StateReady {
-				obj.Status.State = switchv1alpha1.StateReady
+			if obj.AddressesOk(r.Background.switches) {
+				obj.FillPortChannelsAddresses()
+				if obj.Status.State != switchv1alpha1.StateReady {
+					obj.Status.State = switchv1alpha1.StateReady
+				}
+				p.setNext(&statusUpdateStep{})
+				return nil
 			}
-			p.setNext(&statusUpdateStep{})
-			return nil
 		}
 		p.setNext(&addressesStep{})
 		return nil
