@@ -19,7 +19,18 @@ package v1alpha1
 import (
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type AggregateType string
+
+const (
+	CAverageAggregateType AggregateType = "avg"
+	CSumAggregateType     AggregateType = "sum"
+	CMinAggregateType     AggregateType = "min"
+	CMaxAggregateType     AggregateType = "max"
+	CCountAggregateType   AggregateType = "count"
 )
 
 type AggregateItem struct {
@@ -39,7 +50,8 @@ type AggregateItem struct {
 // AggregateSpec defines the desired state of Aggregate
 type AggregateSpec struct {
 	// Aggregates is a list of aggregates required to be computed
-	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
 	Aggregates []AggregateItem `json:"aggregates"`
 }
 
@@ -71,7 +83,65 @@ func init() {
 	SchemeBuilder.Register(&Aggregate{}, &AggregateList{})
 }
 
-func (in *Aggregate) Compute(inventory *Inventory) json.RawMessage {
+func (in *Aggregate) Compute(inventory *Inventory) (json.RawMessage, error) {
+	resultMap := make(map[string]interface{})
 
-	return nil
+	for _, ai := range in.Spec.Aggregates {
+		jp, err := ai.SourcePath.ToK8sJSONPath()
+		if err != nil {
+			return nil, err
+		}
+
+		jp.AllowMissingKeys(true)
+		data, err := jp.FindResults(inventory)
+		if err != nil {
+			return nil, err
+		}
+
+		var aggregatedValue interface{} = nil
+		tokenizedPath := ai.TargetPath.Tokenize()
+
+		dataLen := len(data)
+		if dataLen == 0 {
+			if err := setValueToPath(resultMap, tokenizedPath, aggregatedValue); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		if dataLen > 1 {
+			return nil, errors.New("expected only one value collection to be returned for aggregation")
+		}
+
+		values := data[0]
+		valuesLen := len(values)
+
+		if valuesLen == 0 {
+			if err := setValueToPath(resultMap, tokenizedPath, aggregatedValue); err != nil {
+				return nil, err
+			}
+			continue
+		}
+
+		if ai.Aggregate == "" {
+			aggregatedValue = values
+		} else if valuesLen == 1 {
+			aggregatedValue = values[0]
+		} else {
+			aggregatedValue, err = makeAggregate(ai.Aggregate, values)
+			if err := setValueToPath(resultMap, tokenizedPath, aggregatedValue); err != nil {
+				return nil, err
+			}
+		}
+
+		if err := setValueToPath(resultMap, tokenizedPath, aggregatedValue); err != nil {
+			return nil, err
+		}
+	}
+
+	data, err := json.Marshal(resultMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

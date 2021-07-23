@@ -130,7 +130,10 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 
 		for _, aggregate := range aggregateList.Items {
-			aggregatedValues := aggregate.Compute(inv)
+			aggregatedValues, err := aggregate.Compute(inv)
+			if err != nil {
+				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
+			}
 			inv.Status.Computed[aggregate.Name] = aggregatedValues
 		}
 

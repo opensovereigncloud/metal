@@ -17,114 +17,24 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"errors"
-
-	"k8s.io/apimachinery/pkg/api/resource"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/client-go/util/jsonpath"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	CLabelPrefix = "machine.onmetal.de/size-"
+)
 
 // SizeSpec defines the desired state of Size
 type SizeSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// Constraints is a list of selectors based on machine properties
 	// +kubebuilder:validation:Optional
 	Constraints []ConstraintSpec `json:"constraints,omitempty"`
 }
 
-type AggregateType string
-
-const (
-	CAverageAggregateType AggregateType = "avg"
-	CSumAggregateType     AggregateType = "sum"
-	CMinAggregateType     AggregateType = "min"
-	CMaxAggregateType     AggregateType = "max"
-	CCountAggregateType   AggregateType = "count"
-)
-
-// ConstraintSpec contains conditions of contraint that should be applied on resource
-type ConstraintSpec struct {
-	// Path is a path to the struct field constraint will be applied to
-	// +kubebuilder:validation:Optional
-	Path string `json:"path,omitempty"`
-	// Aggregate defines whether collection values should be aggregated
-	// for constraint checks, in case if path defines selector for collection
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=avg;sum;min;max;count
-	Aggregate AggregateType `json:"agg,omitempty"`
-	// Equal contains an exact expected value
-	// +kubebuilder:validation:Optional
-	Equal *ConstraintValSpec `json:"eq,omitempty"`
-	// NotEqual contains an exact not expected value
-	// +kubebuilder:validation:Optional
-	NotEqual *ConstraintValSpec `json:"neq,omitempty"`
-	// LessThan contains an highest expected value, exclusive
-	// +kubebuilder:validation:Optional
-	LessThan *resource.Quantity `json:"lt,omitempty"`
-	// LessThan contains an highest expected value, inclusive
-	// +kubebuilder:validation:Optional
-	LessThanOrEqual *resource.Quantity `json:"lte,omitempty"`
-	// LessThan contains an lowest expected value, exclusive
-	// +kubebuilder:validation:Optional
-	GreaterThan *resource.Quantity `json:"gt,omitempty"`
-	// GreaterThanOrEqual contains an lowest expected value, inclusive
-	// +kubebuilder:validation:Optional
-	GreaterThanOrEqual *resource.Quantity `json:"gte,omitempty"`
-}
-
-// ConstraintValSpec is a wrapper around value for constraint.
-// Since it is not possilbwe to set oneOf/anyOf through kubebuilder
-// markers, type is set to number here, and patched with kustomize
-// See https://github.com/kubernetes-sigs/kubebuilder/issues/301
-// +kubebuilder:validation:Type=number
-type ConstraintValSpec struct {
-	Literal *string            `json:"-"`
-	Numeric *resource.Quantity `json:"-"`
-}
-
-func (s *ConstraintValSpec) MarshalJSON() ([]byte, error) {
-	if s.Literal != nil && s.Numeric != nil {
-		return nil, errors.New("unable to marshal JSON since both numeric and literal fields are set")
-	}
-	if s.Literal != nil {
-		return json.Marshal(s.Literal)
-	}
-	if s.Numeric != nil {
-		return json.Marshal(s.Numeric)
-	}
-	return nil, nil
-}
-
-func (s *ConstraintValSpec) UnmarshalJSON(data []byte) error {
-	if len(data) == 0 || string(data) == "null" {
-		s.Literal = nil
-		s.Numeric = nil
-		return nil
-	}
-	q := resource.Quantity{}
-	err := q.UnmarshalJSON(data)
-	if err == nil {
-		s.Numeric = &q
-		return nil
-	}
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return err
-	}
-	s.Literal = &str
-	return nil
-}
-
 // SizeStatus defines the observed state of Size
 type SizeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
@@ -150,4 +60,62 @@ type SizeList struct {
 
 func init() {
 	SchemeBuilder.Register(&Size{}, &SizeList{})
+}
+
+func (in *Size) GetMatchLabel() string {
+	return CLabelPrefix + in.Name
+}
+
+func (in *Size) Matches(inventory *Inventory) (bool, error) {
+	for _, constraint := range in.Spec.Constraints {
+		jp := jsonpath.New(constraint.Path)
+		// Do not return errors if data is not found
+		jp.AllowMissingKeys(true)
+		err := jp.Parse(normalizeJSONPath(constraint.Path))
+		if err != nil {
+			return false, err
+		}
+
+		data, err := jp.FindResults(&inventory.Spec)
+		if err != nil {
+			return false, err
+		}
+
+		dataLen := len(data)
+		// If validation data is empty, return "does not match"
+		if dataLen == 0 {
+			return false, nil
+		}
+		// If data has more than 2 arrays, multiple result sets were returned
+		// we do not support that case
+		if dataLen > 1 {
+			return false, errors.New("multiple selection results are not supported")
+		}
+
+		validationData := data[0]
+		validationDataLen := len(validationData)
+		// If result array is empty for some reason, return "does not match"
+		if validationDataLen == 0 {
+			return false, nil
+		}
+
+		var valid bool
+		// If result set has only one value, validate it as a single value
+		// even if it is an aggregate, since result will be the same
+		if validationDataLen == 1 {
+			valid, err = constraint.MatchSingleValue(&validationData[0])
+		} else {
+			valid, err = constraint.MatchMultipleValues(constraint.Aggregate, validationData)
+		}
+
+		if err != nil {
+			return false, err
+		}
+
+		if !valid {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

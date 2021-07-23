@@ -2,7 +2,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -77,55 +76,6 @@ func (in *Aggregate) validate() error {
 			Kind:  gvk.Kind,
 		}
 		return apierrors.NewInvalid(gk, in.Name, allErrs)
-	}
-
-	return nil
-}
-
-func accountPath(s map[string]interface{}, tokenizedPath []string) error {
-	lastTokenIdx := len(tokenizedPath) - 1
-	var prevVal interface{} = s
-	for idx, token := range tokenizedPath {
-		theMap, ok := prevVal.(map[string]interface{})
-		// if previous value is empty struct, but there are still tokens
-		// then parent path is used to set value, and it is not possible
-		// to set value in child path
-		if !ok {
-			return errors.Errorf("can not use path %s to set value, as parent path %s already used to set value", strings.Join(tokenizedPath, "."), strings.Join(tokenizedPath[:idx+1], "."))
-		}
-
-		currVal, ok := theMap[token]
-		// if value is not set
-		if !ok {
-			// if it is the last token, then set empty struct
-			if idx == lastTokenIdx {
-				theMap[token] = struct{}{}
-				// otherwise create a map
-			} else {
-				theMap[token] = make(map[string]interface{})
-			}
-			// if value is set
-		} else {
-			_, ok := currVal.(map[string]interface{})
-			// if value is not map and it is the last token,
-			// then there is a duplicate path
-			if !ok && idx == lastTokenIdx {
-				return errors.Errorf("duplicate path %s", strings.Join(tokenizedPath, "."))
-			}
-			// if it is map and it is the last token,
-			// then there is a child path used to set value
-			if ok && idx == lastTokenIdx {
-				return errors.Errorf("can not use path %s to set value, as there is a child path", strings.Join(tokenizedPath, "."))
-			}
-			// if it is not a map and it is not the last token,
-			// then there is parent path used to set value
-			if !ok && idx != lastTokenIdx {
-				return errors.Errorf("can not use path %s to set value, as parent path %s already used to set value", strings.Join(tokenizedPath, "."), strings.Join(tokenizedPath[:idx+1], "."))
-			}
-			// if it is a map and it is not the last token,
-			// then continue
-		}
-		prevVal = theMap[token]
 	}
 
 	return nil

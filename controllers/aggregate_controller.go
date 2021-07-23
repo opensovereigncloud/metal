@@ -116,7 +116,11 @@ func (r *AggregateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				Name:      inventory.Name,
 			}
 
-			aggregatedValues := aggregate.Compute(&inventory)
+			aggregatedValues, err := aggregate.Compute(&inventory)
+			if err != nil {
+				log.Error(err, "unable to compute aggregate", "inventory", inventoryNamespacedName)
+				return ctrl.Result{}, err
+			}
 			if inventory.Status.Computed == nil {
 				inventory.Status.Computed = make(map[string]json.RawMessage)
 			}

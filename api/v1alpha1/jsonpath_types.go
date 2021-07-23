@@ -40,7 +40,7 @@ func (in *JSONPath) UnmarshalJSON(b []byte) error {
 
 func JSONPathFromString(s string) *JSONPath {
 	return &JSONPath{
-		Path: s,
+		Path: normalizeJSONPath(s),
 	}
 }
 

@@ -32,9 +32,9 @@ import (
 // log is for logging in this package.
 var sizelog = logf.Log.WithName("size-resource")
 
-func (r *Size) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (in *Size) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(in).
 		Complete()
 }
 
@@ -43,24 +43,24 @@ func (r *Size) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &Size{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Size) ValidateCreate() error {
-	sizelog.Info("validate create", "name", r.Name)
-	return r.validate()
+func (in *Size) ValidateCreate() error {
+	sizelog.Info("validate create", "name", in.Name)
+	return in.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Size) ValidateUpdate(old runtime.Object) error {
-	sizelog.Info("validate update", "name", r.Name)
-	return r.validate()
+func (in *Size) ValidateUpdate(old runtime.Object) error {
+	sizelog.Info("validate update", "name", in.Name)
+	return in.validate()
 }
 
 var CDummyInventorySpec = getDummyInventorySpec()
 
-func (r *Size) validate() error {
+func (in *Size) validate() error {
 	ops := make(map[string]int, 0)
 	errs := make([]string, 0)
 
-	for _, c := range r.Spec.Constraints {
+	for _, c := range in.Spec.Constraints {
 		op, ok := ops[c.Path]
 		if !ok {
 			op = 0
@@ -121,51 +121,51 @@ func (r *Size) validate() error {
 	return nil
 }
 
-func (r *ConstraintSpec) hasAggregateAndLiterals() bool {
-	return r.Aggregate != "" &&
-		(r.Equal != nil && r.Equal.Literal != nil ||
-			r.NotEqual != nil && r.NotEqual.Literal != nil)
+func (in *ConstraintSpec) hasAggregateAndLiterals() bool {
+	return in.Aggregate != "" &&
+		(in.Equal != nil && in.Equal.Literal != nil ||
+			in.NotEqual != nil && in.NotEqual.Literal != nil)
 }
 
-func (r *ConstraintSpec) empty() bool {
-	return r.Equal == nil &&
-		r.NotEqual == nil &&
-		r.GreaterThan == nil &&
-		r.GreaterThanOrEqual == nil &&
-		r.LessThan == nil &&
-		r.LessThanOrEqual == nil
+func (in *ConstraintSpec) empty() bool {
+	return in.Equal == nil &&
+		in.NotEqual == nil &&
+		in.GreaterThan == nil &&
+		in.GreaterThanOrEqual == nil &&
+		in.LessThan == nil &&
+		in.LessThanOrEqual == nil
 }
 
-func (r *ConstraintSpec) eqAndNeq() bool {
-	return r.Equal != nil &&
-		r.NotEqual != nil
+func (in *ConstraintSpec) eqAndNeq() bool {
+	return in.Equal != nil &&
+		in.NotEqual != nil
 }
 
-func (r *ConstraintSpec) inclusiveAndExclusive() bool {
-	return r.GreaterThan != nil && r.GreaterThanOrEqual != nil ||
-		r.LessThan != nil && r.LessThanOrEqual != nil
+func (in *ConstraintSpec) inclusiveAndExclusive() bool {
+	return in.GreaterThan != nil && in.GreaterThanOrEqual != nil ||
+		in.LessThan != nil && in.LessThanOrEqual != nil
 }
 
-func (r *ConstraintSpec) borderAndEq() bool {
-	return (r.GreaterThan != nil || r.GreaterThanOrEqual != nil || r.LessThan != nil || r.LessThanOrEqual != nil) &&
-		(r.Equal != nil || r.NotEqual != nil)
+func (in *ConstraintSpec) borderAndEq() bool {
+	return (in.GreaterThan != nil || in.GreaterThanOrEqual != nil || in.LessThan != nil || in.LessThanOrEqual != nil) &&
+		(in.Equal != nil || in.NotEqual != nil)
 }
 
-func (r *ConstraintSpec) wrongInterval() bool {
+func (in *ConstraintSpec) wrongInterval() bool {
 	var upper *resource.Quantity
 	var lower *resource.Quantity
 
-	if r.LessThanOrEqual != nil {
-		upper = r.LessThanOrEqual
+	if in.LessThanOrEqual != nil {
+		upper = in.LessThanOrEqual
 	}
-	if r.LessThan != nil {
-		upper = r.LessThan
+	if in.LessThan != nil {
+		upper = in.LessThan
 	}
-	if r.GreaterThanOrEqual != nil {
-		lower = r.GreaterThanOrEqual
+	if in.GreaterThanOrEqual != nil {
+		lower = in.GreaterThanOrEqual
 	}
-	if r.GreaterThan != nil {
-		lower = r.GreaterThan
+	if in.GreaterThan != nil {
+		lower = in.GreaterThan
 	}
 
 	if upper == nil || lower == nil {
@@ -180,8 +180,8 @@ func (r *ConstraintSpec) wrongInterval() bool {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Size) ValidateDelete() error {
-	sizelog.Info("validate delete", "name", r.Name)
+func (in *Size) ValidateDelete() error {
+	sizelog.Info("validate delete", "name", in.Name)
 	return nil
 }
 

@@ -63,7 +63,10 @@ spec:
                   - sourcePath
                   - targetPath
                   type: object
+                minItems: 1
                 type: array
+            required:
+            - aggregates
             type: object
           status:
             description: AggregateStatus defines the observed state of Aggregate

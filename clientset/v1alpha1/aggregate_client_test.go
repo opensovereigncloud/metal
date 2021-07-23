@@ -112,7 +112,7 @@ var _ = Describe("Aggregate client", func() {
 				defer GinkgoRecover()
 				patchedAggregate, err := client.Patch(ctx, AggregateName, types.JSONPatchType, patchData, v1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedAggregate.Spec.Aggregates[0].TargetPath).Should(Equal(patch[0].Value))
+				Expect(patchedAggregate.Spec.Aggregates[0].TargetPath).Should(BeEquivalentTo(*v1alpha1.JSONPathFromString(patch[0].Value)))
 				finished <- true
 			}()
 
@@ -120,7 +120,7 @@ var _ = Describe("Aggregate client", func() {
 			Expect(event.Type).To(Equal(watch.Modified))
 			eventAggregate = event.Object.(*v1alpha1.Aggregate)
 			Expect(eventAggregate).NotTo(BeNil())
-			Expect(eventAggregate.Spec.Aggregates[0].TargetPath).Should(Equal(patch[0].Value))
+			Expect(eventAggregate.Spec.Aggregates[0].TargetPath).Should(Equal(*v1alpha1.JSONPathFromString(patch[0].Value)))
 
 			<-finished
 
