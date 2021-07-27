@@ -175,8 +175,8 @@ func getNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount flo
 	return net.CIDRMask(ones, bits)
 }
 
-func getInterfaceSubnet(name string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
-	index, _ := strconv.Atoi(strings.ReplaceAll(name, SwitchPortPrefix, EmptyString))
+func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
+	index, _ := strconv.Atoi(strings.ReplaceAll(name, namePrefix, EmptyString))
 	prefix, _ := network.Mask.Size()
 	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(addrType)-prefix, index)
 	return ifaceNet

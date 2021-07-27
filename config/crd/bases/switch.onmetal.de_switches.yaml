@@ -40,11 +40,11 @@ spec:
       name: ConnectionLevel
       type: integer
     - description: South IPv4 subnet
-      jsonPath: .spec.southSubnetV4.cidr
+      jsonPath: .status.southSubnetV4.cidr
       name: SouthSubnetV4
       type: string
     - description: South IPv6 subnet
-      jsonPath: .spec.southSubnetV6.cidr
+      jsonPath: .status.southSubnetV6.cidr
       name: SouthSubnetV6
       type: string
     - description: Request for scan ports

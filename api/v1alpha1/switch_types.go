@@ -270,8 +270,8 @@ type LagSpec struct {
 //+kubebuilder:printcolumn:name="SwitchPorts",type=integer,JSONPath=`.spec.switchPorts`,description="Total amount of non-management network interfaces"
 //+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.status.role`,description="switch's role"
 //+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.status.connectionLevel`,description="Vertical level of switch connection"
-//+kubebuilder:printcolumn:name="SouthSubnetV4",type=string,JSONPath=`.spec.southSubnetV4.cidr`,description="South IPv4 subnet"
-//+kubebuilder:printcolumn:name="SouthSubnetV6",type=string,JSONPath=`.spec.southSubnetV6.cidr`,description="South IPv6 subnet"
+//+kubebuilder:printcolumn:name="SouthSubnetV4",type=string,JSONPath=`.status.southSubnetV4.cidr`,description="South IPv4 subnet"
+//+kubebuilder:printcolumn:name="SouthSubnetV6",type=string,JSONPath=`.status.southSubnetV6.cidr`,description="South IPv6 subnet"
 //+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.status.scanPorts`,description="Request for scan ports"
 //+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Switch processing state"
 
@@ -886,11 +886,11 @@ func (in *Switch) UpdateSouthInterfacesAddresses() {
 			iface := in.Spec.Interfaces[inf]
 			portChannel, aggregated := in.portInLAG(inf)
 			if aggregated {
-				ifaceSubnet := getInterfaceSubnet(portChannel, network, subnetv1alpha1.CIPv4SubnetType)
+				ifaceSubnet := getInterfaceSubnet(portChannel, PortChannelPrefix, network, subnetv1alpha1.CIPv4SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
 				iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
 			} else {
-				ifaceSubnet := getInterfaceSubnet(inf, network, subnetv1alpha1.CIPv4SubnetType)
+				ifaceSubnet := getInterfaceSubnet(inf, SwitchPortPrefix, network, subnetv1alpha1.CIPv4SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
 				iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
 			}
@@ -902,11 +902,11 @@ func (in *Switch) UpdateSouthInterfacesAddresses() {
 			iface := in.Spec.Interfaces[inf]
 			portChannel, aggregated := in.portInLAG(inf)
 			if aggregated {
-				ifaceSubnet := getInterfaceSubnet(portChannel, network, subnetv1alpha1.CIPv6SubnetType)
+				ifaceSubnet := getInterfaceSubnet(portChannel, PortChannelPrefix, network, subnetv1alpha1.CIPv6SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
 				iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
 			} else {
-				ifaceSubnet := getInterfaceSubnet(inf, network, subnetv1alpha1.CIPv6SubnetType)
+				ifaceSubnet := getInterfaceSubnet(inf, SwitchPortPrefix, network, subnetv1alpha1.CIPv6SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
 				iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
 			}
