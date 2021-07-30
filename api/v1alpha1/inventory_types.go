@@ -313,7 +313,7 @@ type NICSpec struct {
 	Lanes uint8 `json:"lanes,omitempty"`
 	// ActiveFEC is an active error correction mode
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:validation:Enum=Not Reported;None;Auto;Off;RS;BaseR;LLRS
+	// +kubebuilder:validation:Enum=none;rs;fc
 	ActiveFEC string `json:"activeFEC,omitempty"`
 	// LLDP is a collection of LLDP messages received by the network interface
 	// +kubebuilder:validation:Optional

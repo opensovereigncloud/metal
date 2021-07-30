@@ -364,13 +364,9 @@ spec:
                           activeFEC:
                             description: ActiveFEC is an active error correction mode
                             enum:
-                              - Not Reported
-                              - None
-                              - Auto
-                              - "Off"
-                              - RS
-                              - BaseR
-                              - LLRS
+                              - none
+                              - rs
+                              - fc
                             type: string
                           lanes:
                             description: Lanes is a number of used lanes (if supported)
