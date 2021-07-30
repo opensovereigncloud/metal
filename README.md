@@ -52,8 +52,12 @@ Check `Makefile` for the full list of `make` goals with descriptions.
 
 `./config/samples/` directory contains examples of manifests. They can be used to try out the controller.
 
-    # apply config
+    # apply inventory config
     kubectl apply -f config/samples/machine_v1alpha1_inventory.yaml
+    # apply size config
+    kubectl apply -f config/samples/machine_v1alpha1_size.yaml
+    # apply aggregate config
+    kubectl apply -f config/samples/machine_v1alpha1_aggregate.yaml
     # get resources
     kubectl get inventories
     # get sample resource

@@ -11,8 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	sizev1alpha1 "github.com/onmetal/k8s-size/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	inventoryv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 )
@@ -22,25 +21,73 @@ var _ = Describe("Inventory controller", func() {
 		InventoryName      = "test-inventory"
 		InventoryNamespace = "default"
 
-		timeout  = time.Second * 30
-		interval = time.Millisecond * 250
+		timeout  = time.Second * 20
+		interval = time.Millisecond * 500
 	)
+
+	AfterEach(func() {
+		ctx := context.Background()
+		resources := []struct {
+			res   client.Object
+			list  client.ObjectList
+			count func(client.ObjectList) int
+		}{
+			{
+				res:  &inventoryv1alpha1.Aggregate{},
+				list: &inventoryv1alpha1.AggregateList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.AggregateList)
+					return len(list.Items)
+				},
+			},
+			{
+				res:  &inventoryv1alpha1.Size{},
+				list: &inventoryv1alpha1.SizeList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.SizeList)
+					return len(list.Items)
+				},
+			},
+			{
+				res:  &inventoryv1alpha1.Inventory{},
+				list: &inventoryv1alpha1.InventoryList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.InventoryList)
+					return len(list.Items)
+				},
+			},
+		}
+
+		for _, r := range resources {
+			Expect(k8sClient.DeleteAllOf(ctx, r.res, client.InNamespace(InventoryNamespace))).To(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, r.list)
+				if err != nil {
+					return false
+				}
+				if r.count(r.list) > 0 {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+		}
+	})
 
 	Context("When inventory CR is created and updated", func() {
 		It("Should be matched or unmatched to size CRs", func() {
 			By("Sizes are installed")
 			ctx := context.Background()
 
-			sizeShouldMatch := sizev1alpha1.Size{
+			sizeShouldMatch := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "should-match",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.cores",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(2, 0),
 							},
 						},
@@ -48,16 +95,16 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			sizeAlreadyMatched := sizev1alpha1.Size{
+			sizeAlreadyMatched := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "already-matched",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.threads",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(4, 0),
 							},
 						},
@@ -65,16 +112,16 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			sizeShouldNotMatch := sizev1alpha1.Size{
+			sizeShouldNotMatch := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "should-not-match",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.cores",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(8, 0),
 							},
 						},
@@ -82,16 +129,16 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			sizeShouldUnmatch := sizev1alpha1.Size{
+			sizeShouldUnmatch := inventoryv1alpha1.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "should-unmatch",
 					Namespace: InventoryNamespace,
 				},
-				Spec: sizev1alpha1.SizeSpec{
-					Constraints: []sizev1alpha1.ConstraintSpec{
+				Spec: inventoryv1alpha1.SizeSpec{
+					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
 							Path: "cpus.threads",
-							Equal: &sizev1alpha1.ConstraintValSpec{
+							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(16, 0),
 							},
 						},
@@ -99,7 +146,7 @@ var _ = Describe("Inventory controller", func() {
 				},
 			}
 
-			testSizes := []sizev1alpha1.Size{
+			testSizes := []inventoryv1alpha1.Size{
 				sizeShouldMatch,
 				sizeAlreadyMatched,
 				sizeShouldNotMatch,
@@ -111,7 +158,7 @@ var _ = Describe("Inventory controller", func() {
 			}
 
 			Eventually(func() bool {
-				sizeList := &sizev1alpha1.SizeList{}
+				sizeList := &inventoryv1alpha1.SizeList{}
 				err := k8sClient.List(ctx, sizeList)
 				if err != nil {
 					return false
@@ -120,6 +167,38 @@ var _ = Describe("Inventory controller", func() {
 					return true
 				}
 				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("Aggregate is installed")
+			testAggregate := inventoryv1alpha1.Aggregate{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-aggregate",
+					Namespace: InventoryNamespace,
+				},
+				Spec: inventoryv1alpha1.AggregateSpec{
+					Aggregates: []inventoryv1alpha1.AggregateItem{
+						{
+							SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus.cpus[*].logicalIds[*]"),
+							TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.maxLogicalId"),
+							Aggregate:  inventoryv1alpha1.CMaxAggregateType,
+						},
+					},
+				},
+			}
+
+			Expect(k8sClient.Create(ctx, &testAggregate)).Should(Succeed())
+
+			Eventually(func() bool {
+				createdAggregateNamespacedName := types.NamespacedName{
+					Namespace: testAggregate.Namespace,
+					Name:      testAggregate.Name,
+				}
+				createdAggregate := inventoryv1alpha1.Aggregate{}
+				err := k8sClient.Get(ctx, createdAggregateNamespacedName, &createdAggregate)
+				if err != nil {
+					return false
+				}
+				return true
 			}, timeout, interval).Should(BeTrue())
 
 			By("Inventory is installed")
@@ -265,11 +344,33 @@ var _ = Describe("Inventory controller", func() {
 				return true
 			}, timeout, interval).Should(BeTrue())
 
+			By("Inventory has aggregate computed")
+			Eventually(func() bool {
+				inventory := inventoryv1alpha1.Inventory{}
+				err := k8sClient.Get(ctx, inventoryNamespacedName, &inventory)
+				if err != nil {
+					return false
+				}
+				if inventory.Status.Computed.Object == nil {
+					return false
+				}
+				aggregateMap, ok := inventory.Status.Computed.Object[testAggregate.Name]
+				if !ok {
+					return false
+				}
+				maxLogicalId := aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["maxLogicalId"].(string)
+				if maxLogicalId != "3" {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
 			By("Inventory is updated")
 			Expect(k8sClient.Get(ctx, inventoryNamespacedName, &createdInventory)).To(Succeed())
 
 			createdInventory.Spec.CPUs.Cores = 8
 			createdInventory.Spec.CPUs.Threads = 16
+			createdInventory.Spec.CPUs.CPUs[0].LogicalIDs = append(createdInventory.Spec.CPUs.CPUs[0].LogicalIDs, 5)
 
 			Expect(k8sClient.Update(ctx, &createdInventory)).To(Succeed())
 
@@ -326,6 +427,27 @@ var _ = Describe("Inventory controller", func() {
 					return false
 				}, timeout, interval).Should(BeTrue())
 			}
+
+			By("Inventory has aggregate recalculated")
+			Eventually(func() bool {
+				inventory := inventoryv1alpha1.Inventory{}
+				err := k8sClient.Get(ctx, inventoryNamespacedName, &inventory)
+				if err != nil {
+					return false
+				}
+				if inventory.Status.Computed.Object == nil {
+					return false
+				}
+				aggregateMap, ok := inventory.Status.Computed.Object[testAggregate.Name]
+				if !ok {
+					return false
+				}
+				maxLogicalId := aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["maxLogicalId"].(string)
+				if maxLogicalId != "5" {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
 
 			By("Inventory is deleted")
 			Expect(k8sClient.Get(ctx, inventoryNamespacedName, &updatedInventory)).To(Succeed())

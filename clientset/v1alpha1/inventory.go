@@ -15,7 +15,6 @@ import (
 
 const (
 	CInventoriesResourceType = "inventories"
-	CStatusSubresource       = "status"
 )
 
 type InventoryInterface interface {

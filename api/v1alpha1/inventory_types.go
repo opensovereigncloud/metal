@@ -308,10 +308,10 @@ type NICSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=1
 	Speed uint32 `json:"speed,omitempty"`
-	//Lanes is a number of used lanes (if supported)
+	// Lanes is a number of used lanes (if supported)
 	// +kubebuilder:validation:Optional
 	Lanes uint8 `json:"lanes,omitempty"`
-	//ActiveFEC is an active error correction mode
+	// ActiveFEC is an active error correction mode
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=none;rs;fc
 	ActiveFEC string `json:"activeFEC,omitempty"`
@@ -408,7 +408,8 @@ type DistroSpec struct {
 // InventoryStatus defines the observed state of Inventory
 // +kubebuilder:object:generate=true
 type InventoryStatus struct {
-	// No additional state required for now
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Computed AggregationResults `json:"computed"`
 }
 
 // Inventory is the Schema for the inventories API

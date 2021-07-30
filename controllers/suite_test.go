@@ -17,16 +17,11 @@ limitations under the License.
 package controllers
 
 import (
-	"go/build"
-	"io/ioutil"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/mod/modfile"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -46,9 +41,7 @@ import (
 	"sigs.k8s.io/kustomize/pkg/resource"
 	"sigs.k8s.io/kustomize/pkg/target"
 
-	inventoryv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
-
-	sizev1alpha1 "github.com/onmetal/k8s-size/api/v1alpha1"
+	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -71,34 +64,16 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
-	sizePackagePath := reflect.TypeOf(sizev1alpha1.Size{}).PkgPath()
-
-	goModData, err := ioutil.ReadFile(filepath.Join("..", "go.mod"))
-	Expect(err).NotTo(HaveOccurred())
-
-	goModFile, err := modfile.Parse("", goModData, nil)
-	Expect(err).NotTo(HaveOccurred())
-
-	sizeModulePath := ""
-	for _, req := range goModFile.Require {
-		if strings.HasPrefix(sizePackagePath, req.Mod.Path) {
-			sizeModulePath = req.Mod.String()
-		}
-	}
-	Expect(sizeModulePath).NotTo(BeZero())
-
-	// https://github.com/kubernetes-sigs/kubebuilder/issues/1999
-	sizeCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", sizeModulePath, "config", "crd")
-
 	// Since kubebuilder is not allowing to set complex types for fields with markers
 	// we have to build patched configuration with kustomize first
 	unstructuredFactory := kunstruct.NewKunstructuredFactoryImpl()
 	resourceFactory := resource.NewFactory(unstructuredFactory)
 	resmapFactory := resmap.NewFactory(resourceFactory)
 	transformerFactory := transformer.NewFactoryImpl()
+	crdPath := filepath.Join("..", "config", "crd")
 	kfs := fs.MakeRealFS()
 
-	loader, err := loader.NewLoader(sizeCrdPath, kfs)
+	loader, err := loader.NewLoader(crdPath, kfs)
 	Expect(err).NotTo(HaveOccurred())
 
 	kt, err := target.NewKustTarget(loader, resmapFactory, transformerFactory)
@@ -128,17 +103,14 @@ var _ = BeforeSuite(func() {
 	}
 
 	testEnv = &envtest.Environment{
-		CRDs:              crds,
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDs: crds,
 	}
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = sizev1alpha1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	err = inventoryv1alpha1.AddToScheme(scheme.Scheme)
+	err = machinev1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
@@ -149,7 +121,17 @@ var _ = BeforeSuite(func() {
 
 	err = (&InventoryReconciler{
 		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Inventory"),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+	err = (&SizeReconciler{
+		Client: k8sManager.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Size"),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+	err = (&AggregateReconciler{
+		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Aggregate"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

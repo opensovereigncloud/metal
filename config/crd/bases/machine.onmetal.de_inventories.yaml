@@ -521,6 +521,12 @@ spec:
             type: object
           status:
             description: InventoryStatus defines the observed state of Inventory
+            properties:
+              computed:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+            required:
+            - computed
             type: object
         type: object
     served: true

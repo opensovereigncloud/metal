@@ -21,7 +21,6 @@ import (
 
 	"github.com/d4l3k/messagediff"
 	"github.com/go-logr/logr"
-	"github.com/onmetal/k8s-size/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -68,11 +67,18 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	if inv.Labels == nil {
+		inv.Labels = make(map[string]string)
+	}
+	if inv.Status.Computed.Object == nil {
+		inv.Status.Computed.Object = make(map[string]interface{})
+	}
+
 	continueToken := ""
 	limit := int64(1000)
 
 	for {
-		sizeList := &v1alpha1.SizeList{}
+		sizeList := &machinev1alpha1.SizeList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     limit,
@@ -114,9 +120,46 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		continueToken = sizeList.Continue
 	}
 
-	err = r.Update(ctx, inv)
-	if err != nil {
+	if err = r.Update(ctx, inv); err != nil {
 		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)
+		return ctrl.Result{}, err
+	}
+
+	continueToken = ""
+
+	for {
+		aggregateList := &machinev1alpha1.AggregateList{}
+		opts := &client.ListOptions{
+			Namespace: req.Namespace,
+			Limit:     limit,
+			Continue:  continueToken,
+		}
+
+		err := r.List(ctx, aggregateList, opts)
+		if err != nil {
+			log.Error(err, "unable to get aggregate resource list", "namespace", req.Namespace)
+			return ctrl.Result{}, err
+		}
+
+		for _, aggregate := range aggregateList.Items {
+			aggregatedValues, err := aggregate.Compute(inv)
+			if err != nil {
+				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
+			}
+			inv.Status.Computed.Object[aggregate.Name] = aggregatedValues
+		}
+
+		if aggregateList.Continue == "" ||
+			aggregateList.RemainingItemCount == nil ||
+			*aggregateList.RemainingItemCount == 0 {
+			break
+		}
+
+		continueToken = aggregateList.Continue
+	}
+
+	if err = r.Status().Update(ctx, inv); err != nil {
+		log.Error(err, "unable to update inventory status resource", "name", req.NamespacedName)
 		return ctrl.Result{}, err
 	}
 
