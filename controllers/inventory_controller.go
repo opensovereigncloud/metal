@@ -67,6 +67,13 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	if inv.Labels == nil {
+		inv.Labels = make(map[string]string)
+	}
+	if inv.Status.Computed.Object == nil {
+		inv.Status.Computed.Object = make(map[string]interface{})
+	}
+
 	continueToken := ""
 	limit := int64(1000)
 
@@ -113,6 +120,11 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		continueToken = sizeList.Continue
 	}
 
+	if err = r.Update(ctx, inv); err != nil {
+		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)
+		return ctrl.Result{}, err
+	}
+
 	continueToken = ""
 
 	for {
@@ -134,7 +146,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			if err != nil {
 				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
 			}
-			inv.Status.Computed[aggregate.Name] = aggregatedValues
+			inv.Status.Computed.Object[aggregate.Name] = aggregatedValues
 		}
 
 		if aggregateList.Continue == "" ||
@@ -146,9 +158,8 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		continueToken = aggregateList.Continue
 	}
 
-	err = r.Update(ctx, inv)
-	if err != nil {
-		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)
+	if err = r.Status().Update(ctx, inv); err != nil {
+		log.Error(err, "unable to update inventory status resource", "name", req.NamespacedName)
 		return ctrl.Result{}, err
 	}
 

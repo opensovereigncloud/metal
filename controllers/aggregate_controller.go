@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -121,12 +120,12 @@ func (r *AggregateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				log.Error(err, "unable to compute aggregate", "inventory", inventoryNamespacedName)
 				return ctrl.Result{}, err
 			}
-			if inventory.Status.Computed == nil {
-				inventory.Status.Computed = make(map[string]json.RawMessage)
+			if inventory.Status.Computed.Object == nil {
+				inventory.Status.Computed.Object = make(map[string]interface{})
 			}
-			inventory.Status.Computed[aggregate.Name] = aggregatedValues
+			inventory.Status.Computed.Object[aggregate.Name] = aggregatedValues
 
-			if err := r.Update(ctx, &inventory); err != nil {
+			if err := r.Status().Update(ctx, &inventory); err != nil {
 				log.Error(err, "unable to update inventory resource", "inventory", inventoryNamespacedName)
 				return ctrl.Result{}, err
 			}
@@ -169,7 +168,7 @@ func (r *AggregateReconciler) finalizeAggregate(ctx context.Context, req ctrl.Re
 		}
 
 		for _, inventory := range inventoryList.Items {
-			_, ok := inventory.Status.Computed[aggregateKey]
+			_, ok := inventory.Status.Computed.Object[aggregateKey]
 			if !ok {
 				continue
 			}
@@ -180,9 +179,9 @@ func (r *AggregateReconciler) finalizeAggregate(ctx context.Context, req ctrl.Re
 			}
 			log.Info("inventory contains aggregate, removing on finalize", "aggregate", req.NamespacedName, "inventory", inventoryNamespacedName)
 
-			delete(inventory.Status.Computed, aggregateKey)
+			delete(inventory.Status.Computed.Object, aggregateKey)
 
-			if err := r.Update(ctx, &inventory); err != nil {
+			if err := r.Status().Update(ctx, &inventory); err != nil {
 				log.Error(err, "unable to update inventory resource", "inventory", inventoryNamespacedName)
 				return err
 			}

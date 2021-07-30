@@ -17,8 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"encoding/json"
-
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -83,7 +81,7 @@ func init() {
 	SchemeBuilder.Register(&Aggregate{}, &AggregateList{})
 }
 
-func (in *Aggregate) Compute(inventory *Inventory) (json.RawMessage, error) {
+func (in *Aggregate) Compute(inventory *Inventory) (interface{}, error) {
 	resultMap := make(map[string]interface{})
 
 	for _, ai := range in.Spec.Aggregates {
@@ -93,7 +91,7 @@ func (in *Aggregate) Compute(inventory *Inventory) (json.RawMessage, error) {
 		}
 
 		jp.AllowMissingKeys(true)
-		data, err := jp.FindResults(inventory)
+		data, err := jp.FindResults(inventory.Spec)
 		if err != nil {
 			return nil, err
 		}
@@ -123,14 +121,15 @@ func (in *Aggregate) Compute(inventory *Inventory) (json.RawMessage, error) {
 		}
 
 		if ai.Aggregate == "" {
-			aggregatedValue = values
+			interfacedValues := make([]interface{}, valuesLen)
+			for i, value := range values {
+				interfacedValues[i] = value.Interface()
+			}
+			aggregatedValue = interfacedValues
 		} else if valuesLen == 1 {
-			aggregatedValue = values[0]
+			aggregatedValue = values[0].Interface()
 		} else {
 			aggregatedValue, err = makeAggregate(ai.Aggregate, values)
-			if err := setValueToPath(resultMap, tokenizedPath, aggregatedValue); err != nil {
-				return nil, err
-			}
 		}
 
 		if err := setValueToPath(resultMap, tokenizedPath, aggregatedValue); err != nil {
@@ -138,10 +137,5 @@ func (in *Aggregate) Compute(inventory *Inventory) (json.RawMessage, error) {
 		}
 	}
 
-	data, err := json.Marshal(resultMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	return resultMap, nil
 }

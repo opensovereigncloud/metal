@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	inventoryv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 )
@@ -23,6 +24,54 @@ var _ = Describe("Size controller", func() {
 		timeout  = time.Second * 30
 		interval = time.Millisecond * 250
 	)
+
+	AfterEach(func() {
+		ctx := context.Background()
+		resources := []struct {
+			res   client.Object
+			list  client.ObjectList
+			count func(client.ObjectList) int
+		}{
+			{
+				res:  &inventoryv1alpha1.Aggregate{},
+				list: &inventoryv1alpha1.AggregateList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.AggregateList)
+					return len(list.Items)
+				},
+			},
+			{
+				res:  &inventoryv1alpha1.Size{},
+				list: &inventoryv1alpha1.SizeList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.SizeList)
+					return len(list.Items)
+				},
+			},
+			{
+				res:  &inventoryv1alpha1.Inventory{},
+				list: &inventoryv1alpha1.InventoryList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.InventoryList)
+					return len(list.Items)
+				},
+			},
+		}
+
+		for _, r := range resources {
+			Expect(k8sClient.DeleteAllOf(ctx, r.res, client.InNamespace(SizeNamespace))).To(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.List(ctx, r.list)
+				if err != nil {
+					return false
+				}
+				if r.count(r.list) > 0 {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+		}
+	})
 
 	Context("When size CR is changed", func() {
 		It("Should be matched or unmatched to inventory CRs", func() {

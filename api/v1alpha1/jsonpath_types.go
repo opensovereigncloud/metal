@@ -57,6 +57,6 @@ func (in *JSONPath) ToK8sJSONPath() (*jsonpath.JSONPath, error) {
 }
 
 func (in *JSONPath) Tokenize() []string {
-	trimmed := strings.Trim(in.Path, "{}")
+	trimmed := strings.Trim(in.Path, "{.}")
 	return strings.Split(trimmed, ".")
 }

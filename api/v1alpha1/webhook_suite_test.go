@@ -149,6 +149,8 @@ var _ = BeforeSuite(func() {
 
 	err = (&Size{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
+	err = (&Aggregate{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:webhook
 
