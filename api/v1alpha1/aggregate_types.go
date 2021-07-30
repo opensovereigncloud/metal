@@ -126,8 +126,6 @@ func (in *Aggregate) Compute(inventory *Inventory) (interface{}, error) {
 				interfacedValues[i] = value.Interface()
 			}
 			aggregatedValue = interfacedValues
-		} else if valuesLen == 1 {
-			aggregatedValue = values[0].Interface()
 		} else {
 			aggregatedValue, err = makeAggregate(ai.Aggregate, values)
 		}

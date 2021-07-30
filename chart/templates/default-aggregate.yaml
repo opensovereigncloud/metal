@@ -1,5 +1,5 @@
-apiVersion: machine.onmetal.de/v1alpha1
-kind: Aggregate
+apiVersion: {{ .Values.crd.aggregate.group }}/v1alpha1
+kind: {{ .Values.crd.aggregate.kind }}
 metadata:
   name: default
 spec:

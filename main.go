@@ -107,6 +107,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Size")
 			os.Exit(1)
 		}
+		if err = (&machinev1alpha1.Aggregate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Aggregate")
+			os.Exit(1)
+		}
 	}
 
 	// +kubebuilder:scaffold:builder

@@ -257,7 +257,7 @@ var _ = Describe("Aggregate controller", func() {
 				if !ok {
 					return false
 				}
-				if coreCount.(int64) != 2 {
+				if coreCount.(string) != "2" {
 					return false
 				}
 				_, ok = aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["maxLogicalId"]
