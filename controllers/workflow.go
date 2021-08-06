@@ -29,6 +29,21 @@ type switchProcessor struct {
 	startPoint processorStep
 }
 
+func (c *switchProcessor) launch(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) (ctrl.Result, error) {
+	return executeStep(c.startPoint, obj, r, ctx)
+}
+
+func executeStep(step processorStep, obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) (ctrl.Result, error) {
+	if err := step.execute(obj, r, ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+	next := step.getNext()
+	if next != nil {
+		return executeStep(next, obj, r, ctx)
+	}
+	return ctrl.Result{}, nil
+}
+
 type processorStep interface {
 	setNext(processorStep)
 	getNext() processorStep
@@ -40,63 +55,6 @@ type step struct {
 }
 
 type preparationStep step
-type creationStep step
-type peersUpdateStep step
-type assignmentStep step
-type connectionsStep step
-type subnetsStep step
-type addressesStep step
-type deletionStep step
-type specUpdateState step
-type statusUpdateStep step
-
-func (p *deletionStep) setNext(processorStep) {}
-
-func (p *deletionStep) getNext() processorStep {
-	return p.next
-}
-
-func (p *deletionStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
-	if err := r.finalize(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to finalize resource",
-			"gvk", obj.GroupVersionKind().String(),
-			"name", obj.NamespacedName())
-		return err
-	}
-	return nil
-}
-
-func (p *specUpdateState) setNext(processorStep) {}
-
-func (p *specUpdateState) getNext() processorStep {
-	return p.next
-}
-
-func (p *specUpdateState) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
-	if err := r.Update(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to update resource",
-			"gvk", obj.GroupVersionKind().String(),
-			"name", obj.NamespacedName())
-		return err
-	}
-	return nil
-}
-
-func (p *statusUpdateStep) setNext(processorStep) {}
-
-func (p *statusUpdateStep) getNext() processorStep {
-	return p.next
-}
-
-func (p *statusUpdateStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
-	if err := r.Status().Update(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to update resource status",
-			"gvk", obj.GroupVersionKind().String(),
-			"name", obj.NamespacedName())
-		return err
-	}
-	return nil
-}
 
 func (p *preparationStep) setNext(next processorStep) {
 	p.next = next
@@ -115,6 +73,8 @@ func (p *preparationStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconcile
 	p.setNext(&creationStep{})
 	return nil
 }
+
+type creationStep step
 
 func (p *creationStep) setNext(next processorStep) {
 	p.next = next
@@ -138,6 +98,8 @@ func (p *creationStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, 
 	return nil
 }
 
+type peersUpdateStep step
+
 func (p *peersUpdateStep) setNext(next processorStep) {
 	p.next = next
 }
@@ -152,6 +114,8 @@ func (p *peersUpdateStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconcile
 	p.setNext(&statusUpdateStep{})
 	return nil
 }
+
+type assignmentStep step
 
 func (p *assignmentStep) setNext(next processorStep) {
 	p.next = next
@@ -181,6 +145,8 @@ func (p *assignmentStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler
 	return nil
 }
 
+type connectionsStep step
+
 func (p *connectionsStep) setNext(next processorStep) {
 	p.next = next
 }
@@ -208,6 +174,8 @@ func (p *connectionsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconcile
 	}
 	return nil
 }
+
+type subnetsStep step
 
 func (p *subnetsStep) setNext(next processorStep) {
 	p.next = next
@@ -243,6 +211,8 @@ func (p *subnetsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, c
 	return nil
 }
 
+type addressesStep step
+
 func (p *addressesStep) setNext(next processorStep) {
 	p.next = next
 }
@@ -258,17 +228,56 @@ func (p *addressesStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler,
 	return nil
 }
 
-func (c *switchProcessor) launch(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) (ctrl.Result, error) {
-	return executeStep(c.startPoint, obj, r, ctx)
+type deletionStep step
+
+func (p *deletionStep) setNext(processorStep) {}
+
+func (p *deletionStep) getNext() processorStep {
+	return p.next
 }
 
-func executeStep(step processorStep, obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) (ctrl.Result, error) {
-	if err := step.execute(obj, r, ctx); err != nil {
-		return ctrl.Result{}, err
+func (p *deletionStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
+	if err := r.finalize(ctx, obj); err != nil {
+		r.Log.Error(err, "failed to finalize resource",
+			"gvk", obj.GroupVersionKind().String(),
+			"name", obj.NamespacedName())
+		return err
 	}
-	next := step.getNext()
-	if next != nil {
-		return executeStep(next, obj, r, ctx)
+	return nil
+}
+
+type specUpdateState step
+
+func (p *specUpdateState) setNext(processorStep) {}
+
+func (p *specUpdateState) getNext() processorStep {
+	return p.next
+}
+
+func (p *specUpdateState) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
+	if err := r.Update(ctx, obj); err != nil {
+		r.Log.Error(err, "failed to update resource",
+			"gvk", obj.GroupVersionKind().String(),
+			"name", obj.NamespacedName())
+		return err
 	}
-	return ctrl.Result{}, nil
+	return nil
+}
+
+type statusUpdateStep step
+
+func (p *statusUpdateStep) setNext(processorStep) {}
+
+func (p *statusUpdateStep) getNext() processorStep {
+	return p.next
+}
+
+func (p *statusUpdateStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
+	if err := r.Status().Update(ctx, obj); err != nil {
+		r.Log.Error(err, "failed to update resource status",
+			"gvk", obj.GroupVersionKind().String(),
+			"name", obj.NamespacedName())
+		return err
+	}
+	return nil
 }

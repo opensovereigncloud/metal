@@ -27,8 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
@@ -61,6 +59,9 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if res.Spec.Host.Type == string(switchv1alpha1.MachineType) {
+		return ctrl.Result{}, nil
+	}
 	sw := &switchv1alpha1.Switch{}
 	if err := r.Get(ctx, types.NamespacedName{Namespace: switchv1alpha1.CNamespace, Name: res.Name}, sw); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -91,20 +92,5 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&inventoriesv1alpha1.Inventory{}).
-		WithEventFilter(r.setPredicates()).
 		Complete(r)
-}
-
-func (r *InventoryReconciler) setPredicates() predicate.Predicate {
-	return predicate.Funcs{
-		CreateFunc: r.checkInventoryType,
-	}
-}
-
-func (r *InventoryReconciler) checkInventoryType(e event.CreateEvent) bool {
-	src := e.Object.(*inventoriesv1alpha1.Inventory)
-	if src.Spec.Host.Type == string(switchv1alpha1.SwitchType) {
-		return true
-	}
-	return false
 }
