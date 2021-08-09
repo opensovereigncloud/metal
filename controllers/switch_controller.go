@@ -96,7 +96,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1alpha1.Switch{}).
 		Watches(&source.Kind{Type: &switchv1alpha1.SwitchAssignment{}}, handler.Funcs{
-			UpdateFunc: r.handleAssignmentUpdate(),
+			UpdateFunc: r.handleAssignmentUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchList{}),
 		}).
 		Watches(&source.Kind{Type: &switchv1alpha1.Switch{}}, handler.Funcs{
 			UpdateFunc: r.handleSwitchUpdate(mgr.GetScheme(), &switchv1alpha1.SwitchList{}),
@@ -107,11 +107,11 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *SwitchReconciler) handleAssignmentUpdate() func(event.UpdateEvent, workqueue.RateLimitingInterface) {
+func (r *SwitchReconciler) handleAssignmentUpdate(scheme *runtime.Scheme, ro runtime.Object) func(event.UpdateEvent, workqueue.RateLimitingInterface) {
 	return func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 		oldRes := e.ObjectOld.(*switchv1alpha1.SwitchAssignment)
 		updRes := e.ObjectNew.(*switchv1alpha1.SwitchAssignment)
-		if err := r.enqueueOnAssignmentUpdate(context.Background(), oldRes, updRes, q); err != nil {
+		if err := r.enqueueOnAssignmentUpdate(context.Background(), scheme, oldRes, updRes, q, ro); err != nil {
 			r.Log.Error(err, "failed to trigger reconciliation on switchAssignment resource update")
 		}
 	}
@@ -136,9 +136,11 @@ func (r *SwitchReconciler) handleSubnetUpdate(scheme *runtime.Scheme, ro runtime
 
 func (r *SwitchReconciler) enqueueOnAssignmentUpdate(
 	ctx context.Context,
+	scheme *runtime.Scheme,
 	oldRes *switchv1alpha1.SwitchAssignment,
 	updRes *switchv1alpha1.SwitchAssignment,
-	q workqueue.RateLimitingInterface) error {
+	q workqueue.RateLimitingInterface,
+	ro runtime.Object) error {
 
 	if !controllerutil.ContainsFinalizer(oldRes, switchv1alpha1.CSwitchAssignmentFinalizer) {
 		return nil
@@ -146,19 +148,23 @@ func (r *SwitchReconciler) enqueueOnAssignmentUpdate(
 	if updRes.Status.State == switchv1alpha1.StateFinished {
 		return nil
 	}
-	list := &switchv1alpha1.SwitchList{}
-	opts, err := updRes.GetListFilter()
+	list := &unstructured.UnstructuredList{}
+	gvk, err := apiutil.GVKForObject(ro, scheme)
 	if err != nil {
+		r.Log.Error(err, "unable to get gvk")
 		return err
 	}
-	if err := r.List(ctx, list, opts); err != nil {
+	list.SetGroupVersionKind(gvk)
+	if err := r.List(ctx, list); err != nil {
+		r.Log.Error(err, "unable to get list of items")
 		return err
 	}
-	if len(list.Items) == 0 {
-		return nil
+	for _, item := range list.Items {
+		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+			Namespace: item.GetNamespace(),
+			Name:      item.GetName(),
+		}})
 	}
-	obj := &list.Items[0]
-	q.Add(reconcile.Request{NamespacedName: obj.NamespacedName()})
 	return nil
 }
 
@@ -167,7 +173,6 @@ func (r *SwitchReconciler) enqueueOnSwitchUpdate(
 	scheme *runtime.Scheme,
 	q workqueue.RateLimitingInterface,
 	ro runtime.Object) error {
-	context.Background()
 
 	list := &unstructured.UnstructuredList{}
 	gvk, err := apiutil.GVKForObject(ro, scheme)

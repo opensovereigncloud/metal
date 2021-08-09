@@ -67,16 +67,15 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			log.Error(err, "failed to update switchAssignment resource")
 			return ctrl.Result{}, err
 		}
-	}
-
-	if res.Status.State == switchv1alpha1.EmptyString {
-		res.FillStatus(switchv1alpha1.StatePending, &switchv1alpha1.LinkedSwitchSpec{})
-		if err := r.Status().Update(ctx, res); err != nil {
-			log.Error(err, "failed to set status on resource creation", "name", res.NamespacedName())
-			return ctrl.Result{}, err
+	} else {
+		if res.Status.State == switchv1alpha1.EmptyString {
+			res.FillStatus(switchv1alpha1.StatePending, &switchv1alpha1.LinkedSwitchSpec{})
+			if err := r.Status().Update(ctx, res); err != nil {
+				log.Error(err, "failed to set status on resource creation", "name", res.NamespacedName())
+				return ctrl.Result{}, err
+			}
 		}
 	}
-
 	return ctrl.Result{}, nil
 }
 
