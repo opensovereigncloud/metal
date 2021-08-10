@@ -54,6 +54,10 @@ spec:
           jsonPath: .status.state
           name: State
           type: string
+        - description: Switch manager type
+          jsonPath: .status.configuration.type
+          name: Manager
+          type: string
       name: v1alpha1
       schema:
         openAPIV3Schema:
@@ -196,6 +200,19 @@ spec:
             status:
               description: SwitchStatus defines the observed state of Switch
               properties:
+                configuration:
+                  description: Configuration refers to current config management state
+                  properties:
+                    managed:
+                      description: Managed refers to management state
+                      type: boolean
+                    type:
+                      description: Type refers to management type
+                      type: string
+                  required:
+                    - managed
+                    - type
+                  type: object
                 connectionLevel:
                   description: ConnectionLevel refers the level of the connection
                   maximum: 255
@@ -350,6 +367,7 @@ spec:
                   description: State refers to current switch state
                   type: string
               required:
+                - configuration
                 - connectionLevel
                 - role
                 - scanPorts

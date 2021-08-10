@@ -42,6 +42,10 @@ const (
 	StateFinished     State = "Finished"
 	StateDeleting     State = "Deleting"
 
+	CConfigManagementTypeLocal  = "local"
+	CConfigManagementTypeRemote = "remote"
+	CConfigManagementTypeEmpty  = ""
+
 	LeafRole  Role = "Leaf"
 	SpineRole Role = "Spine"
 

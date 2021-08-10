@@ -212,6 +212,18 @@ type SwitchStatus struct {
 	//+kubebuilder:validation:Optional
 	//+nullable
 	LAGs map[string]*LagSpec `json:"lags"`
+	//Configuration refers to current config management state
+	//+kubebuilder:validation:Required
+	Configuration *ConfigurationSpec `json:"configuration"`
+}
+
+// ConfigurationSpec defines how switch's config is managed
+//+kubebuilder:object:generate=true
+type ConfigurationSpec struct {
+	//Managed refers to management state
+	Managed bool `json:"managed"`
+	//Type refers to management type
+	Type string `json:"type"`
 }
 
 // ConnectionsSpec defines upstream switches count and properties
@@ -274,6 +286,7 @@ type LagSpec struct {
 //+kubebuilder:printcolumn:name="SouthSubnetV6",type=string,JSONPath=`.status.southSubnetV6.cidr`,description="South IPv6 subnet"
 //+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.status.scanPorts`,description="Request for scan ports"
 //+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Switch processing state"
+//+kubebuilder:printcolumn:name="Manager",type=string,JSONPath=`.status.configuration.type`,description="Switch manager type"
 
 // Switch is the Schema for the switches API
 type Switch struct {
@@ -684,6 +697,10 @@ func (in *Switch) FillStatusOnCreate() {
 		State:     StateInitializing,
 		ScanPorts: false,
 		LAGs:      nil,
+		Configuration: &ConfigurationSpec{
+			Managed: false,
+			Type:    CConfigManagementTypeEmpty,
+		},
 	}
 }
 
