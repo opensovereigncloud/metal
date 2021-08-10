@@ -368,7 +368,6 @@ spec:
                 description: State refers to current switch state
                 type: string
             required:
-            - configuration
             - connectionLevel
             - role
             - scanPorts

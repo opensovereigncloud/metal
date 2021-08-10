@@ -213,7 +213,7 @@ type SwitchStatus struct {
 	//+nullable
 	LAGs map[string]*LagSpec `json:"lags"`
 	//Configuration refers to current config management state
-	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Optional
 	Configuration *ConfigurationSpec `json:"configuration"`
 }
 
