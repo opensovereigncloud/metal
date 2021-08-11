@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"reflect"
+	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -25,23 +27,33 @@ import (
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
+const CSwitchRequeueInterval = time.Second
+
 type switchProcessor struct {
 	startPoint processorStep
 }
 
 func (c *switchProcessor) launch(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) (ctrl.Result, error) {
-	return executeStep(c.startPoint, obj, r, ctx)
+	initialState := obj.DeepCopy()
+	if err := executeStep(c.startPoint, obj, r, ctx); err != nil {
+		return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, err
+	}
+
+	if reflect.DeepEqual(initialState.Spec, obj.Spec) && reflect.DeepEqual(initialState.Status, obj.Status) {
+		return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, nil
+	}
+	return ctrl.Result{}, nil
 }
 
-func executeStep(step processorStep, obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) (ctrl.Result, error) {
+func executeStep(step processorStep, obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
 	if err := step.execute(obj, r, ctx); err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 	next := step.getNext()
 	if next != nil {
 		return executeStep(next, obj, r, ctx)
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
 type processorStep interface {
@@ -192,15 +204,18 @@ func (p *subnetsStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, c
 				obj.FillPortChannelsAddresses()
 				if obj.Status.State != switchv1alpha1.StateReady {
 					obj.Status.State = switchv1alpha1.StateReady
+					p.setNext(&statusUpdateStep{})
+					return nil
+				} else {
+					p.setNext(&configManagerStateStep{})
+					return nil
 				}
-				p.setNext(&statusUpdateStep{})
-				return nil
 			}
 		}
 		p.setNext(&addressesStep{})
 		return nil
 	} else {
-		if err := r.defineSubnets(ctx, obj, r.Background.switches, r.Background.assignment); err != nil {
+		if err := r.defineSubnets(ctx, obj); err != nil {
 			r.Log.Error(err, "failed to define south subnets",
 				"gvk", obj.GroupVersionKind().String(),
 				"name", obj.NamespacedName())
@@ -225,6 +240,30 @@ func (p *addressesStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler,
 	obj.UpdateSouthInterfacesAddresses()
 	obj.UpdateNorthInterfacesAddresses(r.Background.switches)
 	p.setNext(&specUpdateState{})
+	return nil
+}
+
+type configManagerStateStep step
+
+func (p *configManagerStateStep) setNext(processorStep) {}
+
+func (p *configManagerStateStep) getNext() processorStep {
+	return p.next
+}
+
+func (p *configManagerStateStep) execute(obj *switchv1alpha1.Switch, r *SwitchReconciler, ctx context.Context) error {
+	if obj.Status.Configuration == nil {
+		obj.Status.Configuration = &switchv1alpha1.ConfigurationSpec{
+			Managed: false,
+		}
+	} else {
+		if obj.Status.Configuration.Managed {
+			if obj.ConfigurationCheckTimeoutExpired() {
+				obj.SetConfigurationStateFailed()
+			}
+		}
+	}
+	p.setNext(&statusUpdateStep{})
 	return nil
 }
 

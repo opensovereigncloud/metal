@@ -44,7 +44,7 @@ const (
 
 	CConfigManagementTypeLocal  = "local"
 	CConfigManagementTypeRemote = "remote"
-	CConfigManagementTypeEmpty  = ""
+	CConfigManagementTypeFailed = "failed"
 
 	LeafRole  Role = "Leaf"
 	SpineRole Role = "Spine"

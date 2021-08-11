@@ -204,6 +204,10 @@ spec:
               configuration:
                 description: Configuration refers to current config management state
                 properties:
+                  lastCheck:
+                    description: LastCheck refers to time of the last configuration
+                      check
+                    type: string
                   managed:
                     description: Managed refers to management state
                     type: boolean
@@ -211,6 +215,7 @@ spec:
                     description: Type refers to management type
                     type: string
                 required:
+                - lastCheck
                 - managed
                 - type
                 type: object

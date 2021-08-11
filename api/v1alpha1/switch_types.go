@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
@@ -32,6 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const CSwitchConfigCheckTimeout = time.Second * 10
 
 //ConnectionsMap
 //+kubebuilder:object:generate=false
@@ -224,6 +227,8 @@ type ConfigurationSpec struct {
 	Managed bool `json:"managed"`
 	//Type refers to management type
 	Type string `json:"type"`
+	//LastCheck refers to time of the last configuration check
+	LastCheck string `json:"lastCheck"`
 }
 
 // ConnectionsSpec defines upstream switches count and properties
@@ -699,7 +704,6 @@ func (in *Switch) FillStatusOnCreate() {
 		LAGs:      nil,
 		Configuration: &ConfigurationSpec{
 			Managed: false,
-			Type:    CConfigManagementTypeEmpty,
 		},
 	}
 }
@@ -1045,6 +1049,20 @@ func (in *Switch) FillPortChannelsAddresses() {
 			pChannel.IPv6 = iface.IPv6
 		}
 	}
+}
+
+// ConfigurationCheckTimeoutExpired checks whether last config check
+// was carried out too long ago
+func (in *Switch) ConfigurationCheckTimeoutExpired() bool {
+	lastCheck, _ := time.Parse(time.UnixDate, in.Status.Configuration.LastCheck)
+	if time.Now().Sub(lastCheck) > CSwitchConfigCheckTimeout {
+		return true
+	}
+	return false
+}
+
+func (in *Switch) SetConfigurationStateFailed() {
+	in.Status.Configuration.Type = CConfigManagementTypeFailed
 }
 
 // RequestAddress returns the IP address next for the
