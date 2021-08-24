@@ -24,7 +24,7 @@ jobs:
           version: v3.4.0
 
       - name: Run chart-releaser
-      - uses: goodsmileduck/helm-push-action@v3.3.1
+        uses: goodsmileduck/helm-push-action@v3.3.1
         env:
           SOURCE_DIR: '.'
           CHART_FOLDER: 'chart'
