@@ -59,6 +59,45 @@ type InventorySpec struct {
 	// Distro contains info about OS distro
 	// +kubebuilder:validation:Optional
 	Distro *DistroSpec `json:"distro,omitempty"`
+	// Benchmark contains benchmarks results
+	// +kubebuilder:validation:Optional
+	Benchmark *BenchmarkSpec `json:"benchmark"`
+}
+
+// BenchmarkSpec contains benchmark results for inventory item
+// +kubebuilder:object:generate=true
+type BenchmarkSpec struct {
+	// +kubebuilder:validation:Required
+	Blocks []BlockBenchmarkResult
+	// +kubebuilder:validation:Required
+	Network *NetworkBenchmarkResult
+}
+
+// BlockBenchmarkResult contains block (device) benchmark results
+// +kubebuilder:object:generate=true
+type BlockBenchmarkResult struct {
+	// BlockName contains full device name (like "/dev/hda" etc)
+	// +kubebuilder:validation:Required
+	BlockName string `json:"block_name"`
+	// ReadIOAmount contains result of read benchmark with minimal block size in Gib/s
+	// +kubebuilder:validation:Required
+	ReadIOAmount float64 `json:"read_io_amount"`
+	// WriteIOAmount contains result of write benchmark with minimal block size in Gib/s
+	// +kubebuilder:validation:Optional
+	WriteIOAmount float64 `json:"write_io_amount"`
+	// BandwidthReadIOAmount contains result of read benchmark with maximum block size in Gib/s
+	// +kubebuilder:validation:Optional
+	BandwidthReadIOAmount float64 `json:"bandwidth_read_io_amount"`
+	// BandwidthWriteIOAmount contains result of write benchmark with maximum block size in Gib/s
+	// +kubebuilder:validation:Optional
+	BandwidthWriteIOAmount float64 `json:"bandwidth_write_io_amount"`
+}
+
+// NetworkBenchmarkResult contains inventory machines network benchmark result
+type NetworkBenchmarkResult struct {
+	// AverageNetworkThroughput contains network benchmark result in Gbps
+	// +kubebuilder:validation:Required
+	AverageNetworkThroughput float64 `json:"average_network_throughput"`
 }
 
 // SystemSpec contains DMI system information
