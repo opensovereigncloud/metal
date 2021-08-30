@@ -68,9 +68,9 @@ type InventorySpec struct {
 // +kubebuilder:object:generate=true
 type BenchmarkSpec struct {
 	// +kubebuilder:validation:Required
-	Blocks []BlockBenchmarkResult
+	Blocks []BlockBenchmarkResult `json:"blocks"`
 	// +kubebuilder:validation:Required
-	Network *NetworkBenchmarkResult
+	Network *NetworkBenchmarkResult `json:"network"`
 }
 
 // BlockBenchmarkResult contains block (device) benchmark results
@@ -78,26 +78,27 @@ type BenchmarkSpec struct {
 type BlockBenchmarkResult struct {
 	// BlockName contains full device name (like "/dev/hda" etc)
 	// +kubebuilder:validation:Required
-	BlockName string `json:"block_name"`
-	// ReadIOAmount contains result of read benchmark with minimal block size in Gib/s
+	BlockName string `json:"blockName"`
+	// BPSRead contains result of read benchmark with minimal block size in bytes/s
 	// +kubebuilder:validation:Required
-	ReadIOAmount float64 `json:"read_io_amount"`
-	// WriteIOAmount contains result of write benchmark with minimal block size in Gib/s
+	BPSRead uint64 `json:"bpsRead"`
+	// BPSWrite contains result of write benchmark with minimal block size in bytes/s
 	// +kubebuilder:validation:Optional
-	WriteIOAmount float64 `json:"write_io_amount"`
-	// BandwidthReadIOAmount contains result of read benchmark with maximum block size in Gib/s
+	BPSWrite uint64 `json:"bpsWrite"`
+	// BandwidthRead contains result of read benchmark with maximum block size in bytes/s
 	// +kubebuilder:validation:Optional
-	BandwidthReadIOAmount float64 `json:"bandwidth_read_io_amount"`
-	// BandwidthWriteIOAmount contains result of write benchmark with maximum block size in Gib/s
+	BandwidthRead uint64 `json:"bandwidthRead"`
+	// BandwidthWrite contains result of write benchmark with maximum block size in bytes/s
 	// +kubebuilder:validation:Optional
-	BandwidthWriteIOAmount float64 `json:"bandwidth_write_io_amount"`
+	BandwidthWrite uint64 `json:"bandwidthWrite"`
 }
 
 // NetworkBenchmarkResult contains inventory machines network benchmark result
+// +kubebuilder:object:generate=true
 type NetworkBenchmarkResult struct {
-	// AverageNetworkThroughput contains network benchmark result in Gbps
+	// AverageNetworkThroughput contains network benchmark result in bytes/s
 	// +kubebuilder:validation:Required
-	AverageNetworkThroughput float64 `json:"average_network_throughput"`
+	AverageNetworkThroughput uint64 `json:"averageNetworkThroughput"`
 }
 
 // SystemSpec contains DMI system information
