@@ -79,26 +79,26 @@ type BlockBenchmarkResult struct {
 	// BlockName contains full device name (like "/dev/hda" etc)
 	// +kubebuilder:validation:Required
 	BlockName string `json:"blockName"`
-	// BPSRead contains result of read benchmark with minimal block size in bytes/s
+	// SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)
 	// +kubebuilder:validation:Required
-	BPSRead uint64 `json:"bpsRead"`
-	// BPSWrite contains result of write benchmark with minimal block size in bytes/s
+	SmallBlockReadIOPS uint64 `json:"smallBlockReadIops"`
+	// SmallBlockWriteIOPS contains benchmark result for write IOPS with small block size (device specified block size)
 	// +kubebuilder:validation:Optional
-	BPSWrite uint64 `json:"bpsWrite"`
-	// BandwidthRead contains result of read benchmark with maximum block size in bytes/s
+	SmallBlockWriteIOPS uint64 `json:"smallBlockWriteIops"`
+	// BandwidthReadIOPS contains benchmark result for read IOPS with large block size (much larger then device specified block size)
 	// +kubebuilder:validation:Optional
-	BandwidthRead uint64 `json:"bandwidthRead"`
-	// BandwidthWrite contains result of write benchmark with maximum block size in bytes/s
+	BandwidthReadIOPS uint64 `json:"bandwidthReadIops"`
+	// BandwidthWriteIOPS contains benchmark result for write IOPS with large block size (much larger then device specified block size)
 	// +kubebuilder:validation:Optional
-	BandwidthWrite uint64 `json:"bandwidthWrite"`
+	BandwidthWriteIOPS uint64 `json:"bandwidthWriteIops"`
 }
 
 // NetworkBenchmarkResult contains inventory machines network benchmark result
 // +kubebuilder:object:generate=true
 type NetworkBenchmarkResult struct {
-	// AverageNetworkThroughput contains network benchmark result in bytes/s
+	// AverageNetworkThroughputBPS contains network benchmark result in bytes/s
 	// +kubebuilder:validation:Required
-	AverageNetworkThroughput uint64 `json:"averageNetworkThroughput"`
+	AverageNetworkThroughputBPS uint64 `json:"averageNetworkThroughputBps"`
 }
 
 // SystemSpec contains DMI system information
