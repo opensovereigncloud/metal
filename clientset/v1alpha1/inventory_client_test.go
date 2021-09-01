@@ -105,6 +105,10 @@ var _ = Describe("Inventory client", func() {
 						Type: "Machine",
 						Name: "dummy.localdomain",
 					},
+					Benchmark: &v1alpha1.BenchmarkSpec{
+						Blocks:  []v1alpha1.BlockBenchmarkResult{},
+						Network: &v1alpha1.NetworkBenchmarkResult{},
+					},
 				},
 			}
 

@@ -409,6 +409,10 @@ func inventoryTemplate() *inventoryv1alpha1.Inventory {
 				Type: "Machine",
 				Name: "dummy.localdomain",
 			},
+			Benchmark: &inventoryv1alpha1.BenchmarkSpec{
+				Blocks:  []inventoryv1alpha1.BlockBenchmarkResult{},
+				Network: &inventoryv1alpha1.NetworkBenchmarkResult{},
+			},
 		},
 	}
 }
