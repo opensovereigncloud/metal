@@ -41,6 +41,13 @@ service:
   type: ClusterIP
   port: 8443
 
+webhookService:
+  type: "ClusterIP"
+  port: 9443
+
+cluster:
+  domain: "cluster.local"
+
 crd:
   inventory:
     group: machine.onmetal.de
