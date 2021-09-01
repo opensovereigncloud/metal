@@ -59,6 +59,46 @@ type InventorySpec struct {
 	// Distro contains info about OS distro
 	// +kubebuilder:validation:Optional
 	Distro *DistroSpec `json:"distro,omitempty"`
+	// Benchmark contains benchmarks results
+	// +kubebuilder:validation:Optional
+	Benchmark *BenchmarkSpec `json:"benchmark"`
+}
+
+// BenchmarkSpec contains benchmark results for inventory item
+// +kubebuilder:object:generate=true
+type BenchmarkSpec struct {
+	// +kubebuilder:validation:Required
+	Blocks []BlockBenchmarkResult `json:"blocks"`
+	// +kubebuilder:validation:Required
+	Network *NetworkBenchmarkResult `json:"network"`
+}
+
+// BlockBenchmarkResult contains block (device) benchmark results
+// +kubebuilder:object:generate=true
+type BlockBenchmarkResult struct {
+	// BlockName contains full device name (like "/dev/hda" etc)
+	// +kubebuilder:validation:Required
+	BlockName string `json:"blockName"`
+	// SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)
+	// +kubebuilder:validation:Required
+	SmallBlockReadIOPS uint64 `json:"smallBlockReadIops"`
+	// SmallBlockWriteIOPS contains benchmark result for write IOPS with small block size (device specified block size)
+	// +kubebuilder:validation:Optional
+	SmallBlockWriteIOPS uint64 `json:"smallBlockWriteIops"`
+	// BandwidthReadIOPS contains benchmark result for read IOPS with large block size (much larger then device specified block size)
+	// +kubebuilder:validation:Optional
+	BandwidthReadIOPS uint64 `json:"bandwidthReadIops"`
+	// BandwidthWriteIOPS contains benchmark result for write IOPS with large block size (much larger then device specified block size)
+	// +kubebuilder:validation:Optional
+	BandwidthWriteIOPS uint64 `json:"bandwidthWriteIops"`
+}
+
+// NetworkBenchmarkResult contains inventory machines network benchmark result
+// +kubebuilder:object:generate=true
+type NetworkBenchmarkResult struct {
+	// AverageNetworkThroughputBPS contains network benchmark result in bytes/s
+	// +kubebuilder:validation:Required
+	AverageNetworkThroughputBPS uint64 `json:"averageNetworkThroughputBps"`
 }
 
 // SystemSpec contains DMI system information

@@ -66,6 +66,63 @@ spec:
             description: InventorySpec contains result of inventorization process
               on the host
             properties:
+              benchmark:
+                description: Benchmark contains benchmarks results
+                properties:
+                  blocks:
+                    items:
+                      description: BlockBenchmarkResult contains block (device) benchmark
+                        results
+                      properties:
+                        bandwidthReadIops:
+                          description: BandwidthReadIOPS contains benchmark result
+                            for read IOPS with large block size (much larger then
+                            device specified block size)
+                          format: int64
+                          type: integer
+                        bandwidthWriteIops:
+                          description: BandwidthWriteIOPS contains benchmark result
+                            for write IOPS with large block size (much larger then
+                            device specified block size)
+                          format: int64
+                          type: integer
+                        blockName:
+                          description: BlockName contains full device name (like "/dev/hda"
+                            etc)
+                          type: string
+                        smallBlockReadIops:
+                          description: SmallBlockReadIOPS contains benchmark result
+                            for read IOPS with small block size (device specified
+                            block size)
+                          format: int64
+                          type: integer
+                        smallBlockWriteIops:
+                          description: SmallBlockWriteIOPS contains benchmark result
+                            for write IOPS with small block size (device specified
+                            block size)
+                          format: int64
+                          type: integer
+                      required:
+                      - blockName
+                      - smallBlockReadIops
+                      type: object
+                    type: array
+                  network:
+                    description: NetworkBenchmarkResult contains inventory machines
+                      network benchmark result
+                    properties:
+                      averageNetworkThroughputBps:
+                        description: AverageNetworkThroughputBPS contains network
+                          benchmark result in bytes/s
+                        format: int64
+                        type: integer
+                    required:
+                    - averageNetworkThroughputBps
+                    type: object
+                required:
+                - blocks
+                - network
+                type: object
               blocks:
                 description: Blocks contains info about block devices on the host
                 properties:
