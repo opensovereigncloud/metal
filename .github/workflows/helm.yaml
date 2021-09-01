@@ -1,11 +1,30 @@
 name: Release - Helm
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
-      - master
+      - main
 
 jobs:
+  helm-lint:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - uses: azure/setup-helm@v1
+        with:
+          version: 'v3.6.2'
+
+      - name: Lint Helm
+        run: |
+          helm lint chart --strict
+
   release:
     runs-on: ubuntu-latest
     steps:
