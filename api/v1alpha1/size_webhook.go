@@ -313,6 +313,10 @@ func getDummyInventorySpec() *InventorySpec {
 			BuildNumber:   0,
 			BuildBy:       "",
 		},
+		Benchmark: &BenchmarkSpec{
+			Blocks:  []BlockBenchmarkResult{},
+			Network: &NetworkBenchmarkResult{},
+		},
 	}
 }
 
