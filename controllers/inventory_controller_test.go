@@ -478,4 +478,107 @@ var _ = Describe("Inventory controller", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 	})
+
+	Context("When inventory CR is created and updated", func() {
+		It("Labels should be updated accordingly", func() {
+			ctx := context.Background()
+			By("Inventory is installed")
+			testInventory := inventoryv1alpha1.Inventory{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      InventoryName,
+					Namespace: InventoryNamespace,
+				},
+				Spec: inventoryv1alpha1.InventorySpec{
+					System: &inventoryv1alpha1.SystemSpec{
+						ID:           "a967954c-3475-11b2-a85c-84d8b4f8cd2d",
+						Manufacturer: "LENOVO",
+						ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
+						SerialNumber: "R90QR6J0",
+					},
+					Blocks: &inventoryv1alpha1.BlockTotalSpec{
+						Count:    1,
+						Capacity: 1,
+						Blocks: []inventoryv1alpha1.BlockSpec{
+							{
+								Name:       "JustDisk",
+								Type:       "SCSI",
+								Rotational: true,
+								Model:      "greatModel",
+								Size:       1000,
+							},
+						},
+					},
+					Memory: &inventoryv1alpha1.MemorySpec{
+						Total: 1024000,
+					},
+					CPUs: &inventoryv1alpha1.CPUTotalSpec{
+						Sockets: 1,
+						Cores:   2,
+						Threads: 4,
+						CPUs: []inventoryv1alpha1.CPUSpec{
+							{
+								PhysicalID: 0,
+								LogicalIDs: []uint64{0, 1, 2, 3},
+								Cores:      2,
+								Siblings:   4,
+								VendorID:   "GenuineIntel",
+								Model:      "78",
+								ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
+							},
+						},
+					},
+					NICs: &inventoryv1alpha1.NICTotalSpec{
+						Count: 1,
+						NICs: []inventoryv1alpha1.NICSpec{
+							{
+								Name:       "enp0s31f6",
+								PCIAddress: "0000:00:1f.6",
+								MACAddress: "48:2a:e3:02:d9:e8",
+								MTU:        1400,
+								Speed:      1000,
+							},
+						},
+					},
+					Host: &inventoryv1alpha1.HostSpec{
+						Type: "Machine",
+						Name: "dummy.localdomain",
+					},
+					Benchmark: &inventoryv1alpha1.BenchmarkSpec{
+						Blocks:  []inventoryv1alpha1.BlockBenchmarkResult{},
+						Network: &inventoryv1alpha1.NetworkBenchmarkResult{},
+					},
+				},
+			}
+
+			Expect(k8sClient.Create(ctx, &testInventory)).Should(Succeed())
+			inventoryNamespacedName := types.NamespacedName{
+				Namespace: InventoryNamespace,
+				Name:      InventoryName,
+			}
+			createdInventory := inventoryv1alpha1.Inventory{}
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, inventoryNamespacedName, &createdInventory)
+				if err != nil {
+					return false
+				}
+				return createdInventory.Labels[inventoryv1alpha1.CInventoryTypeLabel] == "Machine" &&
+					createdInventory.Labels[inventoryv1alpha1.CInventoryHostnameLabel] == "dummy.localdomain"
+			}, timeout, interval).Should(BeTrue())
+
+			By("When hostname and type changed")
+			createdInventory.Spec.Host.Type = "Switch"
+			createdInventory.Spec.Host.Name = "coolname.localdomain"
+			Expect(k8sClient.Update(ctx, &createdInventory)).Should(Succeed())
+
+			By("Then hostname and type labels should also change eventually")
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, inventoryNamespacedName, &createdInventory)
+				if err != nil {
+					return false
+				}
+				return createdInventory.Labels[inventoryv1alpha1.CInventoryTypeLabel] == "Switch" &&
+					createdInventory.Labels[inventoryv1alpha1.CInventoryHostnameLabel] == "coolname.localdomain"
+			}, timeout, interval).Should(BeTrue())
+		})
+	})
 })
