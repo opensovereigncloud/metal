@@ -124,12 +124,9 @@ type ParentSubnetSpec struct {
 	// Namespace refers to the subnet resource name where CIDR was booked
 	//+kubebuilder:validation:Optional
 	Namespace string `json:"namespace"`
-	// Regions refers to parent subnet regions
+	// Region refers to parent subnet regions
 	//+kubebuilder:validation:Optional
-	Regions []string `json:"regions"`
-	// AvailabilityZones refers to parent subnet availability zones
-	//+kubebuilder:validation:Optional
-	AvailabilityZones []string `json:"availabilityZones"`
+	Region *RegionSpec `json:"region"`
 }
 
 //SwitchChassisSpec defines switch chassis details
@@ -826,8 +823,7 @@ func (in *Switch) ConnectionLevelDefined(swl *SwitchList, swa *SwitchAssignment)
 func (in *Switch) GetSuitableSubnet(
 	subnets *subnetv1alpha1.SubnetList,
 	addressType subnetv1alpha1.SubnetAddressType,
-	regions []string,
-	zones []string) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet) {
+	regions []subnetv1alpha1.Region) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet) {
 
 	var subnetName string
 	addressesNeeded := in.getAddressCount(addressType)
@@ -839,8 +835,7 @@ func (in *Switch) GetSuitableSubnet(
 	for _, sn := range subnets.Items {
 		if sn.Name == subnetName &&
 			sn.Status.Type == addressType &&
-			reflect.DeepEqual(sn.Spec.Regions, regions) &&
-			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
+			reflect.DeepEqual(sn.Spec.Regions, regions) {
 			addressesLeft := sn.Status.CapacityLeft
 			if sn.Status.Type == addressType && addressesLeft.CmpInt64(addressesNeeded) >= 0 {
 				minVacantCIDR := getMinimalVacantCIDR(sn.Status.Vacant, addressType, addressesNeeded)

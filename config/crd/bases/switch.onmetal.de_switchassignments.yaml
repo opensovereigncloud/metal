@@ -24,11 +24,11 @@ spec:
       name: Switch Chassis ID
       type: string
     - description: switch's region
-      jsonPath: .spec.region
+      jsonPath: .spec.region.name
       name: Region
       type: string
     - description: switch's AZ
-      jsonPath: .spec.availabilityZone
+      jsonPath: .spec.region.availabilityZone
       name: Availability Zone
       type: string
     - description: Assignment state
@@ -55,19 +55,26 @@ spec:
           spec:
             description: SwitchAssignmentSpec defines the desired state of SwitchAssignment
             properties:
-              availabilityZone:
-                description: AvailabilityZone refers to the switch's availability
-                  zone
-                type: string
               chassisId:
                 description: ChassisID refers to switch chassis id
                 pattern: ^([0-9a-fA-F]{2}[:]){5}([0-9a-fA-F]{2})$
                 type: string
               region:
                 description: Region refers to the switch's region
-                type: string
+                properties:
+                  availabilityZone:
+                    description: AvailabilityZone refers to the switch's availability
+                      zone
+                    type: string
+                  name:
+                    description: Name refers to the switch's region
+                    pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                    type: string
+                required:
+                - availabilityZone
+                - name
+                type: object
             required:
-            - availabilityZone
             - chassisId
             - region
             type: object

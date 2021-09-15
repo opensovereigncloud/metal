@@ -1,7 +1,6 @@
 apiVersion: machine.onmetal.de/v1alpha1
 kind: Inventory
 metadata:
-  generation: 1
   labels:
     machine.onmetal.de/mac-address-eth0: 68-21-5f-47-15-6e
     machine.onmetal.de/mac-address-ethernet0: 68-21-5f-47-15-6e
@@ -448,3 +447,9 @@ spec:
     serialNumber: 772632X1950885
   virt:
     vmType: none
+  benchmark:
+    blocks:
+      - blockName: sda
+        smallBlockReadIops: 1000
+    network:
+      averageNetworkThroughputBps: 1000

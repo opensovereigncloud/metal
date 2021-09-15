@@ -4,5 +4,6 @@ metadata:
   name: switchassignment-1950221
 spec:
   chassisId: 68:21:5f:47:0a:6e
-  region: EU-West
-  availabilityZone: A
+  region:
+    name: eu-west
+    availabilityZone: A

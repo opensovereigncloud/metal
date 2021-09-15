@@ -1,4 +1,4 @@
 resources:
   - network_sample.yaml
-  - subnet_sample_v4.yaml
-  - subnet_sample_v6.yaml
+  - switch_ranges_v4.yaml
+  - switch_ranges_v6.yaml

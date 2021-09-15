@@ -343,12 +343,6 @@ spec:
                       description: ParentSubnet refers to the subnet resource namespaced
                         name where CIDR was booked
                       properties:
-                        availabilityZones:
-                          description: AvailabilityZones refers to parent subnet availability
-                            zones
-                          items:
-                            type: string
-                          type: array
                         name:
                           description: Name refers to the subnet resource name where
                             CIDR was booked
@@ -357,11 +351,21 @@ spec:
                           description: Namespace refers to the subnet resource name
                             where CIDR was booked
                           type: string
-                        regions:
-                          description: Regions refers to parent subnet regions
-                          items:
-                            type: string
-                          type: array
+                        region:
+                          description: Region refers to parent subnet regions
+                          properties:
+                            availabilityZone:
+                              description: AvailabilityZone refers to the switch's availability
+                                zone
+                              type: string
+                            name:
+                              description: Name refers to the switch's region
+                              pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                              type: string
+                          required:
+                            - availabilityZone
+                            - name
+                          type: object
                       type: object
                   type: object
                 southSubnetV6:
@@ -375,12 +379,6 @@ spec:
                       description: ParentSubnet refers to the subnet resource namespaced
                         name where CIDR was booked
                       properties:
-                        availabilityZones:
-                          description: AvailabilityZones refers to parent subnet availability
-                            zones
-                          items:
-                            type: string
-                          type: array
                         name:
                           description: Name refers to the subnet resource name where
                             CIDR was booked
@@ -389,11 +387,21 @@ spec:
                           description: Namespace refers to the subnet resource name
                             where CIDR was booked
                           type: string
-                        regions:
-                          description: Regions refers to parent subnet regions
-                          items:
-                            type: string
-                          type: array
+                        region:
+                          description: Region refers to parent subnet regions
+                          properties:
+                            availabilityZone:
+                              description: AvailabilityZone refers to the switch's availability
+                                zone
+                              type: string
+                            name:
+                              description: Name refers to the switch's region
+                              pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                              type: string
+                          required:
+                            - availabilityZone
+                            - name
+                          type: object
                       type: object
                   type: object
                 state:

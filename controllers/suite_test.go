@@ -34,8 +34,6 @@ import (
 	subnet "github.com/onmetal/ipam/controllers"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	inventory "github.com/onmetal/k8s-inventory/controllers"
-	sizev1alpha1 "github.com/onmetal/k8s-size/api/v1alpha1"
-	size "github.com/onmetal/k8s-size/controllers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/mod/modfile"
@@ -69,9 +67,9 @@ const (
 	LoopbackSubnetV6     = "switches-v6"
 	SubnetIPv4CIDR       = "100.64.0.0/16"
 	LoopbackIPv4CIDR     = "100.64.0.0/24"
-	SubnetIPv6CIDR       = "2001:db8:1000:0012::0/64"
-	LoopbackIPv6CIDR     = "2001:db8:1000:0012::0/124"
-	TestRegion           = "EU-West"
+	SubnetIPv6CIDR       = "64:ff9b:1::/112"
+	LoopbackIPv6CIDR     = "64:ff9b:1::/120"
+	TestRegion           = "eu-west"
 	TestAvailabilityZone = "A"
 )
 
@@ -95,11 +93,11 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	inventoryGlobalCrdPath := getCrdPath(inventoriesv1alpha1.Inventory{})
 	subnetGlobalCrdPath := getCrdPath(subnetv1alpha1.Subnet{})
-	sizeGlobalCrdPath := getCrdPath(sizev1alpha1.Size{})
+	//sizeGlobalCrdPath := getCrdPath(sizev1alpha1.Size{})
 	switchGlobalCrdPath := filepath.Join("..", "config", "crd", "bases")
 
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath, sizeGlobalCrdPath, subnetGlobalCrdPath},
+		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath, subnetGlobalCrdPath},
 		ErrorIfCRDPathMissing: true,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "config", "webhook")},
@@ -111,8 +109,8 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	globalScheme := scheme.Scheme
-	err = sizev1alpha1.AddToScheme(globalScheme)
-	Expect(err).NotTo(HaveOccurred())
+	//err = sizev1alpha1.AddToScheme(globalScheme)
+	//Expect(err).NotTo(HaveOccurred())
 	err = switchv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = inventoriesv1alpha1.AddToScheme(globalScheme)
@@ -126,28 +124,28 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	By("Set up k8s-size manager")
-	sizeScheme := scheme.Scheme
-	err = sizev1alpha1.AddToScheme(sizeScheme)
-	Expect(err).NotTo(HaveOccurred())
-	k8sSizeManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             sizeScheme,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
-	})
-	Expect(err).ToNot(HaveOccurred())
-	err = (&size.SizeReconciler{
-		Client: k8sSizeManager.GetClient(),
-		Scheme: k8sSizeManager.GetScheme(),
-		Log:    ctrl.Log.WithName("k8s-size").WithName("size"),
-	}).SetupWithManager(k8sSizeManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		defer GinkgoRecover()
-		err = k8sSizeManager.Start(ctx)
-		Expect(err).ToNot(HaveOccurred())
-	}()
+	//By("Set up k8s-size manager")
+	//sizeScheme := scheme.Scheme
+	//err = sizev1alpha1.AddToScheme(sizeScheme)
+	//Expect(err).NotTo(HaveOccurred())
+	//k8sSizeManager, err := ctrl.NewManager(cfg, ctrl.Options{
+	//	Scheme:             sizeScheme,
+	//	LeaderElection:     false,
+	//	MetricsBindAddress: "0",
+	//})
+	//Expect(err).ToNot(HaveOccurred())
+	//err = (&size.SizeReconciler{
+	//	Client: k8sSizeManager.GetClient(),
+	//	Scheme: k8sSizeManager.GetScheme(),
+	//	Log:    ctrl.Log.WithName("k8s-size").WithName("size"),
+	//}).SetupWithManager(k8sSizeManager)
+	//Expect(err).ToNot(HaveOccurred())
+	//
+	//go func() {
+	//	defer GinkgoRecover()
+	//	err = k8sSizeManager.Start(ctx)
+	//	Expect(err).ToNot(HaveOccurred())
+	//}()
 
 	By("Set up k8s-inventory manager")
 	inventoryScheme := scheme.Scheme
@@ -281,10 +279,14 @@ var _ = BeforeSuite(func() {
 			Namespace: OnmetalNamespace,
 		},
 		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:              cidrV4,
-			NetworkName:       UnderlayNetwork,
-			Regions:           []string{TestRegion},
-			AvailabilityZones: []string{TestAvailabilityZone},
+			CIDR:        cidrV4,
+			NetworkName: UnderlayNetwork,
+			Regions: []subnetv1alpha1.Region{
+				{
+					Name:              TestRegion,
+					AvailabilityZones: []string{TestAvailabilityZone},
+				},
+			},
 		},
 	}
 	Expect(k8sClient.Create(ctx, subnetV4)).To(Succeed())
@@ -303,11 +305,15 @@ var _ = BeforeSuite(func() {
 			Namespace: OnmetalNamespace,
 		},
 		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:              loopbackCidrV4,
-			ParentSubnetName:  SubnetNameV4,
-			NetworkName:       UnderlayNetwork,
-			Regions:           []string{TestRegion},
-			AvailabilityZones: []string{TestAvailabilityZone},
+			CIDR:             loopbackCidrV4,
+			ParentSubnetName: SubnetNameV4,
+			NetworkName:      UnderlayNetwork,
+			Regions: []subnetv1alpha1.Region{
+				{
+					Name:              TestRegion,
+					AvailabilityZones: []string{TestAvailabilityZone},
+				},
+			},
 		},
 	}
 	Expect(k8sClient.Create(ctx, loopbackSubnetV4)).To(Succeed())
@@ -326,10 +332,14 @@ var _ = BeforeSuite(func() {
 			Namespace: OnmetalNamespace,
 		},
 		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:              cidrV6,
-			NetworkName:       UnderlayNetwork,
-			Regions:           []string{TestRegion},
-			AvailabilityZones: []string{TestAvailabilityZone},
+			CIDR:        cidrV6,
+			NetworkName: UnderlayNetwork,
+			Regions: []subnetv1alpha1.Region{
+				{
+					Name:              TestRegion,
+					AvailabilityZones: []string{TestAvailabilityZone},
+				},
+			},
 		},
 	}
 	Expect(k8sClient.Create(ctx, subnetV6)).To(Succeed())
@@ -348,11 +358,15 @@ var _ = BeforeSuite(func() {
 			Namespace: OnmetalNamespace,
 		},
 		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:              loopbackCidrV6,
-			ParentSubnetName:  SubnetNameV6,
-			NetworkName:       UnderlayNetwork,
-			Regions:           []string{TestRegion},
-			AvailabilityZones: []string{TestAvailabilityZone},
+			CIDR:             loopbackCidrV6,
+			ParentSubnetName: SubnetNameV6,
+			NetworkName:      UnderlayNetwork,
+			Regions: []subnetv1alpha1.Region{
+				{
+					Name:              TestRegion,
+					AvailabilityZones: []string{TestAvailabilityZone},
+				},
+			},
 		},
 	}
 	Expect(k8sClient.Create(ctx, loopbackSubnetV6)).To(Succeed())

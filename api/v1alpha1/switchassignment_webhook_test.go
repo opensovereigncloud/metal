@@ -62,9 +62,8 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 					Namespace: SWANamespace,
 				},
 				Spec: SwitchAssignmentSpec{
-					ChassisID:        SWAInvalidChassisID,
-					Region:           "EU-West",
-					AvailabilityZone: "A",
+					ChassisID: SWAInvalidChassisID,
+					Region:    &RegionSpec{Name: "eu-west", AvailabilityZone: "A"},
 				},
 			}
 
@@ -95,16 +94,15 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 					Namespace: SWANamespace,
 				},
 				Spec: SwitchAssignmentSpec{
-					ChassisID:        SWAValidChassisID,
-					Region:           "EU-West",
-					AvailabilityZone: "A",
+					ChassisID: SWAValidChassisID,
+					Region:    &RegionSpec{Name: "eu-west", AvailabilityZone: "A"},
 				},
 			}
 			Expect(k8sClient.Create(ctx, &cr)).Should(Succeed())
-			cr.Spec.Region = "EU-East"
+			cr.Spec.Region.Name = "EU-East"
 			err := k8sClient.Update(ctx, &cr)
 			Expect(err).To(HaveOccurred())
-			cr.Spec.AvailabilityZone = "B"
+			cr.Spec.Region.AvailabilityZone = "B"
 			err = k8sClient.Update(ctx, &cr)
 			Expect(err).To(HaveOccurred())
 		})

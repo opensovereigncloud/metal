@@ -470,3 +470,9 @@ spec:
     serialNumber: 772632X1950115
   virt:
     vmType: none
+  benchmark:
+    blocks:
+      - blockName: sda
+        smallBlockReadIops: 1000
+    network:
+      averageNetworkThroughputBps: 1000

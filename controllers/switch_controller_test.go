@@ -94,9 +94,11 @@ var _ = Describe("Controllers interaction", func() {
 						Namespace: OnmetalNamespace,
 					},
 					Spec: switchv1alpha1.SwitchAssignmentSpec{
-						ChassisID:        id,
-						Region:           TestRegion,
-						AvailabilityZone: TestAvailabilityZone,
+						ChassisID: id,
+						Region: &switchv1alpha1.RegionSpec{
+							Name:             TestRegion,
+							AvailabilityZone: TestAvailabilityZone,
+						},
 					},
 				}
 				Expect(k8sClient.Create(ctx, swa)).To(Succeed())
@@ -307,9 +309,11 @@ var _ = Describe("Controllers interaction", func() {
 					Namespace: OnmetalNamespace,
 				},
 				Spec: switchv1alpha1.SwitchAssignmentSpec{
-					ChassisID:        "68:21:5f:47:0d:6e",
-					Region:           TestRegion,
-					AvailabilityZone: TestAvailabilityZone,
+					ChassisID: "68:21:5f:47:0d:6e",
+					Region: &switchv1alpha1.RegionSpec{
+						Name:             TestRegion,
+						AvailabilityZone: TestAvailabilityZone,
+					},
 				},
 			}
 			Expect(k8sClient.Create(ctx, swa)).To(Succeed())

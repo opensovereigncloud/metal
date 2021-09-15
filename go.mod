@@ -6,9 +6,8 @@ require (
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/go-logr/logr v0.4.0
 	github.com/google/uuid v1.2.0
-	github.com/onmetal/ipam v0.0.0-20210630141217-3447d654272f
-	github.com/onmetal/k8s-inventory v0.0.0-20210720145134-83062b14be6f
-	github.com/onmetal/k8s-size v0.0.0-20210426104325-faf578a13d80
+	github.com/onmetal/ipam v0.0.0-20210721054120-e85a3a8dee4f
+	github.com/onmetal/k8s-inventory v0.0.0-20210914152907-c3b127f0ebe2
 	github.com/onsi/ginkgo v1.16.1
 	github.com/onsi/gomega v1.11.0
 	github.com/pkg/errors v0.9.1

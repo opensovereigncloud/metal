@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -33,8 +34,17 @@ type SwitchAssignmentSpec struct {
 	ChassisID string `json:"chassisId"`
 	//Region refers to the switch's region
 	//+kubebuilder:validation:Required
-	Region string `json:"region"`
-	//AvailabilityZone refers to the switch's availability zone
+	Region *RegionSpec `json:"region"`
+}
+
+// RegionSpec defines region info
+//+kubebuilder:object:generate=true
+type RegionSpec struct {
+	// Name refers to the switch's region
+	//+kubebuilder:validation:Pattern=^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+	//+kubebuilder:validation:Required
+	Name string `json:"name"`
+	// AvailabilityZone refers to the switch's availability zone
 	//+kubebuilder:validation:Required
 	AvailabilityZone string `json:"availabilityZone"`
 }
@@ -58,8 +68,8 @@ type LinkedSwitchSpec struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=swa
 //+kubebuilder:printcolumn:name="Switch Chassis ID",type=string,JSONPath=`.spec.chassisId`,description="switch's chassis Id"
-//+kubebuilder:printcolumn:name="Region",type=string,JSONPath=`.spec.region`,description="switch's region"
-//+kubebuilder:printcolumn:name="Availability Zone",type=string,JSONPath=`.spec.availabilityZone`,description="switch's AZ"
+//+kubebuilder:printcolumn:name="Region",type=string,JSONPath=`.spec.region.name`,description="switch's region"
+//+kubebuilder:printcolumn:name="Availability Zone",type=string,JSONPath=`.spec.region.availabilityZone`,description="switch's AZ"
 //+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Assignment state"
 
 // SwitchAssignment is the Schema for the switch assignments API
@@ -113,3 +123,25 @@ func (in *SwitchAssignment) GetListFilter() (*client.ListOptions, error) {
 	}
 	return opts, nil
 }
+
+func (in *RegionSpec) ConvertToSubnetRegion() []subnetv1alpha1.Region {
+	return []subnetv1alpha1.Region{
+		{
+			Name:              in.Name,
+			AvailabilityZones: []string{in.AvailabilityZone},
+		},
+	}
+}
+
+//func ConvertFromSubnetRegion(src []subnetv1alpha1.Region) *RegionSpec {
+//	if len(src) > 1 {
+//		return nil
+//	}
+//	if len(src[0].AvailabilityZones) > 1 {
+//		return nil
+//	}
+//	return &RegionSpec{
+//		Name:             src[0].Name,
+//		AvailabilityZone: src[0].AvailabilityZones[0],
+//	}
+//}

@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"reflect"
+
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -75,11 +77,8 @@ func (in *SwitchAssignment) ValidateUpdate(old runtime.Object) error {
 	if oldSwitchAssignment.Spec.ChassisID != in.Spec.ChassisID {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.chassisId"), in.Spec.ChassisID, "Chassis ID change disallowed"))
 	}
-	if oldSwitchAssignment.Spec.Region != in.Spec.Region {
+	if !reflect.DeepEqual(oldSwitchAssignment.Spec.Region, in.Spec.Region) {
 		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.region"), in.Spec.Region, "Region change disallowed"))
-	}
-	if oldSwitchAssignment.Spec.AvailabilityZone != in.Spec.AvailabilityZone {
-		allErrors = append(allErrors, field.Invalid(field.NewPath("spec.availabilityZone"), in.Spec.AvailabilityZone, "Availability Zone change disallowed"))
 	}
 
 	if len(allErrors) > 0 {
