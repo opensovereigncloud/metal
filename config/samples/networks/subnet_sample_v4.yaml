@@ -1,10 +1,10 @@
 apiVersion: ipam.onmetal.de/v1alpha1
 kind: Subnet
 metadata:
-  name: subnet-sample-v4
+  name: switch-ranges-v4
   namespace: onmetal
 spec:
-  cidr: "100.64.0.0/12"
+  cidr: "100.64.0.0/16"
   networkName: underlay
   regions:
     - EU-West

@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
@@ -59,7 +58,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if res.Spec.Host.Type == string(switchv1alpha1.MachineType) {
+	if res.Spec.Host.Type == string(switchv1alpha1.CMachineType) {
 		return ctrl.Result{}, nil
 	}
 	sw := &switchv1alpha1.Switch{}
@@ -72,15 +71,6 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 		} else {
 			log.Error(err, "failed to lookup for switch resource")
-			return ctrl.Result{}, err
-		}
-	}
-
-	interfaces, _ := switchv1alpha1.PrepareInterfaces(res.Spec.NICs.NICs)
-	if !reflect.DeepEqual(interfaces, sw.Spec.Interfaces) {
-		sw.UpdateInterfacesFromInventory(interfaces)
-		if err := r.Update(ctx, sw); err != nil {
-			r.Log.Error(err, "failed to update switch interfaces", "name", sw.NamespacedName())
 			return ctrl.Result{}, err
 		}
 	}

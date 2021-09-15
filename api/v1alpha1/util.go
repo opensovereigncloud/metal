@@ -34,29 +34,28 @@ type Role string
 type PeerType string
 
 const (
-	StatePending      State = "Pending"
-	StateInitializing State = "Initializing"
-	StateDiscovery    State = "Discovery"
-	StateConfiguring  State = "Configuring"
-	StateReady        State = "Ready"
-	StateFinished     State = "Finished"
-	StateDeleting     State = "Deleting"
+	CSwitchStateInProgress   State = "In Progress"
+	CSwitchStateInitializing State = "Initializing"
+	CSwitchStateReady        State = "Ready"
+	CAssignmentStatePending  State = "Pending"
+	CAssignmentStateFinished State = "Finished"
+	CStateDeleting           State = "Deleting"
 
 	CConfigManagementTypeLocal  = "local"
 	CConfigManagementTypeRemote = "remote"
 	CConfigManagementTypeFailed = "failed"
 
-	LeafRole  Role = "Leaf"
-	SpineRole Role = "Spine"
+	CLeafRole  Role = "Leaf"
+	CSpineRole Role = "Spine"
 
-	MachineType PeerType = "Machine"
-	SwitchType  PeerType = "Switch"
+	CMachineType PeerType = "Machine"
+	CSwitchType  PeerType = "Switch"
 )
 
 const (
-	EmptyString       = ""
-	SwitchPortPrefix  = "Ethernet"
-	PortChannelPrefix = "PortChannel"
+	CEmptyString       = ""
+	CSwitchPortPrefix  = "Ethernet"
+	CPortChannelPrefix = "PortChannel"
 
 	CLabelPrefix    = "switch.onmetal.de/"
 	CLabelChassisId = "chassisId"
@@ -71,7 +70,8 @@ const (
 	CIPv4InterfaceSubnetMask = 30
 	CIPv6InterfaceSubnetMask = 127
 
-	CNamespace = "onmetal"
+	CNamespace            = "onmetal"
+	CSwitchesParentSubnet = "switch-ranges"
 
 	CSwitchFinalizer           = "switches.switch.onmetal.de/finalizer"
 	CSwitchAssignmentFinalizer = "switchassignments.switch.onmetal.de/finalizer"
@@ -81,11 +81,11 @@ var LabelChassisId = CLabelPrefix + CLabelChassisId
 
 func getMinInterfaceIndex(interfaces []string) int {
 	sort.Slice(interfaces, func(i, j int) bool {
-		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[i], SwitchPortPrefix, EmptyString))
-		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[j], SwitchPortPrefix, EmptyString))
+		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[i], CSwitchPortPrefix, CEmptyString))
+		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[j], CSwitchPortPrefix, CEmptyString))
 		return leftIndex < rightIndex
 	})
-	minIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[0], SwitchPortPrefix, EmptyString))
+	minIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[0], CSwitchPortPrefix, CEmptyString))
 	return minIndex
 }
 
@@ -95,7 +95,7 @@ func getChassisId(nics []inventoriesv1alpha1.NICSpec) string {
 			return nic.MACAddress
 		}
 	}
-	return EmptyString
+	return CEmptyString
 }
 
 func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*InterfaceSpec, uint64) {
@@ -118,7 +118,7 @@ func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 			spec.PeerPortDescription = data.PortDescription
 		}
 		result[nic.Name] = spec
-		if strings.HasPrefix(nic.Name, SwitchPortPrefix) {
+		if strings.HasPrefix(nic.Name, CSwitchPortPrefix) {
 			switchPorts += 1
 		}
 	}
@@ -127,14 +127,14 @@ func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 
 func definePeerType(data inventoriesv1alpha1.LLDPSpec) PeerType {
 	if len(data.Capabilities) == 0 {
-		return MachineType
+		return CMachineType
 	}
 	for _, c := range data.Capabilities {
 		if c == CStationCapability {
-			return MachineType
+			return CMachineType
 		}
 	}
-	return SwitchType
+	return CSwitchType
 }
 
 func getInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int {
@@ -149,7 +149,7 @@ func getInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int
 //from the networks list provided as argument according to the
 //needed addresses count. It returns the pointer to the CIDR object.
 func getMinimalVacantCIDR(vacant []subnetv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *subnetv1alpha1.CIDR {
-	zeroNetString := EmptyString
+	zeroNetString := CEmptyString
 	if addressType == subnetv1alpha1.CIPv4SubnetType {
 		zeroNetString = CIPv4ZeroNet
 	} else {
@@ -180,7 +180,7 @@ func getNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount flo
 }
 
 func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
-	index, _ := strconv.Atoi(strings.ReplaceAll(name, namePrefix, EmptyString))
+	index, _ := strconv.Atoi(strings.ReplaceAll(name, namePrefix, CEmptyString))
 	prefix, _ := network.Mask.Size()
 	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(addrType)-prefix, index)
 	return ifaceNet

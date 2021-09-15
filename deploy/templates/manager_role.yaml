@@ -8,6 +8,7 @@ rules:
     resources:
       - subnets
     verbs:
+      - create
       - get
       - list
       - update

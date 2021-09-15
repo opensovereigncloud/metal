@@ -1,7 +1,7 @@
 apiVersion: ipam.onmetal.de/v1alpha1
 kind: Subnet
 metadata:
-  name: subnet-sample-v6
+  name: switch-ranges-v6
   namespace: onmetal
 spec:
   cidr: "2001:db8:1000:0012::0/64"

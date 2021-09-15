@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const CSwitchConfigCheckTimeout = time.Second * 10
@@ -64,6 +65,12 @@ type SwitchSpec struct {
 	//Interfaces refers to details about network interfaces
 	//+kubebuilder:validation:Optional
 	Interfaces map[string]*InterfaceSpec `json:"interfaces,omitempty"`
+	//IPv4 refers to switch's loopback v4 address
+	//+kubebuilder:validation:Optional
+	IPv4 string `json:"ipv4"`
+	//IPv6 refers to switch's loopback v6 address
+	//+kubebuilder:validation:Optional
+	IPv6 string `json:"ipv6"`
 }
 
 //LocationSpec defines location details
@@ -117,6 +124,12 @@ type ParentSubnetSpec struct {
 	// Namespace refers to the subnet resource name where CIDR was booked
 	//+kubebuilder:validation:Optional
 	Namespace string `json:"namespace"`
+	// Regions refers to parent subnet regions
+	//+kubebuilder:validation:Optional
+	Regions []string `json:"regions"`
+	// AvailabilityZones refers to parent subnet availability zones
+	//+kubebuilder:validation:Optional
+	AvailabilityZones []string `json:"availabilityZones"`
 }
 
 //SwitchChassisSpec defines switch chassis details
@@ -146,7 +159,7 @@ type InterfaceSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=1
 	MTU uint16 `json:"mtu,omitempty"`
-	//Lanes refers to how many lanes are used by the interface based on it's speed
+	//Lanes refers to how many lanes are used by the interface based on its speed
 	//+kubebuilder:validation:Optional
 	Lanes uint8 `json:"lanes,omitempty"`
 	//FEC refers to error correction method
@@ -323,7 +336,7 @@ func (in *ConnectionsMap) topLevelSpinesDefined() bool {
 		return false
 	} else {
 		for _, sw := range switches {
-			if sw.Status.State == EmptyString {
+			if sw.Status.State == CEmptyString {
 				return false
 			}
 		}
@@ -374,18 +387,6 @@ func (in *SwitchList) GetTopLevelSwitch() *Switch {
 	return nil
 }
 
-// AllConnectionsOk checks whether all Switch resources
-// in SwitchList has determined their peer connections.
-// Return false if not.
-func (in *SwitchList) AllConnectionsOk() bool {
-	for _, sw := range in.Items {
-		if sw.Status.State == StateDiscovery {
-			return false
-		}
-	}
-	return true
-}
-
 // Constructs map of PeerSpec objects based on stored
 // Switch interfaces.
 // Return map where interface name is a key and PeerSpec
@@ -393,10 +394,10 @@ func (in *SwitchList) AllConnectionsOk() bool {
 func (in *Switch) getBaseConnections() map[string]*PeerSpec {
 	result := make(map[string]*PeerSpec)
 	for name, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(name, SwitchPortPrefix) && data.PeerChassisID != EmptyString {
+		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
 			result[name] = &PeerSpec{
-				Name:      EmptyString,
-				Namespace: EmptyString,
+				Name:      CEmptyString,
+				Namespace: CEmptyString,
 				ChassisID: data.PeerChassisID,
 				Type:      data.PeerType,
 				PortName:  data.PeerPortDescription,
@@ -409,11 +410,11 @@ func (in *Switch) getBaseConnections() map[string]*PeerSpec {
 // Defines the Switch role according to existing peers
 func (in *Switch) getRole(peers map[string]*PeerSpec) Role {
 	for _, data := range peers {
-		if data.Type == MachineType {
-			return LeafRole
+		if data.Type == CMachineType {
+			return CLeafRole
 		}
 	}
-	return SpineRole
+	return CSpineRole
 }
 
 // Moves peers between south and north peer lists
@@ -470,7 +471,7 @@ func (in *Switch) updateNorthPeers(list *SwitchList) {
 					Name:      item.Name,
 					Namespace: item.Namespace,
 					ChassisID: item.Spec.Chassis.ChassisID,
-					Type:      SwitchType,
+					Type:      CSwitchType,
 					PortName:  name,
 				}
 			}
@@ -487,7 +488,7 @@ func (in *Switch) updateSouthPeers(list *SwitchList) {
 					Name:      item.Name,
 					Namespace: item.Namespace,
 					ChassisID: item.Spec.Chassis.ChassisID,
-					Type:      SwitchType,
+					Type:      CSwitchType,
 					PortName:  name,
 				}
 			}
@@ -500,7 +501,7 @@ func (in *Switch) updateSouthPeers(list *SwitchList) {
 func (in *Switch) peersOk(swl *SwitchList) bool {
 	for _, sw := range swl.Items {
 		for inf, peer := range in.Status.SouthConnections.Peers {
-			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == EmptyString {
+			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == CEmptyString {
 				return false
 			}
 			if _, ok := in.Status.NorthConnections.Peers[inf]; ok {
@@ -508,10 +509,17 @@ func (in *Switch) peersOk(swl *SwitchList) bool {
 			}
 		}
 		for inf, peer := range in.Status.NorthConnections.Peers {
-			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == EmptyString {
+			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == CEmptyString {
 				return false
 			}
 			if _, ok := in.Status.SouthConnections.Peers[inf]; ok {
+				return false
+			}
+		}
+	}
+	for name, data := range in.Spec.Interfaces {
+		if data.PeerType == CMachineType {
+			if _, ok := in.Status.SouthConnections.Peers[name]; !ok {
 				return false
 			}
 		}
@@ -593,18 +601,18 @@ func (in *Switch) getAddressCount(addrType subnetv1alpha1.SubnetAddressType) int
 		multiplier = CIPv6AddressesPerLane
 	}
 	for inf, portData := range in.Spec.Interfaces {
-		if strings.HasPrefix(inf, SwitchPortPrefix) {
+		if strings.HasPrefix(inf, CSwitchPortPrefix) {
 			count += int64(portData.Lanes * multiplier)
 		}
 	}
 	return count
 }
 
-// Checks whether specified port is in port channel.
-// Returns name of the port channel and true in case
-// port is a member of port channel, otherwise empty
-// string and false.
-func (in *Switch) portInLAG(name string) (string, bool) {
+// PortInLAG checks whether specified port is in port
+// channel. Returns name of the port channel and true
+// in case port is a member of port channel, otherwise
+// empty string and false.
+func (in *Switch) PortInLAG(name string) (string, bool) {
 	for lag, data := range in.Status.LAGs {
 		for _, member := range data.Members {
 			if member == name {
@@ -612,7 +620,7 @@ func (in *Switch) portInLAG(name string) (string, bool) {
 			}
 		}
 	}
-	return EmptyString, false
+	return CEmptyString, false
 }
 
 // Checks whether listed ports fits for aggregation
@@ -699,13 +707,28 @@ func (in *Switch) FillStatusOnCreate() {
 			Count: len(peers),
 			Peers: peers,
 		},
-		State:     StateInitializing,
+		State:     CSwitchStateInitializing,
 		ScanPorts: false,
 		LAGs:      nil,
 		Configuration: &ConfigurationSpec{
 			Managed: false,
 		},
 	}
+}
+
+func (in *Switch) FinalizerOk() bool {
+	return controllerutil.ContainsFinalizer(in, CSwitchFinalizer)
+}
+
+// SetState updates switch's resource state
+func (in *Switch) SetState(state State) {
+	if in.Status.State != state {
+		in.Status.State = state
+	}
+}
+
+func (in *Switch) CheckState(state State) bool {
+	return in.Status.State == state
 }
 
 // GetListFilter builds list options object
@@ -723,12 +746,12 @@ func (in *Switch) GetListFilter() (*client.ListOptions, error) {
 	return opts, nil
 }
 
-// UpdatePeersData rewrites existing south peers data
+// SetDiscoveredPeers rewrites existing south peers data
 // with fully filled PeerSpec according to info stored
 // in interfaces specs.
-func (in *Switch) UpdatePeersData(list *SwitchList) {
+func (in *Switch) SetDiscoveredPeers(list *SwitchList) {
 	for name, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(name, SwitchPortPrefix) && data.PeerChassisID != EmptyString {
+		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
 			_, found := in.Status.NorthConnections.Peers[name]
 			if !found {
 				for _, item := range list.Items {
@@ -776,14 +799,20 @@ func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
 
 // PeersProcessingFinished checks whether peers are
 // correctly determined for all existing switches.
-func (in *Switch) PeersProcessingFinished(swl *SwitchList, swa *SwitchAssignment) bool {
+func (in *Switch) PeersProcessingFinished(swl *SwitchList) bool {
+	return in.peersOk(swl)
+}
+
+// ConnectionLevelDefined checks whether connection
+// level is already defined
+func (in *Switch) ConnectionLevelDefined(swl *SwitchList, swa *SwitchAssignment) bool {
 	if swa != nil && in.Status.ConnectionLevel != 0 {
 		return false
 	}
 	if in.Status.ConnectionLevel == 255 {
 		return false
 	}
-	if !in.peersOk(swl) || !in.connectionsOk(swl) {
+	if !in.connectionsOk(swl) {
 		return false
 	}
 	return true
@@ -798,11 +827,17 @@ func (in *Switch) GetSuitableSubnet(
 	subnets *subnetv1alpha1.SubnetList,
 	addressType subnetv1alpha1.SubnetAddressType,
 	regions []string,
-	zones []string) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet, error) {
+	zones []string) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet) {
 
+	var subnetName string
 	addressesNeeded := in.getAddressCount(addressType)
+	if addressType == subnetv1alpha1.CIPv4SubnetType {
+		subnetName = CSwitchesParentSubnet + "-v4"
+	} else {
+		subnetName = CSwitchesParentSubnet + "-v6"
+	}
 	for _, sn := range subnets.Items {
-		if sn.Spec.NetworkName == "underlay" &&
+		if sn.Name == subnetName &&
 			sn.Status.Type == addressType &&
 			reflect.DeepEqual(sn.Spec.Regions, regions) &&
 			reflect.DeepEqual(sn.Spec.AvailabilityZones, zones) {
@@ -817,16 +852,12 @@ func (in *Switch) GetSuitableSubnet(
 				}
 				cidrCandidate := &subnetv1alpha1.CIDR{Net: network}
 				if sn.CanReserve(cidrCandidate) {
-					if err := sn.Reserve(cidrCandidate); err != nil {
-						return nil, nil, err
-					} else {
-						return cidrCandidate, &sn, nil
-					}
+					return cidrCandidate, &sn
 				}
 			}
 		}
 	}
-	return nil, nil, nil
+	return nil, nil
 }
 
 // UpdateInterfacesFromInventory fulfills switch's interfaces
@@ -857,7 +888,7 @@ func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpe
 // was updated and peers info needed update.
 func (in *Switch) PeersUpdateNeeded() bool {
 	for name, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(name, SwitchPortPrefix) && data.PeerChassisID != EmptyString {
+		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
 			_, northPeer := in.Status.NorthConnections.Peers[name]
 			_, southPeer := in.Status.SouthConnections.Peers[name]
 			if !northPeer && !southPeer {
@@ -868,9 +899,9 @@ func (in *Switch) PeersUpdateNeeded() bool {
 	return false
 }
 
-// UpdatePeersInfo updates peers data and switch role
+// UpdateStoredPeers updates peers data and switch role
 // according to connected peers.
-func (in *Switch) UpdatePeersInfo() {
+func (in *Switch) UpdateStoredPeers() {
 	machinesConnected := false
 	for name, data := range in.Spec.Interfaces {
 		_, northPeer := in.Status.NorthConnections.Peers[name]
@@ -878,23 +909,23 @@ func (in *Switch) UpdatePeersInfo() {
 		if northPeer || southPeer {
 			continue
 		}
-		if strings.HasPrefix(name, SwitchPortPrefix) && data.PeerChassisID != EmptyString {
+		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
 			in.Status.SouthConnections.Peers[name] = &PeerSpec{
-				Name:      EmptyString,
-				Namespace: EmptyString,
+				Name:      CEmptyString,
+				Namespace: CEmptyString,
 				ChassisID: data.PeerChassisID,
 				Type:      data.PeerType,
 				PortName:  data.PeerPortDescription,
 			}
-			if data.PeerType == MachineType {
+			if data.PeerType == CMachineType {
 				machinesConnected = true
 			}
 		}
 	}
 	if machinesConnected {
-		in.Status.Role = LeafRole
+		in.Status.Role = CLeafRole
 	} else {
-		in.Status.Role = SpineRole
+		in.Status.Role = CSpineRole
 	}
 }
 
@@ -905,13 +936,13 @@ func (in *Switch) UpdateSouthInterfacesAddresses() {
 		_, network, _ := net.ParseCIDR(in.Status.SouthSubnetV4.CIDR)
 		for inf := range in.Status.SouthConnections.Peers {
 			iface := in.Spec.Interfaces[inf]
-			portChannel, aggregated := in.portInLAG(inf)
+			portChannel, aggregated := in.PortInLAG(inf)
 			if aggregated {
-				ifaceSubnet := getInterfaceSubnet(portChannel, PortChannelPrefix, network, subnetv1alpha1.CIPv4SubnetType)
+				ifaceSubnet := getInterfaceSubnet(portChannel, CPortChannelPrefix, network, subnetv1alpha1.CIPv4SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
 				iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
 			} else {
-				ifaceSubnet := getInterfaceSubnet(inf, SwitchPortPrefix, network, subnetv1alpha1.CIPv4SubnetType)
+				ifaceSubnet := getInterfaceSubnet(inf, CSwitchPortPrefix, network, subnetv1alpha1.CIPv4SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
 				iface.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
 			}
@@ -921,13 +952,13 @@ func (in *Switch) UpdateSouthInterfacesAddresses() {
 		_, network, _ := net.ParseCIDR(in.Status.SouthSubnetV6.CIDR)
 		for inf := range in.Status.SouthConnections.Peers {
 			iface := in.Spec.Interfaces[inf]
-			portChannel, aggregated := in.portInLAG(inf)
+			portChannel, aggregated := in.PortInLAG(inf)
 			if aggregated {
-				ifaceSubnet := getInterfaceSubnet(portChannel, PortChannelPrefix, network, subnetv1alpha1.CIPv6SubnetType)
+				ifaceSubnet := getInterfaceSubnet(portChannel, CPortChannelPrefix, network, subnetv1alpha1.CIPv6SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
 				iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
 			} else {
-				ifaceSubnet := getInterfaceSubnet(inf, SwitchPortPrefix, network, subnetv1alpha1.CIPv6SubnetType)
+				ifaceSubnet := getInterfaceSubnet(inf, CSwitchPortPrefix, network, subnetv1alpha1.CIPv6SubnetType)
 				ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
 				iface.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
 			}
@@ -957,19 +988,37 @@ func (in *Switch) UpdateNorthInterfacesAddresses(swl *SwitchList) {
 	}
 }
 
+func (in *Switch) subnetsNotNil() bool {
+	return in.Status.SouthSubnetV4 != nil && in.Status.SouthSubnetV6 != nil
+}
+
+func (in *Switch) subnetsCorrect() bool {
+	return strings.HasPrefix(in.Status.SouthSubnetV4.ParentSubnet.Name, MacToLabel(in.Spec.Chassis.ChassisID)) &&
+		strings.HasPrefix(in.Status.SouthSubnetV6.ParentSubnet.Name, MacToLabel(in.Spec.Chassis.ChassisID))
+}
+
 // SubnetsOk checks whether south subnets are defined for the switch
 func (in *Switch) SubnetsOk() bool {
-	return in.Status.SouthSubnetV4 != nil && in.Status.SouthSubnetV6 != nil
+	return in.subnetsNotNil() && in.subnetsCorrect()
 }
 
 // AddressesDefined checks whether ip addresses defined
 // for all used switch interfaces.
 func (in *Switch) AddressesDefined() bool {
 	for inf, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID != EmptyString {
-			if data.IPv4 == EmptyString || data.IPv6 == EmptyString {
+		if strings.HasPrefix(inf, "Ethernet") && data.PeerChassisID != CEmptyString {
+			if data.IPv4 == CEmptyString || data.IPv6 == CEmptyString {
 				return false
 			}
+		}
+	}
+	return true
+}
+
+func (in *Switch) PortChannelsAddressesDefined() bool {
+	for _, data := range in.Status.LAGs {
+		if data.IPv4 == CEmptyString || data.IPv6 == CEmptyString {
+			return false
 		}
 	}
 	return true
@@ -1002,12 +1051,12 @@ func (in *Switch) AddressesOk(swl *SwitchList) bool {
 	return true
 }
 
-// DefinePortChannels defines possible port channels
-func (in *Switch) DefinePortChannels() {
+// constructs port channels map for Switch
+func (in *Switch) buildPortChannels() map[string]*LagSpec {
 	portChannels := make(map[string]*LagSpec)
 	tmp := make(map[string][]string)
 	for inf, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(inf, SwitchPortPrefix) && data.PeerChassisID != EmptyString {
+		if strings.HasPrefix(inf, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
 			if _, ok := tmp[data.PeerChassisID]; !ok {
 				tmp[data.PeerChassisID] = []string{inf}
 			} else {
@@ -1018,7 +1067,7 @@ func (in *Switch) DefinePortChannels() {
 	for _, members := range tmp {
 		if len(members) > 1 {
 			if in.portsFitLAG(members) {
-				lagName := fmt.Sprintf("%s%d", PortChannelPrefix, getMinInterfaceIndex(members))
+				lagName := fmt.Sprintf("%s%d", CPortChannelPrefix, getMinInterfaceIndex(members))
 				portChannels[lagName] = &LagSpec{
 					Fallback: true,
 					Members:  members,
@@ -1026,13 +1075,37 @@ func (in *Switch) DefinePortChannels() {
 			}
 		}
 	}
-	in.Status.LAGs = portChannels
+	return portChannels
+}
+
+// PortChannelsDefined checks whether port channels are defined
+func (in *Switch) PortChannelsDefined() bool {
+	channels := in.buildPortChannels()
+	for pc, data := range in.Status.LAGs {
+		if _, ok := channels[pc]; !ok {
+			return false
+		}
+		if !reflect.DeepEqual(data.Members, channels[pc].Members) {
+			return false
+		}
+	}
+	for pc := range channels {
+		if _, ok := in.Status.LAGs[pc]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// DefinePortChannels defines possible port channels
+func (in *Switch) DefinePortChannels() {
+	in.Status.LAGs = in.buildPortChannels()
 }
 
 // FillPortChannelsAddresses sets ip addresses for port channel
 func (in *Switch) FillPortChannelsAddresses() {
 	for inf := range in.Status.SouthConnections.Peers {
-		portChannel, aggregated := in.portInLAG(inf)
+		portChannel, aggregated := in.PortInLAG(inf)
 		if aggregated {
 			iface := in.Spec.Interfaces[inf]
 			pChannel := in.Status.LAGs[portChannel]
@@ -1041,7 +1114,7 @@ func (in *Switch) FillPortChannelsAddresses() {
 		}
 	}
 	for inf := range in.Status.NorthConnections.Peers {
-		portChannel, aggregated := in.portInLAG(inf)
+		portChannel, aggregated := in.PortInLAG(inf)
 		if aggregated {
 			iface := in.Spec.Interfaces[inf]
 			pChannel := in.Status.LAGs[portChannel]
@@ -1051,18 +1124,73 @@ func (in *Switch) FillPortChannelsAddresses() {
 	}
 }
 
-// ConfigurationCheckTimeoutExpired checks whether last config check
-// was carried out too long ago
-func (in *Switch) ConfigurationCheckTimeoutExpired() bool {
-	lastCheck, _ := time.Parse(time.UnixDate, in.Status.Configuration.LastCheck)
-	if time.Now().Sub(lastCheck) > CSwitchConfigCheckTimeout {
-		return true
+func (in *Switch) InterfacesMatchInventory(inv *inventoriesv1alpha1.Inventory) bool {
+	interfaces, _ := PrepareInterfaces(inv.Spec.NICs.NICs)
+	for name := range in.Spec.Interfaces {
+		if _, ok := interfaces[name]; !ok {
+			return false
+		}
 	}
-	return false
+	for name, data := range interfaces {
+		stored, ok := in.Spec.Interfaces[name]
+		if !ok {
+			return false
+		}
+		if data.Lanes != stored.Lanes {
+			return false
+		}
+		if data.FEC != stored.FEC {
+			return false
+		}
+		if data.PeerChassisID != stored.PeerChassisID {
+			return false
+		}
+		if data.PeerPortID != stored.PeerPortID {
+			return false
+		}
+		if data.PeerPortDescription != stored.PeerPortDescription {
+			return false
+		}
+		if data.PeerType != stored.PeerType {
+			return false
+		}
+	}
+	return true
 }
 
-func (in *Switch) SetConfigurationStateFailed() {
-	in.Status.Configuration.Type = CConfigManagementTypeFailed
+func (in *Switch) SwitchAddressesDefined() bool {
+	return in.Spec.IPv4 != CEmptyString && in.Spec.IPv6 != CEmptyString
+}
+
+func (in *Switch) ConfigManagerStatusOk() bool {
+	return in.Status.Configuration != nil
+}
+
+func (in *Switch) SetConfigManagerStatus(managerType string) {
+	if managerType == CEmptyString {
+		in.Status.Configuration = &ConfigurationSpec{
+			Managed: false,
+		}
+	} else {
+		in.Status.Configuration.Type = managerType
+	}
+}
+
+func (in *Switch) ConfigManagerTimeoutOk() bool {
+	if in.Status.Configuration.Managed {
+		loc, _ := time.LoadLocation("UTC")
+		lastCheck, _ := time.ParseInLocation(time.UnixDate, in.Status.Configuration.LastCheck, loc)
+		//fmt.Printf("%v - %v = %v\n", time.Now().In(loc), lastCheck, time.Now().In(loc).Sub(lastCheck)*time.Second)
+		return time.Now().In(loc).Sub(lastCheck).Seconds() < CSwitchConfigCheckTimeout.Seconds()
+	} else {
+		return true
+	}
+}
+
+func (in Switch) StatusDeepEqual(prev Switch) bool {
+	in.Status.Configuration = &ConfigurationSpec{}
+	prev.Status.Configuration = &ConfigurationSpec{}
+	return reflect.DeepEqual(in.Status, prev.Status)
 }
 
 // RequestAddress returns the IP address next for the
@@ -1071,13 +1199,13 @@ func (in *InterfaceSpec) RequestAddress(addrType subnetv1alpha1.SubnetAddressTyp
 	addr := net.IP{}
 	switch addrType {
 	case subnetv1alpha1.CIPv4SubnetType:
-		if in.IPv4 == EmptyString {
+		if in.IPv4 == CEmptyString {
 			return nil
 		}
 		_, cidr, _ := net.ParseCIDR(in.IPv4)
 		addr, _ = gocidr.Host(cidr, 2)
 	case subnetv1alpha1.CIPv6SubnetType:
-		if in.IPv6 == EmptyString {
+		if in.IPv6 == CEmptyString {
 			return nil
 		}
 		_, cidr, _ := net.ParseCIDR(in.IPv6)

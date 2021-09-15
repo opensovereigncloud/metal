@@ -68,8 +68,8 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			return ctrl.Result{}, err
 		}
 	} else {
-		if res.Status.State == switchv1alpha1.EmptyString {
-			res.FillStatus(switchv1alpha1.StatePending, &switchv1alpha1.LinkedSwitchSpec{})
+		if res.Status.State == switchv1alpha1.CEmptyString {
+			res.FillStatus(switchv1alpha1.CAssignmentStatePending, &switchv1alpha1.LinkedSwitchSpec{})
 			if err := r.Status().Update(ctx, res); err != nil {
 				log.Error(err, "failed to set status on resource creation", "name", res.NamespacedName())
 				return ctrl.Result{}, err
@@ -88,7 +88,7 @@ func (r *SwitchAssignmentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *SwitchAssignmentReconciler) finalize(ctx context.Context, res *switchv1alpha1.SwitchAssignment) (ctrl.Result, error) {
 	if controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer) {
-		res.FillStatus(switchv1alpha1.StateDeleting, &switchv1alpha1.LinkedSwitchSpec{})
+		res.FillStatus(switchv1alpha1.CStateDeleting, &switchv1alpha1.LinkedSwitchSpec{})
 		if err := r.Status().Update(ctx, res); err != nil {
 			r.Log.Error(err, "failed to finalize resource", "name", res.NamespacedName())
 			return ctrl.Result{}, err

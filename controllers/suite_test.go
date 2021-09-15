@@ -29,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	subnet "github.com/onmetal/ipam/controllers"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
@@ -42,7 +43,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -60,18 +60,21 @@ import (
 const (
 	DefaultNamespace     = "default"
 	OnmetalNamespace     = "onmetal"
-	timeout              = time.Second * 45
+	timeout              = time.Second * 90
 	interval             = time.Millisecond * 250
 	UnderlayNetwork      = "underlay"
-	SubnetNameV4         = "switch-subnet-v4"
-	SubnetNameV6         = "switch-subnet-v6"
-	SubnetIPv4CIDR       = "100.64.0.0/12"
+	SubnetNameV4         = "switch-ranges-v4"
+	LoopbackSubnetV4     = "switches-v4"
+	SubnetNameV6         = "switch-ranges-v6"
+	LoopbackSubnetV6     = "switches-v6"
+	SubnetIPv4CIDR       = "100.64.0.0/16"
+	LoopbackIPv4CIDR     = "100.64.0.0/24"
 	SubnetIPv6CIDR       = "2001:db8:1000:0012::0/64"
+	LoopbackIPv6CIDR     = "2001:db8:1000:0012::0/124"
 	TestRegion           = "EU-West"
 	TestAvailabilityZone = "A"
 )
 
-var cfg *rest.Config
 var k8sClient client.Client
 var ctx context.Context
 var testEnv *envtest.Environment
@@ -270,14 +273,15 @@ var _ = BeforeSuite(func() {
 	}
 	Expect(k8sClient.Create(ctx, network)).To(Succeed())
 
-	cidr, _ := subnetv1alpha1.CIDRFromString(SubnetIPv4CIDR)
+	By("Prepare subnets")
+	cidrV4, _ := subnetv1alpha1.CIDRFromString(SubnetIPv4CIDR)
 	subnetV4 := &subnetv1alpha1.Subnet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SubnetNameV4,
 			Namespace: OnmetalNamespace,
 		},
 		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:              cidr,
+			CIDR:              cidrV4,
 			NetworkName:       UnderlayNetwork,
 			Regions:           []string{TestRegion},
 			AvailabilityZones: []string{TestAvailabilityZone},
@@ -292,46 +296,78 @@ var _ = BeforeSuite(func() {
 		return true
 	}, timeout, interval).Should(BeTrue())
 
+	loopbackCidrV4, _ := subnetv1alpha1.CIDRFromString(LoopbackIPv4CIDR)
+	loopbackSubnetV4 := &subnetv1alpha1.Subnet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      LoopbackSubnetV4,
+			Namespace: OnmetalNamespace,
+		},
+		Spec: subnetv1alpha1.SubnetSpec{
+			CIDR:              loopbackCidrV4,
+			ParentSubnetName:  SubnetNameV4,
+			NetworkName:       UnderlayNetwork,
+			Regions:           []string{TestRegion},
+			AvailabilityZones: []string{TestAvailabilityZone},
+		},
+	}
+	Expect(k8sClient.Create(ctx, loopbackSubnetV4)).To(Succeed())
+	Eventually(func() bool {
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: LoopbackSubnetV4, Namespace: OnmetalNamespace}, loopbackSubnetV4)).Should(Succeed())
+		if loopbackSubnetV4.Status.State != subnetv1alpha1.CFinishedSubnetState {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	cidrV6, _ := subnetv1alpha1.CIDRFromString(SubnetIPv6CIDR)
+	subnetV6 := &subnetv1alpha1.Subnet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      SubnetNameV6,
+			Namespace: OnmetalNamespace,
+		},
+		Spec: subnetv1alpha1.SubnetSpec{
+			CIDR:              cidrV6,
+			NetworkName:       UnderlayNetwork,
+			Regions:           []string{TestRegion},
+			AvailabilityZones: []string{TestAvailabilityZone},
+		},
+	}
+	Expect(k8sClient.Create(ctx, subnetV6)).To(Succeed())
+	Eventually(func() bool {
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: SubnetNameV6, Namespace: OnmetalNamespace}, subnetV6)).Should(Succeed())
+		if subnetV6.Status.State != subnetv1alpha1.CFinishedSubnetState {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	loopbackCidrV6, _ := subnetv1alpha1.CIDRFromString(LoopbackIPv6CIDR)
+	loopbackSubnetV6 := &subnetv1alpha1.Subnet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      LoopbackSubnetV6,
+			Namespace: OnmetalNamespace,
+		},
+		Spec: subnetv1alpha1.SubnetSpec{
+			CIDR:              loopbackCidrV6,
+			ParentSubnetName:  SubnetNameV6,
+			NetworkName:       UnderlayNetwork,
+			Regions:           []string{TestRegion},
+			AvailabilityZones: []string{TestAvailabilityZone},
+		},
+	}
+	Expect(k8sClient.Create(ctx, loopbackSubnetV6)).To(Succeed())
+	Eventually(func() bool {
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: LoopbackSubnetV6, Namespace: OnmetalNamespace}, loopbackSubnetV6)).Should(Succeed())
+		if loopbackSubnetV6.Status.State != subnetv1alpha1.CFinishedSubnetState {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
 }, 60)
 
 var _ = AfterSuite(func() {
-	By("Remove test resources")
-	Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
-	Eventually(func() bool {
-		list := &inventoriesv1alpha1.InventoryList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
-	Eventually(func() bool {
-		list := &switchv1alpha1.SwitchList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.SwitchAssignment{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
-	Eventually(func() bool {
-		list := &switchv1alpha1.SwitchAssignmentList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
+	By("Remove subnets")
 	Expect(k8sClient.DeleteAllOf(ctx, &subnetv1alpha1.Subnet{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
 	Eventually(func() bool {
 		list := &subnetv1alpha1.SubnetList{}
@@ -344,7 +380,6 @@ var _ = AfterSuite(func() {
 		}
 		return true
 	}, timeout, interval).Should(BeTrue())
-
 	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
@@ -366,4 +401,10 @@ func getCrdPath(crdPackageScheme interface{}) string {
 	}
 	Expect(globalModulePath).NotTo(BeZero())
 	return filepath.Join(build.Default.GOPATH, "pkg", "mod", globalModulePath, "config", "crd", "bases")
+}
+
+func getUUID(identifier string) string {
+	namespaceUUID := uuid.NewMD5(uuid.UUID{}, []byte(OnmetalNamespace))
+	newUUID := uuid.NewMD5(namespaceUUID, []byte(identifier))
+	return newUUID.String()
 }

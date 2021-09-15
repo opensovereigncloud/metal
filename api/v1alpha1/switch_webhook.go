@@ -45,7 +45,7 @@ func (in *Switch) Default() {
 		in.Labels = map[string]string{}
 	}
 	if _, ok := in.Labels[LabelChassisId]; !ok {
-		if in.Spec.Chassis.ChassisID != EmptyString {
+		if in.Spec.Chassis.ChassisID != CEmptyString {
 			in.Labels[LabelChassisId] = MacToLabel(in.Spec.Chassis.ChassisID)
 		}
 	}
