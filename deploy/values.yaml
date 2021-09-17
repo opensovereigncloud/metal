@@ -13,7 +13,7 @@ proxy:
 
 manager:
   image:
-    repository: core.harbor.onmetal.de/onmetal/onmetal-switch
+    repository: core.harbor.onmetal.de/onmetal/switch-operator
     pullPolicy: IfNotPresent
     tag: "latest"
 
