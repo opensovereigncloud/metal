@@ -120,15 +120,6 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		continueToken = sizeList.Continue
 	}
 
-	// copy inventory hostname to labels
-	if inv.Labels[machinev1alpha1.CInventoryTypeLabel] != inv.Spec.Host.Type {
-		inv.Labels[machinev1alpha1.CInventoryTypeLabel] = inv.Spec.Host.Type
-	}
-	// copy inventory type to labels
-	if inv.Labels[machinev1alpha1.CInventoryHostnameLabel] != inv.Spec.Host.Name {
-		inv.Labels[machinev1alpha1.CInventoryHostnameLabel] = inv.Spec.Host.Name
-	}
-
 	if err = r.Update(ctx, inv); err != nil {
 		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)
 		return ctrl.Result{}, err
