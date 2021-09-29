@@ -110,6 +110,26 @@ func (r *SwitchReconciler) finalize(obj *switchv1alpha1.Switch) error {
 			}
 		}
 
+		snl := &subnetv1alpha1.SubnetList{}
+		err = r.List(r.Background.ctx, snl)
+		if err != nil {
+			return err
+		}
+		for _, sn := range snl.Items {
+			if obj.Status.SouthSubnetV4 != nil &&
+				sn.Spec.ParentSubnetName == obj.Status.SouthSubnetV4.ParentSubnet.Name {
+				if err := r.Delete(r.Background.ctx, &sn); err != nil {
+					return err
+				}
+			}
+			if obj.Status.SouthSubnetV6 != nil &&
+				sn.Spec.ParentSubnetName == obj.Status.SouthSubnetV6.ParentSubnet.Name {
+				if err := r.Delete(r.Background.ctx, &sn); err != nil {
+					return err
+				}
+			}
+		}
+
 		controllerutil.RemoveFinalizer(obj, switchv1alpha1.CSwitchFinalizer)
 		if err := r.Update(ctx, obj); err != nil {
 			r.Log.Error(err, "failed to update resource on finalizer removal",
@@ -236,6 +256,19 @@ func (r *SwitchReconciler) createSubnetWithCapacity(
 	return sn, nil
 }
 
+func (r *SwitchReconciler) removeInterfaceSubnet(name string, namespace string) error {
+	infSubnet := &subnetv1alpha1.Subnet{}
+	if err := r.Get(r.Background.ctx, types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}, infSubnet); err == nil {
+		if err := r.Delete(r.Background.ctx, infSubnet); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *SwitchReconciler) prepareStateMachine(obj *switchv1alpha1.Switch) *stateMachine {
 	if obj.DeletionTimestamp != nil {
 		return newStateMachine(newStep(nil, r.finalize, nil, nil))
@@ -318,7 +351,21 @@ func (r *SwitchReconciler) interfacesChecker(obj *switchv1alpha1.Switch) bool {
 
 func (r *SwitchReconciler) interfacesSetter(obj *switchv1alpha1.Switch) error {
 	interfaces, _ := switchv1alpha1.PrepareInterfaces(r.Background.inventory.Spec.NICs.NICs)
-	obj.UpdateInterfacesFromInventory(interfaces)
+	stale := obj.UpdateInterfacesFromInventory(interfaces)
+	for _, inf := range stale {
+		if obj.Status.SouthSubnetV4 != nil {
+			subnetName := fmt.Sprintf("%s-%s-v4", switchv1alpha1.MacToLabel(obj.Spec.Chassis.ChassisID), strings.ToLower(inf))
+			if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV4.ParentSubnet.Namespace); err != nil {
+				return err
+			}
+		}
+		if obj.Status.SouthSubnetV6 != nil {
+			subnetName := fmt.Sprintf("%s-%s-v6", switchv1alpha1.MacToLabel(obj.Spec.Chassis.ChassisID), strings.ToLower(inf))
+			if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV6.ParentSubnet.Namespace); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -349,7 +396,21 @@ func (r *SwitchReconciler) portChannelsChecker(obj *switchv1alpha1.Switch) bool 
 
 func (r *SwitchReconciler) portChannelsSetter(obj *switchv1alpha1.Switch) error {
 	obj.SetState(switchv1alpha1.CSwitchStateInProgress)
-	obj.DefinePortChannels()
+	stale := obj.DefinePortChannels()
+	for _, pChannel := range stale {
+		if obj.Status.SouthSubnetV4 != nil {
+			subnetName := fmt.Sprintf("%s-%s-v4", switchv1alpha1.MacToLabel(obj.Spec.Chassis.ChassisID), strings.ToLower(pChannel))
+			if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV4.ParentSubnet.Namespace); err != nil {
+				return err
+			}
+		}
+		if obj.Status.SouthSubnetV6 != nil {
+			subnetName := fmt.Sprintf("%s-%s-v6", switchv1alpha1.MacToLabel(obj.Spec.Chassis.ChassisID), strings.ToLower(pChannel))
+			if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV6.ParentSubnet.Namespace); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

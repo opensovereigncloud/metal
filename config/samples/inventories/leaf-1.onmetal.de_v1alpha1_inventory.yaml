@@ -272,7 +272,18 @@ spec:
       - {}
       speed: 100000
       lanes: 4
-    - macAddress: 68:21:5f:47:11:6e
+    - lldps:
+        - { }
+        - capabilities:
+            - Bridge
+            - Router
+          chassisId: 68:21:5f:47:0d:5a
+          portDescription: Ethernet16
+          portId: Eth33/1
+          systemDescription: 'Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1
+                SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64'
+          systemName: spine-1-1.fra3.infra.onmetal.de
+      macAddress: 68:21:5f:47:11:6e
       mtu: 9100
       name: Ethernet8
       speed: 100000

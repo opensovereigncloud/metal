@@ -36,7 +36,7 @@ import (
 var chassisIds = []string{"68:21:5f:47:0d:6e", "68:21:5f:47:0b:6e", "68:21:5f:47:0a:6e"}
 
 var _ = Describe("Controllers interaction", func() {
-	Context("Testing on sample data", func() {
+	Context("Processing of switch resources on creation and after", func() {
 		BeforeEach(func() {
 			By("Prepare inventories")
 			switchesSamples := []string{
@@ -111,6 +111,18 @@ var _ = Describe("Controllers interaction", func() {
 				}, timeout, interval).Should(BeTrue())
 				Expect(swa.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(id)}))
 			}
+
+			By("Processing finished")
+			list := &switchv1alpha1.SwitchList{}
+			Eventually(func() bool {
+				Expect(k8sClient.List(ctx, list)).Should(Succeed())
+				for _, sw := range list.Items {
+					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
+						return false
+					}
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
 		})
 
 		AfterEach(func() {
@@ -169,11 +181,12 @@ var _ = Describe("Controllers interaction", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should define connection levels", func() {
+		It("Should complete switches processing", func() {
 			list := &switchv1alpha1.SwitchList{}
 			Eventually(func() bool {
 				Expect(k8sClient.List(ctx, list)).Should(Succeed())
 				for _, sw := range list.Items {
+					// check connection levels
 					if strings.HasPrefix(sw.Spec.Hostname, "spine-0") {
 						if sw.Status.ConnectionLevel != 0 {
 							return false
@@ -189,35 +202,55 @@ var _ = Describe("Controllers interaction", func() {
 							return false
 						}
 					}
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
+					// check port channels defined correctly
+					if strings.HasPrefix(sw.Spec.Hostname, "spine-1-1") {
+						if len(sw.Status.LAGs) < 1 {
+							return false
+						}
+						if _, ok := sw.Status.LAGs["PortChannel8"]; !ok {
+							return false
+						}
+						if sw.Spec.Interfaces["Ethernet8"].IPv4 == switchv1alpha1.CEmptyString ||
+							sw.Spec.Interfaces["Ethernet8"].IPv6 == switchv1alpha1.CEmptyString {
+							return false
+						}
+						if sw.Spec.Interfaces["Ethernet16"].IPv4 == switchv1alpha1.CEmptyString ||
+							sw.Spec.Interfaces["Ethernet16"].IPv6 == switchv1alpha1.CEmptyString {
+							return false
+						}
+					}
+					if strings.HasPrefix(sw.Spec.Hostname, "leaf-1") {
+						if len(sw.Status.LAGs) < 1 {
+							return false
+						}
+						if _, ok := sw.Status.LAGs["PortChannel0"]; !ok {
+							return false
+						}
+						if sw.Spec.Interfaces["Ethernet0"].IPv4 == switchv1alpha1.CEmptyString ||
+							sw.Spec.Interfaces["Ethernet0"].IPv6 == switchv1alpha1.CEmptyString {
+							return false
+						}
+						if sw.Spec.Interfaces["Ethernet8"].IPv4 == switchv1alpha1.CEmptyString ||
+							sw.Spec.Interfaces["Ethernet8"].IPv6 == switchv1alpha1.CEmptyString {
+							return false
+						}
+					}
+					// check south subnets, interfaces addresses, port channels addresses
+					if !(sw.SubnetsOk() && sw.AddressesDefined() && sw.AddressesOk(list) && sw.PortChannelsAddressesDefined()) {
 						return false
 					}
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
-		It("Should define switch's loopback addresses", func() {
-			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, sw := range list.Items {
+					// check loopback addresses
 					if sw.Spec.IPv4 == switchv1alpha1.CEmptyString {
 						return false
 					}
 					if sw.Spec.IPv6 == switchv1alpha1.CEmptyString {
 						return false
 					}
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
-						return false
-					}
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
-		})
 
-		//todo: investigate the reason test mostly fails but occasionally passes
-		PIt("Should update switch interfaces and peers on inventory update", func() {
+			By("Update inventory by adding new LLDPs")
 			inv := &inventoriesv1alpha1.Inventory{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Namespace: DefaultNamespace,
@@ -245,11 +278,12 @@ var _ = Describe("Controllers interaction", func() {
 			inv.Spec.NICs.NICs[updatedInfIndex] = updatedInf
 			Expect(k8sClient.Update(ctx, inv)).Should(Succeed())
 
+			By("Should update south peers, interfaces and switch role")
 			sw := &switchv1alpha1.Switch{}
 			Eventually(func() bool {
 				Expect(k8sClient.Get(ctx, types.NamespacedName{
 					Namespace: OnmetalNamespace,
-					Name:      inv.Name,
+					Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
 				}, sw)).Should(Succeed())
 				if _, ok := sw.Status.SouthConnections.Peers["Ethernet124"]; !ok {
 					return false
@@ -262,210 +296,54 @@ var _ = Describe("Controllers interaction", func() {
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
-		})
-	})
 
-	Context("Testing on real data", func() {
-		BeforeEach(func() {
-			By("Prepare inventories")
-			switchesSamples := []string{
-				filepath.Join("..", "config", "samples", "realdata", "sp2.yaml"),
-				filepath.Join("..", "config", "samples", "realdata", "lf1.yaml"),
-				filepath.Join("..", "config", "samples", "realdata", "lf2.yaml"),
+			By("Update inventory by removing some LLDPs")
+			updatedInterfaces := map[string]string{
+				"7db70ddb-f23d-3d67-8b73-fb0dac5216ab": "Ethernet8",
+				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5": "Ethernet16",
 			}
-			for _, sample := range switchesSamples {
-				rawInfo := make(map[string]interface{})
-				inv := &inventoriesv1alpha1.Inventory{}
-				sampleBytes, err := ioutil.ReadFile(sample)
-				Expect(err).NotTo(HaveOccurred())
-				err = yaml.Unmarshal(sampleBytes, rawInfo)
-
-				data, err := json.Marshal(rawInfo)
-				Expect(err).NotTo(HaveOccurred())
-				err = json.Unmarshal(data, inv)
-				Expect(err).NotTo(HaveOccurred())
-
-				swNamespacedName := types.NamespacedName{
-					Namespace: OnmetalNamespace,
-					Name:      inv.Name,
-				}
-				inv.Namespace = DefaultNamespace
-				Expect(k8sClient.Create(ctx, inv)).To(Succeed())
-				sw := &switchv1alpha1.Switch{}
-				Eventually(func() bool {
-					err := k8sClient.Get(ctx, swNamespacedName, sw)
-					if err != nil {
-						return false
+			for name, inf := range updatedInterfaces {
+				inv = &inventoriesv1alpha1.Inventory{}
+				Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: DefaultNamespace,
+					Name:      name,
+				}, inv)).Should(Succeed())
+				updatedInterfaces := make(map[int]inventoriesv1alpha1.NICSpec)
+				for i, nic := range inv.Spec.NICs.NICs {
+					if nic.Name == inf {
+						updatedInterfaces[i] = *nic.DeepCopy()
 					}
-					return true
-				}, timeout, interval).Should(BeTrue())
-				Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(sw.Spec.Chassis.ChassisID)}))
+				}
+				for idx, inf := range updatedInterfaces {
+					inf.NDPs = []inventoriesv1alpha1.NDPSpec{}
+					inf.NDPs = append(inf.NDPs, inventoriesv1alpha1.NDPSpec{})
+					inf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
+					inf.LLDPs = append(inf.LLDPs, inventoriesv1alpha1.LLDPSpec{})
+					inv.Spec.NICs.NICs[idx] = inf
+				}
+				Expect(k8sClient.Update(ctx, inv)).Should(Succeed())
 			}
 
-			By("Prepare assignments")
-			swa := &switchv1alpha1.SwitchAssignment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      getUUID("68:21:5f:47:0d:6e"),
-					Namespace: OnmetalNamespace,
-				},
-				Spec: switchv1alpha1.SwitchAssignmentSpec{
-					ChassisID: "68:21:5f:47:0d:6e",
-					Region: &switchv1alpha1.RegionSpec{
-						Name:             TestRegion,
-						AvailabilityZone: TestAvailabilityZone,
-					},
-				},
+			By("Should remove port channels and update member interfaces addresses")
+			pChannels := map[string]string{
+				"7db70ddb-f23d-3d67-8b73-fb0dac5216ab": "PortChannel0",
+				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5": "PortChannel8",
 			}
-			Expect(k8sClient.Create(ctx, swa)).To(Succeed())
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, swa.NamespacedName(), swa)
-				if err != nil {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-			Expect(swa.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel("68:21:5f:47:0d:6e")}))
-		})
 
-		AfterEach(func() {
-			By("Remove switches")
-			Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
 			Eventually(func() bool {
-				list := &switchv1alpha1.SwitchList{}
-				err := k8sClient.List(ctx, list)
-				if err != nil {
-					return false
-				}
-				if len(list.Items) > 0 {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-
-			By("Check assignments in pending state")
-			list := &switchv1alpha1.SwitchAssignmentList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, item := range list.Items {
-					if item.Status.State != switchv1alpha1.CAssignmentStatePending {
+				for name, pChannel := range pChannels {
+					obj := &switchv1alpha1.Switch{}
+					Expect(k8sClient.Get(ctx, types.NamespacedName{
+						Namespace: OnmetalNamespace,
+						Name:      name,
+					}, obj)).Should(Succeed())
+					if _, ok := obj.Status.LAGs[pChannel]; ok {
 						return false
 					}
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-
-			By("Remove assignments")
-			Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.SwitchAssignment{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
-			Eventually(func() bool {
-				list := &switchv1alpha1.SwitchAssignmentList{}
-				err := k8sClient.List(ctx, list)
-				if err != nil {
-					return false
-				}
-				if len(list.Items) > 0 {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-
-			By("Remove inventories")
-			Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
-			Eventually(func() bool {
-				list := &inventoriesv1alpha1.InventoryList{}
-				err := k8sClient.List(ctx, list)
-				if err != nil {
-					return false
-				}
-				if len(list.Items) > 0 {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
-		It("Should define connection levels", func() {
-			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, sw := range list.Items {
-					if strings.HasPrefix(sw.Spec.Hostname, "sp") {
-						if sw.Status.ConnectionLevel != 0 {
-							return false
-						}
-					}
-					if strings.HasPrefix(sw.Spec.Hostname, "lf") {
-						if sw.Status.ConnectionLevel != 1 {
-							return false
-						}
-					}
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
+					if obj.Spec.Interfaces[updatedInterfaces[name]].IPv4 != switchv1alpha1.CEmptyString {
 						return false
 					}
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
-		It("Should define port channels", func() {
-			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, sw := range list.Items {
-					if len(sw.Status.LAGs) != 2 {
-						return false
-					}
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
-						return false
-					}
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
-		It("Should define south subnets", func() {
-			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, sw := range list.Items {
-					if !sw.SubnetsOk() {
-						return false
-					}
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
-						return false
-					}
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
-		It("Should define ip addresses on switch interfaces", func() {
-			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, sw := range list.Items {
-					if !sw.AddressesDefined() {
-						return false
-					}
-					if !sw.AddressesOk(list) {
-						return false
-					}
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
-						return false
-					}
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
-		It("Should define ip addresses on port channels", func() {
-			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, sw := range list.Items {
-					if !sw.PortChannelsAddressesDefined() {
-						return false
-					}
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
+					if obj.Spec.Interfaces[updatedInterfaces[name]].IPv6 != switchv1alpha1.CEmptyString {
 						return false
 					}
 				}

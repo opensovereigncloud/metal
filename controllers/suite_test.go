@@ -93,7 +93,6 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	inventoryGlobalCrdPath := getCrdPath(inventoriesv1alpha1.Inventory{})
 	subnetGlobalCrdPath := getCrdPath(subnetv1alpha1.Subnet{})
-	//sizeGlobalCrdPath := getCrdPath(sizev1alpha1.Size{})
 	switchGlobalCrdPath := filepath.Join("..", "config", "crd", "bases")
 
 	testEnv = &envtest.Environment{
@@ -109,8 +108,6 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	globalScheme := scheme.Scheme
-	//err = sizev1alpha1.AddToScheme(globalScheme)
-	//Expect(err).NotTo(HaveOccurred())
 	err = switchv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
 	err = inventoriesv1alpha1.AddToScheme(globalScheme)
@@ -123,29 +120,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: globalScheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
-	//By("Set up k8s-size manager")
-	//sizeScheme := scheme.Scheme
-	//err = sizev1alpha1.AddToScheme(sizeScheme)
-	//Expect(err).NotTo(HaveOccurred())
-	//k8sSizeManager, err := ctrl.NewManager(cfg, ctrl.Options{
-	//	Scheme:             sizeScheme,
-	//	LeaderElection:     false,
-	//	MetricsBindAddress: "0",
-	//})
-	//Expect(err).ToNot(HaveOccurred())
-	//err = (&size.SizeReconciler{
-	//	Client: k8sSizeManager.GetClient(),
-	//	Scheme: k8sSizeManager.GetScheme(),
-	//	Log:    ctrl.Log.WithName("k8s-size").WithName("size"),
-	//}).SetupWithManager(k8sSizeManager)
-	//Expect(err).ToNot(HaveOccurred())
-	//
-	//go func() {
-	//	defer GinkgoRecover()
-	//	err = k8sSizeManager.Start(ctx)
-	//	Expect(err).ToNot(HaveOccurred())
-	//}()
 
 	By("Set up k8s-inventory manager")
 	inventoryScheme := scheme.Scheme

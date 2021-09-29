@@ -857,12 +857,14 @@ func (in *Switch) GetSuitableSubnet(
 
 // UpdateInterfacesFromInventory fulfills switch's interfaces
 // data according to updated inventory data
-func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpec) {
+func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpec) []string {
+	result := make([]string, 0)
 	for inf := range in.Spec.Interfaces {
 		if _, ok := updated[inf]; !ok {
 			delete(in.Spec.Interfaces, inf)
 			delete(in.Status.SouthConnections.Peers, inf)
 			delete(in.Status.NorthConnections.Peers, inf)
+			result = append(result, inf)
 		}
 	}
 	for inf, data := range updated {
@@ -875,8 +877,13 @@ func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpe
 			stored.PeerSystemName = data.PeerSystemName
 			stored.PeerPortID = data.PeerPortID
 			stored.PeerPortDescription = data.PeerPortDescription
+			if data.PeerChassisID == CEmptyString {
+				stored.IPv4 = CEmptyString
+				stored.IPv6 = CEmptyString
+			}
 		}
 	}
+	return result
 }
 
 // PeersUpdateNeeded checks whether interfaces data
@@ -1093,8 +1100,17 @@ func (in *Switch) PortChannelsDefined() bool {
 }
 
 // DefinePortChannels defines possible port channels
-func (in *Switch) DefinePortChannels() {
-	in.Status.LAGs = in.buildPortChannels()
+func (in *Switch) DefinePortChannels() []string {
+	result := make([]string, 0)
+	stored := in.Status.LAGs
+	computed := in.buildPortChannels()
+	for pChannel := range stored {
+		if _, ok := computed[pChannel]; !ok {
+			result = append(result, pChannel)
+		}
+	}
+	in.Status.LAGs = computed
+	return result
 }
 
 // FillPortChannelsAddresses sets ip addresses for port channel
