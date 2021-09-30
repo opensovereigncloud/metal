@@ -49,56 +49,44 @@ var _ = Describe("Inventory client", func() {
 						ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
 						SerialNumber: "R90QR6J0",
 					},
-					Blocks: &v1alpha1.BlockTotalSpec{
-						Count:    1,
-						Capacity: 1,
-						Blocks: []v1alpha1.BlockSpec{
-							{
-								Name:       "JustDisk",
-								Type:       "SCSI",
-								Rotational: true,
-								Model:      "greatModel",
-								Size:       1000,
-							},
+					Blocks: []v1alpha1.BlockSpec{
+						{
+							Name:       "JustDisk",
+							Type:       "SCSI",
+							Rotational: true,
+							Model:      "greatModel",
+							Size:       1000,
 						},
 					},
 					Memory: &v1alpha1.MemorySpec{
 						Total: 1024000,
 					},
-					CPUs: &v1alpha1.CPUTotalSpec{
-						Sockets: 1,
-						Cores:   2,
-						Threads: 4,
-						CPUs: []v1alpha1.CPUSpec{
-							{
-								PhysicalID: 0,
-								LogicalIDs: []uint64{0, 1, 2, 3},
-								Cores:      2,
-								Siblings:   4,
-								VendorID:   "GenuineIntel",
-								Model:      "78",
-								ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
-								// These two values should be set through parse method
-								// in order to avoid failure on deep equality.
-								// On deserialization, Quantity sets internal string representation
-								// to the string value coming from JSON.
-								// If left empty or constructed from int64, string representation
-								// will not be set, and DeepEqual method will return false in result.
-								MHz:      resource.MustParse("0"),
-								BogoMIPS: resource.MustParse("0"),
-							},
+					CPUs: []v1alpha1.CPUSpec{
+						{
+							PhysicalID: 0,
+							LogicalIDs: []uint64{0, 1, 2, 3},
+							Cores:      2,
+							Siblings:   4,
+							VendorID:   "GenuineIntel",
+							Model:      "78",
+							ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
+							// These two values should be set through parse method
+							// in order to avoid failure on deep equality.
+							// On deserialization, Quantity sets internal string representation
+							// to the string value coming from JSON.
+							// If left empty or constructed from int64, string representation
+							// will not be set, and DeepEqual method will return false in result.
+							MHz:      resource.MustParse("0"),
+							BogoMIPS: resource.MustParse("0"),
 						},
 					},
-					NICs: &v1alpha1.NICTotalSpec{
-						Count: 1,
-						NICs: []v1alpha1.NICSpec{
-							{
-								Name:       "enp0s31f6",
-								PCIAddress: "0000:00:1f.6",
-								MACAddress: "48:2a:e3:02:d9:e8",
-								MTU:        1400,
-								Speed:      1000,
-							},
+					NICs: []v1alpha1.NICSpec{
+						{
+							Name:       "enp0s31f6",
+							PCIAddress: "0000:00:1f.6",
+							MACAddress: "48:2a:e3:02:d9:e8",
+							MTU:        1400,
+							Speed:      1000,
 						},
 					},
 					Host: &v1alpha1.HostSpec{

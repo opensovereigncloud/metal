@@ -155,18 +155,13 @@ func inventory() *Inventory {
 				ID:           "myInventoryId",
 				Manufacturer: "myManufacturer",
 			},
-			CPUs: &CPUTotalSpec{
-				Sockets: 2,
-				Cores:   16,
-				Threads: 32,
-				CPUs: []CPUSpec{
-					{
-						Model: "78",
-						Cores: 8,
-					},
-					{
-						Cores: 8,
-					},
+			CPUs: []CPUSpec{
+				{
+					Model: "78",
+					Cores: 8,
+				},
+				{
+					Cores: 8,
 				},
 			},
 		},
@@ -254,9 +249,9 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cores",
+						Path: "cpus[0].cores",
 						Equal: &ConstraintValSpec{
-							Numeric: resource.NewScaledQuantity(16, 0),
+							Numeric: resource.NewScaledQuantity(8, 0),
 						},
 					},
 				},
@@ -269,7 +264,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cpus[0].model",
+						Path: "cpus[0].model",
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(78, 0),
 						},
@@ -284,7 +279,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cores",
+						Path: "cpus[1].cores",
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(64, 0),
 						},
@@ -299,7 +294,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cpus[*].cores",
+						Path: "cpus[*].cores",
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
 						},
@@ -314,7 +309,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cpus[*].cores",
+						Path: "cpus[*].cores",
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(16, 0),
 						},
@@ -329,7 +324,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CSumAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(16, 0),
@@ -345,7 +340,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CAverageAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
@@ -361,7 +356,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CSumAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(24, 0),
@@ -377,7 +372,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CAverageAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(24, 0),
@@ -393,8 +388,8 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cores",
-						GreaterThan: resource.NewScaledQuantity(11, 0),
+						Path:        "cpus[0].cores",
+						GreaterThan: resource.NewScaledQuantity(7, 0),
 					},
 				},
 			},
@@ -406,8 +401,8 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cores",
-						GreaterThanOrEqual: resource.NewScaledQuantity(16, 0),
+						Path:               "cpus[0].cores",
+						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
 				},
 			},
@@ -419,7 +414,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:     "cpus.cores",
+						Path:     "cpus[0].cores",
 						LessThan: resource.NewScaledQuantity(17, 0),
 					},
 				},
@@ -432,8 +427,8 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cores",
-						LessThanOrEqual: resource.NewScaledQuantity(16, 0),
+						Path:            "cpus[0].cores",
+						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
 				},
 			},
@@ -445,8 +440,8 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cores",
-						GreaterThan: resource.NewScaledQuantity(8, 0),
+						Path:        "cpus[0].cores",
+						GreaterThan: resource.NewScaledQuantity(4, 0),
 						LessThan:    resource.NewScaledQuantity(24, 0),
 					},
 				},
@@ -459,8 +454,8 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cores",
-						GreaterThanOrEqual: resource.NewScaledQuantity(16, 0),
+						Path:               "cpus[0].cores",
+						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 						LessThan:           resource.NewScaledQuantity(24, 0),
 					},
 				},
@@ -473,9 +468,9 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cores",
-						GreaterThan:     resource.NewScaledQuantity(12, 0),
-						LessThanOrEqual: resource.NewScaledQuantity(24, 0),
+						Path:            "cpus[0].cores",
+						GreaterThan:     resource.NewScaledQuantity(3, 0),
+						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
 				},
 			},
@@ -487,9 +482,9 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cores",
-						GreaterThanOrEqual: resource.NewScaledQuantity(12, 0),
-						LessThanOrEqual:    resource.NewScaledQuantity(24, 0),
+						Path:               "cpus[0].cores",
+						GreaterThanOrEqual: resource.NewScaledQuantity(4, 0),
+						LessThanOrEqual:    resource.NewScaledQuantity(12, 0),
 					},
 				},
 			},
@@ -501,7 +496,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 					},
@@ -515,7 +510,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
@@ -529,7 +524,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CAverageAggregateType,
 						LessThan:  resource.NewScaledQuantity(11, 0),
 					},
@@ -543,7 +538,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CAverageAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
@@ -557,7 +552,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 						LessThan:    resource.NewScaledQuantity(10, 0),
@@ -572,7 +567,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 						LessThan:           resource.NewScaledQuantity(11, 0),
@@ -587,7 +582,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CAverageAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
@@ -602,7 +597,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(4, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(24, 0),
@@ -617,7 +612,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 					},
@@ -631,7 +626,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(16, 0),
 					},
@@ -645,7 +640,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CSumAggregateType,
 						LessThan:  resource.NewScaledQuantity(20, 0),
 					},
@@ -659,7 +654,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CSumAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(16, 0),
 					},
@@ -673,7 +668,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 						LessThan:    resource.NewScaledQuantity(18, 0),
@@ -688,7 +683,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(16, 0),
 						LessThan:           resource.NewScaledQuantity(20, 0),
@@ -703,7 +698,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CSumAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(16, 0),
@@ -718,7 +713,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(10, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(20, 0),
@@ -804,7 +799,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cores",
+						Path: "cpus[0].cores",
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(10, 0),
 						},
@@ -819,9 +814,9 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cores",
+						Path: "cpus[0].cores",
 						NotEqual: &ConstraintValSpec{
-							Numeric: resource.NewScaledQuantity(16, 0),
+							Numeric: resource.NewScaledQuantity(8, 0),
 						},
 					},
 				},
@@ -834,7 +829,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cpus[0].model",
+						Path: "cpus[0].model",
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(77, 0),
 						},
@@ -864,7 +859,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cpus[*].cores",
+						Path: "cpus[*].cores",
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(9, 0),
 						},
@@ -879,7 +874,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.cpus[*].cores",
+						Path: "cpus[*].cores",
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
 						},
@@ -894,7 +889,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CSumAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(20, 0),
@@ -910,7 +905,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CAverageAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(6, 0),
@@ -926,7 +921,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CSumAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(16, 0),
@@ -942,7 +937,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CAverageAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
@@ -958,8 +953,8 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cores",
-						GreaterThan: resource.NewScaledQuantity(16, 0),
+						Path:        "cpus[0].cores",
+						GreaterThan: resource.NewScaledQuantity(8, 0),
 					},
 				},
 			},
@@ -971,8 +966,8 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cores",
-						GreaterThanOrEqual: resource.NewScaledQuantity(17, 0),
+						Path:               "cpus[0].cores",
+						GreaterThanOrEqual: resource.NewScaledQuantity(9, 0),
 					},
 				},
 			},
@@ -984,8 +979,8 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:     "cpus.cores",
-						LessThan: resource.NewScaledQuantity(16, 0),
+						Path:     "cpus[0].cores",
+						LessThan: resource.NewScaledQuantity(8, 0),
 					},
 				},
 			},
@@ -997,8 +992,8 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cores",
-						LessThanOrEqual: resource.NewScaledQuantity(10, 0),
+						Path:            "cpus[0].cores",
+						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
 					},
 				},
 			},
@@ -1010,9 +1005,9 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cores",
+						Path:        "cpus[0].cores",
 						GreaterThan: resource.NewScaledQuantity(1, 0),
-						LessThan:    resource.NewScaledQuantity(16, 0),
+						LessThan:    resource.NewScaledQuantity(8, 0),
 					},
 				},
 			},
@@ -1024,9 +1019,9 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cores",
+						Path:               "cpus[0].cores",
 						GreaterThanOrEqual: resource.NewScaledQuantity(1, 0),
-						LessThan:           resource.NewScaledQuantity(16, 0),
+						LessThan:           resource.NewScaledQuantity(8, 0),
 					},
 				},
 			},
@@ -1038,9 +1033,9 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cores",
+						Path:            "cpus[0].cores",
 						GreaterThan:     resource.NewScaledQuantity(1, 0),
-						LessThanOrEqual: resource.NewScaledQuantity(15, 0),
+						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
 					},
 				},
 			},
@@ -1052,8 +1047,8 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cores",
-						GreaterThanOrEqual: resource.NewScaledQuantity(17, 0),
+						Path:               "cpus[0].cores",
+						GreaterThanOrEqual: resource.NewScaledQuantity(9, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(24, 0),
 					},
 				},
@@ -1066,7 +1061,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(8, 0),
 					},
@@ -1080,7 +1075,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(10, 0),
 					},
@@ -1094,7 +1089,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CAverageAggregateType,
 						LessThan:  resource.NewScaledQuantity(8, 0),
 					},
@@ -1108,7 +1103,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CAverageAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
 					},
@@ -1122,7 +1117,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(8, 0),
 						LessThan:    resource.NewScaledQuantity(10, 0),
@@ -1137,7 +1132,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(9, 0),
 						LessThan:           resource.NewScaledQuantity(11, 0),
@@ -1152,7 +1147,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CAverageAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
@@ -1167,7 +1162,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(4, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(4, 0),
@@ -1182,7 +1177,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(16, 0),
 					},
@@ -1196,7 +1191,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(17, 0),
 					},
@@ -1210,7 +1205,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus.cpus[*].cores",
+						Path:      "cpus[*].cores",
 						Aggregate: CSumAggregateType,
 						LessThan:  resource.NewScaledQuantity(16, 0),
 					},
@@ -1224,7 +1219,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CSumAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(15, 0),
 					},
@@ -1238,7 +1233,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus.cpus[*].cores",
+						Path:        "cpus[*].cores",
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(16, 0),
 						LessThan:    resource.NewScaledQuantity(18, 0),
@@ -1253,7 +1248,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(17, 0),
 						LessThan:           resource.NewScaledQuantity(20, 0),
@@ -1268,7 +1263,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus.cpus[*].cores",
+						Path:            "cpus[*].cores",
 						Aggregate:       CSumAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(15, 0),
@@ -1283,7 +1278,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus.cpus[*].cores",
+						Path:               "cpus[*].cores",
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(2, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(2, 0),
@@ -1318,7 +1313,7 @@ func sizesShouldReturnErr() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.sockets",
+						Path: "cpus[0].cores",
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("nonNumericString"),
 						},

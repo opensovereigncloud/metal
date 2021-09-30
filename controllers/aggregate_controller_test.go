@@ -90,48 +90,36 @@ var _ = Describe("Aggregate controller", func() {
 						ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
 						SerialNumber: "R90QR6J0",
 					},
-					Blocks: &inventoryv1alpha1.BlockTotalSpec{
-						Count:    1,
-						Capacity: 1,
-						Blocks: []inventoryv1alpha1.BlockSpec{
-							{
-								Name:       "JustDisk",
-								Type:       "SCSI",
-								Rotational: true,
-								Model:      "greatModel",
-								Size:       1000,
-							},
+					Blocks: []inventoryv1alpha1.BlockSpec{
+						{
+							Name:       "JustDisk",
+							Type:       "SCSI",
+							Rotational: true,
+							Model:      "greatModel",
+							Size:       1000,
 						},
 					},
 					Memory: &inventoryv1alpha1.MemorySpec{
 						Total: 1024000,
 					},
-					CPUs: &inventoryv1alpha1.CPUTotalSpec{
-						Sockets: 1,
-						Cores:   2,
-						Threads: 4,
-						CPUs: []inventoryv1alpha1.CPUSpec{
-							{
-								PhysicalID: 0,
-								LogicalIDs: []uint64{0, 1, 2, 3},
-								Cores:      2,
-								Siblings:   4,
-								VendorID:   "GenuineIntel",
-								Model:      "78",
-								ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
-							},
+					CPUs: []inventoryv1alpha1.CPUSpec{
+						{
+							PhysicalID: 0,
+							LogicalIDs: []uint64{0, 1, 2, 3},
+							Cores:      2,
+							Siblings:   4,
+							VendorID:   "GenuineIntel",
+							Model:      "78",
+							ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
 						},
 					},
-					NICs: &inventoryv1alpha1.NICTotalSpec{
-						Count: 1,
-						NICs: []inventoryv1alpha1.NICSpec{
-							{
-								Name:       "enp0s31f6",
-								PCIAddress: "0000:00:1f.6",
-								MACAddress: "48:2a:e3:02:d9:e8",
-								MTU:        1400,
-								Speed:      1000,
-							},
+					NICs: []inventoryv1alpha1.NICSpec{
+						{
+							Name:       "enp0s31f6",
+							PCIAddress: "0000:00:1f.6",
+							MACAddress: "48:2a:e3:02:d9:e8",
+							MTU:        1400,
+							Speed:      1000,
 						},
 					},
 					Host: &inventoryv1alpha1.HostSpec{

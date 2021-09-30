@@ -200,25 +200,21 @@ func getDummyInventorySpec() *InventorySpec {
 				MACAddress: "",
 			},
 		},
-		Blocks: &BlockTotalSpec{
-			Count:    0,
-			Capacity: 0,
-			Blocks: []BlockSpec{
-				{
-					Name:       "",
-					Type:       "",
-					Rotational: false,
-					Bus:        "",
-					Model:      "",
-					Size:       0,
-					PartitionTable: &PartitionTableSpec{
-						Type: "",
-						Partitions: []PartitionSpec{
-							{
-								ID:   "",
-								Name: "",
-								Size: 0,
-							},
+		Blocks: []BlockSpec{
+			{
+				Name:       "",
+				Type:       "",
+				Rotational: false,
+				Bus:        "",
+				Model:      "",
+				Size:       0,
+				PartitionTable: &PartitionTableSpec{
+					Type: "",
+					Partitions: []PartitionSpec{
+						{
+							ID:   "",
+							Name: "",
+							Size: 0,
 						},
 					},
 				},
@@ -227,71 +223,63 @@ func getDummyInventorySpec() *InventorySpec {
 		Memory: &MemorySpec{
 			Total: 0,
 		},
-		CPUs: &CPUTotalSpec{
-			Sockets: 0,
-			Cores:   0,
-			Threads: 0,
-			CPUs: []CPUSpec{
-				{
-					PhysicalID: 0,
-					LogicalIDs: []uint64{
-						0,
-					},
-					Cores:        0,
-					Siblings:     0,
-					VendorID:     "",
-					Family:       "",
-					Model:        "",
-					ModelName:    "",
-					Stepping:     "",
-					Microcode:    "",
-					MHz:          *resource.NewScaledQuantity(0, 0),
-					CacheSize:    "",
-					FPU:          false,
-					FPUException: false,
-					CPUIDLevel:   0,
-					WP:           false,
-					Flags: []string{
-						"",
-					},
-					VMXFlags: []string{
-						"",
-					},
-					Bugs: []string{
-						"",
-					},
-					BogoMIPS:        *resource.NewScaledQuantity(0, 0),
-					CLFlushSize:     0,
-					CacheAlignment:  0,
-					AddressSizes:    "",
-					PowerManagement: "",
+		CPUs: []CPUSpec{
+			{
+				PhysicalID: 0,
+				LogicalIDs: []uint64{
+					0,
 				},
+				Cores:        0,
+				Siblings:     0,
+				VendorID:     "",
+				Family:       "",
+				Model:        "",
+				ModelName:    "",
+				Stepping:     "",
+				Microcode:    "",
+				MHz:          *resource.NewScaledQuantity(0, 0),
+				CacheSize:    "",
+				FPU:          false,
+				FPUException: false,
+				CPUIDLevel:   0,
+				WP:           false,
+				Flags: []string{
+					"",
+				},
+				VMXFlags: []string{
+					"",
+				},
+				Bugs: []string{
+					"",
+				},
+				BogoMIPS:        *resource.NewScaledQuantity(0, 0),
+				CLFlushSize:     0,
+				CacheAlignment:  0,
+				AddressSizes:    "",
+				PowerManagement: "",
 			},
 		},
-		NICs: &NICTotalSpec{
-			Count: 0,
-			NICs: []NICSpec{
-				{
-					Name:       "",
-					PCIAddress: "",
-					MACAddress: "",
-					MTU:        0,
-					Speed:      0,
-					LLDPs: []LLDPSpec{
-						{
-							ChassisID:         "",
-							SystemName:        "",
-							SystemDescription: "",
-							PortID:            "",
-							PortDescription:   "",
-						},
+		NICs: []NICSpec{
+			{
+				Name:       "",
+				PCIAddress: "",
+				MACAddress: "",
+				MTU:        0,
+				Speed:      0,
+				LLDPs: []LLDPSpec{
+					{
+						ChassisID:         "",
+						SystemName:        "",
+						SystemDescription: "",
+						PortID:            "",
+						PortDescription:   "",
 					},
-					NDPs: []NDPSpec{
-						{
-							IPAddress:  "",
-							MACAddress: "",
-							State:      "",
-						},
+				},
+				NDPs: []NDPSpec{
+					{
+						IPAddress:  "",
+						MACAddress: "",
+						State:      "",
 					},
 				},
 			},

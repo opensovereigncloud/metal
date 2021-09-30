@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,6 +36,7 @@ var _ = Describe("Size webhook", func() {
 			crs := validSizes(SizeNamespace)
 
 			for _, cr := range crs {
+				By(fmt.Sprintf("Creating size %s", cr.Name))
 				Expect(k8sClient.Create(ctx, &cr)).Should(Succeed())
 			}
 		})
@@ -178,7 +180,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "blocks.count",
+						Path: "blocks[0].size",
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(0, 0),
 						},
@@ -194,7 +196,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "blocks.count",
+						Path: "blocks[0].size",
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(0, 0),
 						},
@@ -210,7 +212,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:     "blocks.count",
+						Path:     "blocks[0].size",
 						LessThan: resource.NewScaledQuantity(5, 0),
 					},
 				},
@@ -224,7 +226,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "blocks.count",
+						Path:            "blocks[0].size",
 						LessThanOrEqual: resource.NewScaledQuantity(5, 0),
 					},
 				},
@@ -238,7 +240,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "blocks.count",
+						Path:        "blocks[0].size",
 						GreaterThan: resource.NewScaledQuantity(1, 0),
 					},
 				},
@@ -252,7 +254,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "blocks.count",
+						Path:               "blocks[0].size",
 						GreaterThanOrEqual: resource.NewScaledQuantity(1, 0),
 					},
 				},
@@ -266,7 +268,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "blocks.count",
+						Path:        "blocks[0].size",
 						LessThan:    resource.NewScaledQuantity(5, 0),
 						GreaterThan: resource.NewScaledQuantity(1, 0),
 					},
@@ -281,7 +283,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "blocks.count",
+						Path:            "blocks[0].size",
 						LessThanOrEqual: resource.NewScaledQuantity(5, 0),
 						GreaterThan:     resource.NewScaledQuantity(1, 0),
 					},
@@ -296,7 +298,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "blocks.count",
+						Path:               "blocks[0].size",
 						LessThanOrEqual:    resource.NewScaledQuantity(5, 0),
 						GreaterThanOrEqual: resource.NewScaledQuantity(1, 0),
 					},
@@ -311,7 +313,7 @@ func validSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "blocks.count",
+						Path:               "blocks[0].size",
 						LessThan:           resource.NewScaledQuantity(5, 0),
 						GreaterThanOrEqual: resource.NewScaledQuantity(1, 0),
 					},
@@ -361,11 +363,11 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "blocks.count",
+						Path:               "blocks[0].size",
 						GreaterThanOrEqual: resource.NewScaledQuantity(1, 0),
 					},
 					{
-						Path:            "blocks.count",
+						Path:            "blocks[0].size",
 						LessThanOrEqual: resource.NewScaledQuantity(5, 0),
 					},
 				},
@@ -379,7 +381,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "blocks.count",
+						Path: "blocks[0].size",
 					},
 				},
 			},
@@ -409,7 +411,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "blocks.count",
+						Path: "blocks[0].size",
 						Equal: &ConstraintValSpec{
 							Literal: &sampleLiteralValue,
 						},
@@ -428,7 +430,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "blocks.count",
+						Path:            "blocks[0].size",
 						LessThan:        resource.NewScaledQuantity(5, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(5, 0),
 					},
@@ -443,7 +445,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "blocks.count",
+						Path:               "blocks[0].size",
 						GreaterThan:        resource.NewScaledQuantity(5, 0),
 						GreaterThanOrEqual: resource.NewScaledQuantity(5, 0),
 					},
@@ -458,7 +460,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:     "blocks.count",
+						Path:     "blocks[0].size",
 						LessThan: resource.NewScaledQuantity(5, 0),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(5, 0),
@@ -475,7 +477,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "blocks.count",
+						Path:            "blocks[0].size",
 						LessThanOrEqual: resource.NewScaledQuantity(5, 0),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(5, 0),
@@ -492,7 +494,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "blocks.count",
+						Path:        "blocks[0].size",
 						GreaterThan: resource.NewScaledQuantity(5, 0),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(5, 0),
@@ -509,7 +511,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "blocks.count",
+						Path:               "blocks[0].size",
 						GreaterThanOrEqual: resource.NewScaledQuantity(5, 0),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(5, 0),
@@ -526,7 +528,7 @@ func invalidSizes(namespace string) []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "blocks.count",
+						Path:        "blocks[0].size",
 						GreaterThan: resource.NewScaledQuantity(5, 0),
 						LessThan:    resource.NewScaledQuantity(1, 0),
 					},

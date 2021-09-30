@@ -86,7 +86,7 @@ var _ = Describe("Size controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus.cores",
+							Path: "cpus[0].cores",
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(16, 0),
 							},
@@ -100,9 +100,8 @@ var _ = Describe("Size controller", func() {
 			inventoryShouldMatch := inventoryTemplate()
 			inventoryShouldMatch.Name = "should-be-matched-and-updated"
 			inventoryShouldMatch.Namespace = SizeNamespace
-			inventoryShouldMatch.Spec.CPUs.Sockets = 2
-			inventoryShouldMatch.Spec.CPUs.Cores = 16
-			inventoryShouldMatch.Spec.CPUs.Threads = 32
+			inventoryShouldMatch.Spec.CPUs[0].Cores = 16
+			inventoryShouldMatch.Spec.CPUs[0].Siblings = 32
 
 			inventoryAlreadyMatched := inventoryTemplate()
 			inventoryAlreadyMatched.Name = "already-matched"
@@ -110,16 +109,14 @@ var _ = Describe("Size controller", func() {
 			inventoryAlreadyMatched.Labels = map[string]string{
 				sizeLabel: "true",
 			}
-			inventoryAlreadyMatched.Spec.CPUs.Sockets = 2
-			inventoryAlreadyMatched.Spec.CPUs.Cores = 16
-			inventoryAlreadyMatched.Spec.CPUs.Threads = 16
+			inventoryAlreadyMatched.Spec.CPUs[0].Cores = 16
+			inventoryAlreadyMatched.Spec.CPUs[0].Siblings = 16
 
 			inventoryShouldntMatch := inventoryTemplate()
 			inventoryShouldntMatch.Name = "should-not-be-matched"
 			inventoryShouldntMatch.Namespace = SizeNamespace
-			inventoryShouldntMatch.Spec.CPUs.Sockets = 4
-			inventoryShouldntMatch.Spec.CPUs.Cores = 32
-			inventoryShouldntMatch.Spec.CPUs.Threads = 64
+			inventoryShouldntMatch.Spec.CPUs[0].Cores = 32
+			inventoryShouldntMatch.Spec.CPUs[0].Siblings = 64
 
 			inventoryShouldUnmatch := inventoryTemplate()
 			inventoryShouldUnmatch.Name = "should-be-unmatched"
@@ -127,9 +124,8 @@ var _ = Describe("Size controller", func() {
 			inventoryShouldUnmatch.Labels = map[string]string{
 				sizeLabel: "true",
 			}
-			inventoryShouldUnmatch.Spec.CPUs.Sockets = 4
-			inventoryShouldUnmatch.Spec.CPUs.Cores = 32
-			inventoryShouldUnmatch.Spec.CPUs.Threads = 32
+			inventoryShouldUnmatch.Spec.CPUs[0].Cores = 32
+			inventoryShouldUnmatch.Spec.CPUs[0].Siblings = 32
 
 			testInventories := []inventoryv1alpha1.Inventory{
 				*inventoryShouldMatch,
@@ -253,8 +249,8 @@ var _ = Describe("Size controller", func() {
 			By("Size is updated")
 			createdSize.Spec.Constraints = []inventoryv1alpha1.ConstraintSpec{
 				{
-					Path:        "cpus.sockets",
-					GreaterThan: resource.NewScaledQuantity(2, 0),
+					Path:        "cpus[0].cores",
+					GreaterThan: resource.NewScaledQuantity(30, 0),
 				},
 			}
 
@@ -361,48 +357,36 @@ func inventoryTemplate() *inventoryv1alpha1.Inventory {
 				ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
 				SerialNumber: "R90QR6J0",
 			},
-			Blocks: &inventoryv1alpha1.BlockTotalSpec{
-				Count:    1,
-				Capacity: 1,
-				Blocks: []inventoryv1alpha1.BlockSpec{
-					{
-						Name:       "JustDisk",
-						Type:       "SCSI",
-						Rotational: true,
-						Model:      "greatModel",
-						Size:       1000,
-					},
+			Blocks: []inventoryv1alpha1.BlockSpec{
+				{
+					Name:       "JustDisk",
+					Type:       "SCSI",
+					Rotational: true,
+					Model:      "greatModel",
+					Size:       1000,
 				},
 			},
 			Memory: &inventoryv1alpha1.MemorySpec{
 				Total: 1024000,
 			},
-			CPUs: &inventoryv1alpha1.CPUTotalSpec{
-				Sockets: 1,
-				Cores:   2,
-				Threads: 4,
-				CPUs: []inventoryv1alpha1.CPUSpec{
-					{
-						PhysicalID: 0,
-						LogicalIDs: []uint64{0, 1, 2, 3},
-						Cores:      2,
-						Siblings:   4,
-						VendorID:   "GenuineIntel",
-						Model:      "78",
-						ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
-					},
+			CPUs: []inventoryv1alpha1.CPUSpec{
+				{
+					PhysicalID: 0,
+					LogicalIDs: []uint64{0, 1, 2, 3},
+					Cores:      2,
+					Siblings:   4,
+					VendorID:   "GenuineIntel",
+					Model:      "78",
+					ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
 				},
 			},
-			NICs: &inventoryv1alpha1.NICTotalSpec{
-				Count: 1,
-				NICs: []inventoryv1alpha1.NICSpec{
-					{
-						Name:       "enp0s31f6",
-						PCIAddress: "0000:00:1f.6",
-						MACAddress: "48:2a:e3:02:d9:e8",
-						MTU:        1400,
-						Speed:      1000,
-					},
+			NICs: []inventoryv1alpha1.NICSpec{
+				{
+					Name:       "enp0s31f6",
+					PCIAddress: "0000:00:1f.6",
+					MACAddress: "48:2a:e3:02:d9:e8",
+					MTU:        1400,
+					Speed:      1000,
 				},
 			},
 			Host: &inventoryv1alpha1.HostSpec{
