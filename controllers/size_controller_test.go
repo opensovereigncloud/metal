@@ -257,14 +257,13 @@ var _ = Describe("Size controller", func() {
 			Expect(k8sClient.Update(ctx, &createdSize)).To(Succeed())
 
 			updatedSize := inventoryv1alpha1.Size{}
-			Eventually(func() bool {
+			Eventually(func() inventoryv1alpha1.SizeSpec {
 				err := k8sClient.Get(ctx, sizeNamespacedName, &updatedSize)
 				if err != nil {
-					return false
+					return inventoryv1alpha1.SizeSpec{}
 				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-			Expect(updatedSize.Spec).To(Equal(createdSize.Spec))
+				return updatedSize.Spec
+			}, timeout, interval).Should(Equal(createdSize.Spec))
 
 			By("Matched inventories should get unmatched")
 			matched := []inventoryv1alpha1.Inventory{

@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -72,6 +73,40 @@ var _ = Describe("Aggregate controller", func() {
 			}, timeout, interval).Should(BeTrue())
 		}
 	})
+
+	nestedMapLookup := func(theMap map[string]interface{}, keys ...string) (interface{}, error) {
+		nextMap := theMap
+		lastKeyIdx := len(keys) - 1
+		if nextMap == nil {
+			return nil, errors.New("map is nil")
+		}
+		if lastKeyIdx < 0 {
+			return nil, errors.New("keys are not provided")
+		}
+		var result interface{}
+		var err error
+		for i, key := range keys {
+			mapIface, ok := nextMap[key]
+			if !ok {
+				result, err = nil, errors.Errorf("key %d, %s not found", i, key)
+				break
+			}
+			if lastKeyIdx == i {
+				result, err = mapIface, nil
+				break
+			}
+			if mapIface == nil {
+				result, err = nil, errors.Errorf("key %d, %s returns nil instead of map", i, key)
+				break
+			}
+			nextMap, ok = mapIface.(map[string]interface{})
+			if !ok {
+				result, err = nil, errors.Errorf("cant cast value for key %d, %s to the map", i, key)
+				break
+			}
+		}
+		return result, err
+	}
 
 	Context("When aggregate CR is changed", func() {
 		It("Should recalculate aggregates for inventory CRs", func() {
@@ -158,7 +193,7 @@ var _ = Describe("Aggregate controller", func() {
 				Spec: inventoryv1alpha1.AggregateSpec{
 					Aggregates: []inventoryv1alpha1.AggregateItem{
 						{
-							SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus.cpus[*].logicalIds[*]"),
+							SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus[*].logicalIds[*]"),
 							TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.maxLogicalId"),
 							Aggregate:  inventoryv1alpha1.CMaxAggregateType,
 						},
@@ -190,14 +225,14 @@ var _ = Describe("Aggregate controller", func() {
 				if err != nil {
 					return false
 				}
-				if inventory.Status.Computed.Object == nil {
+				iface, err := nestedMapLookup(inventory.Status.Computed.Object, testAggregate.Name, "cpus", "maxLogicalId")
+				if err != nil {
 					return false
 				}
-				aggregateMap, ok := inventory.Status.Computed.Object[testAggregate.Name]
-				if !ok {
+				if iface == nil {
 					return false
 				}
-				maxLogicalId := aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["maxLogicalId"].(string)
+				maxLogicalId := iface.(string)
 				if maxLogicalId != "3" {
 					return false
 				}
@@ -207,7 +242,7 @@ var _ = Describe("Aggregate controller", func() {
 			By("Aggregate is updated")
 			testAggregate.Spec.Aggregates = []inventoryv1alpha1.AggregateItem{
 				{
-					SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus.cpus[*].cores"),
+					SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus[*].cores"),
 					TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.coreCount"),
 					Aggregate:  inventoryv1alpha1.CSumAggregateType,
 				},
@@ -238,22 +273,19 @@ var _ = Describe("Aggregate controller", func() {
 				if err != nil {
 					return false
 				}
-				if inventory.Status.Computed.Object == nil {
+				iface, err := nestedMapLookup(inventory.Status.Computed.Object, testAggregate.Name, "cpus", "coreCount")
+				if err != nil {
 					return false
 				}
-				aggregateMap, ok := inventory.Status.Computed.Object[testAggregate.Name]
-				if !ok {
+				if iface == nil {
 					return false
 				}
-				coreCount, ok := aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["coreCount"]
-				if !ok {
+				coreCount := iface.(string)
+				if coreCount != "2" {
 					return false
 				}
-				if coreCount.(string) != "2" {
-					return false
-				}
-				_, ok = aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["maxLogicalId"]
-				if ok {
+				_, err = nestedMapLookup(inventory.Status.Computed.Object, testAggregate.Name, "cpus", "maxLogicalId")
+				if err == nil {
 					return false
 				}
 				return true
