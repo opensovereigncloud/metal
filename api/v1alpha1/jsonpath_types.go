@@ -33,6 +33,22 @@ func (in *JSONPath) UnmarshalJSON(b []byte) error {
 		return errors.Wrap(err, "unable to parse JSONPath")
 	}
 
+	parser := jsonpath.NewParser(stringVal)
+	if err := parser.Parse(stringVal); err != nil {
+		return errors.Wrap(err, "unable to parse JSONPath")
+	}
+	if len(parser.Root.Nodes) != 1 || parser.Root.Nodes[0].Type() != jsonpath.NodeList {
+		return errors.New("path should have exactly one path expression")
+	}
+
+	nodeList := parser.Root.Nodes[0].(*jsonpath.ListNode)
+	for idx, node := range nodeList.Nodes {
+		nodeType := node.Type()
+		if !(nodeType == jsonpath.NodeField || nodeType == jsonpath.NodeArray) {
+			return errors.Errorf("path contains segment %d, %s that is not a field name", idx, node.String())
+		}
+	}
+
 	in.Path = stringVal
 
 	return nil

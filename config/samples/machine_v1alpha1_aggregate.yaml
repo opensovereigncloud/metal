@@ -4,21 +4,21 @@ metadata:
   name: default
 spec:
   aggregates:
-    - sourcePath: blocks.blocks[*]
+    - sourcePath: spec.blocks[*]
       targetPath: blocks.count
       aggregate: count
-    - sourcePath: blocks.blocks[*].size
+    - sourcePath: spec.blocks[*].size
       targetPath: blocks.capacity
       aggregate: sum
-    - sourcePath: cpus.cpus[*]
+    - sourcePath: spec.cpus[*]
       targetPath: cpus.sockets
       aggregate: count
-    - sourcePath: cpus.cpus[*].cores
+    - sourcePath: spec.cpus[*].cores
       targetPath: cpus.cores
       aggregate: sum
-    - sourcePath: cpus.cpus[*].siblings
+    - sourcePath: spec.cpus[*].siblings
       targetPath: cpus.threads
       aggregate: sum
-    - sourcePath: nics.nics[*]
+    - sourcePath: spec.nics[*]
       targetPath: nics.count
       aggregate: count

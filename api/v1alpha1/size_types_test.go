@@ -183,7 +183,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.id",
+						Path: *JSONPathFromString("spec.system.id"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("myInventoryId"),
 						},
@@ -198,7 +198,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.serialNumber",
+						Path: *JSONPathFromString("spec.system.serialNumber"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr(""),
 						},
@@ -213,13 +213,13 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.id",
+						Path: *JSONPathFromString("spec.system.id"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("myInventoryId"),
 						},
 					},
 					{
-						Path: "system.manufacturer",
+						Path: *JSONPathFromString("spec.system.manufacturer"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("myManufacturer"),
 						},
@@ -234,7 +234,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.id",
+						Path: *JSONPathFromString("spec.system.id"),
 						NotEqual: &ConstraintValSpec{
 							Literal: stringPtr("blacklistedSystemId"),
 						},
@@ -249,7 +249,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[0].cores",
+						Path: *JSONPathFromString("spec.cpus[0].cores"),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
 						},
@@ -264,7 +264,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[0].model",
+						Path: *JSONPathFromString("spec.cpus[0].model"),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(78, 0),
 						},
@@ -279,7 +279,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[1].cores",
+						Path: *JSONPathFromString("spec.cpus[1].cores"),
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(64, 0),
 						},
@@ -294,7 +294,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[*].cores",
+						Path: *JSONPathFromString("spec.cpus[*].cores"),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
 						},
@@ -309,7 +309,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[*].cores",
+						Path: *JSONPathFromString("spec.cpus[*].cores"),
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(16, 0),
 						},
@@ -324,7 +324,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CSumAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(16, 0),
@@ -340,7 +340,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CAverageAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
@@ -356,7 +356,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CSumAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(24, 0),
@@ -372,7 +372,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CAverageAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(24, 0),
@@ -388,7 +388,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[0].cores",
+						Path:        *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThan: resource.NewScaledQuantity(7, 0),
 					},
 				},
@@ -401,7 +401,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[0].cores",
+						Path:               *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
 				},
@@ -414,7 +414,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:     "cpus[0].cores",
+						Path:     *JSONPathFromString("spec.cpus[0].cores"),
 						LessThan: resource.NewScaledQuantity(17, 0),
 					},
 				},
@@ -427,7 +427,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[0].cores",
+						Path:            *JSONPathFromString("spec.cpus[0].cores"),
 						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
 				},
@@ -440,7 +440,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[0].cores",
+						Path:        *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThan: resource.NewScaledQuantity(4, 0),
 						LessThan:    resource.NewScaledQuantity(24, 0),
 					},
@@ -454,7 +454,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[0].cores",
+						Path:               *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 						LessThan:           resource.NewScaledQuantity(24, 0),
 					},
@@ -468,7 +468,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[0].cores",
+						Path:            *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThan:     resource.NewScaledQuantity(3, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
@@ -482,7 +482,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[0].cores",
+						Path:               *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThanOrEqual: resource.NewScaledQuantity(4, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(12, 0),
 					},
@@ -496,7 +496,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 					},
@@ -510,7 +510,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
@@ -524,7 +524,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CAverageAggregateType,
 						LessThan:  resource.NewScaledQuantity(11, 0),
 					},
@@ -538,7 +538,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CAverageAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
 					},
@@ -552,7 +552,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 						LessThan:    resource.NewScaledQuantity(10, 0),
@@ -567,7 +567,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(8, 0),
 						LessThan:           resource.NewScaledQuantity(11, 0),
@@ -582,7 +582,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CAverageAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(8, 0),
@@ -597,7 +597,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(4, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(24, 0),
@@ -612,7 +612,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 					},
@@ -626,7 +626,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(16, 0),
 					},
@@ -640,7 +640,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CSumAggregateType,
 						LessThan:  resource.NewScaledQuantity(20, 0),
 					},
@@ -654,7 +654,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CSumAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(16, 0),
 					},
@@ -668,7 +668,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(6, 0),
 						LessThan:    resource.NewScaledQuantity(18, 0),
@@ -683,7 +683,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(16, 0),
 						LessThan:           resource.NewScaledQuantity(20, 0),
@@ -698,7 +698,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CSumAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(16, 0),
@@ -713,7 +713,7 @@ func sizesShouldMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(10, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(20, 0),
@@ -733,7 +733,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.id",
+						Path: *JSONPathFromString("spec.system.id"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("anotherInventoryId"),
 						},
@@ -748,7 +748,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.id",
+						Path: *JSONPathFromString("spec.system.id"),
 						NotEqual: &ConstraintValSpec{
 							Literal: stringPtr("myInventoryId"),
 						},
@@ -763,13 +763,13 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.id",
+						Path: *JSONPathFromString("spec.system.id"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("myInventoryId"),
 						},
 					},
 					{
-						Path: "system.manufacturer",
+						Path: *JSONPathFromString("spec.system.manufacturer"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("nonExistentManufacturer"),
 						},
@@ -784,7 +784,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "ipmis.ipAddress",
+						Path: *JSONPathFromString("spec.ipmis.ipAddress"),
 						NotEqual: &ConstraintValSpec{
 							Literal: stringPtr("192.168.1.1"),
 						},
@@ -799,7 +799,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[0].cores",
+						Path: *JSONPathFromString("spec.cpus[0].cores"),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(10, 0),
 						},
@@ -814,7 +814,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[0].cores",
+						Path: *JSONPathFromString("spec.cpus[0].cores"),
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
 						},
@@ -829,7 +829,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[0].model",
+						Path: *JSONPathFromString("spec.cpus[0].model"),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(77, 0),
 						},
@@ -844,7 +844,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus.memory.total",
+						Path: *JSONPathFromString("spec.cpus.memory.total"),
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, resource.Giga),
 						},
@@ -859,7 +859,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[*].cores",
+						Path: *JSONPathFromString("spec.cpus[*].cores"),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(9, 0),
 						},
@@ -874,7 +874,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[*].cores",
+						Path: *JSONPathFromString("spec.cpus[*].cores"),
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
 						},
@@ -889,7 +889,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CSumAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(20, 0),
@@ -905,7 +905,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CAverageAggregateType,
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(6, 0),
@@ -921,7 +921,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CSumAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(16, 0),
@@ -937,7 +937,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CAverageAggregateType,
 						NotEqual: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(8, 0),
@@ -953,7 +953,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[0].cores",
+						Path:        *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThan: resource.NewScaledQuantity(8, 0),
 					},
 				},
@@ -966,7 +966,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[0].cores",
+						Path:               *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThanOrEqual: resource.NewScaledQuantity(9, 0),
 					},
 				},
@@ -979,7 +979,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:     "cpus[0].cores",
+						Path:     *JSONPathFromString("spec.cpus[0].cores"),
 						LessThan: resource.NewScaledQuantity(8, 0),
 					},
 				},
@@ -992,7 +992,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[0].cores",
+						Path:            *JSONPathFromString("spec.cpus[0].cores"),
 						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
 					},
 				},
@@ -1005,7 +1005,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[0].cores",
+						Path:        *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThan: resource.NewScaledQuantity(1, 0),
 						LessThan:    resource.NewScaledQuantity(8, 0),
 					},
@@ -1019,7 +1019,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[0].cores",
+						Path:               *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThanOrEqual: resource.NewScaledQuantity(1, 0),
 						LessThan:           resource.NewScaledQuantity(8, 0),
 					},
@@ -1033,7 +1033,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[0].cores",
+						Path:            *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThan:     resource.NewScaledQuantity(1, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
 					},
@@ -1047,7 +1047,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[0].cores",
+						Path:               *JSONPathFromString("spec.cpus[0].cores"),
 						GreaterThanOrEqual: resource.NewScaledQuantity(9, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(24, 0),
 					},
@@ -1061,7 +1061,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(8, 0),
 					},
@@ -1075,7 +1075,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(10, 0),
 					},
@@ -1089,7 +1089,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CAverageAggregateType,
 						LessThan:  resource.NewScaledQuantity(8, 0),
 					},
@@ -1103,7 +1103,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CAverageAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
 					},
@@ -1117,7 +1117,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CAverageAggregateType,
 						GreaterThan: resource.NewScaledQuantity(8, 0),
 						LessThan:    resource.NewScaledQuantity(10, 0),
@@ -1132,7 +1132,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(9, 0),
 						LessThan:           resource.NewScaledQuantity(11, 0),
@@ -1147,7 +1147,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CAverageAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(7, 0),
@@ -1162,7 +1162,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CAverageAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(4, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(4, 0),
@@ -1177,7 +1177,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(16, 0),
 					},
@@ -1191,7 +1191,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(17, 0),
 					},
@@ -1205,7 +1205,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:      "cpus[*].cores",
+						Path:      *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate: CSumAggregateType,
 						LessThan:  resource.NewScaledQuantity(16, 0),
 					},
@@ -1219,7 +1219,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CSumAggregateType,
 						LessThanOrEqual: resource.NewScaledQuantity(15, 0),
 					},
@@ -1233,7 +1233,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:        "cpus[*].cores",
+						Path:        *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:   CSumAggregateType,
 						GreaterThan: resource.NewScaledQuantity(16, 0),
 						LessThan:    resource.NewScaledQuantity(18, 0),
@@ -1248,7 +1248,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(17, 0),
 						LessThan:           resource.NewScaledQuantity(20, 0),
@@ -1263,7 +1263,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:            "cpus[*].cores",
+						Path:            *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:       CSumAggregateType,
 						GreaterThan:     resource.NewScaledQuantity(6, 0),
 						LessThanOrEqual: resource.NewScaledQuantity(15, 0),
@@ -1278,7 +1278,7 @@ func sizesShouldNotMatch() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:               "cpus[*].cores",
+						Path:               *JSONPathFromString("spec.cpus[*].cores"),
 						Aggregate:          CSumAggregateType,
 						GreaterThanOrEqual: resource.NewScaledQuantity(2, 0),
 						LessThanOrEqual:    resource.NewScaledQuantity(2, 0),
@@ -1298,7 +1298,7 @@ func sizesShouldReturnErr() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "system.id",
+						Path: *JSONPathFromString("spec.system.id"),
 						Equal: &ConstraintValSpec{
 							Numeric: resource.NewScaledQuantity(3, 0),
 						},
@@ -1313,7 +1313,7 @@ func sizesShouldReturnErr() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus[0].cores",
+						Path: *JSONPathFromString("spec.cpus[0].cores"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("nonNumericString"),
 						},
@@ -1328,7 +1328,7 @@ func sizesShouldReturnErr() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path: "cpus",
+						Path: *JSONPathFromString("spec.cpus"),
 						Equal: &ConstraintValSpec{
 							Literal: stringPtr("nonNumericString"),
 						},
@@ -1343,7 +1343,7 @@ func sizesShouldReturnErr() []Size {
 			Spec: SizeSpec{
 				Constraints: []ConstraintSpec{
 					{
-						Path:  "cpus",
+						Path:  *JSONPathFromString("spec.cpus"),
 						Equal: &ConstraintValSpec{},
 					},
 				},

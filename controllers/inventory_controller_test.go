@@ -121,7 +121,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus[0].cores",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(2, 0),
 							},
@@ -138,7 +138,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus[0].siblings",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].siblings"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(4, 0),
 							},
@@ -155,7 +155,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus[0].cores",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(8, 0),
 							},
@@ -172,7 +172,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus[0].siblings",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].siblings"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(16, 0),
 							},
@@ -213,7 +213,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.AggregateSpec{
 					Aggregates: []inventoryv1alpha1.AggregateItem{
 						{
-							SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus[*].logicalIds[*]"),
+							SourcePath: *inventoryv1alpha1.JSONPathFromString("spec.cpus[*].logicalIds[*]"),
 							TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.maxLogicalId"),
 							Aggregate:  inventoryv1alpha1.CMaxAggregateType,
 						},

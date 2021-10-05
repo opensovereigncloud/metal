@@ -193,7 +193,7 @@ var _ = Describe("Aggregate controller", func() {
 				Spec: inventoryv1alpha1.AggregateSpec{
 					Aggregates: []inventoryv1alpha1.AggregateItem{
 						{
-							SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus[*].logicalIds[*]"),
+							SourcePath: *inventoryv1alpha1.JSONPathFromString("spec.cpus[*].logicalIds[*]"),
 							TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.maxLogicalId"),
 							Aggregate:  inventoryv1alpha1.CMaxAggregateType,
 						},
@@ -242,7 +242,7 @@ var _ = Describe("Aggregate controller", func() {
 			By("Aggregate is updated")
 			testAggregate.Spec.Aggregates = []inventoryv1alpha1.AggregateItem{
 				{
-					SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus[*].cores"),
+					SourcePath: *inventoryv1alpha1.JSONPathFromString("spec.cpus[*].cores"),
 					TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.coreCount"),
 					Aggregate:  inventoryv1alpha1.CSumAggregateType,
 				},

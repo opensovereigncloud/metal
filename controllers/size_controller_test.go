@@ -86,7 +86,7 @@ var _ = Describe("Size controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus[0].cores",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(16, 0),
 							},
@@ -249,7 +249,7 @@ var _ = Describe("Size controller", func() {
 			By("Size is updated")
 			createdSize.Spec.Constraints = []inventoryv1alpha1.ConstraintSpec{
 				{
-					Path:        "cpus[0].cores",
+					Path:        *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
 					GreaterThan: resource.NewScaledQuantity(30, 0),
 				},
 			}

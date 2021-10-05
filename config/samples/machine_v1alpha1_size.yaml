@@ -4,12 +4,12 @@ metadata:
   name: v1-s-x86
 spec:
   constraints:
-    - path: "сpus.cores"
+    - path: "status.computed.default.сpus.cores"
       eq: 2
-    - path: "memory.total"
+    - path: "spec.memory.total"
       gte: "2Gi"
-    - path: "cpus.cpus[*].mhz"
+    - path: "spec.cpus[*].mhz"
       lt: "1000.00"
-    - path: "system.manufacturer"
+    - path: "spec.system.manufacturer"
       neq: "LENOVO"
 

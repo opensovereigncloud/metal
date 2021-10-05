@@ -17,16 +17,19 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/util/jsonpath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+const (
+	CStatusFieldName   = "status"
+	CComputedFieldName = "computed"
 )
 
 // log is for logging in this package.
@@ -54,28 +57,39 @@ func (in *Size) ValidateUpdate(old runtime.Object) error {
 	return in.validate()
 }
 
-var CDummyInventorySpec = getDummyInventorySpec()
+var CDummyInventorySpec = getDummyInventoryForValidation()
 
 func (in *Size) validate() error {
 	ops := make(map[string]int, 0)
 	errs := make([]string, 0)
 
 	for _, c := range in.Spec.Constraints {
-		op, ok := ops[c.Path]
+		pathString := c.Path.String()
+		op, ok := ops[pathString]
 		if !ok {
 			op = 0
 		}
 		op++
-		ops[c.Path] = op
+		ops[pathString] = op
 
-		jp := jsonpath.New(c.Path)
-		jp.AllowMissingKeys(false)
-		if err := jp.Parse(normalizeJSONPath(c.Path)); err != nil {
-			errs = append(errs, errors.Wrap(err, "unable to parse JSONPath").Error())
-		}
+		// It is not possible to check on aggregate path existence,
+		// as it may be applied dynamically
+		// So, instead, we will check that path has a proper prefixs,
+		// has at least 4 segments, and matches the schema,
+		// i.e. status.computed.{aggregate-name}.{value-key}
 
-		if _, err := jp.FindResults(CDummyInventorySpec); err != nil {
-			errs = append(errs, errors.Wrap(err, "unable to find results with path").Error())
+		// Moreover, jsonpath doesn't allow to access its parser.
+		// Means, it is required to process path in different ways for each case.
+
+		tokens := c.Path.Tokenize()
+		if !(len(tokens) >= 4 && tokens[0] == CStatusFieldName && tokens[1] == CComputedFieldName) {
+			jp, err := c.Path.ToK8sJSONPath()
+			jp.AllowMissingKeys(false)
+			if err != nil {
+				errs = append(errs, errors.Wrap(err, "unable to parse JSONPath").Error())
+			} else if _, err := jp.FindResults(CDummyInventorySpec); err != nil {
+				errs = append(errs, errors.Wrap(err, "unable to find results with path").Error())
+			}
 		}
 
 		if op == 2 {
@@ -183,137 +197,4 @@ func (in *ConstraintSpec) wrongInterval() bool {
 func (in *Size) ValidateDelete() error {
 	sizelog.Info("validate delete", "name", in.Name)
 	return nil
-}
-
-// getDummyInventorySpec fills structure with dummy data and used to validate whether path points to existing field
-func getDummyInventorySpec() *InventorySpec {
-	return &InventorySpec{
-		System: &SystemSpec{
-			ID:           "",
-			Manufacturer: "",
-			ProductSKU:   "",
-			SerialNumber: "",
-		},
-		IPMIs: []IPMISpec{
-			{
-				IPAddress:  "",
-				MACAddress: "",
-			},
-		},
-		Blocks: []BlockSpec{
-			{
-				Name:       "",
-				Type:       "",
-				Rotational: false,
-				Bus:        "",
-				Model:      "",
-				Size:       0,
-				PartitionTable: &PartitionTableSpec{
-					Type: "",
-					Partitions: []PartitionSpec{
-						{
-							ID:   "",
-							Name: "",
-							Size: 0,
-						},
-					},
-				},
-			},
-		},
-		Memory: &MemorySpec{
-			Total: 0,
-		},
-		CPUs: []CPUSpec{
-			{
-				PhysicalID: 0,
-				LogicalIDs: []uint64{
-					0,
-				},
-				Cores:        0,
-				Siblings:     0,
-				VendorID:     "",
-				Family:       "",
-				Model:        "",
-				ModelName:    "",
-				Stepping:     "",
-				Microcode:    "",
-				MHz:          *resource.NewScaledQuantity(0, 0),
-				CacheSize:    "",
-				FPU:          false,
-				FPUException: false,
-				CPUIDLevel:   0,
-				WP:           false,
-				Flags: []string{
-					"",
-				},
-				VMXFlags: []string{
-					"",
-				},
-				Bugs: []string{
-					"",
-				},
-				BogoMIPS:        *resource.NewScaledQuantity(0, 0),
-				CLFlushSize:     0,
-				CacheAlignment:  0,
-				AddressSizes:    "",
-				PowerManagement: "",
-			},
-		},
-		NICs: []NICSpec{
-			{
-				Name:       "",
-				PCIAddress: "",
-				MACAddress: "",
-				MTU:        0,
-				Speed:      0,
-				LLDPs: []LLDPSpec{
-					{
-						ChassisID:         "",
-						SystemName:        "",
-						SystemDescription: "",
-						PortID:            "",
-						PortDescription:   "",
-					},
-				},
-				NDPs: []NDPSpec{
-					{
-						IPAddress:  "",
-						MACAddress: "",
-						State:      "",
-					},
-				},
-			},
-		},
-		Virt: &VirtSpec{
-			VMType: "",
-		},
-		Host: &HostSpec{
-			Type: "",
-			Name: "",
-		},
-		Distro: &DistroSpec{
-			BuildVersion:  "",
-			DebianVersion: "",
-			KernelVersion: "",
-			AsicType:      "",
-			CommitId:      "",
-			BuildDate:     "",
-			BuildNumber:   0,
-			BuildBy:       "",
-		},
-		Benchmark: &BenchmarkSpec{
-			Blocks:  []BlockBenchmarkResult{},
-			Network: &NetworkBenchmarkResult{},
-		},
-	}
-}
-
-func normalizeJSONPath(jp string) string {
-	if strings.HasPrefix(jp, "{.") {
-		return jp
-	}
-	if strings.HasPrefix(jp, ".") {
-		return fmt.Sprintf("{%s}", jp)
-	}
-	return fmt.Sprintf("{.%s}", jp)
 }
