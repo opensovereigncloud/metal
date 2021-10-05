@@ -78,6 +78,44 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	limit := int64(1000)
 
 	for {
+		aggregateList := &machinev1alpha1.AggregateList{}
+		opts := &client.ListOptions{
+			Namespace: req.Namespace,
+			Limit:     limit,
+			Continue:  continueToken,
+		}
+
+		err := r.List(ctx, aggregateList, opts)
+		if err != nil {
+			log.Error(err, "unable to get aggregate resource list", "namespace", req.Namespace)
+			return ctrl.Result{}, err
+		}
+
+		for _, aggregate := range aggregateList.Items {
+			aggregatedValues, err := aggregate.Compute(inv)
+			if err != nil {
+				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
+			}
+			inv.Status.Computed.Object[aggregate.Name] = aggregatedValues
+		}
+
+		if aggregateList.Continue == "" ||
+			aggregateList.RemainingItemCount == nil ||
+			*aggregateList.RemainingItemCount == 0 {
+			break
+		}
+
+		continueToken = aggregateList.Continue
+	}
+
+	if err = r.Status().Update(ctx, inv); err != nil {
+		log.Error(err, "unable to update inventory status resource", "name", req.NamespacedName)
+		return ctrl.Result{}, err
+	}
+
+	continueToken = ""
+
+	for {
 		sizeList := &machinev1alpha1.SizeList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
@@ -122,44 +160,6 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	if err = r.Update(ctx, inv); err != nil {
 		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)
-		return ctrl.Result{}, err
-	}
-
-	continueToken = ""
-
-	for {
-		aggregateList := &machinev1alpha1.AggregateList{}
-		opts := &client.ListOptions{
-			Namespace: req.Namespace,
-			Limit:     limit,
-			Continue:  continueToken,
-		}
-
-		err := r.List(ctx, aggregateList, opts)
-		if err != nil {
-			log.Error(err, "unable to get aggregate resource list", "namespace", req.Namespace)
-			return ctrl.Result{}, err
-		}
-
-		for _, aggregate := range aggregateList.Items {
-			aggregatedValues, err := aggregate.Compute(inv)
-			if err != nil {
-				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
-			}
-			inv.Status.Computed.Object[aggregate.Name] = aggregatedValues
-		}
-
-		if aggregateList.Continue == "" ||
-			aggregateList.RemainingItemCount == nil ||
-			*aggregateList.RemainingItemCount == 0 {
-			break
-		}
-
-		continueToken = aggregateList.Continue
-	}
-
-	if err = r.Status().Update(ctx, inv); err != nil {
-		log.Error(err, "unable to update inventory status resource", "name", req.NamespacedName)
 		return ctrl.Result{}, err
 	}
 
