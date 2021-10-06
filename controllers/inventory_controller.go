@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/d4l3k/messagediff"
 	"github.com/go-logr/logr"
@@ -30,6 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+)
+
+const (
+	CMACAddressLabelPrefix = "machine.onmetal.de/mac-address-"
 )
 
 // InventoryReconciler reconciles a Inventory object
@@ -72,6 +77,12 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	if inv.Status.Computed.Object == nil {
 		inv.Status.Computed.Object = make(map[string]interface{})
+	}
+
+	// Due to k8s validation which allows labels to consist of alphanumeric characters, '-', '_' or '.' need to replace
+	// colons in nic's MAC address
+	for _, nic := range inv.Spec.NICs {
+		inv.Labels[CMACAddressLabelPrefix+strings.ReplaceAll(nic.MACAddress, ":", "")] = ""
 	}
 
 	continueToken := ""
