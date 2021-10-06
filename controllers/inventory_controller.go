@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/d4l3k/messagediff"
 	"github.com/go-logr/logr"
@@ -30,6 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+)
+
+const (
+	CMACAddressLabelPrefix = "machine.onmetal.de/mac-address-"
 )
 
 // InventoryReconciler reconciles a Inventory object
@@ -74,8 +79,52 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		inv.Status.Computed.Object = make(map[string]interface{})
 	}
 
+	// Due to k8s validation which allows labels to consist of alphanumeric characters, '-', '_' or '.' need to replace
+	// colons in nic's MAC address
+	for _, nic := range inv.Spec.NICs {
+		inv.Labels[CMACAddressLabelPrefix+strings.ReplaceAll(nic.MACAddress, ":", "")] = ""
+	}
+
 	continueToken := ""
 	limit := int64(1000)
+
+	for {
+		aggregateList := &machinev1alpha1.AggregateList{}
+		opts := &client.ListOptions{
+			Namespace: req.Namespace,
+			Limit:     limit,
+			Continue:  continueToken,
+		}
+
+		err := r.List(ctx, aggregateList, opts)
+		if err != nil {
+			log.Error(err, "unable to get aggregate resource list", "namespace", req.Namespace)
+			return ctrl.Result{}, err
+		}
+
+		for _, aggregate := range aggregateList.Items {
+			aggregatedValues, err := aggregate.Compute(inv)
+			if err != nil {
+				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
+			}
+			inv.Status.Computed.Object[aggregate.Name] = aggregatedValues
+		}
+
+		if aggregateList.Continue == "" ||
+			aggregateList.RemainingItemCount == nil ||
+			*aggregateList.RemainingItemCount == 0 {
+			break
+		}
+
+		continueToken = aggregateList.Continue
+	}
+
+	if err = r.Status().Update(ctx, inv); err != nil {
+		log.Error(err, "unable to update inventory status resource", "name", req.NamespacedName)
+		return ctrl.Result{}, err
+	}
+
+	continueToken = ""
 
 	for {
 		sizeList := &machinev1alpha1.SizeList{}
@@ -122,44 +171,6 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	if err = r.Update(ctx, inv); err != nil {
 		log.Error(err, "unable to update inventory resource", "name", req.NamespacedName)
-		return ctrl.Result{}, err
-	}
-
-	continueToken = ""
-
-	for {
-		aggregateList := &machinev1alpha1.AggregateList{}
-		opts := &client.ListOptions{
-			Namespace: req.Namespace,
-			Limit:     limit,
-			Continue:  continueToken,
-		}
-
-		err := r.List(ctx, aggregateList, opts)
-		if err != nil {
-			log.Error(err, "unable to get aggregate resource list", "namespace", req.Namespace)
-			return ctrl.Result{}, err
-		}
-
-		for _, aggregate := range aggregateList.Items {
-			aggregatedValues, err := aggregate.Compute(inv)
-			if err != nil {
-				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
-			}
-			inv.Status.Computed.Object[aggregate.Name] = aggregatedValues
-		}
-
-		if aggregateList.Continue == "" ||
-			aggregateList.RemainingItemCount == nil ||
-			*aggregateList.RemainingItemCount == 0 {
-			break
-		}
-
-		continueToken = aggregateList.Continue
-	}
-
-	if err = r.Status().Update(ctx, inv); err != nil {
-		log.Error(err, "unable to update inventory status resource", "name", req.NamespacedName)
 		return ctrl.Result{}, err
 	}
 

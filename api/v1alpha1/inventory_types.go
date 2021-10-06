@@ -40,16 +40,16 @@ type InventorySpec struct {
 	IPMIs []IPMISpec `json:"ipmis,omitempty"`
 	// Blocks contains info about block devices on the host
 	// +kubebuilder:validation:Required
-	Blocks *BlockTotalSpec `json:"blocks,omitempty"`
+	Blocks []BlockSpec `json:"blocks,omitempty"`
 	// Memory contains info block devices on the host
 	// +kubebuilder:validation:Required
 	Memory *MemorySpec `json:"memory,omitempty"`
 	// CPUs contains info about cpus, cores and threads
 	// +kubebuilder:validation:Required
-	CPUs *CPUTotalSpec `json:"cpus,omitempty"`
+	CPUs []CPUSpec `json:"cpus,omitempty"`
 	// NICs contains info about network interfaces and network discovery
 	// +kubebuilder:validation:Required
-	NICs *NICTotalSpec `json:"nics,omitempty"`
+	NICs []NICSpec `json:"nics,omitempty"`
 	// Virt is a virtualization detected on host
 	// +kubebuilder:validation:Optional
 	Virt *VirtSpec `json:"virt,omitempty"`
@@ -132,22 +132,6 @@ type IPMISpec struct {
 	MACAddress string `json:"macAddress,omitempty"`
 }
 
-// BlockTotalSpec contains disk aggregates and disk descriptions
-// +kubebuilder:object:generate=true
-type BlockTotalSpec struct {
-	// Count is a total disk count on a host
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum=1
-	Count uint64 `json:"count,omitempty"`
-	// Capacity is a total disk storage capacity on a host in bytes
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum=1
-	Capacity uint64 `json:"capacity,omitempty"`
-	// Blocks contains info about block devices on the host
-	// +kubebuilder:validation:Required
-	Blocks []BlockSpec `json:"blocks,omitempty"`
-}
-
 // BlockSpec contains info about block device
 // +kubebuilder:object:generate=true
 type BlockSpec struct {
@@ -210,27 +194,6 @@ type MemorySpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Minimum=1
 	Total uint64 `json:"total,omitempty"`
-}
-
-// CPUTotalSpec contains an overview of CPUs and calculated total
-// +kubebuilder:object:generate=true
-type CPUTotalSpec struct {
-	// Sockets represents a total amount of physical processors
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum=1
-	Sockets uint64 `json:"sockets,omitempty"`
-	// Cores is a total amount of physical cores
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum=1
-	Cores uint64 `json:"cores,omitempty"`
-	// Cores is a total amount of logical cores
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum=1
-	Threads uint64 `json:"threads,omitempty"`
-	// CPUs is a collection of specs for physical CPUs
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinItems=1
-	CPUs []CPUSpec `json:"cpus,omitempty"`
 }
 
 // CPUSpec contains info about CPUs on hsot machine
@@ -312,18 +275,6 @@ type CPUSpec struct {
 	// PowerManagement
 	// +kubebuilder:validation:Optional
 	PowerManagement string `json:"powerManagement,omitempty"`
-}
-
-// NICTotalSpec contains info about network interfaces and aggregates
-// +kubebuilder:object:generate=true
-type NICTotalSpec struct {
-	// Count is a total amount of hardware NICs on host
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum=1
-	Count uint64 `json:"count,omitempty"`
-	// NICs contains info about network interfaces and network discovery
-	// +kubebuilder:validation:Required
-	NICs []NICSpec `json:"nics,omitempty"`
 }
 
 // NICSpec contains info about network interfaces
@@ -457,11 +408,11 @@ type InventoryStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.host.name`,description="Hostname"
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.host.type`,description="Type"
-// +kubebuilder:printcolumn:name="Cores",type=integer,JSONPath=`.spec.cpus.cores`,description="Total amount of cores"
+// +kubebuilder:printcolumn:name="Cores",type=integer,JSONPath=`.status.computed.default.cpus.cores`,description="Total amount of cores"
 // +kubebuilder:printcolumn:name="Memory",type=integer,JSONPath=`.spec.memory.total`,description="RAM amount in bytes"
-// +kubebuilder:printcolumn:name="Disks",type=integer,JSONPath=`.spec.blocks.count`,description="Hardware disk count"
-// +kubebuilder:printcolumn:name="Storage",type=integer,JSONPath=`.spec.blocks.capacity`,description="Total amount of disk capacity"
-// +kubebuilder:printcolumn:name="NICs",type=integer,JSONPath=`.spec.nics.count`,description="Total amount of hardware network interfaces"
+// +kubebuilder:printcolumn:name="Disks",type=integer,JSONPath=`.status.computed.default.blocks.count`,description="Hardware disk count"
+// +kubebuilder:printcolumn:name="Storage",type=integer,JSONPath=`.status.computed.default.blocks.capacity`,description="Total amount of disk capacity"
+// +kubebuilder:printcolumn:name="NICs",type=integer,JSONPath=`.status.computed.default.nics.count`,description="Total amount of hardware network interfaces"
 type Inventory struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

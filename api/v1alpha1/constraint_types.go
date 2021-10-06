@@ -11,7 +11,7 @@ import (
 type ConstraintSpec struct {
 	// Path is a path to the struct field constraint will be applied to
 	// +kubebuilder:validation:Optional
-	Path string `json:"path,omitempty"`
+	Path JSONPath `json:"path,omitempty"`
 	// Aggregate defines whether collection values should be aggregated
 	// for constraint checks, in case if path defines selector for collection
 	// +kubebuilder:validation:Optional

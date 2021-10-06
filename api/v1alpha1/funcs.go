@@ -240,3 +240,142 @@ func valueToQuantity(value *reflect.Value) (*resource.Quantity, error) {
 
 	return nil, errors.Errorf("unsupported kind %s for numeric comparison", nonPointerValue.Kind().String())
 }
+
+func normalizeJSONPath(jp string) string {
+	if strings.HasPrefix(jp, "{.") {
+		return jp
+	}
+	if strings.HasPrefix(jp, ".") {
+		return fmt.Sprintf("{%s}", jp)
+	}
+	return fmt.Sprintf("{.%s}", jp)
+}
+
+type ValidationInventory struct {
+	Spec InventorySpec `json:"spec"`
+}
+
+// getDummyInventoryForValidation fills structure with dummy data and used to validate whether path points to existing field
+func getDummyInventoryForValidation() *ValidationInventory {
+	return &ValidationInventory{
+		Spec: InventorySpec{
+			System: &SystemSpec{
+				ID:           "",
+				Manufacturer: "",
+				ProductSKU:   "",
+				SerialNumber: "",
+			},
+			IPMIs: []IPMISpec{
+				{
+					IPAddress:  "",
+					MACAddress: "",
+				},
+			},
+			Blocks: []BlockSpec{
+				{
+					Name:       "",
+					Type:       "",
+					Rotational: false,
+					Bus:        "",
+					Model:      "",
+					Size:       0,
+					PartitionTable: &PartitionTableSpec{
+						Type: "",
+						Partitions: []PartitionSpec{
+							{
+								ID:   "",
+								Name: "",
+								Size: 0,
+							},
+						},
+					},
+				},
+			},
+			Memory: &MemorySpec{
+				Total: 0,
+			},
+			CPUs: []CPUSpec{
+				{
+					PhysicalID: 0,
+					LogicalIDs: []uint64{
+						0,
+					},
+					Cores:        0,
+					Siblings:     0,
+					VendorID:     "",
+					Family:       "",
+					Model:        "",
+					ModelName:    "",
+					Stepping:     "",
+					Microcode:    "",
+					MHz:          *resource.NewScaledQuantity(0, 0),
+					CacheSize:    "",
+					FPU:          false,
+					FPUException: false,
+					CPUIDLevel:   0,
+					WP:           false,
+					Flags: []string{
+						"",
+					},
+					VMXFlags: []string{
+						"",
+					},
+					Bugs: []string{
+						"",
+					},
+					BogoMIPS:        *resource.NewScaledQuantity(0, 0),
+					CLFlushSize:     0,
+					CacheAlignment:  0,
+					AddressSizes:    "",
+					PowerManagement: "",
+				},
+			},
+			NICs: []NICSpec{
+				{
+					Name:       "",
+					PCIAddress: "",
+					MACAddress: "",
+					MTU:        0,
+					Speed:      0,
+					LLDPs: []LLDPSpec{
+						{
+							ChassisID:         "",
+							SystemName:        "",
+							SystemDescription: "",
+							PortID:            "",
+							PortDescription:   "",
+						},
+					},
+					NDPs: []NDPSpec{
+						{
+							IPAddress:  "",
+							MACAddress: "",
+							State:      "",
+						},
+					},
+				},
+			},
+			Virt: &VirtSpec{
+				VMType: "",
+			},
+			Host: &HostSpec{
+				Type: "",
+				Name: "",
+			},
+			Distro: &DistroSpec{
+				BuildVersion:  "",
+				DebianVersion: "",
+				KernelVersion: "",
+				AsicType:      "",
+				CommitId:      "",
+				BuildDate:     "",
+				BuildNumber:   0,
+				BuildBy:       "",
+			},
+			Benchmark: &BenchmarkSpec{
+				Blocks:  []BlockBenchmarkResult{},
+				Network: &NetworkBenchmarkResult{},
+			},
+		},
+	}
+}
