@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +22,7 @@ var _ = Describe("Inventory controller", func() {
 		InventoryName      = "test-inventory"
 		InventoryNamespace = "default"
 
-		timeout  = time.Second * 20
+		timeout  = time.Second * 30
 		interval = time.Millisecond * 500
 	)
 
@@ -73,6 +74,40 @@ var _ = Describe("Inventory controller", func() {
 		}
 	})
 
+	nestedMapLookup := func(theMap map[string]interface{}, keys ...string) (interface{}, error) {
+		nextMap := theMap
+		lastKeyIdx := len(keys) - 1
+		if nextMap == nil {
+			return nil, errors.New("map is nil")
+		}
+		if lastKeyIdx < 0 {
+			return nil, errors.New("keys are not provided")
+		}
+		var result interface{}
+		var err error
+		for i, key := range keys {
+			mapIface, ok := nextMap[key]
+			if !ok {
+				result, err = nil, errors.Errorf("key %d, %s not found", i, key)
+				break
+			}
+			if lastKeyIdx == i {
+				result, err = mapIface, nil
+				break
+			}
+			if mapIface == nil {
+				result, err = nil, errors.Errorf("key %d, %s returns nil instead of map", i, key)
+				break
+			}
+			nextMap, ok = mapIface.(map[string]interface{})
+			if !ok {
+				result, err = nil, errors.Errorf("cant cast value for key %d, %s to the map", i, key)
+				break
+			}
+		}
+		return result, err
+	}
+
 	Context("When inventory CR is created and updated", func() {
 		It("Should be matched or unmatched to size CRs", func() {
 			By("Sizes are installed")
@@ -86,7 +121,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus.cores",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(2, 0),
 							},
@@ -103,7 +138,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus.threads",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].siblings"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(4, 0),
 							},
@@ -120,7 +155,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus.cores",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(8, 0),
 							},
@@ -137,7 +172,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.SizeSpec{
 					Constraints: []inventoryv1alpha1.ConstraintSpec{
 						{
-							Path: "cpus.threads",
+							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].siblings"),
 							Equal: &inventoryv1alpha1.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(16, 0),
 							},
@@ -178,7 +213,7 @@ var _ = Describe("Inventory controller", func() {
 				Spec: inventoryv1alpha1.AggregateSpec{
 					Aggregates: []inventoryv1alpha1.AggregateItem{
 						{
-							SourcePath: *inventoryv1alpha1.JSONPathFromString("cpus.cpus[*].logicalIds[*]"),
+							SourcePath: *inventoryv1alpha1.JSONPathFromString("spec.cpus[*].logicalIds[*]"),
 							TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.maxLogicalId"),
 							Aggregate:  inventoryv1alpha1.CMaxAggregateType,
 						},
@@ -218,48 +253,36 @@ var _ = Describe("Inventory controller", func() {
 						ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
 						SerialNumber: "R90QR6J0",
 					},
-					Blocks: &inventoryv1alpha1.BlockTotalSpec{
-						Count:    1,
-						Capacity: 1,
-						Blocks: []inventoryv1alpha1.BlockSpec{
-							{
-								Name:       "JustDisk",
-								Type:       "SCSI",
-								Rotational: true,
-								Model:      "greatModel",
-								Size:       1000,
-							},
+					Blocks: []inventoryv1alpha1.BlockSpec{
+						{
+							Name:       "JustDisk",
+							Type:       "SCSI",
+							Rotational: true,
+							Model:      "greatModel",
+							Size:       1000,
 						},
 					},
 					Memory: &inventoryv1alpha1.MemorySpec{
 						Total: 1024000,
 					},
-					CPUs: &inventoryv1alpha1.CPUTotalSpec{
-						Sockets: 1,
-						Cores:   2,
-						Threads: 4,
-						CPUs: []inventoryv1alpha1.CPUSpec{
-							{
-								PhysicalID: 0,
-								LogicalIDs: []uint64{0, 1, 2, 3},
-								Cores:      2,
-								Siblings:   4,
-								VendorID:   "GenuineIntel",
-								Model:      "78",
-								ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
-							},
+					CPUs: []inventoryv1alpha1.CPUSpec{
+						{
+							PhysicalID: 0,
+							LogicalIDs: []uint64{0, 1, 2, 3},
+							Cores:      2,
+							Siblings:   4,
+							VendorID:   "GenuineIntel",
+							Model:      "78",
+							ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
 						},
 					},
-					NICs: &inventoryv1alpha1.NICTotalSpec{
-						Count: 1,
-						NICs: []inventoryv1alpha1.NICSpec{
-							{
-								Name:       "enp0s31f6",
-								PCIAddress: "0000:00:1f.6",
-								MACAddress: "48:2a:e3:02:d9:e8",
-								MTU:        1400,
-								Speed:      1000,
-							},
+					NICs: []inventoryv1alpha1.NICSpec{
+						{
+							Name:       "enp0s31f6",
+							PCIAddress: "0000:00:1f.6",
+							MACAddress: "48:2a:e3:02:d9:e8",
+							MTU:        1400,
+							Speed:      1000,
 						},
 					},
 					Host: &inventoryv1alpha1.HostSpec{
@@ -355,14 +378,11 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				if inventory.Status.Computed.Object == nil {
+				iface, err := nestedMapLookup(inventory.Status.Computed.Object, testAggregate.Name, "cpus", "maxLogicalId")
+				if err != nil {
 					return false
 				}
-				aggregateMap, ok := inventory.Status.Computed.Object[testAggregate.Name]
-				if !ok {
-					return false
-				}
-				maxLogicalId := aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["maxLogicalId"].(string)
+				maxLogicalId := iface.(string)
 				if maxLogicalId != "3" {
 					return false
 				}
@@ -372,9 +392,9 @@ var _ = Describe("Inventory controller", func() {
 			By("Inventory is updated")
 			Expect(k8sClient.Get(ctx, inventoryNamespacedName, &createdInventory)).To(Succeed())
 
-			createdInventory.Spec.CPUs.Cores = 8
-			createdInventory.Spec.CPUs.Threads = 16
-			createdInventory.Spec.CPUs.CPUs[0].LogicalIDs = append(createdInventory.Spec.CPUs.CPUs[0].LogicalIDs, 5)
+			createdInventory.Spec.CPUs[0].LogicalIDs = append(createdInventory.Spec.CPUs[0].LogicalIDs, 5)
+			createdInventory.Spec.CPUs[0].Cores = 8
+			createdInventory.Spec.CPUs[0].Siblings = 16
 			createdInventory.Spec.Benchmark = &inventoryv1alpha1.BenchmarkSpec{
 				Blocks: []inventoryv1alpha1.BlockBenchmarkResult{
 					{
@@ -391,14 +411,13 @@ var _ = Describe("Inventory controller", func() {
 			Expect(k8sClient.Update(ctx, &createdInventory)).To(Succeed())
 
 			updatedInventory := inventoryv1alpha1.Inventory{}
-			Eventually(func() bool {
+			Eventually(func() inventoryv1alpha1.InventorySpec {
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &updatedInventory)
 				if err != nil {
-					return false
+					return inventoryv1alpha1.InventorySpec{}
 				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-			Expect(updatedInventory.Spec).To(Equal(createdInventory.Spec))
+				return updatedInventory.Spec
+			}, timeout, interval).Should(Equal(createdInventory.Spec))
 
 			By("Matched size should get unmatched")
 			matchedLabels := []string{
@@ -451,14 +470,11 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				if inventory.Status.Computed.Object == nil {
+				iface, err := nestedMapLookup(inventory.Status.Computed.Object, testAggregate.Name, "cpus", "maxLogicalId")
+				if err != nil {
 					return false
 				}
-				aggregateMap, ok := inventory.Status.Computed.Object[testAggregate.Name]
-				if !ok {
-					return false
-				}
-				maxLogicalId := aggregateMap.(map[string]interface{})["cpus"].(map[string]interface{})["maxLogicalId"].(string)
+				maxLogicalId := iface.(string)
 				if maxLogicalId != "5" {
 					return false
 				}

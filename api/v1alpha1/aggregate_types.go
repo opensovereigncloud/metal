@@ -91,7 +91,7 @@ func (in *Aggregate) Compute(inventory *Inventory) (interface{}, error) {
 		}
 
 		jp.AllowMissingKeys(true)
-		data, err := jp.FindResults(inventory.Spec)
+		data, err := jp.FindResults(inventory)
 		if err != nil {
 			return nil, err
 		}

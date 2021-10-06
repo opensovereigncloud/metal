@@ -46,7 +46,7 @@ var _ = Describe("Size client", func() {
 				Spec: v1alpha1.SizeSpec{
 					Constraints: []v1alpha1.ConstraintSpec{
 						{
-							Path:        "a.b.c",
+							Path:        *v1alpha1.JSONPathFromString("a.b.c"),
 							GreaterThan: &qty,
 						},
 					},
@@ -78,7 +78,7 @@ var _ = Describe("Size client", func() {
 			<-finished
 
 			By("Updating Size")
-			createdSize.Spec.Constraints[0].Path = "d.e.f"
+			createdSize.Spec.Constraints[0].Path = *v1alpha1.JSONPathFromString("d.e.f")
 			go func() {
 				defer GinkgoRecover()
 				updatedSize, err := client.Update(ctx, createdSize, v1.UpdateOptions{})
@@ -113,7 +113,7 @@ var _ = Describe("Size client", func() {
 				defer GinkgoRecover()
 				patchedSize, err := client.Patch(ctx, SizeName, types.JSONPatchType, patchData, v1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedSize.Spec.Constraints[0].Path).Should(Equal(patch[0].Value))
+				Expect(patchedSize.Spec.Constraints[0].Path.String()).Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
 				finished <- true
 			}()
 
@@ -121,7 +121,7 @@ var _ = Describe("Size client", func() {
 			Expect(event.Type).To(Equal(watch.Modified))
 			eventSize = event.Object.(*v1alpha1.Size)
 			Expect(eventSize).NotTo(BeNil())
-			Expect(eventSize.Spec.Constraints[0].Path).Should(Equal(patch[0].Value))
+			Expect(eventSize.Spec.Constraints[0].Path.String()).Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
 
 			<-finished
 

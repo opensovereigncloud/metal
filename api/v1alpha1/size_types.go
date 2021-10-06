@@ -19,7 +19,6 @@ package v1alpha1
 import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/jsonpath"
 )
 
 const (
@@ -68,15 +67,15 @@ func (in *Size) GetMatchLabel() string {
 
 func (in *Size) Matches(inventory *Inventory) (bool, error) {
 	for _, constraint := range in.Spec.Constraints {
-		jp := jsonpath.New(constraint.Path)
-		// Do not return errors if data is not found
-		jp.AllowMissingKeys(true)
-		err := jp.Parse(normalizeJSONPath(constraint.Path))
+		jp, err := constraint.Path.ToK8sJSONPath()
 		if err != nil {
 			return false, err
 		}
 
-		data, err := jp.FindResults(&inventory.Spec)
+		// Do not return errors if data is not found
+		jp.AllowMissingKeys(true)
+
+		data, err := jp.FindResults(&inventory)
 		if err != nil {
 			return false, err
 		}

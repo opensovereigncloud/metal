@@ -49,7 +49,7 @@ func validAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 					},
 				},
@@ -63,7 +63,7 @@ func validAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 						Aggregate:  CSumAggregateType,
 					},
@@ -78,12 +78,12 @@ func validAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 						Aggregate:  CSumAggregateType,
 					},
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].mhz"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].mhz"),
 						TargetPath: *JSONPathFromString("cpus.freq"),
 						Aggregate:  CAverageAggregateType,
 					},
@@ -103,7 +103,7 @@ func invalidAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings123"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings123"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 					},
 				},
@@ -131,7 +131,7 @@ func invalidAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings123"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings123"),
 						TargetPath: *JSONPathFromString(":::"),
 					},
 				},
@@ -145,12 +145,12 @@ func invalidAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 						Aggregate:  CSumAggregateType,
 					},
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].mhz"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].mhz"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 						Aggregate:  CAverageAggregateType,
 					},
@@ -165,12 +165,12 @@ func invalidAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings"),
 						TargetPath: *JSONPathFromString("cpus"),
 						Aggregate:  CSumAggregateType,
 					},
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].mhz"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].mhz"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 						Aggregate:  CAverageAggregateType,
 					},
@@ -185,12 +185,12 @@ func invalidAggregates(namespace string) []Aggregate {
 			Spec: AggregateSpec{
 				Aggregates: []AggregateItem{
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].siblings"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].siblings"),
 						TargetPath: *JSONPathFromString("cpus.threads"),
 						Aggregate:  CSumAggregateType,
 					},
 					{
-						SourcePath: *JSONPathFromString("cpus.cpus[*].mhz"),
+						SourcePath: *JSONPathFromString("spec.cpus[*].mhz"),
 						TargetPath: *JSONPathFromString("cpus.threads.freq"),
 						Aggregate:  CAverageAggregateType,
 					},
