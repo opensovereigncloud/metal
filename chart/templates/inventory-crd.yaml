@@ -484,6 +484,117 @@ spec:
                         type: integer
                     type: object
                   type: array
+                pciDevices:
+                  description: PCIDevices contains info about devices accessible through
+                  items:
+                    description: PCIDeviceSpec contains description of PCI device
+                    properties:
+                      busId:
+                        description: BusID is an ID of PCI bun on the board device is
+                          attached to.
+                        type: string
+                      class:
+                        description: Class refers to generic device designation.
+                        properties:
+                          id:
+                            description: ID is a hexadecimal identifier of device property
+                              , that corresponds to the value from PCIIDs database
+                            type: string
+                          name:
+                            description: Name is a string value of property extracted
+                              from PCIID DB
+                            type: string
+                        required:
+                          - id
+                        type: object
+                      interface:
+                        description: ProgrammingInterface specifies communication protocols.
+                        properties:
+                          id:
+                            description: ID is a hexadecimal identifier of device property
+                              , that corresponds to the value from PCIIDs database
+                            type: string
+                          name:
+                            description: Name is a string value of property extracted
+                              from PCIID DB
+                            type: string
+                        required:
+                          - id
+                        type: object
+                      subclass:
+                        description: Subclass narrows the designation scope.
+                        properties:
+                          id:
+                            description: ID is a hexadecimal identifier of device property
+                              , that corresponds to the value from PCIIDs database
+                            type: string
+                          name:
+                            description: Name is a string value of property extracted
+                              from PCIID DB
+                            type: string
+                        required:
+                          - id
+                        type: object
+                      subtype:
+                        description: Subtype shows device's subsystem.
+                        properties:
+                          id:
+                            description: ID is a hexadecimal identifier of device property
+                              , that corresponds to the value from PCIIDs database
+                            type: string
+                          name:
+                            description: Name is a string value of property extracted
+                              from PCIID DB
+                            type: string
+                        required:
+                          - id
+                        type: object
+                      subvendor:
+                        description: Subvendor usually refers to the platform or co-manufacturer.
+                          E.g. Lenovo board manufactured for Intel platform (by Intel
+                          spec).
+                        properties:
+                          id:
+                            description: ID is a hexadecimal identifier of device property
+                              , that corresponds to the value from PCIIDs database
+                            type: string
+                          name:
+                            description: Name is a string value of property extracted
+                              from PCIID DB
+                            type: string
+                        required:
+                          - id
+                        type: object
+                      type:
+                        description: Type shows device's designation.
+                        properties:
+                          id:
+                            description: ID is a hexadecimal identifier of device property
+                              , that corresponds to the value from PCIIDs database
+                            type: string
+                          name:
+                            description: Name is a string value of property extracted
+                              from PCIID DB
+                            type: string
+                        required:
+                          - id
+                        type: object
+                      vendor:
+                        description: Vendor refers to manufacturer ore device trademark.
+                        properties:
+                          id:
+                            description: ID is a hexadecimal identifier of device property
+                              , that corresponds to the value from PCIIDs database
+                            type: string
+                          name:
+                            description: Name is a string value of property extracted
+                              from PCIID DB
+                            type: string
+                        required:
+                          - id
+                        type: object
+                    type: object
+                  type: array
                 system:
                   description: System contains DMI system information
                   properties:
