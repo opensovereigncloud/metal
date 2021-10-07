@@ -294,9 +294,12 @@ type PCIDeviceDescriptionSpec struct {
 // PCIDeviceSpec contains description of PCI device
 // +kubebuilder:object:generate=true
 type PCIDeviceSpec struct {
-	// BusID is an ID of PCI bun on the board device is attached to.
+	// BusID is an ID of PCI bus on the board device is attached to.
 	// +kubebuilder:validation:Required
 	BusID string `json:"busId,omitempty"`
+	// Address is an ID of device on PCI bus.
+	// +kubebuilder:validation:Required
+	Address string `json:"address,omitempty"`
 	// Vendor refers to manufacturer ore device trademark.
 	// +kubebuilder:validation:Optional
 	Vendor *PCIDeviceDescriptionSpec `json:"vendor,omitempty"`

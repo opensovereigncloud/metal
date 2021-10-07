@@ -489,8 +489,11 @@ spec:
                   items:
                     description: PCIDeviceSpec contains description of PCI device
                     properties:
+                      address:
+                        description: Address is an ID of device on PCI bus.
+                        type: string
                       busId:
-                        description: BusID is an ID of PCI bun on the board device is
+                        description: BusID is an ID of PCI bus on the board device is
                           attached to.
                         type: string
                       class:
