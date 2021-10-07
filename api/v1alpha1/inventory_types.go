@@ -47,6 +47,9 @@ type InventorySpec struct {
 	// CPUs contains info about cpus, cores and threads
 	// +kubebuilder:validation:Required
 	CPUs []CPUSpec `json:"cpus,omitempty"`
+	// PCIDevices contains info about devices accessible through
+	// +kubebuilder:validation:Optional
+	PCIDevices []PCIDeviceSpec `json:"pciDevices"`
 	// NICs contains info about network interfaces and network discovery
 	// +kubebuilder:validation:Required
 	NICs []NICSpec `json:"nics,omitempty"`
@@ -275,6 +278,46 @@ type CPUSpec struct {
 	// PowerManagement
 	// +kubebuilder:validation:Optional
 	PowerManagement string `json:"powerManagement,omitempty"`
+}
+
+// PCIDeviceDescriptionSpec contains one of the options that is describing the PCI device
+// +kubebuilder:object:generate=true
+type PCIDeviceDescriptionSpec struct {
+	// ID is a hexadecimal identifier of device property , that corresponds to the value from PCIIDs database
+	// +kubebuilder:validation:Required
+	ID string `json:"id"`
+	// Name is a string value of property extracted from PCIID DB
+	// +kubebuilder:validation:Optional
+	Name string `json:"name"`
+}
+
+// PCIDeviceSpec contains description of PCI device
+// +kubebuilder:object:generate=true
+type PCIDeviceSpec struct {
+	// BusID is an ID of PCI bun on the board device is attached to.
+	// +kubebuilder:validation:Required
+	BusID string `json:"busId,omitempty"`
+	// Vendor refers to manufacturer ore device trademark.
+	// +kubebuilder:validation:Optional
+	Vendor *PCIDeviceDescriptionSpec `json:"vendor,omitempty"`
+	// Subvendor usually refers to the platform or co-manufacturer. E.g. Lenovo board manufactured for Intel platform (by Intel spec).
+	// +kubebuilder:validation:Optional
+	Subvendor *PCIDeviceDescriptionSpec `json:"subvendor,omitempty"`
+	// Type shows device's designation.
+	// +kubebuilder:validation:Optional
+	Type *PCIDeviceDescriptionSpec `json:"type,omitempty"`
+	// Subtype shows device's subsystem.
+	// +kubebuilder:validation:Optional
+	Subtype *PCIDeviceDescriptionSpec `json:"subtype,omitempty"`
+	// Class refers to generic device designation.
+	// +kubebuilder:validation:Optional
+	Class *PCIDeviceDescriptionSpec `json:"class,omitempty"`
+	// Subclass narrows the designation scope.
+	// +kubebuilder:validation:Optional
+	Subclass *PCIDeviceDescriptionSpec `json:"subclass,omitempty"`
+	// ProgrammingInterface specifies communication protocols.
+	// +kubebuilder:validation:Optional
+	ProgrammingInterface *PCIDeviceDescriptionSpec `json:"interface,omitempty"`
 }
 
 // NICSpec contains info about network interfaces
