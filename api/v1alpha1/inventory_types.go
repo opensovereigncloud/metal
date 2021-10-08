@@ -47,6 +47,9 @@ type InventorySpec struct {
 	// CPUs contains info about cpus, cores and threads
 	// +kubebuilder:validation:Required
 	CPUs []CPUSpec `json:"cpus,omitempty"`
+	// NUMA contains info about cpu/memory topology
+	// +kubebuilder:validation:Optional
+	NUMA []NumaSpec `json:"numa,omitempty"`
 	// PCIDevices contains info about devices accessible through
 	// +kubebuilder:validation:Optional
 	PCIDevices []PCIDeviceSpec `json:"pciDevices"`
@@ -278,6 +281,23 @@ type CPUSpec struct {
 	// PowerManagement
 	// +kubebuilder:validation:Optional
 	PowerManagement string `json:"powerManagement,omitempty"`
+}
+
+// NumaSpec describes NUMA node
+// +kubebuilder:object:generate=true
+type NumaSpec struct {
+	// ID is NUMA node ID.
+	// +kubebuilder:validation:Required
+	ID int `json:"id"`
+	// CPUs is a list of CPU logical IDs in current numa node.
+	// +kubebuilder:validation:Required
+	CPUs []int `json:"cpus"`
+	// Distances contains distances to other nodes. Element index corresponds to NUMA node ID.
+	// +kubebuilder:validation:Required
+	Distances []int `json:"distances"`
+	// Memory contains info about NUMA node memory setup.
+	// +kubebuilder:validation:Required
+	Memory *MemorySpec `json:"memory"`
 }
 
 // PCIDeviceDescriptionSpec contains one of the options that is describing the PCI device

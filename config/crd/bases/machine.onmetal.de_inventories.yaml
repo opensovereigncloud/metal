@@ -485,6 +485,42 @@ spec:
                       type: integer
                   type: object
                 type: array
+              numa:
+                description: NUMA contains info about cpu/memory topology
+                items:
+                  description: NumaSpec describes NUMA node
+                  properties:
+                    cpus:
+                      description: CPUs is a list of CPU logical IDs in current numa
+                        node.
+                      items:
+                        type: integer
+                      type: array
+                    distances:
+                      description: Distances contains distances to other nodes. Element
+                        index corresponds to NUMA node ID.
+                      items:
+                        type: integer
+                      type: array
+                    id:
+                      description: ID is NUMA node ID.
+                      type: integer
+                    memory:
+                      description: Memory contains info about NUMA node memory setup.
+                      properties:
+                        total:
+                          description: Total is a total amount of RAM on host
+                          format: int64
+                          minimum: 1
+                          type: integer
+                      type: object
+                  required:
+                  - cpus
+                  - distances
+                  - id
+                  - memory
+                  type: object
+                type: array
               pciDevices:
                 description: PCIDevices contains info about devices accessible through
                 items:
