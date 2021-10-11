@@ -52,7 +52,7 @@ type InventorySpec struct {
 	NUMA []NumaSpec `json:"numa,omitempty"`
 	// PCIDevices contains info about devices accessible through
 	// +kubebuilder:validation:Optional
-	PCIDevices []PCIDeviceSpec `json:"pciDevices"`
+	PCIDevices []PCIDeviceSpec `json:"pciDevices,omitempty"`
 	// NICs contains info about network interfaces and network discovery
 	// +kubebuilder:validation:Required
 	NICs []NICSpec `json:"nics,omitempty"`
