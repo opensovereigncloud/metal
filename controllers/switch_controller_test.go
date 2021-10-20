@@ -266,7 +266,6 @@ var _ = Describe("Controllers interaction", func() {
 			}
 			updatedInf.NDPs = []inventoriesv1alpha1.NDPSpec{}
 			updatedInf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
-			updatedInf.LLDPs = append(updatedInf.LLDPs, inventoriesv1alpha1.LLDPSpec{})
 			updatedInf.LLDPs = append(updatedInf.LLDPs, inventoriesv1alpha1.LLDPSpec{
 				ChassisID:         "1c:34:da:57:3b:44",
 				SystemName:        "Fake",

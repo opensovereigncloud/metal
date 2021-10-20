@@ -20,6 +20,7 @@ import (
 	"math"
 	"math/big"
 	"net"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -109,13 +110,16 @@ func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 			FEC:        nic.ActiveFEC,
 			MTU:        nic.MTU,
 		}
-		if len(nic.LLDPs) > 1 {
-			data := nic.LLDPs[1]
-			spec.PeerType = definePeerType(data)
-			spec.PeerChassisID = data.ChassisID
-			spec.PeerSystemName = data.SystemName
-			spec.PeerPortID = data.PortID
-			spec.PeerPortDescription = data.PortDescription
+		for _, data := range nic.LLDPs {
+			var emptyLldp inventoriesv1alpha1.LLDPSpec
+			if !reflect.DeepEqual(emptyLldp, data) {
+				spec.PeerType = definePeerType(data)
+				spec.PeerChassisID = data.ChassisID
+				spec.PeerSystemName = data.SystemName
+				spec.PeerPortID = data.PortID
+				spec.PeerPortDescription = data.PortDescription
+				break
+			}
 		}
 		result[nic.Name] = spec
 		if strings.HasPrefix(nic.Name, CSwitchPortPrefix) {
