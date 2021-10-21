@@ -886,25 +886,9 @@ func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpe
 	return result
 }
 
-// PeersUpdateNeeded checks whether interfaces data
-// was updated and peers info needed update.
-func (in *Switch) PeersUpdateNeeded() bool {
-	for name, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
-			_, northPeer := in.Status.NorthConnections.Peers[name]
-			_, southPeer := in.Status.SouthConnections.Peers[name]
-			if !northPeer && !southPeer {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // UpdateStoredPeers updates peers data and switch role
 // according to connected peers.
 func (in *Switch) UpdateStoredPeers() {
-	machinesConnected := false
 	for name, data := range in.Spec.Interfaces {
 		_, northPeer := in.Status.NorthConnections.Peers[name]
 		_, southPeer := in.Status.SouthConnections.Peers[name]
@@ -919,12 +903,34 @@ func (in *Switch) UpdateStoredPeers() {
 				Type:      data.PeerType,
 				PortName:  data.PeerPortDescription,
 			}
-			if data.PeerType == CMachineType {
-				machinesConnected = true
-			}
 		}
 	}
-	if machinesConnected {
+}
+
+func (in *Switch) RoleOk() bool {
+	machineConnected := false
+	for _, peerData := range in.Status.SouthConnections.Peers {
+		if peerData.Type == CMachineType {
+			machineConnected = true
+		}
+	}
+	if machineConnected && in.Status.Role == CSpineRole {
+		return false
+	}
+	if !machineConnected && in.Status.Role == CLeafRole {
+		return false
+	}
+	return true
+}
+
+func (in *Switch) UpdateRole() {
+	machineConnected := false
+	for _, peerData := range in.Status.SouthConnections.Peers {
+		if peerData.Type == CMachineType {
+			machineConnected = true
+		}
+	}
+	if machineConnected {
 		in.Status.Role = CLeafRole
 	} else {
 		in.Status.Role = CSpineRole

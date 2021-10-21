@@ -283,7 +283,8 @@ func (r *SwitchReconciler) prepareStateMachine(obj *switchv1alpha1.Switch) *stat
 	setSubnets := newStep(r.subnetsChecker, r.subnetsSetter, r.statusUpdater, setIpAddresses)
 	setPortChannels := newStep(r.portChannelsChecker, r.portChannelsSetter, r.statusUpdater, setSubnets)
 	setConnectionLevel := newStep(r.connectionLevelChecker, r.connectionLevelSetter, r.statusUpdater, setPortChannels)
-	setPeers := newStep(r.peersInfoChecker, r.peersInfoSetter, r.statusUpdater, setConnectionLevel)
+	setRole := newStep(r.roleChecker, r.roleSetter, r.statusUpdater, setConnectionLevel)
+	setPeers := newStep(r.peersInfoChecker, r.peersInfoSetter, r.statusUpdater, setRole)
 	setAssignment := newStep(r.assignmentChecker, r.assignmentSetter, r.statusUpdater, setPeers)
 	setInterfaces := newStep(r.interfacesChecker, r.interfacesSetter, r.specUpdater, setAssignment)
 	setInitialStatus := newStep(r.initialStatusChecker, r.initialStatusSetter, r.statusUpdater, setInterfaces)
@@ -377,6 +378,15 @@ func (r *SwitchReconciler) peersInfoSetter(obj *switchv1alpha1.Switch) error {
 	obj.SetState(switchv1alpha1.CSwitchStateInProgress)
 	obj.UpdateStoredPeers()
 	obj.SetDiscoveredPeers(r.Background.switches)
+	return nil
+}
+
+func (r *SwitchReconciler) roleChecker(obj *switchv1alpha1.Switch) bool {
+	return obj.RoleOk()
+}
+
+func (r *SwitchReconciler) roleSetter(obj *switchv1alpha1.Switch) error {
+	obj.UpdateRole()
 	return nil
 }
 
