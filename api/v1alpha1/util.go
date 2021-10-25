@@ -153,7 +153,7 @@ func getInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int
 //from the networks list provided as argument according to the
 //needed addresses count. It returns the pointer to the CIDR object.
 func getMinimalVacantCIDR(vacant []subnetv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *subnetv1alpha1.CIDR {
-	zeroNetString := CEmptyString
+	var zeroNetString string
 	if addressType == subnetv1alpha1.CIPv4SubnetType {
 		zeroNetString = CIPv4ZeroNet
 	} else {

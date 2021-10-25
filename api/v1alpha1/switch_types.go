@@ -476,23 +476,6 @@ func (in *Switch) updateNorthPeers(list *SwitchList) {
 	}
 }
 
-// Rewrites stored south peers info with fully defined PeerSpec
-func (in *Switch) updateSouthPeers(list *SwitchList) {
-	for _, item := range list.Items {
-		for name, data := range item.Spec.Interfaces {
-			if data.PeerChassisID == in.Spec.Chassis.ChassisID {
-				in.Status.SouthConnections.Peers[data.PeerPortDescription] = &PeerSpec{
-					Name:      item.Name,
-					Namespace: item.Namespace,
-					ChassisID: item.Spec.Chassis.ChassisID,
-					Type:      CSwitchType,
-					PortName:  name,
-				}
-			}
-		}
-	}
-}
-
 // Checks whether all stored peers are unique and fully defined.
 // Return true if so, false otherwise.
 func (in *Switch) peersOk(swl *SwitchList) bool {
@@ -1053,7 +1036,6 @@ func (in *Switch) AddressesOk(swl *SwitchList) bool {
 					return false
 				}
 			}
-			break
 		}
 	}
 	return true

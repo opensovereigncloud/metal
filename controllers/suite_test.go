@@ -266,10 +266,7 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient.Create(ctx, subnetV4)).To(Succeed())
 	Eventually(func() bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: SubnetNameV4, Namespace: OnmetalNamespace}, subnetV4)).Should(Succeed())
-		if subnetV4.Status.State != subnetv1alpha1.CFinishedSubnetState {
-			return false
-		}
-		return true
+		return subnetV4.Status.State == subnetv1alpha1.CFinishedSubnetState
 	}, timeout, interval).Should(BeTrue())
 
 	loopbackCidrV4, _ := subnetv1alpha1.CIDRFromString(LoopbackIPv4CIDR)
@@ -293,10 +290,7 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient.Create(ctx, loopbackSubnetV4)).To(Succeed())
 	Eventually(func() bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: LoopbackSubnetV4, Namespace: OnmetalNamespace}, loopbackSubnetV4)).Should(Succeed())
-		if loopbackSubnetV4.Status.State != subnetv1alpha1.CFinishedSubnetState {
-			return false
-		}
-		return true
+		return loopbackSubnetV4.Status.State == subnetv1alpha1.CFinishedSubnetState
 	}, timeout, interval).Should(BeTrue())
 
 	cidrV6, _ := subnetv1alpha1.CIDRFromString(SubnetIPv6CIDR)
@@ -319,10 +313,7 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient.Create(ctx, subnetV6)).To(Succeed())
 	Eventually(func() bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: SubnetNameV6, Namespace: OnmetalNamespace}, subnetV6)).Should(Succeed())
-		if subnetV6.Status.State != subnetv1alpha1.CFinishedSubnetState {
-			return false
-		}
-		return true
+		return subnetV6.Status.State == subnetv1alpha1.CFinishedSubnetState
 	}, timeout, interval).Should(BeTrue())
 
 	loopbackCidrV6, _ := subnetv1alpha1.CIDRFromString(LoopbackIPv6CIDR)
@@ -346,10 +337,7 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient.Create(ctx, loopbackSubnetV6)).To(Succeed())
 	Eventually(func() bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: LoopbackSubnetV6, Namespace: OnmetalNamespace}, loopbackSubnetV6)).Should(Succeed())
-		if loopbackSubnetV6.Status.State != subnetv1alpha1.CFinishedSubnetState {
-			return false
-		}
-		return true
+		return loopbackSubnetV6.Status.State == subnetv1alpha1.CFinishedSubnetState
 	}, timeout, interval).Should(BeTrue())
 
 }, 60)

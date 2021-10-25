@@ -63,7 +63,7 @@ var _ = Describe("Controllers interaction", func() {
 				sampleBytes, err := ioutil.ReadFile(sample)
 				Expect(err).NotTo(HaveOccurred())
 				err = yaml.Unmarshal(sampleBytes, rawInfo)
-
+				Expect(err).NotTo(HaveOccurred())
 				data, err := json.Marshal(rawInfo)
 				Expect(err).NotTo(HaveOccurred())
 				err = json.Unmarshal(data, inv)
@@ -78,10 +78,7 @@ var _ = Describe("Controllers interaction", func() {
 				sw := &switchv1alpha1.Switch{}
 				Eventually(func() bool {
 					err := k8sClient.Get(ctx, swNamespacedName, sw)
-					if err != nil {
-						return false
-					}
-					return true
+					return err == nil
 				}, timeout, interval).Should(BeTrue())
 				Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(sw.Spec.Chassis.ChassisID)}))
 			}
@@ -104,10 +101,7 @@ var _ = Describe("Controllers interaction", func() {
 				Expect(k8sClient.Create(ctx, swa)).To(Succeed())
 				Eventually(func() bool {
 					err := k8sClient.Get(ctx, swa.NamespacedName(), swa)
-					if err != nil {
-						return false
-					}
-					return true
+					return err == nil
 				}, timeout, interval).Should(BeTrue())
 				Expect(swa.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(id)}))
 			}

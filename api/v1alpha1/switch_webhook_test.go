@@ -60,6 +60,7 @@ var _ = Describe("Switch Webhook", func() {
 			sampleBytes, err := ioutil.ReadFile(sample)
 			Expect(err).NotTo(HaveOccurred())
 			err = yaml.Unmarshal(sampleBytes, rawInfo)
+			Expect(err).NotTo(HaveOccurred())
 			data, err := json.Marshal(rawInfo)
 			Expect(err).NotTo(HaveOccurred())
 			err = json.Unmarshal(data, sw)

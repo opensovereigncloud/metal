@@ -221,17 +221,11 @@ var _ = Describe("Switch client", func() {
 			By("Requesting created Switch")
 			Eventually(func() bool {
 				_, err = client.Get(ctx, SwitchName, v1.GetOptions{})
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			Eventually(func() bool {
 				_, err = client.Get(ctx, SwitchToDeleteName, v1.GetOptions{})
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeFalse())
 
 			Eventually(events).Should(Receive(event))

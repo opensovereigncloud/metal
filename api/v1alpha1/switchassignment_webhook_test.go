@@ -78,10 +78,7 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 					Name:      cr.Name,
 				}
 				err := k8sClient.Get(ctx, namespacedName, &swa)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			})
 			Expect(cr.Labels).Should(Equal(map[string]string{LabelChassisId: strings.ReplaceAll(cr.Spec.ChassisID, ":", "-")}))
 		})
