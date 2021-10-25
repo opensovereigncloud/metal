@@ -33,6 +33,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.42
+          args: -e S1008
 
   helm-lint:
     runs-on: [self-hosted, Linux, X64]

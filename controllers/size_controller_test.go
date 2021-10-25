@@ -181,7 +181,7 @@ var _ = Describe("Size controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeLabel {
 						return true
 					}
@@ -200,7 +200,7 @@ var _ = Describe("Size controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeLabel {
 						return true
 					}
@@ -219,7 +219,7 @@ var _ = Describe("Size controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeLabel {
 						return false
 					}
@@ -238,7 +238,7 @@ var _ = Describe("Size controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeLabel {
 						return false
 					}
@@ -282,7 +282,7 @@ var _ = Describe("Size controller", func() {
 					if err != nil {
 						return false
 					}
-					for k, _ := range inventory.GetLabels() {
+					for k := range inventory.GetLabels() {
 						if k == sizeLabel {
 							return false
 						}
@@ -308,7 +308,7 @@ var _ = Describe("Size controller", func() {
 					if err != nil {
 						return false
 					}
-					for k, _ := range inventory.GetLabels() {
+					for k := range inventory.GetLabels() {
 						if k == sizeLabel {
 							return true
 						}
@@ -335,7 +335,7 @@ var _ = Describe("Size controller", func() {
 					return false
 				}
 				for _, inventory := range inventoryList.Items {
-					for k, _ := range inventory.GetLabels() {
+					for k := range inventory.GetLabels() {
 						if k == sizeLabel {
 							return false
 						}

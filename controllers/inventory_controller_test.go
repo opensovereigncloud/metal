@@ -318,7 +318,7 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeShouldMatch.GetMatchLabel() {
 						return true
 					}
@@ -333,7 +333,7 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeAlreadyMatched.GetMatchLabel() {
 						return true
 					}
@@ -348,7 +348,7 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeShouldUnmatch.GetMatchLabel() {
 						return false
 					}
@@ -363,7 +363,7 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				for k, _ := range inventory.GetLabels() {
+				for k := range inventory.GetLabels() {
 					if k == sizeShouldNotMatch.GetMatchLabel() {
 						return false
 					}
@@ -432,7 +432,7 @@ var _ = Describe("Inventory controller", func() {
 					if err != nil {
 						return false
 					}
-					for k, _ := range inventory.GetLabels() {
+					for k := range inventory.GetLabels() {
 						if k == label {
 							return false
 						}
@@ -454,7 +454,7 @@ var _ = Describe("Inventory controller", func() {
 					if err != nil {
 						return false
 					}
-					for k, _ := range inventory.GetLabels() {
+					for k := range inventory.GetLabels() {
 						if k == label {
 							return true
 						}

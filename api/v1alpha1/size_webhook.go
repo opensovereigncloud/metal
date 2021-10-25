@@ -60,7 +60,7 @@ func (in *Size) ValidateUpdate(old runtime.Object) error {
 var CDummyInventorySpec = getDummyInventoryForValidation()
 
 func (in *Size) validate() error {
-	ops := make(map[string]int, 0)
+	ops := make(map[string]int)
 	errs := make([]string, 0)
 
 	for _, c := range in.Spec.Constraints {
