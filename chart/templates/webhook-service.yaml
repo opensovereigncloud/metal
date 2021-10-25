@@ -5,9 +5,9 @@ metadata:
   labels:
   {{- include "chart.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.webhookService.type }}
+  type: {{ .Values.service.webhook.type }}
   ports:
-    - port: {{ .Values.webhookService.port }}
+    - port: {{ .Values.service.webhook.port }}
       targetPort: 9443
   selector:
     control-plane: controller-manager

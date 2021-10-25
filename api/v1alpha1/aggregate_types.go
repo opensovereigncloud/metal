@@ -128,6 +128,11 @@ func (in *Aggregate) Compute(inventory *Inventory) (interface{}, error) {
 			aggregatedValue = interfacedValues
 		} else {
 			aggregatedValue, err = makeAggregate(ai.Aggregate, values)
+			if err != nil {
+				// If we are failing to calculate one aggregate, we can skip it
+				// and continue to the next one
+				continue
+			}
 		}
 
 		if err := setValueToPath(resultMap, tokenizedPath, aggregatedValue); err != nil {
