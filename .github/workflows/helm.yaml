@@ -27,8 +27,8 @@ jobs:
       - name: Run chart-releaser
         uses: goodsmileduck/helm-push-action@v3.3.1
         env:
-          SOURCE_DIR: '.'
-          CHART_FOLDER: 'chart'
+          SOURCE_DIR: 'charts'
+          CHART_FOLDER: 'onmetal-inventory'
           FORCE: 'True'
           CHARTMUSEUM_URL: ' https://core.harbor.onmetal.de/chartrepo/onmetal'
           CHARTMUSEUM_USER: '${{ secrets.CHARTMUSEUM_USER }}'
