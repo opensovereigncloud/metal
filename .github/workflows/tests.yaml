@@ -49,4 +49,4 @@ jobs:
 
       - name: Lint Helm
         run: |
-          helm lint chart/onmetal-inventory --strict
+          helm lint charts/onmetal-inventory --strict
