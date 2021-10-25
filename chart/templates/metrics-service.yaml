@@ -6,10 +6,10 @@ metadata:
     control-plane: {{ include "chart.fullname" . }}-controller-manager
     {{- include "chart.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.service.metrics.type }}
   ports:
     - name: https
-      port: {{ .Values.service.port }}
+      port: {{ .Values.service.metrics.port }}
       targetPort: https
   selector:
     control-plane: controller-manager
