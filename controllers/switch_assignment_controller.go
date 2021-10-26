@@ -61,13 +61,14 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return r.finalize(ctx, res)
 	}
 
-	if !controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer) {
+	switch controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer) {
+	case false:
 		controllerutil.AddFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer)
 		if err := r.Update(ctx, res); err != nil {
 			log.Error(err, "failed to update switchAssignment resource")
 			return ctrl.Result{}, err
 		}
-	} else {
+	case true:
 		if res.Status.State == switchv1alpha1.CEmptyString {
 			res.FillStatus(switchv1alpha1.CAssignmentStatePending, &switchv1alpha1.LinkedSwitchSpec{})
 			if err := r.Status().Update(ctx, res); err != nil {

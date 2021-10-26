@@ -153,7 +153,7 @@ spec:
                       description: PeerSystemName
                       type: string
                     peerType:
-                      description: PeerType refers to neighbour type
+                      description: PeerType refers to neighbor type
                       enum:
                       - Machine
                       - Switch
@@ -278,7 +278,7 @@ spec:
                           description: PortName
                           type: string
                         type:
-                          description: Type refers to neighbour type
+                          description: Type refers to neighbor type
                           enum:
                           - Machine
                           - Switch
@@ -322,7 +322,7 @@ spec:
                           description: PortName
                           type: string
                         type:
-                          description: Type refers to neighbour type
+                          description: Type refers to neighbor type
                           enum:
                           - Machine
                           - Switch

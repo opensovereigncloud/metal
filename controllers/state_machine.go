@@ -84,8 +84,9 @@ func (s *processingStep) setAndUpdate(obj *switchv1alpha1.Switch, initialState *
 		return nil
 	}
 	if obj.Status.Configuration != nil && initialState.Status.Configuration != nil {
-		if (obj.Status.Configuration.Type != initialState.Status.Configuration.Type && obj.Status.Configuration.Type == switchv1alpha1.CConfigManagementTypeFailed) &&
-			s.updateFunc != nil {
+		configTypeChanged := obj.Status.Configuration.Type != initialState.Status.Configuration.Type
+		configTypeFailed := obj.Status.Configuration.Type == switchv1alpha1.CConfigManagementTypeFailed
+		if configTypeChanged && configTypeFailed && s.updateFunc != nil {
 			s.setNext(nil)
 			if err := s.updateFunc(obj); err != nil {
 				return err

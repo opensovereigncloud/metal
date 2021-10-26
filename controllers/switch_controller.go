@@ -96,47 +96,50 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *SwitchReconciler) finalize(obj *switchv1alpha1.Switch) error {
 	ctx := r.Background.ctx
-	if controllerutil.ContainsFinalizer(obj, switchv1alpha1.CSwitchFinalizer) {
-		swa, err := r.findAssignment(ctx, obj)
-		if err != nil {
-			r.Log.Error(err, "failed to lookup for related switch assignment resource",
-				"gvk", obj.GroupVersionKind(), "name", obj.NamespacedName())
-		}
-		if swa != nil {
-			swa.FillStatus(switchv1alpha1.CAssignmentStatePending, &switchv1alpha1.LinkedSwitchSpec{})
-			if err := r.Status().Update(ctx, swa); err != nil {
-				r.Log.Error(err, "failed to set status on resource creation",
-					"gvk", swa.GroupVersionKind(), "name", swa.NamespacedName())
-			}
-		}
+	if !controllerutil.ContainsFinalizer(obj, switchv1alpha1.CSwitchFinalizer) {
+		return nil
+	}
 
-		snl := &subnetv1alpha1.SubnetList{}
-		err = r.List(r.Background.ctx, snl)
-		if err != nil {
-			return err
-		}
-		for _, sn := range snl.Items {
-			if obj.Status.SouthSubnetV4 != nil &&
-				sn.Spec.ParentSubnetName == obj.Status.SouthSubnetV4.ParentSubnet.Name {
-				if err := r.Delete(r.Background.ctx, &sn); err != nil {
-					return err
-				}
-			}
-			if obj.Status.SouthSubnetV6 != nil &&
-				sn.Spec.ParentSubnetName == obj.Status.SouthSubnetV6.ParentSubnet.Name {
-				if err := r.Delete(r.Background.ctx, &sn); err != nil {
-					return err
-				}
-			}
-		}
-
-		controllerutil.RemoveFinalizer(obj, switchv1alpha1.CSwitchFinalizer)
-		if err := r.Update(ctx, obj); err != nil {
-			r.Log.Error(err, "failed to update resource on finalizer removal",
-				"gvk", obj.GroupVersionKind(), "name", obj.NamespacedName())
-			return err
+	swa, err := r.findAssignment(ctx, obj)
+	if err != nil {
+		r.Log.Error(err, "failed to lookup for related switch assignment resource",
+			"gvk", obj.GroupVersionKind(), "name", obj.NamespacedName())
+	}
+	if swa != nil {
+		swa.FillStatus(switchv1alpha1.CAssignmentStatePending, &switchv1alpha1.LinkedSwitchSpec{})
+		if err = r.Status().Update(ctx, swa); err != nil {
+			r.Log.Error(err, "failed to set status on resource creation",
+				"gvk", swa.GroupVersionKind(), "name", swa.NamespacedName())
 		}
 	}
+
+	snl := &subnetv1alpha1.SubnetList{}
+	err = r.List(r.Background.ctx, snl)
+	if err != nil {
+		return err
+	}
+	for _, sn := range snl.Items {
+		if obj.Status.SouthSubnetV4 != nil &&
+			sn.Spec.ParentSubnetName == obj.Status.SouthSubnetV4.ParentSubnet.Name {
+			if err := r.Delete(r.Background.ctx, &sn); err != nil {
+				return err
+			}
+		}
+		if obj.Status.SouthSubnetV6 != nil &&
+			sn.Spec.ParentSubnetName == obj.Status.SouthSubnetV6.ParentSubnet.Name {
+			if err := r.Delete(r.Background.ctx, &sn); err != nil {
+				return err
+			}
+		}
+	}
+
+	controllerutil.RemoveFinalizer(obj, switchv1alpha1.CSwitchFinalizer)
+	if err := r.Update(ctx, obj); err != nil {
+		r.Log.Error(err, "failed to update resource on finalizer removal",
+			"gvk", obj.GroupVersionKind(), "name", obj.NamespacedName())
+		return err
+	}
+
 	return nil
 }
 

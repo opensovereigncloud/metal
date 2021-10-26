@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
 	"strings"
 	"time"
 
@@ -84,7 +83,6 @@ var _ = Describe("SwitchAssignment Webhook", func() {
 		})
 		It("Should not allow to update resource", func() {
 			By("Update SwitchAssignment resource")
-			ctx := context.Background()
 			cr := SwitchAssignment{
 				ObjectMeta: controllerRuntime.ObjectMeta{
 					Name:      "test-switch-assignment",

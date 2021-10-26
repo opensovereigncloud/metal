@@ -1,3 +1,19 @@
+/*
+Copyright 2021 T-Systems International GmbH, SAP SE or an SAP affiliate company. All right reserved
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1alpha1
 
 import (
@@ -11,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/onmetal/switch-operator/api/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
 var _ = Describe("Switch client", func() {
@@ -36,28 +52,28 @@ var _ = Describe("Switch client", func() {
 
 			client := clientset.Switches(SwitchesNamespace)
 
-			res := &v1alpha1.Switch{
+			res := &switchv1alpha1.Switch{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      SwitchName,
 					Namespace: SwitchesNamespace,
 				},
-				Spec: v1alpha1.SwitchSpec{
+				Spec: switchv1alpha1.SwitchSpec{
 					Hostname:    SwitchName,
-					Location:    &v1alpha1.LocationSpec{},
+					Location:    &switchv1alpha1.LocationSpec{},
 					TotalPorts:  5,
 					SwitchPorts: 4,
-					Distro: &v1alpha1.SwitchDistroSpec{
+					Distro: &switchv1alpha1.SwitchDistroSpec{
 						OS:      "SONiC",
 						Version: "1.0.0",
 						ASIC:    "broadcom",
 					},
-					Chassis: &v1alpha1.SwitchChassisSpec{
+					Chassis: &switchv1alpha1.SwitchChassisSpec{
 						Manufacturer: "Edgecore",
 						SKU:          "1",
 						Serial:       "00000X00001",
 						ChassisID:    "68:21:5f:47:0d:6e",
 					},
-					Interfaces: map[string]*v1alpha1.InterfaceSpec{
+					Interfaces: map[string]*switchv1alpha1.InterfaceSpec{
 						"eth0": {
 							Speed:               1000,
 							MTU:                 1500,
@@ -110,7 +126,7 @@ var _ = Describe("Switch client", func() {
 			events := watcher.ResultChan()
 
 			By("Creating Switch")
-			createdSwitch := &v1alpha1.Switch{}
+			createdSwitch := &switchv1alpha1.Switch{}
 			go func() {
 				defer GinkgoRecover()
 				createdSwitch, err = client.Create(ctx, res, v1.CreateOptions{})
@@ -122,7 +138,7 @@ var _ = Describe("Switch client", func() {
 			event := &watch.Event{}
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Added))
-			eventSwitch := event.Object.(*v1alpha1.Switch)
+			eventSwitch := event.Object.(*switchv1alpha1.Switch)
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Spec).Should(Equal(res.Spec))
 
@@ -137,7 +153,8 @@ var _ = Describe("Switch client", func() {
 			createdSwitch.Spec.Location.Row = 9
 			go func() {
 				defer GinkgoRecover()
-				updatedSwitch, err := client.Update(ctx, createdSwitch, v1.UpdateOptions{})
+				var updatedSwitch *switchv1alpha1.Switch
+				updatedSwitch, err = client.Update(ctx, createdSwitch, v1.UpdateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(updatedSwitch.Spec).Should(Equal(createdSwitch.Spec))
 				finished <- true
@@ -145,7 +162,7 @@ var _ = Describe("Switch client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSwitch = event.Object.(*v1alpha1.Switch)
+			eventSwitch = event.Object.(*switchv1alpha1.Switch)
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Spec).Should(Equal(createdSwitch.Spec))
 
@@ -167,7 +184,8 @@ var _ = Describe("Switch client", func() {
 
 			go func() {
 				defer GinkgoRecover()
-				patchedSwitch, err := client.Patch(ctx, SwitchName, types.JSONPatchType, patchData, v1.PatchOptions{})
+				var patchedSwitch *switchv1alpha1.Switch
+				patchedSwitch, err = client.Patch(ctx, SwitchName, types.JSONPatchType, patchData, v1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(patchedSwitch.Spec.Location.Room).Should(Equal(patch[0].Value))
 				finished <- true
@@ -175,7 +193,7 @@ var _ = Describe("Switch client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSwitch = event.Object.(*v1alpha1.Switch)
+			eventSwitch = event.Object.(*switchv1alpha1.Switch)
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Spec.Location.Room).Should(Equal(patch[0].Value))
 
@@ -187,7 +205,8 @@ var _ = Describe("Switch client", func() {
 			createdSwitch.FillStatusOnCreate()
 			go func() {
 				defer GinkgoRecover()
-				updatedSwitch, err := client.UpdateStatus(ctx, createdSwitch, v1.UpdateOptions{})
+				var updatedSwitch *switchv1alpha1.Switch
+				updatedSwitch, err = client.UpdateStatus(ctx, createdSwitch, v1.UpdateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(updatedSwitch.Status).Should(Equal(createdSwitch.Status))
 				finished <- true
@@ -195,7 +214,7 @@ var _ = Describe("Switch client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSwitch = event.Object.(*v1alpha1.Switch)
+			eventSwitch = event.Object.(*switchv1alpha1.Switch)
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Status).Should(Equal(createdSwitch.Status))
 
@@ -230,7 +249,7 @@ var _ = Describe("Switch client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventSwitch = event.Object.(*v1alpha1.Switch)
+			eventSwitch = event.Object.(*switchv1alpha1.Switch)
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Name).To(Equal(SwitchToDeleteName))
 
@@ -244,7 +263,7 @@ var _ = Describe("Switch client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventSwitch = event.Object.(*v1alpha1.Switch)
+			eventSwitch = event.Object.(*switchv1alpha1.Switch)
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Name).To(Equal(SwitchName))
 

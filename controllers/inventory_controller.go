@@ -65,7 +65,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err := r.Get(ctx, types.NamespacedName{Namespace: switchv1alpha1.CNamespace, Name: res.Name}, sw); err != nil {
 		if apierrors.IsNotFound(err) {
 			sw.Prepare(res)
-			if err := r.Client.Create(ctx, sw); err != nil {
+			if err = r.Client.Create(ctx, sw); err != nil {
 				r.Log.Error(err, "failed to create switch resource", "name", sw.NamespacedName())
 				return ctrl.Result{}, err
 			}

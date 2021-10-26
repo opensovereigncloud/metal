@@ -172,7 +172,7 @@ type InterfaceSpec struct {
 	//IPv6 refers to interface's IPv6 address
 	//+kubebuilder:validation:Optional
 	IPv6 string `json:"ipv6,omitempty"`
-	//PeerType refers to neighbour type
+	//PeerType refers to neighbor type
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:validation:Enum=Machine;Switch
 	PeerType PeerType `json:"peerType,omitempty"`
@@ -264,7 +264,7 @@ type PeerSpec struct {
 	// ChassisID refers to switch's chassis id
 	//+kubebuilder:validation:Required
 	ChassisID string `json:"chassisId"`
-	//Type refers to neighbour type
+	//Type refers to neighbor type
 	//+kubebuilder:validation:Optional
 	//+kubebuilder:validation:Enum=Machine;Switch
 	Type PeerType `json:"type,omitempty"`
@@ -422,23 +422,24 @@ func (in *Switch) movePeers(list *SwitchList) {
 			in.Status.SouthConnections.Peers[name] = data
 			delete(in.Status.NorthConnections.Peers, name)
 		}
-	} else {
-		for _, item := range list.Items {
-			for name, data := range in.Status.SouthConnections.Peers {
-				if data.ChassisID == item.Spec.Chassis.ChassisID {
-					if item.Status.ConnectionLevel < in.Status.ConnectionLevel {
-						in.Status.NorthConnections.Peers[name] = data
-						delete(in.Status.SouthConnections.Peers, name)
-					}
-				}
+		return
+	}
+
+	for _, item := range list.Items {
+		for name, data := range in.Status.SouthConnections.Peers {
+			southPeerFound := data.ChassisID == item.Spec.Chassis.ChassisID
+			higherConnLevel := item.Status.ConnectionLevel < in.Status.ConnectionLevel
+			if southPeerFound && higherConnLevel {
+				in.Status.NorthConnections.Peers[name] = data
+				delete(in.Status.SouthConnections.Peers, name)
 			}
-			for name, data := range in.Status.NorthConnections.Peers {
-				if data.ChassisID == item.Spec.Chassis.ChassisID {
-					if item.Status.ConnectionLevel > in.Status.ConnectionLevel {
-						in.Status.SouthConnections.Peers[name] = data
-						delete(in.Status.NorthConnections.Peers, name)
-					}
-				}
+		}
+		for name, data := range in.Status.NorthConnections.Peers {
+			northPeerFound := data.ChassisID == item.Spec.Chassis.ChassisID
+			lowerConnLevel := item.Status.ConnectionLevel > in.Status.ConnectionLevel
+			if northPeerFound && lowerConnLevel {
+				in.Status.SouthConnections.Peers[name] = data
+				delete(in.Status.NorthConnections.Peers, name)
 			}
 		}
 	}
@@ -807,7 +808,6 @@ func (in *Switch) GetSuitableSubnet(
 	subnets *subnetv1alpha1.SubnetList,
 	addressType subnetv1alpha1.SubnetAddressType,
 	regions []subnetv1alpha1.Region) (*subnetv1alpha1.CIDR, *subnetv1alpha1.Subnet) {
-
 	var subnetName string
 	addressesNeeded := in.getAddressCount(addressType)
 	if addressType == subnetv1alpha1.CIPv4SubnetType {
