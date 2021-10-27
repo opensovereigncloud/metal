@@ -330,6 +330,50 @@ func getDummyInventoryForValidation() *ValidationInventory {
 					PowerManagement: "",
 				},
 			},
+			NUMA: []NumaSpec{
+				{
+					ID:        0,
+					CPUs:      []int{0},
+					Distances: []int{0},
+					Memory: &MemorySpec{
+						Total: 0,
+					},
+				},
+			},
+			PCIDevices: []PCIDeviceSpec{
+				{
+					BusID:   "",
+					Address: "",
+					Vendor: &PCIDeviceDescriptionSpec{
+						ID:   "",
+						Name: "",
+					},
+					Subvendor: &PCIDeviceDescriptionSpec{
+						ID:   "",
+						Name: "",
+					},
+					Type: &PCIDeviceDescriptionSpec{
+						ID:   "",
+						Name: "",
+					},
+					Subtype: &PCIDeviceDescriptionSpec{
+						ID:   "",
+						Name: "",
+					},
+					Class: &PCIDeviceDescriptionSpec{
+						ID:   "",
+						Name: "",
+					},
+					Subclass: &PCIDeviceDescriptionSpec{
+						ID:   "",
+						Name: "",
+					},
+					ProgrammingInterface: &PCIDeviceDescriptionSpec{
+						ID:   "",
+						Name: "",
+					},
+				},
+			},
 			NICs: []NICSpec{
 				{
 					Name:       "",
