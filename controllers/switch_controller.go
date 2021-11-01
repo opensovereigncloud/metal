@@ -416,13 +416,13 @@ func (r *SwitchReconciler) interfacesSetter(obj *switchv1alpha1.Switch) error {
 	stale := obj.UpdateInterfacesFromInventory(interfaces)
 	for _, inf := range stale {
 		if obj.Status.SouthSubnetV4 != nil {
-			subnetName := fmt.Sprintf("%s-%s-v4", obj.Name, strings.ToLower(inf))
+			subnetName := obj.GetInterfaceSubnetName(inf, subnetv1alpha1.CIPv4SubnetType)
 			if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV4.ParentSubnet.Namespace); err != nil {
 				return err
 			}
 		}
 		if obj.Status.SouthSubnetV6 != nil {
-			subnetName := fmt.Sprintf("%s-%s-v6", obj.Name, strings.ToLower(inf))
+			subnetName := obj.GetInterfaceSubnetName(inf, subnetv1alpha1.CIPv6SubnetType)
 			if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV6.ParentSubnet.Namespace); err != nil {
 				return err
 			}
@@ -525,8 +525,9 @@ func (r *SwitchReconciler) updateSouthSubnetV4(
 		return fmt.Errorf("%w: no v4 subnet to reserve CIDR for south network exists", noParentSubnetError)
 	}
 
+	switchSubnetName := obj.GetSwitchSubnetName(subnetv1alpha1.CIPv4SubnetType)
 	for _, item := range subnets.Items {
-		if item.Name == fmt.Sprintf("%s-v4", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID)) {
+		if item.Name == switchSubnetName {
 			switchSubnet = &item
 			break
 		}
@@ -535,7 +536,7 @@ func (r *SwitchReconciler) updateSouthSubnetV4(
 	if switchSubnet == nil {
 		addressesCount := obj.GetAddressCount(subnetv1alpha1.CIPv4SubnetType)
 		switchSubnet, err = r.createSubnetWithCapacity(
-			fmt.Sprintf("%s-v4", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID)),
+			switchSubnetName,
 			parentSubnet.Namespace,
 			resource.NewQuantity(addressesCount, resource.DecimalSI),
 			parentSubnet.Name,
@@ -584,8 +585,9 @@ func (r *SwitchReconciler) updateSouthSubnetV6(
 		return fmt.Errorf("%w: no v6 subnet to reserve CIDR for south network exists", noParentSubnetError)
 	}
 
+	switchSubnetName := obj.GetSwitchSubnetName(subnetv1alpha1.CIPv6SubnetType)
 	for _, item := range subnets.Items {
-		if item.Name == fmt.Sprintf("%s-v6", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID)) {
+		if item.Name == switchSubnetName {
 			switchSubnet = &item
 			break
 		}
@@ -594,7 +596,7 @@ func (r *SwitchReconciler) updateSouthSubnetV6(
 	if switchSubnet == nil {
 		addressesCount := obj.GetAddressCount(subnetv1alpha1.CIPv6SubnetType)
 		switchSubnet, err = r.createSubnetWithCapacity(
-			fmt.Sprintf("%s-v6", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID)),
+			switchSubnetName,
 			parentSubnet.Namespace,
 			resource.NewQuantity(addressesCount, resource.DecimalSI),
 			parentSubnet.Name,
@@ -633,6 +635,31 @@ func (r *SwitchReconciler) ipAddressesSetter(obj *switchv1alpha1.Switch) error {
 }
 
 func (r *SwitchReconciler) interfacesSubnetsSetter(obj *switchv1alpha1.Switch) error {
+	if err := r.removeInterfacesSubnets(obj); err != nil {
+		return err
+	}
+	if err := r.updateInterfacesSubnets(obj); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *SwitchReconciler) removeInterfacesSubnets(obj *switchv1alpha1.Switch) error {
+	var subnetName string
+	for iface := range obj.Status.NorthConnections.Peers {
+		subnetName = obj.GetInterfaceSubnetName(iface, subnetv1alpha1.CIPv4SubnetType)
+		if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV4.ParentSubnet.Namespace); err != nil {
+			return err
+		}
+		subnetName = obj.GetInterfaceSubnetName(iface, subnetv1alpha1.CIPv6SubnetType)
+		if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV6.ParentSubnet.Namespace); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *SwitchReconciler) updateInterfacesSubnets(obj *switchv1alpha1.Switch) error {
 	labels := map[string]string{switchv1alpha1.LabelSwitchName: obj.Name}
 	for iface, data := range obj.Spec.Interfaces {
 		labels[switchv1alpha1.LabelInterfaceName] = strings.ToLower(iface)
@@ -655,14 +682,15 @@ func (r *SwitchReconciler) interfacesSubnetsSetter(obj *switchv1alpha1.Switch) e
 
 func (r *SwitchReconciler) updateInterfaceSubnetV4(obj *switchv1alpha1.Switch, name string, address string, labels map[string]string) error {
 	var err error
+	interfaceSubnetName := obj.GetInterfaceSubnetName(name, subnetv1alpha1.CIPv4SubnetType)
 	if err = r.Get(r.Background.ctx, types.NamespacedName{
 		Namespace: obj.Status.SouthSubnetV4.ParentSubnet.Namespace,
-		Name:      fmt.Sprintf("%s-%s-v4", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID), strings.ToLower(name)),
+		Name:      interfaceSubnetName,
 	}, &subnetv1alpha1.Subnet{}); err != nil {
 		if apierrors.IsNotFound(err) {
 			_, cidr, _ := net.ParseCIDR(address)
 			if _, err = r.createSubnetWithCIDR(
-				fmt.Sprintf("%s-%s-v4", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID), strings.ToLower(name)),
+				interfaceSubnetName,
 				obj.Status.SouthSubnetV4.ParentSubnet.Namespace,
 				subnetv1alpha1.CIDRFromNet(cidr),
 				obj.Status.SouthSubnetV4.ParentSubnet.Name,
@@ -679,14 +707,15 @@ func (r *SwitchReconciler) updateInterfaceSubnetV4(obj *switchv1alpha1.Switch, n
 
 func (r *SwitchReconciler) updateInterfaceSubnetV6(obj *switchv1alpha1.Switch, name string, address string, labels map[string]string) error {
 	var err error
+	interfaceSubnetName := obj.GetInterfaceSubnetName(name, subnetv1alpha1.CIPv6SubnetType)
 	if err = r.Get(r.Background.ctx, types.NamespacedName{
 		Namespace: obj.Status.SouthSubnetV6.ParentSubnet.Namespace,
-		Name:      fmt.Sprintf("%s-%s-v6", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID), strings.ToLower(name)),
+		Name:      interfaceSubnetName,
 	}, &subnetv1alpha1.Subnet{}); err != nil {
 		if apierrors.IsNotFound(err) {
 			_, cidr, _ := net.ParseCIDR(address)
 			if _, err = r.createSubnetWithCIDR(
-				fmt.Sprintf("%s-%s-v6", switchv1alpha1.MacToResName(obj.Spec.Chassis.ChassisID), strings.ToLower(name)),
+				interfaceSubnetName,
 				obj.Status.SouthSubnetV6.ParentSubnet.Namespace,
 				subnetv1alpha1.CIDRFromNet(cidr),
 				obj.Status.SouthSubnetV6.ParentSubnet.Name,
@@ -730,14 +759,15 @@ func (r *SwitchReconciler) updateSwitchV4Address(obj *switchv1alpha1.Switch, lab
 	}, &subnetv1alpha1.Subnet{}); err != nil {
 		return err
 	}
+	loopbackSubnetName := obj.GetLoopbackSubnetName(subnetv1alpha1.CIPv4SubnetType)
 	sn := &subnetv1alpha1.Subnet{}
 	if err := r.Get(r.Background.ctx, types.NamespacedName{
 		Namespace: obj.Status.SouthSubnetV4.ParentSubnet.Namespace,
-		Name:      fmt.Sprintf("%s-lo-v4", obj.Name),
+		Name:      loopbackSubnetName,
 	}, sn); err != nil {
 		if apierrors.IsNotFound(err) {
 			sn, err = r.createSubnetWithCapacity(
-				fmt.Sprintf("%s-lo-v4", obj.Name),
+				loopbackSubnetName,
 				obj.Status.SouthSubnetV4.ParentSubnet.Namespace,
 				resource.NewQuantity(1, resource.DecimalSI),
 				CSwitchLoopbackV4Subnet,
@@ -767,14 +797,15 @@ func (r *SwitchReconciler) updateSwitchV6Address(obj *switchv1alpha1.Switch, lab
 	}, &subnetv1alpha1.Subnet{}); err != nil {
 		return err
 	}
+	loopbackSubnetName := obj.GetLoopbackSubnetName(subnetv1alpha1.CIPv6SubnetType)
 	sn := &subnetv1alpha1.Subnet{}
 	if err := r.Get(r.Background.ctx, types.NamespacedName{
 		Namespace: obj.Status.SouthSubnetV6.ParentSubnet.Namespace,
-		Name:      fmt.Sprintf("%s-lo-v6", obj.Name),
+		Name:      loopbackSubnetName,
 	}, sn); err != nil {
 		if apierrors.IsNotFound(err) {
 			sn, err = r.createSubnetWithCapacity(
-				fmt.Sprintf("%s-lo-v6", obj.Name),
+				loopbackSubnetName,
 				obj.Status.SouthSubnetV6.ParentSubnet.Namespace,
 				resource.NewQuantity(1, resource.DecimalSI),
 				CSwitchLoopbackV6Subnet,

@@ -696,6 +696,7 @@ func (in *Switch) SetDiscoveredPeers(list *SwitchList) {
 			}
 		}
 	}
+	in.movePeers(list)
 }
 
 // UpdateConnectionLevel updates switch's connection level
@@ -888,8 +889,8 @@ func (in *Switch) subnetsNotNil() bool {
 }
 
 func (in *Switch) subnetsCorrect() bool {
-	return strings.HasPrefix(in.Status.SouthSubnetV4.ParentSubnet.Name, MacToResName(in.Spec.Chassis.ChassisID)) &&
-		strings.HasPrefix(in.Status.SouthSubnetV6.ParentSubnet.Name, MacToResName(in.Spec.Chassis.ChassisID))
+	return in.Status.SouthSubnetV4.ParentSubnet.Name == in.GetSwitchSubnetName(subnetv1alpha1.CIPv4SubnetType) &&
+		in.Status.SouthSubnetV6.ParentSubnet.Name == in.GetSwitchSubnetName(subnetv1alpha1.CIPv6SubnetType)
 }
 
 func (in *Switch) subnetsCIDRDefined() bool {
@@ -1020,11 +1021,43 @@ func (in *Switch) ConfigManagerTimeoutOk() bool {
 	if in.Status.Configuration.Managed {
 		loc, _ := time.LoadLocation("UTC")
 		lastCheck, _ := time.ParseInLocation(time.UnixDate, in.Status.Configuration.LastCheck, loc)
-		//fmt.Printf("%v - %v = %v\n", time.Now().In(loc), lastCheck, time.Now().In(loc).Sub(lastCheck)*time.Second)
 		return time.Now().In(loc).Sub(lastCheck).Seconds() < CSwitchConfigCheckTimeout.Seconds()
 	} else {
 		return true
 	}
+}
+
+func (in *Switch) GetSwitchSubnetName(addressType subnetv1alpha1.SubnetAddressType) string {
+	var suffix string
+	switch addressType {
+	case subnetv1alpha1.CIPv4SubnetType:
+		suffix = "v4"
+	case subnetv1alpha1.CIPv6SubnetType:
+		suffix = "v6"
+	}
+	return fmt.Sprintf("%s-%s", in.Name, suffix)
+}
+
+func (in *Switch) GetLoopbackSubnetName(addressType subnetv1alpha1.SubnetAddressType) string {
+	var suffix string
+	switch addressType {
+	case subnetv1alpha1.CIPv4SubnetType:
+		suffix = "v4"
+	case subnetv1alpha1.CIPv6SubnetType:
+		suffix = "v6"
+	}
+	return fmt.Sprintf("%s-lo-%s", in.Name, suffix)
+}
+
+func (in *Switch) GetInterfaceSubnetName(nic string, addressType subnetv1alpha1.SubnetAddressType) string {
+	var suffix string
+	switch addressType {
+	case subnetv1alpha1.CIPv4SubnetType:
+		suffix = "v4"
+	case subnetv1alpha1.CIPv6SubnetType:
+		suffix = "v6"
+	}
+	return fmt.Sprintf("%s-%s-%s", in.Name, strings.ToLower(nic), suffix)
 }
 
 func (in Switch) StatusDeepEqual(prev Switch) bool {
