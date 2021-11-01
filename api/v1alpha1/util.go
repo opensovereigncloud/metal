@@ -17,11 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"math"
-	"math/big"
 	"net"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -54,12 +51,13 @@ const (
 )
 
 const (
-	CEmptyString       = ""
-	CSwitchPortPrefix  = "Ethernet"
-	CPortChannelPrefix = "PortChannel"
+	CEmptyString      = ""
+	CSwitchPortPrefix = "Ethernet"
 
 	CLabelPrefix    = "switch.onmetal.de/"
 	CLabelChassisId = "chassisId"
+	CLabelName      = "name"
+	CLabelInterface = "interface"
 
 	CSonicSwitchOs     = "SONiC"
 	CStationCapability = "Station"
@@ -79,16 +77,8 @@ const (
 )
 
 var LabelChassisId = CLabelPrefix + CLabelChassisId
-
-func getMinInterfaceIndex(interfaces []string) int {
-	sort.Slice(interfaces, func(i, j int) bool {
-		leftIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[i], CSwitchPortPrefix, CEmptyString))
-		rightIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[j], CSwitchPortPrefix, CEmptyString))
-		return leftIndex < rightIndex
-	})
-	minIndex, _ := strconv.Atoi(strings.ReplaceAll(interfaces[0], CSwitchPortPrefix, CEmptyString))
-	return minIndex
-}
+var LabelSwitchName = CLabelPrefix + CLabelName
+var LabelInterfaceName = CLabelPrefix + CLabelInterface
 
 func getChassisId(nics []inventoriesv1alpha1.NICSpec) string {
 	for _, nic := range nics {
@@ -149,40 +139,6 @@ func getInterfaceSubnetMaskLength(addrType subnetv1alpha1.SubnetAddressType) int
 	}
 }
 
-//getMinimalVacantCIDR calculates the minimal suitable network
-//from the networks list provided as argument according to the
-//needed addresses count. It returns the pointer to the CIDR object.
-func getMinimalVacantCIDR(vacant []subnetv1alpha1.CIDR, addressType subnetv1alpha1.SubnetAddressType, addressesCount int64) *subnetv1alpha1.CIDR {
-	var zeroNetString string
-	if addressType == subnetv1alpha1.CIPv4SubnetType {
-		zeroNetString = CIPv4ZeroNet
-	} else {
-		zeroNetString = CIPv6ZeroNet
-	}
-	_, zeroNet, _ := net.ParseCIDR(zeroNetString)
-	minSuitableNet := subnetv1alpha1.CIDRFromNet(zeroNet)
-	for _, cidr := range vacant {
-		if cidr.AddressCapacity().Cmp(minSuitableNet.AddressCapacity()) < 0 &&
-			cidr.AddressCapacity().Cmp(new(big.Int).SetInt64(addressesCount)) >= 0 {
-			minSuitableNet = &cidr
-		}
-	}
-	return minSuitableNet
-}
-
-func getNeededMask(addrType subnetv1alpha1.SubnetAddressType, addressesCount float64) net.IPMask {
-	bits := 32
-	pow := 2.0
-	for math.Pow(2, pow) < addressesCount {
-		pow++
-	}
-	if addrType == subnetv1alpha1.CIPv6SubnetType {
-		bits = 128
-	}
-	ones := bits - int(pow)
-	return net.CIDRMask(ones, bits)
-}
-
 func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, addrType subnetv1alpha1.SubnetAddressType) *net.IPNet {
 	index, _ := strconv.Atoi(strings.ReplaceAll(name, namePrefix, CEmptyString))
 	prefix, _ := network.Mask.Size()
@@ -192,4 +148,8 @@ func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, addr
 
 func MacToLabel(mac string) string {
 	return strings.ReplaceAll(mac, ":", "-")
+}
+
+func MacToResName(mac string) string {
+	return strings.ReplaceAll(mac, ":", "")
 }

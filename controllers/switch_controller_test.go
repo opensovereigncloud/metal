@@ -196,41 +196,7 @@ var _ = Describe("Controllers interaction", func() {
 							return false
 						}
 					}
-					// check port channels defined correctly
-					if strings.HasPrefix(sw.Spec.Hostname, "spine-1-1") {
-						if len(sw.Status.LAGs) < 1 {
-							return false
-						}
-						if _, ok := sw.Status.LAGs["PortChannel8"]; !ok {
-							return false
-						}
-						if sw.Spec.Interfaces["Ethernet8"].IPv4 == switchv1alpha1.CEmptyString ||
-							sw.Spec.Interfaces["Ethernet8"].IPv6 == switchv1alpha1.CEmptyString {
-							return false
-						}
-						if sw.Spec.Interfaces["Ethernet16"].IPv4 == switchv1alpha1.CEmptyString ||
-							sw.Spec.Interfaces["Ethernet16"].IPv6 == switchv1alpha1.CEmptyString {
-							return false
-						}
-					}
-					if strings.HasPrefix(sw.Spec.Hostname, "leaf-1") {
-						if len(sw.Status.LAGs) < 1 {
-							return false
-						}
-						if _, ok := sw.Status.LAGs["PortChannel0"]; !ok {
-							return false
-						}
-						if sw.Spec.Interfaces["Ethernet0"].IPv4 == switchv1alpha1.CEmptyString ||
-							sw.Spec.Interfaces["Ethernet0"].IPv6 == switchv1alpha1.CEmptyString {
-							return false
-						}
-						if sw.Spec.Interfaces["Ethernet8"].IPv4 == switchv1alpha1.CEmptyString ||
-							sw.Spec.Interfaces["Ethernet8"].IPv6 == switchv1alpha1.CEmptyString {
-							return false
-						}
-					}
-					// check south subnets, interfaces addresses, port channels addresses
-					if !(sw.SubnetsOk() && sw.AddressesDefined() && sw.AddressesOk(list) && sw.PortChannelsAddressesDefined()) {
+					if !(sw.SubnetsOk() && sw.AddressesDefined() && sw.AddressesOk(list)) {
 						return false
 					}
 					// check loopback addresses
@@ -286,59 +252,6 @@ var _ = Describe("Controllers interaction", func() {
 				}
 				if sw.Status.Role != switchv1alpha1.CLeafRole {
 					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-
-			By("Update inventory by removing some LLDPs")
-			updatedInterfaces := map[string]string{
-				"7db70ddb-f23d-3d67-8b73-fb0dac5216ab": "Ethernet8",
-				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5": "Ethernet16",
-			}
-			for name, inf := range updatedInterfaces {
-				inv = &inventoriesv1alpha1.Inventory{}
-				Expect(k8sClient.Get(ctx, types.NamespacedName{
-					Namespace: DefaultNamespace,
-					Name:      name,
-				}, inv)).Should(Succeed())
-				updatedInterfaces := make(map[int]inventoriesv1alpha1.NICSpec)
-				for i, nic := range inv.Spec.NICs.NICs {
-					if nic.Name == inf {
-						updatedInterfaces[i] = *nic.DeepCopy()
-					}
-				}
-				for idx, inf := range updatedInterfaces {
-					inf.NDPs = []inventoriesv1alpha1.NDPSpec{}
-					inf.NDPs = append(inf.NDPs, inventoriesv1alpha1.NDPSpec{})
-					inf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
-					inf.LLDPs = append(inf.LLDPs, inventoriesv1alpha1.LLDPSpec{})
-					inv.Spec.NICs.NICs[idx] = inf
-				}
-				Expect(k8sClient.Update(ctx, inv)).Should(Succeed())
-			}
-
-			By("Should remove port channels and update member interfaces addresses")
-			pChannels := map[string]string{
-				"7db70ddb-f23d-3d67-8b73-fb0dac5216ab": "PortChannel0",
-				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5": "PortChannel8",
-			}
-
-			Eventually(func() bool {
-				for name, pChannel := range pChannels {
-					obj := &switchv1alpha1.Switch{}
-					Expect(k8sClient.Get(ctx, types.NamespacedName{
-						Namespace: OnmetalNamespace,
-						Name:      name,
-					}, obj)).Should(Succeed())
-					if _, ok := obj.Status.LAGs[pChannel]; ok {
-						return false
-					}
-					if obj.Spec.Interfaces[updatedInterfaces[name]].IPv4 != switchv1alpha1.CEmptyString {
-						return false
-					}
-					if obj.Spec.Interfaces[updatedInterfaces[name]].IPv6 != switchv1alpha1.CEmptyString {
-						return false
-					}
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
