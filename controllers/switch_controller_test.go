@@ -17,16 +17,12 @@ limitations under the License.
 package controllers
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"path/filepath"
 	"strings"
 
+	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v3"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -34,142 +30,89 @@ import (
 )
 
 var chassisIds = []string{"68:21:5f:47:0d:6e", "68:21:5f:47:0b:6e", "68:21:5f:47:0a:6e"}
+var newMachineLLDP = inventoriesv1alpha1.LLDPSpec{
+	ChassisID:         "1c:34:da:57:3b:44",
+	SystemName:        "Fake",
+	SystemDescription: "Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64",
+	PortID:            "lan0",
+	PortDescription:   "lan0",
+	Capabilities:      []inventoriesv1alpha1.LLDPCapabilities{switchv1alpha1.CStationCapability},
+}
+var newLeafLLDP = inventoriesv1alpha1.LLDPSpec{
+	ChassisID:         "68:21:5f:47:0d:5a",
+	SystemName:        "spine-1-1.fra3.infra.onmetal.de",
+	SystemDescription: "Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1 SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64",
+	PortID:            "Eth63/1",
+	PortDescription:   "Ethernet124",
+	Capabilities:      []inventoriesv1alpha1.LLDPCapabilities{switchv1alpha1.CBridgeCapability, switchv1alpha1.CRouterCapability},
+}
+var newSpineLLDP = inventoriesv1alpha1.LLDPSpec{
+	ChassisID:         "68:21:5f:47:11:6e",
+	SystemName:        "leaf-1.fra3.infra.onmetal.de",
+	SystemDescription: "Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64 #1 SMP Debian 4.19.67-2+deb10u2 (2019-11-11) x86_64",
+	PortID:            "Eth63/1",
+	PortDescription:   "Ethernet124",
+	Capabilities:      []inventoriesv1alpha1.LLDPCapabilities{switchv1alpha1.CBridgeCapability, switchv1alpha1.CRouterCapability},
+}
 
 var _ = Describe("Controllers interaction", func() {
 	Context("Processing of switch resources on creation and after", func() {
-		BeforeEach(func() {
-			By("Prepare inventories")
-			switchesSamples := []string{
-				filepath.Join("..", "config", "samples", "inventories", "spine-0-1.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-0-2.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-0-3.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-1-1.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-1-2.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-1-3.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-1-4.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-1-5.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "spine-1-6.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "leaf-1.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "leaf-2.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "leaf-3.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "leaf-4.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "leaf-5.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "leaf-6.onmetal.de_v1alpha1_inventory.yaml"),
-				filepath.Join("..", "config", "samples", "inventories", "leaf-7.onmetal.de_v1alpha1_inventory.yaml"),
-			}
-			for _, sample := range switchesSamples {
-				rawInfo := make(map[string]interface{})
-				inv := &inventoriesv1alpha1.Inventory{}
-				sampleBytes, err := ioutil.ReadFile(sample)
-				Expect(err).NotTo(HaveOccurred())
-				err = yaml.Unmarshal(sampleBytes, rawInfo)
-				Expect(err).NotTo(HaveOccurred())
-				data, err := json.Marshal(rawInfo)
-				Expect(err).NotTo(HaveOccurred())
-				err = json.Unmarshal(data, inv)
-				Expect(err).NotTo(HaveOccurred())
-
-				swNamespacedName := types.NamespacedName{
-					Namespace: OnmetalNamespace,
-					Name:      inv.Name,
-				}
-				inv.Namespace = DefaultNamespace
-				Expect(k8sClient.Create(ctx, inv)).To(Succeed())
-				sw := &switchv1alpha1.Switch{}
-				Eventually(func() bool {
-					err := k8sClient.Get(ctx, swNamespacedName, sw)
-					return err == nil
-				}, timeout, interval).Should(BeTrue())
-				Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(sw.Spec.Chassis.ChassisID)}))
-			}
-
-			By("Prepare assignments")
-			for _, id := range chassisIds {
-				swa := &switchv1alpha1.SwitchAssignment{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      getUUID(id),
-						Namespace: OnmetalNamespace,
-					},
-					Spec: switchv1alpha1.SwitchAssignmentSpec{
-						ChassisID: id,
-						Region: &switchv1alpha1.RegionSpec{
-							Name:             TestRegion,
-							AvailabilityZone: TestAvailabilityZone,
-						},
-					},
-				}
-				Expect(k8sClient.Create(ctx, swa)).To(Succeed())
-				Eventually(func() bool {
-					err := k8sClient.Get(ctx, swa.NamespacedName(), swa)
-					return err == nil
-				}, timeout, interval).Should(BeTrue())
-				Expect(swa.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(id)}))
-			}
-
-			By("Processing finished")
-			list := &switchv1alpha1.SwitchList{}
-			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, sw := range list.Items {
-					if sw.Status.State != switchv1alpha1.CSwitchStateReady {
-						return false
-					}
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-		})
-
 		AfterEach(func() {
-			By("Remove switches")
-			Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
-			Eventually(func() bool {
-				list := &switchv1alpha1.SwitchList{}
-				err := k8sClient.List(ctx, list)
-				if err != nil {
-					return false
-				}
-				if len(list.Items) > 0 {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
+			var err error
+			swl := &switchv1alpha1.SwitchList{}
+			snl := &subnetv1alpha1.SubnetList{}
+			opts := &client.ListOptions{}
 
-			By("Check assignments in pending state")
-			list := &switchv1alpha1.SwitchAssignmentList{}
+			By("Check there are two subnets - v4 and v6 - for every south NIC")
 			Eventually(func() bool {
-				Expect(k8sClient.List(ctx, list)).Should(Succeed())
-				for _, item := range list.Items {
-					if item.Status.State != switchv1alpha1.CAssignmentStatePending {
+				Expect(k8sClient.List(ctx, swl)).Should(Succeed())
+				for _, sw := range swl.Items {
+					southNICs := make([]string, 0)
+					for nic := range sw.Status.SouthConnections.Peers {
+						southNICs = append(southNICs, strings.ToLower(nic))
+					}
+					if len(southNICs) == 0 {
+						return true
+					}
+					labels := labelsMap{
+						include: map[string][]string{
+							switchv1alpha1.LabelSwitchName:    {sw.Name},
+							switchv1alpha1.LabelInterfaceName: southNICs,
+						},
+					}
+					opts, err = getListFilter(labels)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(k8sClient.List(ctx, snl, opts)).Should(Succeed())
+					if len(snl.Items) != len(southNICs)*2 {
 						return false
 					}
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
 
-			By("Remove assignments")
-			Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.SwitchAssignment{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+			By("Check there are no subnets for north NICs")
 			Eventually(func() bool {
-				list := &switchv1alpha1.SwitchAssignmentList{}
-				err := k8sClient.List(ctx, list)
-				if err != nil {
-					return false
-				}
-				if len(list.Items) > 0 {
-					return false
-				}
-				return true
-			}, timeout, interval).Should(BeTrue())
-
-			By("Remove inventories")
-			Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
-			Eventually(func() bool {
-				list := &inventoriesv1alpha1.InventoryList{}
-				err := k8sClient.List(ctx, list)
-				if err != nil {
-					return false
-				}
-				if len(list.Items) > 0 {
-					return false
+				Expect(k8sClient.List(ctx, swl)).Should(Succeed())
+				for _, sw := range swl.Items {
+					northNICs := make([]string, 0)
+					for nic := range sw.Status.SouthConnections.Peers {
+						northNICs = append(northNICs, strings.ToLower(nic))
+					}
+					if len(northNICs) == 0 {
+						return true
+					}
+					labels := labelsMap{
+						include: map[string][]string{
+							switchv1alpha1.LabelSwitchName:    {sw.Name},
+							switchv1alpha1.LabelInterfaceName: northNICs,
+						},
+					}
+					opts, err = getListFilter(labels)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(k8sClient.List(ctx, snl, opts)).Should(Succeed())
+					if len(snl.Items) != 0 {
+						return false
+					}
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
@@ -210,31 +153,13 @@ var _ = Describe("Controllers interaction", func() {
 				return true
 			}, timeout, interval).Should(BeTrue())
 
-			By("Update inventory by adding new LLDPs")
+			By("Update leaf inventory by adding new machine LLDP")
 			inv := &inventoriesv1alpha1.Inventory{}
 			Expect(k8sClient.Get(ctx, types.NamespacedName{
 				Namespace: DefaultNamespace,
 				Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
 			}, inv)).Should(Succeed())
-			updatedInfIndex := 0
-			updatedInf := inventoriesv1alpha1.NICSpec{}
-			for i, nic := range inv.Spec.NICs.NICs {
-				if nic.Name == "Ethernet124" {
-					updatedInfIndex = i
-					updatedInf = *nic.DeepCopy()
-				}
-			}
-			updatedInf.NDPs = []inventoriesv1alpha1.NDPSpec{}
-			updatedInf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
-			updatedInf.LLDPs = append(updatedInf.LLDPs, inventoriesv1alpha1.LLDPSpec{
-				ChassisID:         "1c:34:da:57:3b:44",
-				SystemName:        "Fake",
-				SystemDescription: "Debian GNU/Linux 10 (buster) Linux 4.19.0-6-2-amd64",
-				PortID:            "lan0",
-				PortDescription:   "lan0",
-				Capabilities:      []inventoriesv1alpha1.LLDPCapabilities{switchv1alpha1.CStationCapability},
-			})
-			inv.Spec.NICs.NICs[updatedInfIndex] = updatedInf
+			updateInventory(inv, "Ethernet124", newMachineLLDP)
 			Expect(k8sClient.Update(ctx, inv)).Should(Succeed())
 
 			By("Should update south peers, interfaces and switch role")
@@ -255,6 +180,90 @@ var _ = Describe("Controllers interaction", func() {
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
+
+			snl := &subnetv1alpha1.SubnetList{}
+			Expect(k8sClient.List(ctx, snl))
+			Expect(checkNeededSubnetExist(snl, sw.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv4SubnetType))).Should(BeTrue())
+			Expect(checkNeededSubnetExist(snl, sw.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv6SubnetType))).Should(BeTrue())
+
+			By("Update leaf inventory by changing machine LLDP to switch LLDP")
+			leafInv := &inventoriesv1alpha1.Inventory{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: DefaultNamespace,
+				Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
+			}, leafInv)).Should(Succeed())
+			updateInventory(leafInv, "Ethernet124", newLeafLLDP)
+			Expect(k8sClient.Update(ctx, leafInv)).Should(Succeed())
+
+			By("Update spine inventory by adding LLDP")
+			spineInv := &inventoriesv1alpha1.Inventory{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: DefaultNamespace,
+				Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+			}, spineInv)).Should(Succeed())
+			updateInventory(spineInv, "Ethernet124", newSpineLLDP)
+			Expect(k8sClient.Update(ctx, spineInv)).Should(Succeed())
+
+			By("Should update peers and interfaces")
+			leaf := &switchv1alpha1.Switch{}
+			spine := &switchv1alpha1.Switch{}
+			Eventually(func() bool {
+				Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: OnmetalNamespace,
+					Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
+				}, leaf)).Should(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: OnmetalNamespace,
+					Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+				}, spine)).Should(Succeed())
+				if _, ok := spine.Status.SouthConnections.Peers["Ethernet124"]; !ok {
+					return false
+				}
+				if spine.Status.State != switchv1alpha1.CSwitchStateReady {
+					return false
+				}
+				if _, ok := leaf.Status.NorthConnections.Peers["Ethernet124"]; !ok {
+					return false
+				}
+				if leaf.Status.State != switchv1alpha1.CSwitchStateReady {
+					return false
+				}
+				if leaf.Status.Role != switchv1alpha1.CSpineRole {
+					return false
+				}
+				return true
+			}, timeout, interval).Should(BeTrue())
+
+			Expect(k8sClient.List(ctx, snl))
+			Expect(checkNeededSubnetExist(snl, leaf.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv4SubnetType))).Should(BeFalse())
+			Expect(checkNeededSubnetExist(snl, leaf.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv6SubnetType))).Should(BeFalse())
+			Expect(checkNeededSubnetExist(snl, spine.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv4SubnetType))).Should(BeTrue())
+			Expect(checkNeededSubnetExist(snl, spine.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv6SubnetType))).Should(BeTrue())
 		})
 	})
 })
+
+func checkNeededSubnetExist(list *subnetv1alpha1.SubnetList, name string) bool {
+	result := false
+	for _, sn := range list.Items {
+		if sn.Name == name {
+			return true
+		}
+	}
+	return result
+}
+
+func updateInventory(inv *inventoriesv1alpha1.Inventory, nicName string, lldp inventoriesv1alpha1.LLDPSpec) {
+	updatedInfIndex := 0
+	updatedInf := inventoriesv1alpha1.NICSpec{}
+	for i, nic := range inv.Spec.NICs.NICs {
+		if nic.Name == nicName {
+			updatedInfIndex = i
+			updatedInf = *nic.DeepCopy()
+		}
+	}
+	updatedInf.NDPs = []inventoriesv1alpha1.NDPSpec{}
+	updatedInf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
+	updatedInf.LLDPs = append(updatedInf.LLDPs, lldp)
+	inv.Spec.NICs.NICs[updatedInfIndex] = updatedInf
+}

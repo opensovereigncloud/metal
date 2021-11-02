@@ -61,6 +61,8 @@ const (
 
 	CSonicSwitchOs     = "SONiC"
 	CStationCapability = "Station"
+	CRouterCapability  = "Router"
+	CBridgeCapability  = "Bridge"
 
 	CIPv4ZeroNet             = "0.0.0.0/0"
 	CIPv6ZeroNet             = "::/0"

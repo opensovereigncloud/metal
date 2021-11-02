@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"go/build"
 	"io/ioutil"
@@ -37,6 +38,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/mod/modfile"
+	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -340,22 +342,12 @@ var _ = BeforeSuite(func() {
 		return loopbackSubnetV6.Status.State == subnetv1alpha1.CFinishedSubnetState
 	}, timeout, interval).Should(BeTrue())
 
+	prepareEnv()
+
 }, 60)
 
 var _ = AfterSuite(func() {
-	By("Remove subnets")
-	Expect(k8sClient.DeleteAllOf(ctx, &subnetv1alpha1.Subnet{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
-	Eventually(func() bool {
-		list := &subnetv1alpha1.SubnetList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
+	cleanUp()
 	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
@@ -383,4 +375,156 @@ func getUUID(identifier string) string {
 	namespaceUUID := uuid.NewMD5(uuid.UUID{}, []byte(OnmetalNamespace))
 	newUUID := uuid.NewMD5(namespaceUUID, []byte(identifier))
 	return newUUID.String()
+}
+
+func prepareEnv() {
+	By("Prepare inventories")
+	switchesSamples := []string{
+		filepath.Join("..", "config", "samples", "inventories", "spine-0-1.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-0-2.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-0-3.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-1-1.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-1-2.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-1-3.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-1-4.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-1-5.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "spine-1-6.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "leaf-1.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "leaf-2.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "leaf-3.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "leaf-4.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "leaf-5.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "leaf-6.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "inventories", "leaf-7.onmetal.de_v1alpha1_inventory.yaml"),
+	}
+	for _, sample := range switchesSamples {
+		rawInfo := make(map[string]interface{})
+		inv := &inventoriesv1alpha1.Inventory{}
+		sampleBytes, err := ioutil.ReadFile(sample)
+		Expect(err).NotTo(HaveOccurred())
+		err = yaml.Unmarshal(sampleBytes, rawInfo)
+		Expect(err).NotTo(HaveOccurred())
+		data, err := json.Marshal(rawInfo)
+		Expect(err).NotTo(HaveOccurred())
+		err = json.Unmarshal(data, inv)
+		Expect(err).NotTo(HaveOccurred())
+
+		swNamespacedName := types.NamespacedName{
+			Namespace: OnmetalNamespace,
+			Name:      inv.Name,
+		}
+		inv.Namespace = DefaultNamespace
+		Expect(k8sClient.Create(ctx, inv)).To(Succeed())
+		sw := &switchv1alpha1.Switch{}
+		Eventually(func() bool {
+			err := k8sClient.Get(ctx, swNamespacedName, sw)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+		Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(sw.Spec.Chassis.ChassisID)}))
+	}
+
+	By("Prepare assignments")
+	for _, id := range chassisIds {
+		swa := &switchv1alpha1.SwitchAssignment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      getUUID(id),
+				Namespace: OnmetalNamespace,
+			},
+			Spec: switchv1alpha1.SwitchAssignmentSpec{
+				ChassisID: id,
+				Region: &switchv1alpha1.RegionSpec{
+					Name:             TestRegion,
+					AvailabilityZone: TestAvailabilityZone,
+				},
+			},
+		}
+		Expect(k8sClient.Create(ctx, swa)).To(Succeed())
+		Eventually(func() bool {
+			err := k8sClient.Get(ctx, swa.NamespacedName(), swa)
+			return err == nil
+		}, timeout, interval).Should(BeTrue())
+		Expect(swa.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(id)}))
+	}
+
+	By("Processing finished")
+	list := &switchv1alpha1.SwitchList{}
+	Eventually(func() bool {
+		Expect(k8sClient.List(ctx, list)).Should(Succeed())
+		for _, sw := range list.Items {
+			if sw.Status.State != switchv1alpha1.CSwitchStateReady {
+				return false
+			}
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+}
+
+func cleanUp() {
+	By("Remove switches")
+	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &switchv1alpha1.SwitchList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	By("Check assignments in pending state")
+	list := &switchv1alpha1.SwitchAssignmentList{}
+	Eventually(func() bool {
+		Expect(k8sClient.List(ctx, list)).Should(Succeed())
+		for _, item := range list.Items {
+			if item.Status.State != switchv1alpha1.CAssignmentStatePending {
+				return false
+			}
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	By("Remove assignments")
+	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.SwitchAssignment{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &switchv1alpha1.SwitchAssignmentList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	By("Remove inventories")
+	Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &inventoriesv1alpha1.InventoryList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	By("Remove subnets")
+	Expect(k8sClient.DeleteAllOf(ctx, &subnetv1alpha1.Subnet{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &subnetv1alpha1.SubnetList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
 }

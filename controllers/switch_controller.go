@@ -177,6 +177,9 @@ func getListFilter(labelsMap labelsMap) (*client.ListOptions, error) {
 	selector := labels.NewSelector()
 	if labelsMap.include != nil {
 		for k, v := range labelsMap.include {
+			if len(v) == 0 {
+				continue
+			}
 			req, err := getLabelsRequirementIncluded(k, v)
 			if err != nil {
 				return nil, err
@@ -186,6 +189,9 @@ func getListFilter(labelsMap labelsMap) (*client.ListOptions, error) {
 	}
 	if labelsMap.exclude != nil {
 		for k, v := range labelsMap.exclude {
+			if len(v) == 0 {
+				continue
+			}
 			req, err := getLabelsRequirementExcluded(k, v)
 			if err != nil {
 				return nil, err
@@ -439,6 +445,8 @@ func (r *SwitchReconciler) peersInfoSetter(obj *switchv1alpha1.Switch) error {
 	obj.SetState(switchv1alpha1.CSwitchStateInProgress)
 	obj.UpdateStoredPeers()
 	obj.SetDiscoveredPeers(r.Background.switches)
+	obj.MovePeers(r.Background.switches)
+	obj.CleanUpPeers()
 	return nil
 }
 
@@ -646,6 +654,9 @@ func (r *SwitchReconciler) interfacesSubnetsSetter(obj *switchv1alpha1.Switch) e
 
 func (r *SwitchReconciler) removeInterfacesSubnets(obj *switchv1alpha1.Switch) error {
 	var subnetName string
+	if !obj.SubnetsOk() {
+		return nil
+	}
 	for iface := range obj.Status.NorthConnections.Peers {
 		subnetName = obj.GetInterfaceSubnetName(iface, subnetv1alpha1.CIPv4SubnetType)
 		if err := r.removeInterfaceSubnet(subnetName, obj.Status.SouthSubnetV4.ParentSubnet.Namespace); err != nil {

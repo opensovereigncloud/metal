@@ -123,7 +123,7 @@ var _ = BeforeSuite(func() {
 		if err != nil {
 			return err
 		}
-		conn.Close()
+		Expect(conn.Close()).Should(Succeed())
 		return nil
 	}).Should(Succeed())
 

@@ -413,7 +413,7 @@ func (in *Switch) getRole(peers map[string]*PeerSpec) Role {
 
 // Moves peers between south and north peer lists
 // according to changes in peers connection levels.
-func (in *Switch) movePeers(list *SwitchList) {
+func (in *Switch) MovePeers(swl *SwitchList) {
 	if in.Status.ConnectionLevel == 0 {
 		for name, data := range in.Status.NorthConnections.Peers {
 			in.Status.SouthConnections.Peers[name] = data
@@ -422,22 +422,35 @@ func (in *Switch) movePeers(list *SwitchList) {
 		return
 	}
 
-	for _, item := range list.Items {
+	for _, sw := range swl.Items {
 		for name, data := range in.Status.SouthConnections.Peers {
-			southPeerFound := data.ChassisID == item.Spec.Chassis.ChassisID
-			higherConnLevel := item.Status.ConnectionLevel < in.Status.ConnectionLevel
+			southPeerFound := data.ChassisID == sw.Spec.Chassis.ChassisID
+			higherConnLevel := sw.Status.ConnectionLevel < in.Status.ConnectionLevel
 			if southPeerFound && higherConnLevel {
 				in.Status.NorthConnections.Peers[name] = data
 				delete(in.Status.SouthConnections.Peers, name)
 			}
 		}
 		for name, data := range in.Status.NorthConnections.Peers {
-			northPeerFound := data.ChassisID == item.Spec.Chassis.ChassisID
-			lowerConnLevel := item.Status.ConnectionLevel > in.Status.ConnectionLevel
+			northPeerFound := data.ChassisID == sw.Spec.Chassis.ChassisID
+			lowerConnLevel := sw.Status.ConnectionLevel > in.Status.ConnectionLevel
 			if northPeerFound && lowerConnLevel {
 				in.Status.SouthConnections.Peers[name] = data
 				delete(in.Status.NorthConnections.Peers, name)
 			}
+		}
+	}
+}
+
+func (in *Switch) CleanUpPeers() {
+	for inf, data := range in.Status.SouthConnections.Peers {
+		if data.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
+			delete(in.Status.SouthConnections.Peers, inf)
+		}
+	}
+	for inf, data := range in.Status.NorthConnections.Peers {
+		if data.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
+			delete(in.Status.NorthConnections.Peers, inf)
 		}
 	}
 }
@@ -477,29 +490,56 @@ func (in *Switch) updateNorthPeers(list *SwitchList) {
 // Checks whether all stored peers are unique and fully defined.
 // Return true if so, false otherwise.
 func (in *Switch) peersOk(swl *SwitchList) bool {
+	if in.Status.ConnectionLevel == 0 && len(in.Status.NorthConnections.Peers) > 0 {
+		return false
+	}
+
 	for _, sw := range swl.Items {
 		for inf, peer := range in.Status.SouthConnections.Peers {
-			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == CEmptyString {
+			if peer.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
 				return false
 			}
-			if _, ok := in.Status.NorthConnections.Peers[inf]; ok {
+			southPeerFound := peer.ChassisID == sw.Spec.Chassis.ChassisID
+			higherConnLevel := sw.Status.ConnectionLevel < in.Status.ConnectionLevel
+			if southPeerFound && higherConnLevel {
 				return false
 			}
 		}
 		for inf, peer := range in.Status.NorthConnections.Peers {
-			if peer.ChassisID == sw.Spec.Chassis.ChassisID && peer.Name == CEmptyString {
+			if peer.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
 				return false
 			}
-			if _, ok := in.Status.SouthConnections.Peers[inf]; ok {
+			northPeerFound := peer.ChassisID == sw.Spec.Chassis.ChassisID
+			lowerConnLevel := sw.Status.ConnectionLevel > in.Status.ConnectionLevel
+			if northPeerFound && lowerConnLevel {
 				return false
 			}
 		}
 	}
-	for name, data := range in.Spec.Interfaces {
-		if data.PeerType == CMachineType {
-			if _, ok := in.Status.SouthConnections.Peers[name]; !ok {
-				return false
-			}
+	return true
+}
+
+func (in *Switch) peersDefined() bool {
+	for inf, data := range in.Spec.Interfaces {
+		if !strings.HasPrefix(inf, CSwitchPortPrefix) || data.PeerChassisID == CEmptyString {
+			continue
+		}
+		southPeer, southPeerFound := in.Status.SouthConnections.Peers[inf]
+		northPeer, northPeerFound := in.Status.NorthConnections.Peers[inf]
+		if southPeerFound && northPeerFound {
+			return false
+		}
+		if !(southPeerFound || northPeerFound) {
+			return false
+		}
+		if southPeerFound && southPeer.ChassisID != data.PeerChassisID {
+			return false
+		}
+		if northPeerFound && northPeer.ChassisID != data.PeerChassisID {
+			return false
+		}
+		if data.PeerType == CMachineType && !southPeerFound {
+			return false
 		}
 	}
 	return true
@@ -677,26 +717,27 @@ func (in *Switch) GetUsedNICs() []string {
 // SetDiscoveredPeers rewrites existing south peers data
 // with fully filled PeerSpec according to info stored
 // in interfaces specs.
-func (in *Switch) SetDiscoveredPeers(list *SwitchList) {
+func (in *Switch) SetDiscoveredPeers(swl *SwitchList) {
 	for name, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
-			_, found := in.Status.NorthConnections.Peers[name]
-			if !found {
-				for _, item := range list.Items {
-					if item.Spec.Chassis.ChassisID == data.PeerChassisID {
-						in.Status.SouthConnections.Peers[name] = &PeerSpec{
-							Name:      item.Name,
-							Namespace: item.Namespace,
-							ChassisID: data.PeerChassisID,
-							Type:      data.PeerType,
-							PortName:  data.PeerPortDescription,
-						}
-					}
+		if !strings.HasPrefix(name, CSwitchPortPrefix) || data.PeerChassisID == CEmptyString {
+			continue
+		}
+		_, found := in.Status.NorthConnections.Peers[name]
+		if found {
+			continue
+		}
+		for _, sw := range swl.Items {
+			if sw.Spec.Chassis.ChassisID == data.PeerChassisID {
+				in.Status.SouthConnections.Peers[name] = &PeerSpec{
+					Name:      sw.Name,
+					Namespace: sw.Namespace,
+					ChassisID: data.PeerChassisID,
+					Type:      data.PeerType,
+					PortName:  data.PeerPortDescription,
 				}
 			}
 		}
 	}
-	in.movePeers(list)
 }
 
 // UpdateConnectionLevel updates switch's connection level
@@ -707,7 +748,7 @@ func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
 		return
 	}
 	if in.Status.ConnectionLevel == 0 {
-		in.movePeers(list)
+		in.MovePeers(list)
 	} else {
 		for _, connectionLevel := range keys {
 			switches := connectionsMap[connectionLevel]
@@ -717,7 +758,7 @@ func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
 				if minConnectionLevel != 255 && minConnectionLevel < in.Status.ConnectionLevel {
 					in.Status.ConnectionLevel = minConnectionLevel + 1
 					in.updateNorthPeers(northPeers)
-					in.movePeers(list)
+					in.MovePeers(list)
 				}
 			}
 		}
@@ -729,7 +770,7 @@ func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
 // PeersProcessingFinished checks whether peers are
 // correctly determined for all existing switches.
 func (in *Switch) PeersProcessingFinished(swl *SwitchList) bool {
-	return in.peersOk(swl)
+	return in.peersDefined() && in.peersOk(swl)
 }
 
 // ConnectionLevelDefined checks whether connection
@@ -764,15 +805,15 @@ func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpe
 		if !ok {
 			in.Spec.Interfaces[inf] = data
 		} else {
+			if data.PeerChassisID != stored.PeerChassisID {
+				stored.IPv4 = CEmptyString
+				stored.IPv6 = CEmptyString
+			}
 			stored.PeerType = data.PeerType
 			stored.PeerChassisID = data.PeerChassisID
 			stored.PeerSystemName = data.PeerSystemName
 			stored.PeerPortID = data.PeerPortID
 			stored.PeerPortDescription = data.PeerPortDescription
-			if data.PeerChassisID == CEmptyString {
-				stored.IPv4 = CEmptyString
-				stored.IPv6 = CEmptyString
-			}
 		}
 	}
 	return result
@@ -782,12 +823,13 @@ func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpe
 // according to connected peers.
 func (in *Switch) UpdateStoredPeers() {
 	for name, data := range in.Spec.Interfaces {
-		_, northPeer := in.Status.NorthConnections.Peers[name]
-		_, southPeer := in.Status.SouthConnections.Peers[name]
-		if northPeer || southPeer {
+		if !strings.HasPrefix(name, CSwitchPortPrefix) || data.PeerChassisID == CEmptyString {
 			continue
 		}
-		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
+		_, northPeer := in.Status.NorthConnections.Peers[name]
+		_, southPeer := in.Status.SouthConnections.Peers[name]
+		noPeerStored := northPeer || southPeer
+		if !noPeerStored {
 			in.Status.SouthConnections.Peers[name] = &PeerSpec{
 				Name:      CEmptyString,
 				Namespace: CEmptyString,
@@ -993,6 +1035,9 @@ func (in *Switch) InterfacesMatchInventory(inv *inventoriesv1alpha1.Inventory) b
 			return false
 		}
 		if data.PeerType != stored.PeerType {
+			return false
+		}
+		if data.PeerSystemName != stored.PeerSystemName {
 			return false
 		}
 	}
