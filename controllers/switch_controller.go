@@ -564,6 +564,16 @@ func (r *SwitchReconciler) updateSouthSubnetV4(
 		return err
 	}
 
+	if obj.Status.SouthSubnetV4 == nil {
+		obj.Status.SouthSubnetV4 = &switchv1alpha1.SwitchSubnetSpec{
+			ParentSubnet: &switchv1alpha1.ParentSubnetSpec{
+				Namespace: switchSubnet.Namespace,
+				Name:      switchSubnet.Name,
+				Region:    region,
+			},
+		}
+	}
+
 	subnetFinished := switchSubnet.Status.State == subnetv1alpha1.CFinishedSubnetState
 	CIDRUnfilled := obj.Status.SouthSubnetV4.CIDR == switchv1alpha1.CEmptyString
 	if subnetFinished && CIDRUnfilled {
@@ -622,6 +632,16 @@ func (r *SwitchReconciler) updateSouthSubnetV6(
 			},
 		}
 		return err
+	}
+
+	if obj.Status.SouthSubnetV6 == nil {
+		obj.Status.SouthSubnetV6 = &switchv1alpha1.SwitchSubnetSpec{
+			ParentSubnet: &switchv1alpha1.ParentSubnetSpec{
+				Namespace: switchSubnet.Namespace,
+				Name:      switchSubnet.Name,
+				Region:    region,
+			},
+		}
 	}
 
 	subnetFinished := switchSubnet.Status.State == subnetv1alpha1.CFinishedSubnetState
