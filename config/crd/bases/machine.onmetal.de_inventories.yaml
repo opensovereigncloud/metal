@@ -108,17 +108,23 @@ spec:
                       type: object
                     type: array
                   network:
-                    description: NetworkBenchmarkResult contains inventory machines
-                      network benchmark result
-                    properties:
-                      averageNetworkThroughputBps:
-                        description: AverageNetworkThroughputBPS contains network
-                          benchmark result in bytes/s
-                        format: int64
-                        type: integer
-                    required:
-                    - averageNetworkThroughputBps
-                    type: object
+                    items:
+                      description: NetworkBenchmarkResult contains inventory machines
+                        network benchmark result
+                      properties:
+                        averageNetworkThroughputBps:
+                          description: AverageNetworkThroughputBPS contains network
+                            benchmark result in bytes/s
+                          format: int64
+                          type: integer
+                        interface:
+                          description: Interface defines name of the network device
+                          type: string
+                      required:
+                      - averageNetworkThroughputBps
+                      - interface
+                      type: object
+                    type: array
                 required:
                 - blocks
                 - network

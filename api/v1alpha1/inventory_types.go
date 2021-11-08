@@ -76,7 +76,7 @@ type BenchmarkSpec struct {
 	// +kubebuilder:validation:Required
 	Blocks []BlockBenchmarkResult `json:"blocks"`
 	// +kubebuilder:validation:Required
-	Network *NetworkBenchmarkResult `json:"network"`
+	Network []NetworkBenchmarkResult `json:"network"`
 }
 
 // BlockBenchmarkResult contains block (device) benchmark results
@@ -102,6 +102,9 @@ type BlockBenchmarkResult struct {
 // NetworkBenchmarkResult contains inventory machines network benchmark result
 // +kubebuilder:object:generate=true
 type NetworkBenchmarkResult struct {
+	// Interface defines name of the network device
+	// +kubebuilder:validation:Required
+	Interface string `json:"interface"`
 	// AverageNetworkThroughputBPS contains network benchmark result in bytes/s
 	// +kubebuilder:validation:Required
 	AverageNetworkThroughputBPS uint64 `json:"averageNetworkThroughputBps"`
