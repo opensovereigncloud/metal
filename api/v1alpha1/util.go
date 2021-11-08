@@ -63,6 +63,7 @@ const (
 	CStationCapability = "Station"
 	CRouterCapability  = "Router"
 	CBridgeCapability  = "Bridge"
+	CNDPReachable      = "Reachable"
 
 	CIPv4ZeroNet             = "0.0.0.0/0"
 	CIPv6ZeroNet             = "::/0"
@@ -112,6 +113,16 @@ func PrepareInterfaces(nics []inventoriesv1alpha1.NICSpec) (map[string]*Interfac
 				spec.PeerPortDescription = data.PortDescription
 				break
 			}
+		}
+		for _, data := range nic.NDPs {
+			if spec.PeerChassisID != CEmptyString {
+				break
+			}
+			if data.State != CNDPReachable {
+				continue
+			}
+			spec.PeerChassisID = data.MACAddress
+			spec.PeerType = CMachineType
 		}
 		result[nic.Name] = spec
 		if strings.HasPrefix(nic.Name, CSwitchPortPrefix) {

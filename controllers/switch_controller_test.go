@@ -54,6 +54,11 @@ var newSpineLLDP = inventoriesv1alpha1.LLDPSpec{
 	PortDescription:   "Ethernet124",
 	Capabilities:      []inventoriesv1alpha1.LLDPCapabilities{switchv1alpha1.CBridgeCapability, switchv1alpha1.CRouterCapability},
 }
+var newMachineNDP = inventoriesv1alpha1.NDPSpec{
+	MACAddress: "1c:34:da:57:3b:44",
+	IPAddress:  "fe80::1e34:daff:fe40:d76b",
+	State:      "Reachable",
+}
 
 var _ = Describe("Controllers interaction", func() {
 	Context("Processing of switch resources on creation and after", func() {
@@ -159,7 +164,8 @@ var _ = Describe("Controllers interaction", func() {
 				Namespace: DefaultNamespace,
 				Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
 			}, inv)).Should(Succeed())
-			updateInventory(inv, "Ethernet124", newMachineLLDP)
+			updateInterfaceLLDP(inv, "Ethernet124", newMachineLLDP)
+			updateInterfaceNDP(inv, "Ethernet120", newMachineNDP)
 			Expect(k8sClient.Update(ctx, inv)).Should(Succeed())
 
 			By("Should update south peers, interfaces and switch role")
@@ -170,6 +176,9 @@ var _ = Describe("Controllers interaction", func() {
 					Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
 				}, sw)).Should(Succeed())
 				if _, ok := sw.Status.SouthConnections.Peers["Ethernet124"]; !ok {
+					return false
+				}
+				if _, ok := sw.Status.SouthConnections.Peers["Ethernet120"]; !ok {
 					return false
 				}
 				if sw.Status.State != switchv1alpha1.CSwitchStateReady {
@@ -185,6 +194,8 @@ var _ = Describe("Controllers interaction", func() {
 			Expect(k8sClient.List(ctx, snl))
 			Expect(checkNeededSubnetExist(snl, sw.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv4SubnetType))).Should(BeTrue())
 			Expect(checkNeededSubnetExist(snl, sw.GetInterfaceSubnetName("Ethernet124", subnetv1alpha1.CIPv6SubnetType))).Should(BeTrue())
+			Expect(checkNeededSubnetExist(snl, sw.GetInterfaceSubnetName("Ethernet120", subnetv1alpha1.CIPv4SubnetType))).Should(BeTrue())
+			Expect(checkNeededSubnetExist(snl, sw.GetInterfaceSubnetName("Ethernet120", subnetv1alpha1.CIPv6SubnetType))).Should(BeTrue())
 
 			By("Update leaf inventory by changing machine LLDP to switch LLDP")
 			leafInv := &inventoriesv1alpha1.Inventory{}
@@ -192,7 +203,7 @@ var _ = Describe("Controllers interaction", func() {
 				Namespace: DefaultNamespace,
 				Name:      "7db70ddb-f23d-3d67-8b73-fb0dac5216ab",
 			}, leafInv)).Should(Succeed())
-			updateInventory(leafInv, "Ethernet124", newLeafLLDP)
+			updateInterfaceLLDP(leafInv, "Ethernet124", newLeafLLDP)
 			Expect(k8sClient.Update(ctx, leafInv)).Should(Succeed())
 
 			By("Update spine inventory by adding LLDP")
@@ -201,7 +212,7 @@ var _ = Describe("Controllers interaction", func() {
 				Namespace: DefaultNamespace,
 				Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
 			}, spineInv)).Should(Succeed())
-			updateInventory(spineInv, "Ethernet124", newSpineLLDP)
+			updateInterfaceLLDP(spineInv, "Ethernet124", newSpineLLDP)
 			Expect(k8sClient.Update(ctx, spineInv)).Should(Succeed())
 
 			By("Should update peers and interfaces")
@@ -228,7 +239,7 @@ var _ = Describe("Controllers interaction", func() {
 				if leaf.Status.State != switchv1alpha1.CSwitchStateReady {
 					return false
 				}
-				if leaf.Status.Role != switchv1alpha1.CSpineRole {
+				if leaf.Status.Role != switchv1alpha1.CLeafRole {
 					return false
 				}
 				return true
@@ -253,7 +264,7 @@ func checkNeededSubnetExist(list *subnetv1alpha1.SubnetList, name string) bool {
 	return result
 }
 
-func updateInventory(inv *inventoriesv1alpha1.Inventory, nicName string, lldp inventoriesv1alpha1.LLDPSpec) {
+func updateInterfaceLLDP(inv *inventoriesv1alpha1.Inventory, nicName string, lldp inventoriesv1alpha1.LLDPSpec) {
 	updatedInfIndex := 0
 	updatedInf := inventoriesv1alpha1.NICSpec{}
 	for i, nic := range inv.Spec.NICs.NICs {
@@ -265,5 +276,20 @@ func updateInventory(inv *inventoriesv1alpha1.Inventory, nicName string, lldp in
 	updatedInf.NDPs = []inventoriesv1alpha1.NDPSpec{}
 	updatedInf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
 	updatedInf.LLDPs = append(updatedInf.LLDPs, lldp)
+	inv.Spec.NICs.NICs[updatedInfIndex] = updatedInf
+}
+
+func updateInterfaceNDP(inv *inventoriesv1alpha1.Inventory, nicName string, ndp inventoriesv1alpha1.NDPSpec) {
+	updatedInfIndex := 0
+	updatedInf := inventoriesv1alpha1.NICSpec{}
+	for i, nic := range inv.Spec.NICs.NICs {
+		if nic.Name == nicName {
+			updatedInfIndex = i
+			updatedInf = *nic.DeepCopy()
+		}
+	}
+	updatedInf.NDPs = []inventoriesv1alpha1.NDPSpec{}
+	updatedInf.LLDPs = []inventoriesv1alpha1.LLDPSpec{}
+	updatedInf.NDPs = append(updatedInf.NDPs, ndp)
 	inv.Spec.NICs.NICs[updatedInfIndex] = updatedInf
 }
