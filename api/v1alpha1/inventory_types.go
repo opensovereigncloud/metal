@@ -76,20 +76,20 @@ type BenchmarkSpec struct {
 	// +kubebuilder:validation:Required
 	Blocks []Blocks `json:"blocks"`
 	// +kubebuilder:validation:Required
-	Networks []NetworkBenchmarkResult `json:"network"`
+	Networks []NetworkBenchmarkResult `json:"networks"`
 }
 
 type Blocks struct {
 	// BlockName contains full device name (like "/dev/hda" etc)
 	// +kubebuilder:validation:Required
 	BlockName string                 `json:"blockName"`
-	Results   []BlockBenchmarkResult `json:"result"`
+	Results   []BlockBenchmarkResult `json:"results"`
 }
 
 // BlockBenchmarkResult contains block (device) benchmark results
 // +kubebuilder:object:generate=true
 type BlockBenchmarkResult struct {
-	// IOPattern defines type of I/O pattern e.g. read/write/readwrite
+	// IOPattern defines type of I/O pattern (like "read/write/readwrite" etc)
 	// +kubebuilder:validation:Required
 	IOPattern string `json:"ioPattern"`
 	// SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)
