@@ -72,3 +72,14 @@ spec:
   host:
     type: Machine
     name: node1
+  benchmark:
+    blocks:
+    - blockName: "/dev/sda1"
+      results:
+        - ioPattern: "read"
+          smallBlockReadIops: 0
+        - ioPattern: "readwrite"
+          smallBlockReadIops: 0
+    network:
+      - interfaceName: "ens5f0np0"
+        averageNetworkThroughputBps: 20703931946

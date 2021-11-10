@@ -74,17 +74,24 @@ type InventorySpec struct {
 // +kubebuilder:object:generate=true
 type BenchmarkSpec struct {
 	// +kubebuilder:validation:Required
-	Blocks []BlockBenchmarkResult `json:"blocks"`
+	Blocks []Blocks `json:"blocks"`
 	// +kubebuilder:validation:Required
-	Network []NetworkBenchmarkResult `json:"network"`
+	Networks []NetworkBenchmarkResult `json:"network"`
+}
+
+type Blocks struct {
+	// BlockName contains full device name (like "/dev/hda" etc)
+	// +kubebuilder:validation:Required
+	BlockName string                 `json:"blockName"`
+	Results   []BlockBenchmarkResult `json:"result"`
 }
 
 // BlockBenchmarkResult contains block (device) benchmark results
 // +kubebuilder:object:generate=true
 type BlockBenchmarkResult struct {
-	// BlockName contains full device name (like "/dev/hda" etc)
+	// IOPattern defines type of I/O pattern e.g. read/write/readwrite
 	// +kubebuilder:validation:Required
-	BlockName string `json:"blockName"`
+	IOPattern string `json:"ioPattern"`
 	// SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)
 	// +kubebuilder:validation:Required
 	SmallBlockReadIOPS uint64 `json:"smallBlockReadIops"`
@@ -102,9 +109,9 @@ type BlockBenchmarkResult struct {
 // NetworkBenchmarkResult contains inventory machines network benchmark result
 // +kubebuilder:object:generate=true
 type NetworkBenchmarkResult struct {
-	// Interface defines name of the network device
+	// InterfaceName defines a name of network device
 	// +kubebuilder:validation:Required
-	Interface string `json:"interface"`
+	InterfaceName string `json:"interfaceName"`
 	// AverageNetworkThroughputBPS contains network benchmark result in bytes/s
 	// +kubebuilder:validation:Required
 	AverageNetworkThroughputBPS uint64 `json:"averageNetworkThroughputBps"`

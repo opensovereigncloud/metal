@@ -1,0 +1,114 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Inventory
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"machine.onmetal.de/v1alpha1","kind":"Inventory","metadata":{"annotations":{},"name":"a967954c-3475-11b2-a85c-84d8b4f8cd2d","namespace":"default"},"spec":{"benchmark":{"blocks":[{"blockName":"/dev/sda1","result":[{"iopattern":"read","smallBlockReadIops":0},{"iopattern":"readwrite","smallBlockReadIops":0}]}],"network":[{"averageNetworkThroughputBps":20703931946,"interface":"ens5f0np0"}]},"blocks":[{"bus":null,"model":"SAMSUNG MZVLW256HEHP-000L7","name":"nvme0n1","partitionTable":{"partitions":[{"id":"0624092B-A594-44A7-BEE7-A6D6582D399A","name":"EFI System Partition","size":104857600}],"type":"GPT"},"rotational":false,"size":256060514304,"type":"NVMe"}],"cpus":[{"addressSizes":"39 bits physical, 48 bits virtual","bogoMips":"4999.9","bugs":["cpu_meltdown","spectre_v1","spectre_v2"],"cacheAlignment":64,"cacheSize":"3072 KB","clFlushSize":64,"cores":2,"cpuIdLevel":22,"family":"6","flags":["fpu","vme","de","pse","tsc","msr","pae","mce"],"fpu":true,"fpuException":true,"logicalIds":[0,1,2,3],"mhz":"2799.699","microcode":"0xe2","model":"78","modelName":"Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz","physicalId":0,"powerManagement":"","siblings":4,"stepping":"3","vendorId":"GenuineIntel","vmxFlags":["vnmi","preemption_timer","invvpid","ept_x_only","ept_ad","ept_1gb"],"wp":true}],"host":{"name":"node1","type":"Machine"},"ipmis":[{"ipAddress":"192.168.10.191","macAddress":"38:68:dd:26:8d:f5"}],"memory":{"total":16620400640},"nics":[{"lldps":[{"chassisId":"3c:2c:99:9d:cd:48","portDescription":"Ethernet Port on unit 1, port 47","portId":"3c:2c:99:9d:cd:77","systemDescription":"ECS4100-52T","systemName":"EC1817001226"}],"macAddress":"48:2a:e3:02:d9:e8","mtu":1500,"name":"enp0s31f6","ndps":[{"ipAddress":"ff02::1:3","macAddress":"33:33:00:01:00:03","state":"Reachable"}],"pciAddress":"0000:00:1f.6","speed":1000}],"system":{"id":"a967954c-3475-11b2-a85c-84d8b4f8cd2d","manufacturer":"LENOVO","productSku":"LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG","serialNumber":"R90QR6J0"},"virt":{"vmType":"none"}}}
+  creationTimestamp: "2021-11-10T09:50:49Z"
+  generation: 1
+  name: a967954c-3475-11b2-a85c-84d8b4f8cd2d
+  namespace: default
+  resourceVersion: "35003"
+  uid: ecae235e-5eff-4e5a-8d1c-49847f231fd3
+spec:
+  benchmark:
+    blocks:
+    - blockName: /dev/sda1
+      result:
+      - iopattern: read
+        smallBlockReadIops: 0
+        
+      - iopattern: readwrite
+        smallBlockReadIops: 0
+    network:
+    - averageNetworkThroughputBps: 20703931946
+      interface: ens5f0np0
+  blocks:
+  - model: SAMSUNG MZVLW256HEHP-000L7
+    name: nvme0n1
+    partitionTable:
+      partitions:
+      - id: 0624092B-A594-44A7-BEE7-A6D6582D399A
+        name: EFI System Partition
+        size: 104857600
+      type: GPT
+    rotational: false
+    size: 256060514304
+    type: NVMe
+  cpus:
+  - addressSizes: 39 bits physical, 48 bits virtual
+    bogoMips: "4999.9"
+    bugs:
+    - cpu_meltdown
+    - spectre_v1
+    - spectre_v2
+    cacheAlignment: 64
+    cacheSize: 3072 KB
+    clFlushSize: 64
+    cores: 2
+    cpuIdLevel: 22
+    family: "6"
+    flags:
+    - fpu
+    - vme
+    - de
+    - pse
+    - tsc
+    - msr
+    - pae
+    - mce
+    fpu: true
+    fpuException: true
+    logicalIds:
+    - 0
+    - 1
+    - 2
+    - 3
+    mhz: "2799.699"
+    microcode: "0xe2"
+    model: "78"
+    modelName: Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz
+    physicalId: 0
+    powerManagement: ""
+    siblings: 4
+    stepping: "3"
+    vendorId: GenuineIntel
+    vmxFlags:
+    - vnmi
+    - preemption_timer
+    - invvpid
+    - ept_x_only
+    - ept_ad
+    - ept_1gb
+    wp: true
+  host:
+    name: node1
+    type: Machine
+  ipmis:
+  - ipAddress: 192.168.10.191
+    macAddress: 38:68:dd:26:8d:f5
+  memory:
+    total: 16620400640
+  nics:
+  - lldps:
+    - chassisId: 3c:2c:99:9d:cd:48
+      portDescription: Ethernet Port on unit 1, port 47
+      portId: 3c:2c:99:9d:cd:77
+      systemDescription: ECS4100-52T
+      systemName: EC1817001226
+    macAddress: 48:2a:e3:02:d9:e8
+    mtu: 1500
+    name: enp0s31f6
+    ndps:
+    - ipAddress: ff02::1:3
+      macAddress: "33:33:00:01:00:03"
+      state: Reachable
+    pciAddress: 0000:00:1f.6
+    speed: 1000
+  system:
+    id: a967954c-3475-11b2-a85c-84d8b4f8cd2d
+    manufacturer: LENOVO
+    productSku: LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG
+    serialNumber: R90QR6J0
+  virt:
+    vmType: none

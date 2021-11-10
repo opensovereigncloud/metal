@@ -290,8 +290,8 @@ var _ = Describe("Inventory controller", func() {
 						Name: "dummy.localdomain",
 					},
 					Benchmark: &inventoryv1alpha1.BenchmarkSpec{
-						Blocks:  []inventoryv1alpha1.BlockBenchmarkResult{},
-						Network: &inventoryv1alpha1.NetworkBenchmarkResult{},
+						Blocks:   []inventoryv1alpha1.Blocks{},
+						Networks: []inventoryv1alpha1.NetworkBenchmarkResult{},
 					},
 				},
 			}
@@ -396,16 +396,21 @@ var _ = Describe("Inventory controller", func() {
 			createdInventory.Spec.CPUs[0].Cores = 8
 			createdInventory.Spec.CPUs[0].Siblings = 16
 			createdInventory.Spec.Benchmark = &inventoryv1alpha1.BenchmarkSpec{
-				Blocks: []inventoryv1alpha1.BlockBenchmarkResult{
+				Blocks: []inventoryv1alpha1.Blocks{
 					{
-						BlockName:           "/dev/hda",
-						SmallBlockReadIOPS:  10000,
-						SmallBlockWriteIOPS: 9000,
-						BandwidthReadIOPS:   8000,
-						BandwidthWriteIOPS:  7000,
+						BlockName: "/dev/hda",
+						Result: []inventoryv1alpha1.BlockBenchmarkResult{
+							{
+								IOPattern:           "read",
+								SmallBlockReadIOPS:  10000,
+								SmallBlockWriteIOPS: 9000,
+								BandwidthReadIOPS:   8000,
+								BandwidthWriteIOPS:  7000,
+							},
+						},
 					},
 				},
-				Network: &inventoryv1alpha1.NetworkBenchmarkResult{AverageNetworkThroughputBPS: 15000000000},
+				Networks: []inventoryv1alpha1.NetworkBenchmarkResult{{InterfaceName: "ens5f0np0", AverageNetworkThroughputBPS: 15000000000}},
 			}
 
 			Expect(k8sClient.Update(ctx, &createdInventory)).To(Succeed())
