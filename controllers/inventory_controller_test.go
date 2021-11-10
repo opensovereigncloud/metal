@@ -399,7 +399,7 @@ var _ = Describe("Inventory controller", func() {
 				Blocks: []inventoryv1alpha1.Blocks{
 					{
 						BlockName: "/dev/hda",
-						Result: []inventoryv1alpha1.BlockBenchmarkResult{
+						Results: []inventoryv1alpha1.BlockBenchmarkResult{
 							{
 								IOPattern:           "read",
 								SmallBlockReadIOPS:  10000,
