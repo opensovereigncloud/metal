@@ -80,10 +80,10 @@ type BenchmarkSpec struct {
 }
 
 type Blocks struct {
-	// BlockName contains full device name (like "/dev/hda" etc)
+	// Name contains full device name (like "/dev/hda" etc)
 	// +kubebuilder:validation:Required
-	BlockName string                 `json:"blockName"`
-	Results   []BlockBenchmarkResult `json:"results"`
+	Name    string                 `json:"name"`
+	Results []BlockBenchmarkResult `json:"results"`
 }
 
 // BlockBenchmarkResult contains block (device) benchmark results

@@ -72,11 +72,11 @@ spec:
                   blocks:
                     items:
                       properties:
-                        blockName:
-                          description: BlockName contains full device name (like "/dev/hda"
+                        name:
+                          description: Name contains full device name (like "/dev/hda"
                             etc)
                           type: string
-                        result:
+                        results:
                           items:
                             description: BlockBenchmarkResult contains block (device)
                               benchmark results
@@ -95,7 +95,7 @@ spec:
                                 type: integer
                               ioPattern:
                                 description: IOPattern defines type of I/O pattern
-                                  e.g. read/write/readwrite
+                                  (like "read/write/readwrite" etc)
                                 type: string
                               smallBlockReadIops:
                                 description: SmallBlockReadIOPS contains benchmark
@@ -115,11 +115,11 @@ spec:
                             type: object
                           type: array
                       required:
-                      - blockName
-                      - result
+                      - name
+                      - results
                       type: object
                     type: array
-                  network:
+                  networks:
                     items:
                       description: NetworkBenchmarkResult contains inventory machines
                         network benchmark result
@@ -139,7 +139,7 @@ spec:
                     type: array
                 required:
                 - blocks
-                - network
+                - networks
                 type: object
               blocks:
                 description: Blocks contains info about block devices on the host

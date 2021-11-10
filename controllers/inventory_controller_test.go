@@ -398,7 +398,7 @@ var _ = Describe("Inventory controller", func() {
 			createdInventory.Spec.Benchmark = &inventoryv1alpha1.BenchmarkSpec{
 				Blocks: []inventoryv1alpha1.Blocks{
 					{
-						BlockName: "/dev/hda",
+						Name: "/dev/hda",
 						Results: []inventoryv1alpha1.BlockBenchmarkResult{
 							{
 								IOPattern:           "read",

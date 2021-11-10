@@ -74,7 +74,7 @@ spec:
     name: node1
   benchmark:
     blocks:
-    - blockName: "/dev/sda1"
+    - name: "/dev/sda1"
       results:
         - ioPattern: "read"
           smallBlockReadIops: 0
