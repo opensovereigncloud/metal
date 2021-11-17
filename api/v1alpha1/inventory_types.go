@@ -484,11 +484,11 @@ type InventoryStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.host.name`,description="Hostname"
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.host.type`,description="Type"
-// +kubebuilder:printcolumn:name="Cores",type=integer,JSONPath=`.status.computed.default.cpus.cores`,description="Total amount of cores"
+// +kubebuilder:printcolumn:name="Cores",type=string,JSONPath=`.status.computed.default.cpus.cores`,description="Total amount of cores"
 // +kubebuilder:printcolumn:name="Memory",type=integer,JSONPath=`.spec.memory.total`,description="RAM amount in bytes"
-// +kubebuilder:printcolumn:name="Disks",type=integer,JSONPath=`.status.computed.default.blocks.count`,description="Hardware disk count"
-// +kubebuilder:printcolumn:name="Storage",type=integer,JSONPath=`.status.computed.default.blocks.capacity`,description="Total amount of disk capacity"
-// +kubebuilder:printcolumn:name="NICs",type=integer,JSONPath=`.status.computed.default.nics.count`,description="Total amount of hardware network interfaces"
+// +kubebuilder:printcolumn:name="Disks",type=string,JSONPath=`.status.computed.default.blocks.count`,description="Hardware disk count"
+// +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=`.status.computed.default.blocks.capacity`,description="Total amount of disk capacity"
+// +kubebuilder:printcolumn:name="NICs",type=string,JSONPath=`.status.computed.default.nics.count`,description="Total amount of hardware network interfaces"
 type Inventory struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

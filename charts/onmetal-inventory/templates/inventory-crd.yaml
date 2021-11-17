@@ -27,7 +27,7 @@ spec:
     - description: Total amount of cores
       jsonPath: .status.computed.default.cpus.cores
       name: Cores
-      type: integer
+      type: string
     - description: RAM amount in bytes
       jsonPath: .spec.memory.total
       name: Memory
@@ -35,15 +35,15 @@ spec:
     - description: Hardware disk count
       jsonPath: .status.computed.default.blocks.count
       name: Disks
-      type: integer
+      type: string
     - description: Total amount of disk capacity
       jsonPath: .status.computed.default.blocks.capacity
       name: Storage
-      type: integer
+      type: string
     - description: Total amount of hardware network interfaces
       jsonPath: .status.computed.default.nics.count
       name: NICs
-      type: integer
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
