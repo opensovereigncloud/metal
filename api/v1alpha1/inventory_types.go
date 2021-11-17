@@ -74,12 +74,12 @@ type InventorySpec struct {
 // +kubebuilder:object:generate=true
 type BenchmarkSpec struct {
 	// +kubebuilder:validation:Required
-	Blocks []Blocks `json:"blocks"`
+	Blocks []BlockBenchmarkCollection `json:"blocks"`
 	// +kubebuilder:validation:Required
 	Networks []NetworkBenchmarkResult `json:"networks"`
 }
 
-type Blocks struct {
+type BlockBenchmarkCollection struct {
 	// Name contains full device name (like "/dev/hda" etc)
 	// +kubebuilder:validation:Required
 	Name    string                 `json:"name"`

@@ -162,7 +162,7 @@ var _ = Describe("Aggregate controller", func() {
 						Name: "dummy.localdomain",
 					},
 					Benchmark: &inventoryv1alpha1.BenchmarkSpec{
-						Blocks:   []inventoryv1alpha1.Blocks{},
+						Blocks:   []inventoryv1alpha1.BlockBenchmarkCollection{},
 						Networks: []inventoryv1alpha1.NetworkBenchmarkResult{},
 					},
 				},

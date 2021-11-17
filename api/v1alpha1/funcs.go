@@ -417,7 +417,7 @@ func getDummyInventoryForValidation() *ValidationInventory {
 				BuildBy:       "",
 			},
 			Benchmark: &BenchmarkSpec{
-				Blocks:   []Blocks{},
+				Blocks:   []BlockBenchmarkCollection{},
 				Networks: []NetworkBenchmarkResult{},
 			},
 		},

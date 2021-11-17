@@ -290,7 +290,7 @@ var _ = Describe("Inventory controller", func() {
 						Name: "dummy.localdomain",
 					},
 					Benchmark: &inventoryv1alpha1.BenchmarkSpec{
-						Blocks:   []inventoryv1alpha1.Blocks{},
+						Blocks:   []inventoryv1alpha1.BlockBenchmarkCollection{},
 						Networks: []inventoryv1alpha1.NetworkBenchmarkResult{},
 					},
 				},
@@ -396,7 +396,7 @@ var _ = Describe("Inventory controller", func() {
 			createdInventory.Spec.CPUs[0].Cores = 8
 			createdInventory.Spec.CPUs[0].Siblings = 16
 			createdInventory.Spec.Benchmark = &inventoryv1alpha1.BenchmarkSpec{
-				Blocks: []inventoryv1alpha1.Blocks{
+				Blocks: []inventoryv1alpha1.BlockBenchmarkCollection{
 					{
 						Name: "/dev/hda",
 						Results: []inventoryv1alpha1.BlockBenchmarkResult{
