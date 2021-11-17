@@ -15,6 +15,7 @@ webhooks:
         name: {{ include "chart.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-{{ .Values.crd.size.group | replace "." "-" }}-v1alpha1-{{ .Values.crd.size.singular }}
+        port: {{ .Values.service.webhook.port }}
     failurePolicy: Fail
     name: v{{ .Values.crd.size.singular }}.kb.io
     rules:
@@ -36,6 +37,7 @@ webhooks:
         name: {{ include "chart.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-{{ .Values.crd.aggregate.group | replace "." "-" }}-v1alpha1-{{ .Values.crd.aggregate.singular }}
+        port: {{ .Values.service.webhook.port }}
     failurePolicy: Fail
     name: v{{ .Values.crd.aggregate.singular }}.kb.io
     rules:
