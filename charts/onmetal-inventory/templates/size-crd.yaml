@@ -53,8 +53,11 @@ spec:
                           - count
                         type: string
                       eq:
+                        anyOf:
+                          - type: integer
+                          - type: string
                         description: Equal contains an exact expected value
-                        type: number
+                        x-kubernetes-int-or-string: true
                       gt:
                         anyOf:
                           - type: integer
@@ -85,8 +88,11 @@ spec:
                         pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                         x-kubernetes-int-or-string: true
                       neq:
+                        anyOf:
+                          - type: integer
+                          - type: string
                         description: NotEqual contains an exact not expected value
-                        type: number
+                        x-kubernetes-int-or-string: true
                       path:
                         description: Path is a path to the struct field constraint will
                           be applied to
