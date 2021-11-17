@@ -12,7 +12,7 @@ webhooks:
       - v1beta1
     clientConfig:
       service:
-        name: {{ .Values.crd.size.singular }}-{{ include "chart.fullname" . }}-webhook-service
+        name: {{ include "chart.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-{{ .Values.crd.size.group | replace "." "-" }}-v1alpha1-{{ .Values.crd.size.singular }}
     failurePolicy: Fail
@@ -33,7 +33,7 @@ webhooks:
       - v1beta1
     clientConfig:
       service:
-        name: {{ .Values.crd.aggregate.singular }}-{{ include "chart.fullname" . }}-webhook-service
+        name: {{ include "chart.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-{{ .Values.crd.aggregate.group | replace "." "-" }}-v1alpha1-{{ .Values.crd.aggregate.singular }}
     failurePolicy: Fail
