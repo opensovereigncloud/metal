@@ -71,57 +71,75 @@ spec:
                 properties:
                   blocks:
                     items:
-                      description: BlockBenchmarkResult contains block (device) benchmark
-                        results
                       properties:
-                        bandwidthReadIops:
-                          description: BandwidthReadIOPS contains benchmark result
-                            for read IOPS with large block size (much larger then
-                            device specified block size)
-                          format: int64
-                          type: integer
-                        bandwidthWriteIops:
-                          description: BandwidthWriteIOPS contains benchmark result
-                            for write IOPS with large block size (much larger then
-                            device specified block size)
-                          format: int64
-                          type: integer
-                        blockName:
-                          description: BlockName contains full device name (like "/dev/hda"
+                        name:
+                          description: Name contains full device name (like "/dev/hda"
                             etc)
                           type: string
-                        smallBlockReadIops:
-                          description: SmallBlockReadIOPS contains benchmark result
-                            for read IOPS with small block size (device specified
-                            block size)
-                          format: int64
-                          type: integer
-                        smallBlockWriteIops:
-                          description: SmallBlockWriteIOPS contains benchmark result
-                            for write IOPS with small block size (device specified
-                            block size)
-                          format: int64
-                          type: integer
+                        results:
+                          items:
+                            description: BlockBenchmarkResult contains block (device)
+                              benchmark results
+                            properties:
+                              bandwidthReadIops:
+                                description: BandwidthReadIOPS contains benchmark
+                                  result for read IOPS with large block size (much
+                                  larger then device specified block size)
+                                format: int64
+                                type: integer
+                              bandwidthWriteIops:
+                                description: BandwidthWriteIOPS contains benchmark
+                                  result for write IOPS with large block size (much
+                                  larger then device specified block size)
+                                format: int64
+                                type: integer
+                              ioPattern:
+                                description: IOPattern defines type of I/O pattern
+                                  (like "read/write/readwrite" etc)
+                                type: string
+                              smallBlockReadIops:
+                                description: SmallBlockReadIOPS contains benchmark
+                                  result for read IOPS with small block size (device
+                                  specified block size)
+                                format: int64
+                                type: integer
+                              smallBlockWriteIops:
+                                description: SmallBlockWriteIOPS contains benchmark
+                                  result for write IOPS with small block size (device
+                                  specified block size)
+                                format: int64
+                                type: integer
+                            required:
+                            - ioPattern
+                            - smallBlockReadIops
+                            type: object
+                          type: array
                       required:
-                      - blockName
-                      - smallBlockReadIops
+                      - name
+                      - results
                       type: object
                     type: array
-                  network:
-                    description: NetworkBenchmarkResult contains inventory machines
-                      network benchmark result
-                    properties:
-                      averageNetworkThroughputBps:
-                        description: AverageNetworkThroughputBPS contains network
-                          benchmark result in bytes/s
-                        format: int64
-                        type: integer
-                    required:
-                    - averageNetworkThroughputBps
-                    type: object
+                  networks:
+                    items:
+                      description: NetworkBenchmarkResult contains inventory machines
+                        network benchmark result
+                      properties:
+                        averageNetworkThroughputBps:
+                          description: AverageNetworkThroughputBPS contains network
+                            benchmark result in bytes/s
+                          format: int64
+                          type: integer
+                        interfaceName:
+                          description: InterfaceName defines a name of network device
+                          type: string
+                      required:
+                      - averageNetworkThroughputBps
+                      - interfaceName
+                      type: object
+                    type: array
                 required:
                 - blocks
-                - network
+                - networks
                 type: object
               blocks:
                 description: Blocks contains info about block devices on the host
