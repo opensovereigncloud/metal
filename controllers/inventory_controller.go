@@ -35,6 +35,7 @@ import (
 
 const (
 	CMACAddressLabelPrefix = "machine.onmetal.de/mac-address-"
+	CDefaultAggregateName  = "default"
 )
 
 // InventoryReconciler reconciles a Inventory object
@@ -72,6 +73,30 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
+	if inv.GetDeletionTimestamp() != nil {
+		return ctrl.Result{}, nil
+	}
+
+	defaultAggregateNamespacedName := types.NamespacedName{
+		Namespace: req.Namespace,
+		Name:      CDefaultAggregateName,
+	}
+	defaultAggregate := &machinev1alpha1.Aggregate{}
+	err = r.Get(ctx, defaultAggregateNamespacedName, defaultAggregate)
+	if apierrors.IsNotFound(err) {
+		log.Info("trying to create default aggregate", "name", defaultAggregateNamespacedName)
+		if err := r.createDefaultAggregate(ctx, req.Namespace); err != nil {
+			log.Error(err, "unable to create default aggregate", "agg", defaultAggregateNamespacedName)
+			return ctrl.Result{}, err
+		}
+		// Assuming that aggregate will be calculated and inventory will be reconciled on change
+		return ctrl.Result{}, nil
+	}
+	if err != nil {
+		log.Error(err, "unable to check whether default aggregate exists", "agg", defaultAggregateNamespacedName)
+		return ctrl.Result{}, err
+	}
+
 	if inv.Labels == nil {
 		inv.Labels = make(map[string]string)
 	}
@@ -103,6 +128,10 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 
 		for _, aggregate := range aggregateList.Items {
+			if aggregate.GetDeletionTimestamp() != nil {
+				continue
+			}
+
 			aggregatedValues, err := aggregate.Compute(inv)
 			if err != nil {
 				log.Error(err, "unable to compute aggregate", "inventory", req.NamespacedName)
@@ -140,6 +169,10 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 
 		for _, size := range sizeList.Items {
+			if size.GetDeletionTimestamp() != nil {
+				continue
+			}
+
 			labelName := size.GetMatchLabel()
 			matches, err := size.Matches(inv)
 			sizeNamespacedName := types.NamespacedName{
@@ -202,12 +235,63 @@ func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
 
 	l := r.Log.WithValues("inventory", nsName)
 
-	msg, eq := messagediff.PrettyDiff(old.Spec, upd.Spec)
-	if eq {
+	specMsg, specEq := messagediff.PrettyDiff(old.Spec, upd.Spec)
+	aggMsg, aggEq := messagediff.PrettyDiff(old.Status.Computed, upd.Status.Computed)
+
+	if specEq && aggEq {
 		l.Info("new version is the same")
 		return false
 	}
 
-	l.Info("found a difference on update", "diff", msg)
+	l.Info("found a difference on update", "spec", specMsg, "agg", aggMsg)
 	return true
+}
+
+func (r *InventoryReconciler) createDefaultAggregate(ctx context.Context, namespace string) error {
+	agg := &machinev1alpha1.Aggregate{
+		ObjectMeta: ctrl.ObjectMeta{
+			Namespace: namespace,
+			Name:      CDefaultAggregateName,
+		},
+		Spec: machinev1alpha1.AggregateSpec{
+			Aggregates: []machinev1alpha1.AggregateItem{
+				{
+					SourcePath: *machinev1alpha1.JSONPathFromString("spec.blocks[*]"),
+					TargetPath: *machinev1alpha1.JSONPathFromString("blocks.count"),
+					Aggregate:  machinev1alpha1.CCountAggregateType,
+				},
+				{
+					SourcePath: *machinev1alpha1.JSONPathFromString("spec.blocks[*].size"),
+					TargetPath: *machinev1alpha1.JSONPathFromString("blocks.capacity"),
+					Aggregate:  machinev1alpha1.CSumAggregateType,
+				},
+				{
+					SourcePath: *machinev1alpha1.JSONPathFromString("spec.cpus[*]"),
+					TargetPath: *machinev1alpha1.JSONPathFromString("cpus.sockets"),
+					Aggregate:  machinev1alpha1.CCountAggregateType,
+				},
+				{
+					SourcePath: *machinev1alpha1.JSONPathFromString("spec.cpus[*].cores"),
+					TargetPath: *machinev1alpha1.JSONPathFromString("cpus.cores"),
+					Aggregate:  machinev1alpha1.CSumAggregateType,
+				},
+				{
+					SourcePath: *machinev1alpha1.JSONPathFromString("spec.cpus[*].siblings"),
+					TargetPath: *machinev1alpha1.JSONPathFromString("cpus.threads"),
+					Aggregate:  machinev1alpha1.CSumAggregateType,
+				},
+				{
+					SourcePath: *machinev1alpha1.JSONPathFromString("spec.nics[*]"),
+					TargetPath: *machinev1alpha1.JSONPathFromString("nics.count"),
+					Aggregate:  machinev1alpha1.CCountAggregateType,
+				},
+			},
+		},
+	}
+
+	if err := r.Create(ctx, agg); err != nil {
+		return err
+	}
+
+	return nil
 }

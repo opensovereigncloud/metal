@@ -33,6 +33,14 @@ var _ = Describe("Size controller", func() {
 			count func(client.ObjectList) int
 		}{
 			{
+				res:  &inventoryv1alpha1.Inventory{},
+				list: &inventoryv1alpha1.InventoryList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.InventoryList)
+					return len(list.Items)
+				},
+			},
+			{
 				res:  &inventoryv1alpha1.Aggregate{},
 				list: &inventoryv1alpha1.AggregateList{},
 				count: func(objList client.ObjectList) int {
@@ -45,14 +53,6 @@ var _ = Describe("Size controller", func() {
 				list: &inventoryv1alpha1.SizeList{},
 				count: func(objList client.ObjectList) int {
 					list := objList.(*inventoryv1alpha1.SizeList)
-					return len(list.Items)
-				},
-			},
-			{
-				res:  &inventoryv1alpha1.Inventory{},
-				list: &inventoryv1alpha1.InventoryList{},
-				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.InventoryList)
 					return len(list.Items)
 				},
 			},

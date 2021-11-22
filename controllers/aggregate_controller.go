@@ -110,6 +110,10 @@ func (r *AggregateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 
 		for _, inventory := range inventoryList.Items {
+			if inventory.GetDeletionTimestamp() != nil {
+				continue
+			}
+
 			inventoryNamespacedName := types.NamespacedName{
 				Namespace: inventory.Namespace,
 				Name:      inventory.Name,

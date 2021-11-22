@@ -110,6 +110,10 @@ func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 
 		for _, inventory := range inventoryList.Items {
+			if inventory.GetDeletionTimestamp() != nil {
+				continue
+			}
+
 			matches, err := size.Matches(&inventory)
 			inventoryNamespacedName := types.NamespacedName{
 				Namespace: inventory.Namespace,
