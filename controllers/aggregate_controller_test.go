@@ -34,6 +34,14 @@ var _ = Describe("Aggregate controller", func() {
 			count func(client.ObjectList) int
 		}{
 			{
+				res:  &inventoryv1alpha1.Inventory{},
+				list: &inventoryv1alpha1.InventoryList{},
+				count: func(objList client.ObjectList) int {
+					list := objList.(*inventoryv1alpha1.InventoryList)
+					return len(list.Items)
+				},
+			},
+			{
 				res:  &inventoryv1alpha1.Aggregate{},
 				list: &inventoryv1alpha1.AggregateList{},
 				count: func(objList client.ObjectList) int {
@@ -46,14 +54,6 @@ var _ = Describe("Aggregate controller", func() {
 				list: &inventoryv1alpha1.SizeList{},
 				count: func(objList client.ObjectList) int {
 					list := objList.(*inventoryv1alpha1.SizeList)
-					return len(list.Items)
-				},
-			},
-			{
-				res:  &inventoryv1alpha1.Inventory{},
-				list: &inventoryv1alpha1.InventoryList{},
-				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.InventoryList)
 					return len(list.Items)
 				},
 			},
@@ -301,7 +301,7 @@ var _ = Describe("Aggregate controller", func() {
 				if err != nil {
 					return false
 				}
-				if len(inventory.Status.Computed.Object) != 0 {
+				if _, ok := inventory.Status.Computed.Object[testAggregate.Name]; ok {
 					return false
 				}
 				return true
