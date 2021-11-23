@@ -17,12 +17,17 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	CLabelPrefix = "machine.onmetal.de/size-"
+
+	CAggregatePathPrefix            = "{.status.computed."
+	CAggregatePathPrefixReplacement = "{."
 )
 
 // SizeSpec defines the desired state of Size
@@ -67,7 +72,27 @@ func (in *Size) GetMatchLabel() string {
 
 func (in *Size) Matches(inventory *Inventory) (bool, error) {
 	for _, constraint := range in.Spec.Constraints {
-		jp, err := constraint.Path.ToK8sJSONPath()
+		// TODO think how or wait to improve on the hot fix
+		// https://github.com/kubernetes-sigs/controller-tools/issues/287
+		// nevertheless #1 is fixed, there is still an issue with kustomize dependency
+		// https://github.com/kubernetes-sigs/kustomize/blob/f1b191c02fe046a043854092f5f03b4625f5614a/cmd/depprobcheck/README.md
+		//
+		// jsonpath library iterates over fields and doesn't care about tags.
+		// I.e. AggregationResults is serialized into nested map (object), but in go code
+		// it is represented by structure containing the exact inner map.
+		// Means, jsonpath expects path to be like "status.computed.object.default..."
+		// and not like "status.computed.default...".
+
+		var queriedObject interface{} = inventory
+		localJP := constraint.Path
+		jpString := localJP.String()
+		if strings.HasPrefix(jpString, CAggregatePathPrefix) {
+			jpString = CAggregatePathPrefixReplacement + strings.TrimPrefix(jpString, CAggregatePathPrefix)
+			localJP = *JSONPathFromString(jpString)
+			queriedObject = inventory.Status.Computed.Object
+		}
+
+		jp, err := localJP.ToK8sJSONPath()
 		if err != nil {
 			return false, err
 		}
@@ -75,7 +100,7 @@ func (in *Size) Matches(inventory *Inventory) (bool, error) {
 		// Do not return errors if data is not found
 		jp.AllowMissingKeys(true)
 
-		data, err := jp.FindResults(&inventory)
+		data, err := jp.FindResults(queriedObject)
 		if err != nil {
 			return false, err
 		}

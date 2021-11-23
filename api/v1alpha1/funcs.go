@@ -156,6 +156,10 @@ func valueToString(value *reflect.Value) (string, error) {
 		}
 	}
 
+	if nonPointerValue.Kind() == reflect.Interface {
+		nonPointerValue = reflect.ValueOf(nonPointerValue.Interface())
+	}
+
 	if nonPointerValue.Kind() != reflect.String {
 		return "", errors.Errorf("unsupported kind %s for literal comparison", nonPointerValue.Kind().String())
 	}
@@ -172,6 +176,10 @@ func valueToQuantity(value *reflect.Value) (*resource.Quantity, error) {
 		} else {
 			break
 		}
+	}
+
+	if nonPointerValue.Kind() == reflect.Interface {
+		nonPointerValue = reflect.ValueOf(nonPointerValue.Interface())
 	}
 
 	switch nonPointerValue.Kind() {

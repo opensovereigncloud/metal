@@ -12,4 +12,3 @@ spec:
       lt: "1000.00"
     - path: "spec.system.manufacturer"
       neq: "LENOVO"
-
