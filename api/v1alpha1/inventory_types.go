@@ -90,6 +90,7 @@ type BlockBenchmarkCollection struct {
 // +kubebuilder:object:generate=true
 type BlockBenchmarkResult struct {
 	// IOPattern defines type of I/O pattern (like "read/write/readwrite" etc)
+	// more types could be found here: https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite
 	// +kubebuilder:validation:Required
 	IOPattern string `json:"ioPattern"`
 	// SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)
