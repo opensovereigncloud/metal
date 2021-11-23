@@ -94,8 +94,9 @@ spec:
                                 format: int64
                                 type: integer
                               ioPattern:
-                                description: IOPattern defines type of I/O pattern
-                                  (like "read/write/readwrite" etc)
+                                description: 'IOPattern defines type of I/O pattern
+                                  (like "read/write/readwrite" etc) more types could
+                                  be found here: https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite'
                                 type: string
                               smallBlockReadIops:
                                 description: SmallBlockReadIOPS contains benchmark
