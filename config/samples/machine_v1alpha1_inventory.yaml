@@ -80,6 +80,6 @@ spec:
           smallBlockReadIops: 0
         - ioPattern: "readwrite"
           smallBlockReadIops: 0
-    network:
+    networks:
       - interfaceName: "enp0s31f6"
         averageNetworkThroughputBps: 20703931946
