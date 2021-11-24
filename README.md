@@ -21,4 +21,4 @@ Please report bugs, suggestions or post question by opening a [Github issue](htt
 
 ## License
 
-[Apache License 2.0](https://github.com/helm/chart-testing/blob/main/LICENSE)
+[Apache License 2.0](https://github.com/onmetal/switch-operator/blob/main/LICENSE)
