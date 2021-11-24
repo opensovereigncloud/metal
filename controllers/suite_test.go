@@ -17,9 +17,9 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"go/build"
 	"io/ioutil"
@@ -30,18 +30,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	subnet "github.com/onmetal/ipam/controllers"
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamctrl "github.com/onmetal/ipam/controllers"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
-	inventory "github.com/onmetal/k8s-inventory/controllers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/mod/modfile"
-	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,7 +58,7 @@ import (
 const (
 	DefaultNamespace     = "default"
 	OnmetalNamespace     = "onmetal"
-	timeout              = time.Second * 90
+	timeout              = time.Second * 60
 	interval             = time.Millisecond * 250
 	UnderlayNetwork      = "underlay"
 	SubnetNameV4         = "switch-ranges-v4"
@@ -94,9 +92,8 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	inventoryGlobalCrdPath := getCrdPath(inventoriesv1alpha1.Inventory{})
-	subnetGlobalCrdPath := getCrdPath(subnetv1alpha1.Subnet{})
+	subnetGlobalCrdPath := getCrdPath(ipamv1alpha1.Subnet{})
 	switchGlobalCrdPath := filepath.Join("..", "config", "crd", "bases")
-
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath, subnetGlobalCrdPath},
 		ErrorIfCRDPathMissing: true,
@@ -104,7 +101,6 @@ var _ = BeforeSuite(func() {
 			Paths: []string{filepath.Join("..", "config", "webhook")},
 		},
 	}
-
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
@@ -114,7 +110,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	err = inventoriesv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
-	err = subnetv1alpha1.AddToScheme(globalScheme)
+	err = ipamv1alpha1.AddToScheme(globalScheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -123,51 +119,33 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	By("Set up k8s-inventory manager")
-	inventoryScheme := scheme.Scheme
-	err = inventoriesv1alpha1.AddToScheme(inventoryScheme)
-	Expect(err).NotTo(HaveOccurred())
-	k8sInventoryManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             inventoryScheme,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
-	})
-	Expect(err).ToNot(HaveOccurred())
-	err = (&inventory.InventoryReconciler{
-		Client: k8sInventoryManager.GetClient(),
-		Scheme: k8sInventoryManager.GetScheme(),
-		Log:    ctrl.Log.WithName("k8s-inventory").WithName("inventory"),
-	}).SetupWithManager(k8sInventoryManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		defer GinkgoRecover()
-		err = k8sInventoryManager.Start(ctx)
-		Expect(err).ToNot(HaveOccurred())
-	}()
-
 	By("Set up k8s-subnet manager")
-	subnetScheme := scheme.Scheme
-	err = subnetv1alpha1.AddToScheme(subnetScheme)
+	ipamScheme := scheme.Scheme
+	err = ipamv1alpha1.AddToScheme(ipamScheme)
 	Expect(err).ToNot(HaveOccurred())
-
 	k8sSubnetManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             subnetScheme,
+		Scheme:             ipamScheme,
 		LeaderElection:     false,
 		MetricsBindAddress: "0",
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&subnet.SubnetReconciler{
+	err = (&ipamctrl.SubnetReconciler{
 		Client: k8sSubnetManager.GetClient(),
 		Scheme: k8sSubnetManager.GetScheme(),
 		Log:    ctrl.Log.WithName("k8s-subnet").WithName("subnet"),
 	}).SetupWithManager(k8sSubnetManager)
 	Expect(err).ToNot(HaveOccurred())
-	err = (&subnet.NetworkReconciler{
+	err = (&ipamctrl.NetworkReconciler{
 		Client: k8sSubnetManager.GetClient(),
 		Scheme: k8sSubnetManager.GetScheme(),
 		Log:    ctrl.Log.WithName("k8s-subnet").WithName("network"),
+	}).SetupWithManager(k8sSubnetManager)
+	Expect(err).ToNot(HaveOccurred())
+	err = (&ipamctrl.IPReconciler{
+		Client: k8sSubnetManager.GetClient(),
+		Scheme: k8sSubnetManager.GetScheme(),
+		Log:    ctrl.Log.WithName("k8s-subnet").WithName("ip"),
 	}).SetupWithManager(k8sSubnetManager)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -201,14 +179,12 @@ var _ = BeforeSuite(func() {
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
-
 	err = (&SwitchAssignmentReconciler{
 		Client: k8sManager.GetClient(),
 		Scheme: k8sManager.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("SwitchAssignment"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
-
 	err = (&InventoryReconciler{
 		Client: k8sManager.GetClient(),
 		Scheme: k8sManager.GetScheme(),
@@ -236,114 +212,8 @@ var _ = BeforeSuite(func() {
 	namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: switchv1alpha1.CNamespace}}
 	Expect(k8sClient.Create(ctx, namespace)).To(Succeed())
 
-	network := &subnetv1alpha1.Network{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      UnderlayNetwork,
-			Namespace: OnmetalNamespace,
-		},
-		Spec: subnetv1alpha1.NetworkSpec{
-			Description: "test underlay network",
-		},
-	}
-	Expect(k8sClient.Create(ctx, network)).To(Succeed())
-
-	By("Prepare subnets")
-	cidrV4, _ := subnetv1alpha1.CIDRFromString(SubnetIPv4CIDR)
-	subnetV4 := &subnetv1alpha1.Subnet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      SubnetNameV4,
-			Namespace: OnmetalNamespace,
-		},
-		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:        cidrV4,
-			NetworkName: UnderlayNetwork,
-			Regions: []subnetv1alpha1.Region{
-				{
-					Name:              TestRegion,
-					AvailabilityZones: []string{TestAvailabilityZone},
-				},
-			},
-		},
-	}
-	Expect(k8sClient.Create(ctx, subnetV4)).To(Succeed())
-	Eventually(func() bool {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: SubnetNameV4, Namespace: OnmetalNamespace}, subnetV4)).Should(Succeed())
-		return subnetV4.Status.State == subnetv1alpha1.CFinishedSubnetState
-	}, timeout, interval).Should(BeTrue())
-
-	loopbackCidrV4, _ := subnetv1alpha1.CIDRFromString(LoopbackIPv4CIDR)
-	loopbackSubnetV4 := &subnetv1alpha1.Subnet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      LoopbackSubnetV4,
-			Namespace: OnmetalNamespace,
-		},
-		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:             loopbackCidrV4,
-			ParentSubnetName: SubnetNameV4,
-			NetworkName:      UnderlayNetwork,
-			Regions: []subnetv1alpha1.Region{
-				{
-					Name:              TestRegion,
-					AvailabilityZones: []string{TestAvailabilityZone},
-				},
-			},
-		},
-	}
-	Expect(k8sClient.Create(ctx, loopbackSubnetV4)).To(Succeed())
-	Eventually(func() bool {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: LoopbackSubnetV4, Namespace: OnmetalNamespace}, loopbackSubnetV4)).Should(Succeed())
-		return loopbackSubnetV4.Status.State == subnetv1alpha1.CFinishedSubnetState
-	}, timeout, interval).Should(BeTrue())
-
-	cidrV6, _ := subnetv1alpha1.CIDRFromString(SubnetIPv6CIDR)
-	subnetV6 := &subnetv1alpha1.Subnet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      SubnetNameV6,
-			Namespace: OnmetalNamespace,
-		},
-		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:        cidrV6,
-			NetworkName: UnderlayNetwork,
-			Regions: []subnetv1alpha1.Region{
-				{
-					Name:              TestRegion,
-					AvailabilityZones: []string{TestAvailabilityZone},
-				},
-			},
-		},
-	}
-	Expect(k8sClient.Create(ctx, subnetV6)).To(Succeed())
-	Eventually(func() bool {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: SubnetNameV6, Namespace: OnmetalNamespace}, subnetV6)).Should(Succeed())
-		return subnetV6.Status.State == subnetv1alpha1.CFinishedSubnetState
-	}, timeout, interval).Should(BeTrue())
-
-	loopbackCidrV6, _ := subnetv1alpha1.CIDRFromString(LoopbackIPv6CIDR)
-	loopbackSubnetV6 := &subnetv1alpha1.Subnet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      LoopbackSubnetV6,
-			Namespace: OnmetalNamespace,
-		},
-		Spec: subnetv1alpha1.SubnetSpec{
-			CIDR:             loopbackCidrV6,
-			ParentSubnetName: SubnetNameV6,
-			NetworkName:      UnderlayNetwork,
-			Regions: []subnetv1alpha1.Region{
-				{
-					Name:              TestRegion,
-					AvailabilityZones: []string{TestAvailabilityZone},
-				},
-			},
-		},
-	}
-	Expect(k8sClient.Create(ctx, loopbackSubnetV6)).To(Succeed())
-	Eventually(func() bool {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: LoopbackSubnetV6, Namespace: OnmetalNamespace}, loopbackSubnetV6)).Should(Succeed())
-		return loopbackSubnetV6.Status.State == subnetv1alpha1.CFinishedSubnetState
-	}, timeout, interval).Should(BeTrue())
-
+	prepareNetwork()
 	prepareEnv()
-
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -371,92 +241,82 @@ func getCrdPath(crdPackageScheme interface{}) string {
 	return filepath.Join(build.Default.GOPATH, "pkg", "mod", globalModulePath, "config", "crd", "bases")
 }
 
-func getUUID(identifier string) string {
-	namespaceUUID := uuid.NewMD5(uuid.UUID{}, []byte(OnmetalNamespace))
-	newUUID := uuid.NewMD5(namespaceUUID, []byte(identifier))
-	return newUUID.String()
-}
-
 func prepareEnv() {
 	By("Prepare inventories")
 	switchesSamples := []string{
-		filepath.Join("..", "config", "samples", "inventories", "spine-0-1.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-0-2.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-0-3.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-1-1.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-1-2.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-1-3.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-1-4.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-1-5.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "spine-1-6.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "leaf-1.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "leaf-2.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "leaf-3.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "leaf-4.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "leaf-5.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "leaf-6.onmetal.de_v1alpha1_inventory.yaml"),
-		filepath.Join("..", "config", "samples", "inventories", "leaf-7.onmetal.de_v1alpha1_inventory.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "edge-leaf-1.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "edge-leaf-2.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "leaf-1.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "leaf-2.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "spine-1.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "spine-2.fra3.infra.onmetal.de.yaml"),
 	}
 	for _, sample := range switchesSamples {
-		rawInfo := make(map[string]interface{})
 		inv := &inventoriesv1alpha1.Inventory{}
 		sampleBytes, err := ioutil.ReadFile(sample)
 		Expect(err).NotTo(HaveOccurred())
-		err = yaml.Unmarshal(sampleBytes, rawInfo)
-		Expect(err).NotTo(HaveOccurred())
-		data, err := json.Marshal(rawInfo)
-		Expect(err).NotTo(HaveOccurred())
-		err = json.Unmarshal(data, inv)
-		Expect(err).NotTo(HaveOccurred())
-
-		swNamespacedName := types.NamespacedName{
-			Namespace: OnmetalNamespace,
-			Name:      inv.Name,
-		}
-		inv.Namespace = DefaultNamespace
+		dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+		Expect(dec.Decode(inv)).NotTo(HaveOccurred())
 		Expect(k8sClient.Create(ctx, inv)).To(Succeed())
-		sw := &switchv1alpha1.Switch{}
-		Eventually(func() bool {
-			err := k8sClient.Get(ctx, swNamespacedName, sw)
-			return err == nil
-		}, timeout, interval).Should(BeTrue())
-		Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(sw.Spec.Chassis.ChassisID)}))
 	}
 
 	By("Prepare assignments")
-	for _, id := range chassisIds {
-		swa := &switchv1alpha1.SwitchAssignment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      getUUID(id),
-				Namespace: OnmetalNamespace,
-			},
-			Spec: switchv1alpha1.SwitchAssignmentSpec{
-				ChassisID: id,
-				Region: &switchv1alpha1.RegionSpec{
-					Name:             TestRegion,
-					AvailabilityZone: TestAvailabilityZone,
-				},
-			},
-		}
+	assignmentsSamples := []string{
+		filepath.Join("..", "config", "samples", "testdata", "assignment-sp1.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "assignment-sp2.yaml"),
+	}
+	for _, sample := range assignmentsSamples {
+		swa := &switchv1alpha1.SwitchAssignment{}
+		sampleBytes, err := ioutil.ReadFile(sample)
+		Expect(err).NotTo(HaveOccurred())
+		dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+		Expect(dec.Decode(swa)).NotTo(HaveOccurred())
 		Expect(k8sClient.Create(ctx, swa)).To(Succeed())
 		Eventually(func() bool {
 			err := k8sClient.Get(ctx, swa.NamespacedName(), swa)
 			return err == nil
 		}, timeout, interval).Should(BeTrue())
-		Expect(swa.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(id)}))
+		Expect(swa.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(swa.Spec.ChassisID)}))
 	}
 
-	By("Processing finished")
+	By("Switches created from inventories")
 	list := &switchv1alpha1.SwitchList{}
-	Eventually(func() bool {
-		Expect(k8sClient.List(ctx, list)).Should(Succeed())
-		for _, sw := range list.Items {
-			if sw.Status.State != switchv1alpha1.CSwitchStateReady {
-				return false
-			}
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
+	Expect(k8sClient.List(ctx, list)).Should(Succeed())
+	Expect(len(list.Items)).To(Equal(len(switchesSamples)))
+	for _, sw := range list.Items {
+		Expect(sw.Labels).Should(Equal(map[string]string{switchv1alpha1.LabelChassisId: switchv1alpha1.MacToLabel(sw.Spec.Chassis.ChassisID)}))
+	}
+}
+
+func prepareNetwork() {
+	By("Prepare network")
+	networkSample := filepath.Join("..", "config", "samples", "testdata", "underlay-network.yaml")
+	network := &ipamv1alpha1.Network{}
+	sampleBytes, err := ioutil.ReadFile(networkSample)
+	Expect(err).NotTo(HaveOccurred())
+	dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+	Expect(dec.Decode(network)).NotTo(HaveOccurred())
+	Expect(k8sClient.Create(ctx, network)).To(Succeed())
+
+	By("Prepare subnets")
+	subnetsSamples := []string{
+		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v4.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v6.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "switches-v4.yaml"),
+		filepath.Join("..", "config", "samples", "testdata", "switches-v6.yaml"),
+	}
+	for _, sample := range subnetsSamples {
+		subnet := &ipamv1alpha1.Subnet{}
+		sampleBytes, err := ioutil.ReadFile(sample)
+		Expect(err).NotTo(HaveOccurred())
+		dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+		Expect(dec.Decode(subnet)).NotTo(HaveOccurred())
+		Expect(k8sClient.Create(ctx, subnet)).To(Succeed())
+		Eventually(func() bool {
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: subnet.Namespace, Name: subnet.Name}, subnet)).To(Succeed())
+			return subnet.Status.State == ipamv1alpha1.CFinishedSubnetState
+		}, timeout, interval).Should(BeTrue())
+	}
 }
 
 func cleanUp() {
@@ -501,7 +361,7 @@ func cleanUp() {
 	}, timeout, interval).Should(BeTrue())
 
 	By("Remove inventories")
-	Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(DefaultNamespace))).To(Succeed())
+	Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
 	Eventually(func() bool {
 		list := &inventoriesv1alpha1.InventoryList{}
 		err := k8sClient.List(ctx, list)
@@ -514,10 +374,24 @@ func cleanUp() {
 		return true
 	}, timeout, interval).Should(BeTrue())
 
-	By("Remove subnets")
-	Expect(k8sClient.DeleteAllOf(ctx, &subnetv1alpha1.Subnet{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	By("Remove IPs")
+	Expect(k8sClient.DeleteAllOf(ctx, &ipamv1alpha1.IP{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
 	Eventually(func() bool {
-		list := &subnetv1alpha1.SubnetList{}
+		list := &ipamv1alpha1.IPList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	By("Remove subnets")
+	Expect(k8sClient.DeleteAllOf(ctx, &ipamv1alpha1.Subnet{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &ipamv1alpha1.SubnetList{}
 		err := k8sClient.List(ctx, list)
 		if err != nil {
 			return false

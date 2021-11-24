@@ -29,6 +29,8 @@ import (
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
+const CSwitchAssignmentFinalizer = "switchassignments.switch.onmetal.de/finalizer"
+
 type SwitchAssignmentReconciler struct {
 	client.Client
 	Log    logr.Logger
@@ -61,9 +63,9 @@ func (r *SwitchAssignmentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return r.finalize(ctx, res)
 	}
 
-	switch controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer) {
+	switch controllerutil.ContainsFinalizer(res, CSwitchAssignmentFinalizer) {
 	case false:
-		controllerutil.AddFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer)
+		controllerutil.AddFinalizer(res, CSwitchAssignmentFinalizer)
 		if err := r.Update(ctx, res); err != nil {
 			log.Error(err, "failed to update switchAssignment resource")
 			return ctrl.Result{}, err
@@ -88,14 +90,14 @@ func (r *SwitchAssignmentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *SwitchAssignmentReconciler) finalize(ctx context.Context, res *switchv1alpha1.SwitchAssignment) (ctrl.Result, error) {
-	if controllerutil.ContainsFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer) {
+	if controllerutil.ContainsFinalizer(res, CSwitchAssignmentFinalizer) {
 		res.FillStatus(switchv1alpha1.CStateDeleting, &switchv1alpha1.LinkedSwitchSpec{})
 		if err := r.Status().Update(ctx, res); err != nil {
 			r.Log.Error(err, "failed to finalize resource", "name", res.NamespacedName())
 			return ctrl.Result{}, err
 		}
 
-		controllerutil.RemoveFinalizer(res, switchv1alpha1.CSwitchAssignmentFinalizer)
+		controllerutil.RemoveFinalizer(res, CSwitchAssignmentFinalizer)
 		if err := r.Update(ctx, res); err != nil {
 			r.Log.Error(err, "failed to update resource on finalizer removal", "name", res.NamespacedName())
 			return ctrl.Result{}, err

@@ -83,10 +83,9 @@ spec:
             properties:
               state:
                 enum:
-                - Pending
-                - Finished
-                - Deleting
-                - Creating
+                - pending
+                - finished
+                - deleting
                 type: string
               switch:
                 properties:

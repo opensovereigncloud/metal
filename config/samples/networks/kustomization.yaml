@@ -1,6 +1,0 @@
-resources:
-  - network_sample.yaml
-  - switch_ranges_v4.yaml
-  - switch_ranges_v6.yaml
-  - switches_v4.yaml
-  - switches_v6.yaml

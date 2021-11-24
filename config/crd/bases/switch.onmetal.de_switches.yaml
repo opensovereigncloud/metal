@@ -24,12 +24,12 @@ spec:
       name: Hostname
       type: string
     - description: OS running on switch
-      jsonPath: .spec.distro.os
+      jsonPath: .spec.softwarePlatform.operatingSystem
       name: OS
       type: string
     - description: Total amount of non-management network interfaces
-      jsonPath: .spec.switchPorts
-      name: SwitchPorts
+      jsonPath: .status.switchPorts
+      name: Ports
       type: integer
     - description: switch's role
       jsonPath: .status.role
@@ -37,27 +37,36 @@ spec:
       type: string
     - description: Vertical level of switch connection
       jsonPath: .status.connectionLevel
-      name: ConnectionLevel
+      name: Conn Level
       type: integer
     - description: South IPv4 subnet
-      jsonPath: .status.southSubnetV4.cidr
-      name: SouthSubnetV4
+      jsonPath: .status.subnetV4.cidr
+      name: Subnet V4
+      priority: 1
       type: string
     - description: South IPv6 subnet
-      jsonPath: .status.southSubnetV6.cidr
-      name: SouthSubnetV6
+      jsonPath: .status.subnetV6.cidr
+      name: Subnet V6
+      priority: 1
       type: string
-    - description: Request for scan ports
-      jsonPath: .status.scanPorts
-      name: ScanPorts
-      type: boolean
-    - description: Switch processing state
+    - description: Switch state
       jsonPath: .status.state
-      name: State
+      name: Switch State
+      type: string
+    - description: Switch configuration processing state
+      jsonPath: .status.configuration.state
+      name: Conf State
+      priority: 1
       type: string
     - description: Switch manager type
-      jsonPath: .status.configuration.type
-      name: Manager
+      jsonPath: .status.configuration.managerType
+      name: Manager Type
+      priority: 1
+      type: string
+    - description: Switch manager state
+      jsonPath: .status.configuration.managerState
+      name: Manager State
+      priority: 1
       type: string
     name: v1alpha1
     schema:
@@ -80,101 +89,29 @@ spec:
             description: SwitchSpec defines the desired state of Switch
             properties:
               chassis:
-                description: SwitchChassis refers to switch hardware information
+                description: Chassis refers to baremetal box info
                 properties:
                   chassisId:
-                    description: ChassisID refers to switch chassis ID advertising
-                      via LLDP
+                    description: ChassisID refers to the chassis identificator - either
+                      MAC-address or system uuid validation pattern
                     type: string
                   manufacturer:
-                    description: Manufacturer refers to switch chassis manufacturer
+                    description: Manufactirer refers to the switch's manufacturer
                     type: string
-                  serial:
-                    description: Serial refers to switch chassis serial number
+                  serialNumber:
+                    description: SerialNumber refers to the switch's serial number
                     type: string
                   sku:
-                    description: SKU
+                    description: SKU refers to the switch's stock keeping unit
                     type: string
-                type: object
-              distro:
-                description: SwitchDistro refers to switch OS information
-                properties:
-                  asic:
-                    description: ASIC
-                    type: string
-                  os:
-                    description: OS refers to switch operating system
-                    type: string
-                  version:
-                    description: Version refers to switch OS version
-                    type: string
+                required:
+                - chassisId
                 type: object
               hostname:
-                description: Hostname
-                type: string
-              interfaces:
-                additionalProperties:
-                  description: InterfaceSpec defines switch's network interface details
-                  properties:
-                    fec:
-                      description: FEC refers to error correction method
-                      enum:
-                      - none
-                      - rs
-                      - fc
-                      type: string
-                    ipv4:
-                      description: IPv4 refers to interface's IPv4 address
-                      type: string
-                    ipv6:
-                      description: IPv6 refers to interface's IPv6 address
-                      type: string
-                    lanes:
-                      description: Lanes refers to how many lanes are used by the
-                        interface based on its speed
-                      type: integer
-                    macAddress:
-                      description: MacAddress refers to interface's MAC address
-                      type: string
-                    mtu:
-                      description: MTU is refers to Maximum Transmission Unit
-                      minimum: 1
-                      type: integer
-                    peerChassisId:
-                      description: PeerChassisID
-                      type: string
-                    peerPortDescription:
-                      description: PeerPortDescription
-                      type: string
-                    peerPortId:
-                      description: PeerPortID
-                      type: string
-                    peerSystemName:
-                      description: PeerSystemName
-                      type: string
-                    peerType:
-                      description: PeerType refers to neighbor type
-                      enum:
-                      - Machine
-                      - Switch
-                      type: string
-                    speed:
-                      description: Speed refers to current interface speed
-                      format: int32
-                      type: integer
-                  required:
-                  - speed
-                  type: object
-                description: Interfaces refers to details about network interfaces
-                type: object
-              ipv4:
-                description: IPv4 refers to switch's loopback v4 address
-                type: string
-              ipv6:
-                description: IPv6 refers to switch's loopback v6 address
+                description: Hostname refers to switch hostname
                 type: string
               location:
-                description: Location refers to the switch location
+                description: Location refers to the switch's location
                 properties:
                   hu:
                     description: HU refers to height in units
@@ -189,230 +126,378 @@ spec:
                     description: Row refers to row number
                     type: integer
                 type: object
-              switchPorts:
-                description: SwitchPorts refers to non-management network interfaces
-                  count
-                format: int64
-                type: integer
-              totalPorts:
-                description: TotalPorts refers to network interfaces total count
-                format: int64
-                type: integer
+              softwarePlatform:
+                description: SoftwarePlatform refers to software info
+                properties:
+                  asic:
+                    description: ASIC refers to the switch's ASIC manufacturer
+                    type: string
+                  onie:
+                    description: ONIE refers to whether open network installation
+                      environment is used
+                    type: boolean
+                  operatingSystem:
+                    description: OperatingSystem refers to switch's operating system
+                    type: string
+                  version:
+                    description: Version refers to the operating system version
+                    type: string
+                required:
+                - operatingSystem
+                type: object
             required:
             - chassis
             - hostname
-            - switchPorts
-            - totalPorts
+            - softwarePlatform
             type: object
           status:
             description: SwitchStatus defines the observed state of Switch
             properties:
               configuration:
-                description: Configuration refers to current config management state
+                description: Configuration refers to how switch's configuration manager
+                  is defined
                 properties:
                   lastCheck:
-                    description: LastCheck refers to time of the last configuration
-                      check
+                    description: LastCheck refers to the last timestamp when configuration
+                      was applied
                     type: string
                   managed:
-                    description: Managed refers to management state
+                    description: Managed refers to whether switch configuration is
+                      managed or not
                     type: boolean
-                  type:
-                    description: Type refers to management type
+                  managerState:
+                    description: State refers to configuration manager state
+                    enum:
+                    - active
+                    - failed
+                    type: string
+                  managerType:
+                    description: Type refers to configuration manager type
+                    enum:
+                    - local
+                    - remote
+                    type: string
+                  state:
+                    description: State refers to current switch's configuration processing
+                      state
+                    enum:
+                    - initial
+                    - applied
+                    - in progress
+                    - pending
                     type: string
                 required:
-                - lastCheck
                 - managed
-                - type
+                - state
                 type: object
               connectionLevel:
-                description: ConnectionLevel refers the level of the connection
-                maximum: 255
-                minimum: 0
+                description: ConnectionLevel refers to switch's current position in
+                  connection hierarchy
                 type: integer
-              lags:
+              interfaces:
                 additionalProperties:
-                  description: LagSpec defines link aggregation config
+                  description: InterfaceSpec defines the state of switch's interface
                   properties:
-                    fallback:
-                      description: Fallback refers to fallback flag
-                      type: boolean
-                    ipv4:
-                      description: IPv4 refers to interface's IPv4 address
+                    direction:
+                      description: Direction refers to the interface's connection
+                        'direction'
+                      enum:
+                      - north
+                      - south
                       type: string
-                    ipv6:
-                      description: IPv6 refers to interface's IPv6 address
+                    fec:
+                      description: FEC refers to the current interface's forward error
+                        correction type
+                      enum:
+                      - none
+                      - rs
+                      - fc
                       type: string
-                    members:
-                      description: Members refers to the aggregation members names
-                      items:
-                        type: string
-                      type: array
-                  required:
-                  - fallback
-                  - members
-                  type: object
-                description: LAGs refers to existing link aggregations
-                nullable: true
-                type: object
-              northConnections:
-                description: NorthSwitches refers to up-level switch
-                properties:
-                  count:
-                    description: Count refers to upstream switches count
-                    type: integer
-                  peers:
-                    additionalProperties:
-                      description: PeerSpec defines switch connected to another switch
+                    ipV4:
+                      description: IPv4 refers to the interface's IPv4 address
+                      properties:
+                        address:
+                          description: Address refers to the ip address value validation
+                            pattern
+                          type: string
+                        resourceReference:
+                          description: ResourceReference refers to the related resource
+                            definition
+                          properties:
+                            apiVersion:
+                              description: APIVersion refers to the resource API version
+                              type: string
+                            kind:
+                              description: Kind refers to the resource kind
+                              type: string
+                            name:
+                              description: Name refers to the resource name
+                              type: string
+                            namespace:
+                              description: Namespace refers to the resource namespace
+                              type: string
+                          type: object
+                      type: object
+                    ipV6:
+                      description: IPv6 refers to the interface's IPv6 address
+                      properties:
+                        address:
+                          description: Address refers to the ip address value validation
+                            pattern
+                          type: string
+                        resourceReference:
+                          description: ResourceReference refers to the related resource
+                            definition
+                          properties:
+                            apiVersion:
+                              description: APIVersion refers to the resource API version
+                              type: string
+                            kind:
+                              description: Kind refers to the resource kind
+                              type: string
+                            name:
+                              description: Name refers to the resource name
+                              type: string
+                            namespace:
+                              description: Namespace refers to the resource namespace
+                              type: string
+                          type: object
+                      type: object
+                    lanes:
+                      description: Lanes refers to the number of lanes used by interface
+                      type: integer
+                    macAddress:
+                      description: MACAddress refers to the interface's hardware address
+                        validation pattern
+                      type: string
+                    mtu:
+                      description: MTU refers to the current value of interface's
+                        MTU
+                      type: integer
+                    peer:
+                      description: Peer refers to the info about device connected
+                        to current switch port
                       properties:
                         chassisId:
-                          description: ChassisID refers to switch's chassis id
+                          description: ChassisID refers to the chassis identificator
+                            - either MAC-address or system uuid validation pattern
                           type: string
-                        name:
-                          description: Name refers to switch's name
+                        portDescription:
+                          description: PortDescription refers to the advertised peer's
+                            port description
                           type: string
-                        namespace:
-                          description: Namespace refers to switch's namespace
+                        portId:
+                          description: PortID refers to the advertised peer's port
+                            ID
                           type: string
-                        portName:
-                          description: PortName
+                        resourceReference:
+                          description: ResourceReference refers to the related resource
+                            definition
+                          properties:
+                            apiVersion:
+                              description: APIVersion refers to the resource API version
+                              type: string
+                            kind:
+                              description: Kind refers to the resource kind
+                              type: string
+                            name:
+                              description: Name refers to the resource name
+                              type: string
+                            namespace:
+                              description: Namespace refers to the resource namespace
+                              type: string
+                          type: object
+                        systemName:
+                          description: SystemName refers to the advertised peer's
+                            name
                           type: string
                         type:
-                          description: Type refers to neighbor type
+                          description: Type refers to the peer type
                           enum:
-                          - Machine
-                          - Switch
+                          - machine
+                          - switch
+                          - router
+                          - undefined
                           type: string
-                      required:
-                      - chassisId
                       type: object
-                    description: Peers refers to connected upstream switches
+                    speed:
+                      description: Speed refers to interface's speed
+                      format: int32
+                      type: integer
+                    state:
+                      description: State refers to the current interface's operational
+                        state
+                      enum:
+                      - up
+                      - down
+                      type: string
+                  required:
+                  - direction
+                  - fec
+                  - lanes
+                  - macAddress
+                  - mtu
+                  - speed
+                  - state
+                  type: object
+                description: Interfaces refers to switch's interfaces configuration
+                type: object
+              loopbackV4:
+                description: LoopbackV4 refers to the switch's loopback IPv4 address
+                properties:
+                  address:
+                    description: Address refers to the ip address value validation
+                      pattern
+                    type: string
+                  resourceReference:
+                    description: ResourceReference refers to the related resource
+                      definition
+                    properties:
+                      apiVersion:
+                        description: APIVersion refers to the resource API version
+                        type: string
+                      kind:
+                        description: Kind refers to the resource kind
+                        type: string
+                      name:
+                        description: Name refers to the resource name
+                        type: string
+                      namespace:
+                        description: Namespace refers to the resource namespace
+                        type: string
+                    type: object
+                type: object
+              loopbackV6:
+                description: LoopbackV6 refers to the switch's loopback IPv6 address
+                properties:
+                  address:
+                    description: Address refers to the ip address value validation
+                      pattern
+                    type: string
+                  resourceReference:
+                    description: ResourceReference refers to the related resource
+                      definition
+                    properties:
+                      apiVersion:
+                        description: APIVersion refers to the resource API version
+                        type: string
+                      kind:
+                        description: Kind refers to the resource kind
+                        type: string
+                      name:
+                        description: Name refers to the resource name
+                        type: string
+                      namespace:
+                        description: Namespace refers to the resource namespace
+                        type: string
                     type: object
                 type: object
               role:
-                description: 'Role refers to switch''s role: leaf or spine'
+                description: Role refers to switch's role
                 enum:
-                - Leaf
-                - Spine
+                - spine
+                - leaf
                 type: string
-              scanPorts:
-                description: ScanPorts flag determining whether scanning of ports
-                  is requested
-                type: boolean
-              southConnections:
-                description: SouthSwitches refers to down-level switch
-                properties:
-                  count:
-                    description: Count refers to upstream switches count
-                    type: integer
-                  peers:
-                    additionalProperties:
-                      description: PeerSpec defines switch connected to another switch
-                      properties:
-                        chassisId:
-                          description: ChassisID refers to switch's chassis id
-                          type: string
-                        name:
-                          description: Name refers to switch's name
-                          type: string
-                        namespace:
-                          description: Namespace refers to switch's namespace
-                          type: string
-                        portName:
-                          description: PortName
-                          type: string
-                        type:
-                          description: Type refers to neighbor type
-                          enum:
-                          - Machine
-                          - Switch
-                          type: string
-                      required:
-                      - chassisId
-                      type: object
-                    description: Peers refers to connected upstream switches
-                    type: object
-                type: object
-              southSubnetV4:
-                description: SouthSubnet refers to south IPv4 subnet
-                nullable: true
-                properties:
-                  cidr:
-                    description: CIDR refers to the assigned subnet
-                    type: string
-                  parentSubnet:
-                    description: ParentSubnet refers to the subnet resource namespaced
-                      name where CIDR was booked
-                    properties:
-                      name:
-                        description: Name refers to the subnet resource name where
-                          CIDR was booked
-                        type: string
-                      namespace:
-                        description: Namespace refers to the subnet resource name
-                          where CIDR was booked
-                        type: string
-                      region:
-                        description: Region refers to parent subnet regions
-                        properties:
-                          availabilityZone:
-                            description: AvailabilityZone refers to the switch's availability
-                              zone
-                            type: string
-                          name:
-                            description: Name refers to the switch's region
-                            pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
-                            type: string
-                        required:
-                        - availabilityZone
-                        - name
-                        type: object
-                    type: object
-                type: object
-              southSubnetV6:
-                description: SouthSubnet refers to south IPv6 subnet
-                nullable: true
-                properties:
-                  cidr:
-                    description: CIDR refers to the assigned subnet
-                    type: string
-                  parentSubnet:
-                    description: ParentSubnet refers to the subnet resource namespaced
-                      name where CIDR was booked
-                    properties:
-                      name:
-                        description: Name refers to the subnet resource name where
-                          CIDR was booked
-                        type: string
-                      namespace:
-                        description: Namespace refers to the subnet resource name
-                          where CIDR was booked
-                        type: string
-                      region:
-                        description: Region refers to parent subnet regions
-                        properties:
-                          availabilityZone:
-                            description: AvailabilityZone refers to the switch's availability
-                              zone
-                            type: string
-                          name:
-                            description: Name refers to the switch's region
-                            pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
-                            type: string
-                        required:
-                        - availabilityZone
-                        - name
-                        type: object
-                    type: object
-                type: object
               state:
-                description: State refers to current switch state
+                description: State refers to current switch's processing state
+                enum:
+                - initial
+                - in progress
+                - ready
                 type: string
+              subnetV4:
+                description: SubnetV4 refers to the switch's south IPv4 subnet
+                properties:
+                  cidr:
+                    description: CIDR refers to subnet CIDR validation pattern
+                    type: string
+                  region:
+                    description: Region refers to switch's region
+                    properties:
+                      availabilityZone:
+                        description: AvailabilityZone refers to the switch's availability
+                          zone
+                        type: string
+                      name:
+                        description: Name refers to the switch's region
+                        pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                        type: string
+                    required:
+                    - availabilityZone
+                    - name
+                    type: object
+                  resourceReference:
+                    description: ResourceReference refers to the related resource
+                      definition
+                    properties:
+                      apiVersion:
+                        description: APIVersion refers to the resource API version
+                        type: string
+                      kind:
+                        description: Kind refers to the resource kind
+                        type: string
+                      name:
+                        description: Name refers to the resource name
+                        type: string
+                      namespace:
+                        description: Namespace refers to the resource namespace
+                        type: string
+                    type: object
+                type: object
+              subnetV6:
+                description: SubnetV6 refers to the switch's south IPv6 subnet
+                properties:
+                  cidr:
+                    description: CIDR refers to subnet CIDR validation pattern
+                    type: string
+                  region:
+                    description: Region refers to switch's region
+                    properties:
+                      availabilityZone:
+                        description: AvailabilityZone refers to the switch's availability
+                          zone
+                        type: string
+                      name:
+                        description: Name refers to the switch's region
+                        pattern: ^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+                        type: string
+                    required:
+                    - availabilityZone
+                    - name
+                    type: object
+                  resourceReference:
+                    description: ResourceReference refers to the related resource
+                      definition
+                    properties:
+                      apiVersion:
+                        description: APIVersion refers to the resource API version
+                        type: string
+                      kind:
+                        description: Kind refers to the resource kind
+                        type: string
+                      name:
+                        description: Name refers to the resource name
+                        type: string
+                      namespace:
+                        description: Namespace refers to the resource namespace
+                        type: string
+                    type: object
+                type: object
+              switchPorts:
+                description: SwitchPorts refers to the number of ports excluding management
+                  interfaces, loopback etc.
+                type: integer
+              totalPorts:
+                description: TotalPorts refers to total number of ports
+                type: integer
             required:
+            - configuration
             - connectionLevel
+            - interfaces
             - role
-            - scanPorts
             - state
+            - switchPorts
+            - totalPorts
             type: object
         type: object
     served: true

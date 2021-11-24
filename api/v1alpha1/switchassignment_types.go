@@ -25,6 +25,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type State string
+
+const (
+	CAssignmentStatePending  State = "pending"
+	CAssignmentStateFinished State = "finished"
+	CStateDeleting           State = "deleting"
+)
+
 // SwitchAssignmentSpec defines the desired state of SwitchAssignment
 //+kubebuilder:object:generate=true
 type SwitchAssignmentSpec struct {
@@ -51,7 +59,7 @@ type RegionSpec struct {
 
 // SwitchAssignmentStatus defines the observed state of SwitchAssignment
 type SwitchAssignmentStatus struct {
-	//+kubebuilder:validation:Enum=Pending;Finished;Deleting;Creating
+	//+kubebuilder:validation:Enum=pending;finished;deleting
 	State State `json:"state"`
 	//+kubebuilder:validation:Optional
 	Switch *LinkedSwitchSpec `json:"switch"`
@@ -133,15 +141,15 @@ func (in *RegionSpec) ConvertToSubnetRegion() []subnetv1alpha1.Region {
 	}
 }
 
-//func ConvertFromSubnetRegion(src []subnetv1alpha1.Region) *RegionSpec {
-//	if len(src) > 1 {
-//		return nil
-//	}
-//	if len(src[0].AvailabilityZones) > 1 {
-//		return nil
-//	}
-//	return &RegionSpec{
-//		Name:             src[0].Name,
-//		AvailabilityZone: src[0].AvailabilityZones[0],
-//	}
-//}
+func ConvertFromSubnetRegion(src []subnetv1alpha1.Region) *RegionSpec {
+	if len(src) > 1 {
+		return nil
+	}
+	if len(src[0].AvailabilityZones) > 1 {
+		return nil
+	}
+	return &RegionSpec{
+		Name:             src[0].Name,
+		AvailabilityZone: src[0].AvailabilityZones[0],
+	}
+}

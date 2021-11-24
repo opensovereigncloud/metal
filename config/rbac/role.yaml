@@ -9,13 +9,31 @@ rules:
 - apiGroups:
   - ipam.onmetal.de
   resources:
+  - ips
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.onmetal.de
+  resources:
+  - ips/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ipam.onmetal.de
+  resources:
   - subnets
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
-  - update
   - watch
 - apiGroups:
   - ipam.onmetal.de
@@ -23,7 +41,6 @@ rules:
   - subnets/status
   verbs:
   - get
-  - patch
   - update
 - apiGroups:
   - machine.onmetal.de

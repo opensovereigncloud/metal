@@ -30,6 +30,8 @@ import (
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
+const CMachineType = "Machine"
+
 // InventoryReconciler reconciles a Switch object
 type InventoryReconciler struct {
 	client.Client
@@ -58,13 +60,13 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if res.Spec.Host.Type == string(switchv1alpha1.CMachineType) {
+	if res.Spec.Host.Type == CMachineType {
 		return ctrl.Result{}, nil
 	}
 	sw := &switchv1alpha1.Switch{}
 	if err := r.Get(ctx, types.NamespacedName{Namespace: switchv1alpha1.CNamespace, Name: res.Name}, sw); err != nil {
 		if apierrors.IsNotFound(err) {
-			sw.Prepare(res)
+			sw.SwitchFromInventory(res)
 			if err = r.Client.Create(ctx, sw); err != nil {
 				r.Log.Error(err, "failed to create switch resource", "name", sw.NamespacedName())
 				return ctrl.Result{}, err

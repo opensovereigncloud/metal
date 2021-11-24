@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"reflect"
 	"time"
 
@@ -28,28 +29,28 @@ import (
 const CSwitchRequeueInterval = time.Second
 
 type executable interface {
-	execute(*switchv1alpha1.Switch, *switchv1alpha1.Switch) error
+	execute(context.Context, *switchv1alpha1.Switch, *switchv1alpha1.Switch) error
 	setNext(executable)
 	getNext() executable
 }
 
 type processingStep struct {
-	checkFunc  func(*switchv1alpha1.Switch) bool
-	setFunc    func(*switchv1alpha1.Switch) error
-	updateFunc func(*switchv1alpha1.Switch) error
-	next       executable
+	stateCheckFunc     func(*switchv1alpha1.Switch) bool
+	stateComputeFunc   func(context.Context, *switchv1alpha1.Switch) error
+	resourceUpdateFunc func(context.Context, *switchv1alpha1.Switch) error
+	next               executable
 }
 
 func newStep(
 	stepCheckFunc func(*switchv1alpha1.Switch) bool,
-	stepSetFunc func(*switchv1alpha1.Switch) error,
-	stepUpdateFunc func(*switchv1alpha1.Switch) error,
+	stepComputeFunc func(context.Context, *switchv1alpha1.Switch) error,
+	stepResUpdateFunc func(context.Context, *switchv1alpha1.Switch) error,
 	nextStep executable) *processingStep {
 	return &processingStep{
-		checkFunc:  stepCheckFunc,
-		setFunc:    stepSetFunc,
-		updateFunc: stepUpdateFunc,
-		next:       nextStep,
+		stateCheckFunc:     stepCheckFunc,
+		stateComputeFunc:   stepComputeFunc,
+		resourceUpdateFunc: stepResUpdateFunc,
+		next:               nextStep,
 	}
 }
 
@@ -61,40 +62,18 @@ func (s *processingStep) getNext() executable {
 	return s.next
 }
 
-func (s *processingStep) execute(obj *switchv1alpha1.Switch, initialState *switchv1alpha1.Switch) error {
-	if s.checkFunc != nil {
-		if !s.checkFunc(obj) {
-			return s.setAndUpdate(obj, initialState)
-		}
-	} else {
-		return s.setAndUpdate(obj, initialState)
+func (s *processingStep) execute(ctx context.Context, newState *switchv1alpha1.Switch, oldState *switchv1alpha1.Switch) (err error) {
+	if s.stateCheckFunc(newState) {
+		return
 	}
-	return nil
-}
-
-func (s *processingStep) setAndUpdate(obj *switchv1alpha1.Switch, initialState *switchv1alpha1.Switch) error {
-	if err := s.setFunc(obj); err != nil {
-		return err
+	if err = s.stateComputeFunc(ctx, newState); err != nil {
+		return
 	}
-	if (!reflect.DeepEqual(initialState.Spec, obj.Spec) || !obj.StatusDeepEqual(*initialState)) && s.updateFunc != nil {
+	if s.resourceUpdateFunc != nil {
 		s.setNext(nil)
-		if err := s.updateFunc(obj); err != nil {
-			return err
-		}
-		return nil
+		err = s.resourceUpdateFunc(ctx, newState)
 	}
-	if obj.Status.Configuration != nil && initialState.Status.Configuration != nil {
-		configTypeChanged := obj.Status.Configuration.Type != initialState.Status.Configuration.Type
-		configTypeFailed := obj.Status.Configuration.Type == switchv1alpha1.CConfigManagementTypeFailed
-		if configTypeChanged && configTypeFailed && s.updateFunc != nil {
-			s.setNext(nil)
-			if err := s.updateFunc(obj); err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-	return nil
+	return
 }
 
 type stateMachine struct {
@@ -107,24 +86,24 @@ func newStateMachine(startPoint executable) *stateMachine {
 	}
 }
 
-func (s *stateMachine) launch(obj *switchv1alpha1.Switch) (ctrl.Result, error) {
-	initialState := obj.DeepCopy()
-	if err := s.executeStep(obj, initialState); err != nil {
+func (s *stateMachine) launch(ctx context.Context, curState *switchv1alpha1.Switch) (ctrl.Result, error) {
+	prevState := curState.DeepCopy()
+	if err := s.executeStep(ctx, curState, prevState); err != nil {
 		return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, err
 	}
-	if reflect.DeepEqual(initialState.Spec, obj.Spec) && obj.StatusDeepEqual(*initialState) {
+	if reflect.DeepEqual(curState.Status, prevState.Status) {
 		return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, nil
 	}
 	return ctrl.Result{}, nil
 }
 
-func (s *stateMachine) executeStep(currentState *switchv1alpha1.Switch, initialState *switchv1alpha1.Switch) error {
-	if err := s.executionPoint.execute(currentState, initialState); err != nil {
-		return err
+func (s *stateMachine) executeStep(ctx context.Context, curState *switchv1alpha1.Switch, prevState *switchv1alpha1.Switch) (err error) {
+	if err = s.executionPoint.execute(ctx, curState, prevState); err != nil {
+		return
 	}
 	s.executionPoint = s.executionPoint.getNext()
-	if s.executionPoint != nil {
-		return s.executeStep(currentState, initialState)
+	if s.executionPoint == nil {
+		return
 	}
-	return nil
+	return s.executeStep(ctx, curState, prevState)
 }

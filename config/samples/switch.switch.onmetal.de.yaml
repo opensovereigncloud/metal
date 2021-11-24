@@ -1,0 +1,138 @@
+apiVersion: switch.onmetal.de/v1alpha1
+kind: Switch
+metadata:
+  name: a177382d-a3b4-3ecd-97a4-01cc15e749e4
+  namespace: onmetal
+spec:
+  chassis:
+    chassisId: 68:21:5f:47:17:6e
+    manufacturer: Accton
+    serialNumber: 772632X1950125
+    sku: "1"
+  hostname: sonic-spine-1
+  location: {}
+  softwarePlatform:
+    asic: broadcom
+    operatingSystem: SONiC
+    version: ab8fa0e4
+status:
+  configuration:
+    managed: false
+    state: pending
+  connectionLevel: 0
+  interfaces:
+    Ethernet0:
+      direction: south
+      fec: none
+      ipV4:
+        address: 100.64.6.1/30
+      ipV6:
+        address: 64:ff9b:1::200/127
+      lanes: 4
+      macAddress: 68:21:5f:47:17:6e
+      mtu: 9100
+      peer:
+        chassisId: 68:21:5f:47:16:6e
+        portDescription: Ethernet108
+        portId: Eth28/1
+        resourceReference:
+          apiVersion: switch.onmetal.de/v1alpha1
+          kind: Switch
+          name: b9a234a5-416b-3d49-a4f8-65b6f30c8ee5
+          namespace: onmetal
+        systemName: sonic-leaf-1
+        type: switch
+      speed: 100000
+      state: up
+    Ethernet4:
+      direction: south
+      fec: none
+      ipV4:
+        address: 100.64.6.17/30
+      ipV6:
+        address: 64:ff9b:1::208/127
+      lanes: 4
+      macAddress: 68:21:5f:47:17:6e
+      mtu: 9100
+      peer:
+        type: undefined
+      speed: 100000
+      state: up
+    Ethernet8:
+      direction: south
+      fec: none
+      ipV4:
+        address: 100.64.6.33/30
+      ipV6:
+        address: 64:ff9b:1::210/127
+      lanes: 4
+      macAddress: 68:21:5f:47:17:6e
+      mtu: 9100
+      peer:
+        type: undefined
+      speed: 100000
+      state: up
+    Ethernet12:
+      direction: south
+      fec: none
+      ipV4:
+        address: 100.64.6.49/30
+      ipV6:
+        address: 64:ff9b:1::218/127
+      lanes: 4
+      macAddress: 68:21:5f:47:17:6e
+      mtu: 9100
+      peer:
+        type: undefined
+      speed: 100000
+      state: up
+    Ethernet16:
+      direction: south
+      fec: none
+      ipV4:
+        address: 100.64.6.65/30
+      ipV6:
+        address: 64:ff9b:1::220/127
+      lanes: 4
+      macAddress: 68:21:5f:47:17:6e
+      mtu: 9100
+      peer:
+        type: undefined
+      speed: 100000
+      state: up
+  loopbackV4:
+    address: 100.64.11.3
+    resourceReference:
+      apiVersion: ipam.onmetal.de/v1alpha1
+      kind: IP
+      name: a177382d-a3b4-3ecd-97a4-01cc15e749e4-lo-ipv4
+      namespace: onmetal
+  loopbackV6:
+    address: 64:ff9b:1::1
+    resourceReference:
+      name: a177382d-a3b4-3ecd-97a4-01cc15e749e4-lo-ipv6
+      namespace: onmetal
+  role: spine
+  state: ready
+  subnetV4:
+    cidr: 100.64.6.0/23
+    region:
+      availabilityZone: A
+      name: eu-west
+    resourceReference:
+      apiVersion: ipam.onmetal.de/v1alpha1
+      kind: Subnet
+      name: a177382d-a3b4-3ecd-97a4-01cc15e749e4-v4
+      namespace: onmetal
+  subnetV6:
+    cidr: 64:ff9b:1::200/120
+    region:
+      availabilityZone: A
+      name: eu-west
+    resourceReference:
+      apiVersion: ipam.onmetal.de/v1alpha1
+      kind: Subnet
+      name: a177382d-a3b4-3ecd-97a4-01cc15e749e4-v6
+      namespace: onmetal
+  switchPorts: 5
+  totalPorts: 6

@@ -21,56 +21,173 @@ import (
 	"net"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
-	"time"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
-	subnetv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const CSwitchConfigCheckTimeout = time.Second * 10
+type SwitchState string
 
-//ConnectionsMap
-//+kubebuilder:object:generate=false
-type ConnectionsMap map[uint8][]Switch
+const (
+	CSwitchStateReady      SwitchState = "ready"
+	CSwitchStateInProgress SwitchState = "in progress"
+	CSwitchStateInitial    SwitchState = "initial"
+)
 
-//SwitchSpec defines the desired state of Switch
-//+kubebuilder:object:generate=true
-type SwitchSpec struct {
-	//Hostname
-	//+kubebuilder:validation:Required
-	Hostname string `json:"hostname"`
-	//Location refers to the switch location
-	//+kubebuilder:validation:Optional
-	Location *LocationSpec `json:"location,omitempty"`
-	//TotalPorts refers to network interfaces total count
-	//+kubebuilder:validation:Required
-	TotalPorts uint64 `json:"totalPorts"`
-	//SwitchPorts refers to non-management network interfaces count
-	//+kubebuilder:validation:Required
-	SwitchPorts uint64 `json:"switchPorts"`
-	//SwitchDistro refers to switch OS information
-	//+kubebuilder:validation:Optional
-	Distro *SwitchDistroSpec `json:"distro,omitempty"`
-	//SwitchChassis refers to switch hardware information
-	//+kubebuilder:validation:Required
-	Chassis *SwitchChassisSpec `json:"chassis"`
-	//Interfaces refers to details about network interfaces
-	//+kubebuilder:validation:Optional
-	Interfaces map[string]*InterfaceSpec `json:"interfaces,omitempty"`
-	//IPv4 refers to switch's loopback v4 address
-	//+kubebuilder:validation:Optional
-	IPv4 string `json:"ipv4"`
-	//IPv6 refers to switch's loopback v6 address
-	//+kubebuilder:validation:Optional
-	IPv6 string `json:"ipv6"`
+type SwitchRole string
+
+const (
+	CSwitchRoleLeaf  SwitchRole = "leaf"
+	CSwitchRoleSpine SwitchRole = "spine"
+)
+
+type SwitchConfState string
+
+const (
+	CSwitchConfInitial    SwitchConfState = "initial"
+	CSwitchConfApplied    SwitchConfState = "applied"
+	CSwitchConfPending    SwitchConfState = "pending"
+	CSwitchConfInProgress SwitchConfState = "in progress"
+)
+
+type FECType string
+
+const (
+	CFECNone FECType = "none"
+	CFECRS   FECType = "rs"
+	CFECFC   FECType = "fc"
+)
+
+type NICState string
+
+const (
+	CNICUp   NICState = "up"
+	CNICDown NICState = "down"
+)
+
+type NICDirection string
+
+const (
+	CDirectionSouth NICDirection = "south"
+	CDirectionNorth NICDirection = "north"
+)
+
+const (
+	CPeerTypeMachine   string = "machine"
+	CPeerTypeSwitch    string = "switch"
+	CPeerTypeRouter    string = "router"
+	CPeerTypeUndefined string = "undefined"
+)
+
+type ConfManagerType string
+
+const (
+	CConfManagerTLocal  ConfManagerType = "local"
+	CConfManagerTRemote ConfManagerType = "remote"
+)
+
+type ConfManagerState string
+
+const (
+	CConfManagerSActive ConfManagerState = "active"
+	CConfManagerSFailed ConfManagerState = "failed"
+
+	CSwitchPortMTU    = 9100
+	CEmptyString      = ""
+	CSwitchPortPrefix = "Ethernet"
+
+	CNamespace = "onmetal"
+
+	CIPv4AddressesPerLane    = uint8(4)
+	CIPv6AddressesPerLane    = uint8(2)
+	CIPv4InterfaceSubnetMask = 30
+	CIPv6InterfaceSubnetMask = 127
+
+	CSonicSwitchOs     = "SONiC"
+	CStationCapability = "Station"
+	CRouterCapability  = "Router"
+	CBridgeCapability  = "Bridge"
+	CNDPReachable      = "Reachable"
+
+	CLabelPrefix    = "switch.onmetal.de/"
+	CLabelChassisId = "chassisId"
+	CLabelName      = "name"
+	CLabelInterface = "interface"
+	CLabelRelation  = "relation"
+)
+
+var LabelChassisId = CLabelPrefix + CLabelChassisId
+var LabelSwitchName = CLabelPrefix + CLabelName
+var LabelInterfaceName = CLabelPrefix + CLabelInterface
+var LabelResourceRelation = CLabelPrefix + CLabelRelation
+
+func MacToLabel(mac string) string {
+	return strings.ReplaceAll(mac, ":", "-")
 }
 
-//LocationSpec defines location details
+type ConnectionsMap map[uint8]*SwitchList
+
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// SwitchSpec defines the desired state of Switch
+//+kubebuilder:object:generate=true
+type SwitchSpec struct {
+	//Hostname refers to switch hostname
+	//+kubebuilder:validation:Required
+	Hostname string `json:"hostname"`
+	//Chassis refers to baremetal box info
+	//+kubebuilder:validation:Required
+	Chassis *ChassisSpec `json:"chassis"`
+	//SoftwarePlatform refers to software info
+	//+kubebuilder:validation:Required
+	SoftwarePlatform *SoftwarePlatformSpec `json:"softwarePlatform"`
+	//Location refers to the switch's location
+	//+kubebuilder:validation:Optional
+	Location *LocationSpec `json:"location,omitempty"`
+}
+
+// ChassisSpec defines switch's chassis info
+//+kubebuilder:object:generate=true
+type ChassisSpec struct {
+	//ChassisID refers to the chassis identificator - either MAC-address or system uuid
+	//+kubebuilder:validation:Required
+	//validation pattern
+	ChassisID string `json:"chassisId"`
+	//Manufactirer refers to the switch's manufacturer
+	//+kubebuilder:validation:Optional
+	Manufacturer string `json:"manufacturer,omitempty"`
+	//SerialNumber refers to the switch's serial number
+	//+kubebuilder:validation:Optional
+	SerialNumber string `json:"serialNumber,omitempty"`
+	//SKU refers to the switch's stock keeping unit
+	//+kubebuilder:validation:Optional
+	SKU string `json:"sku,omitempty"`
+}
+
+// SoftwarePlatformSpec defines switch's software base
+//+kubebuilder:object:generate=true
+type SoftwarePlatformSpec struct {
+	//ONIE refers to whether open network installation environment is used
+	//+kubebuilder:validation:Optional
+	ONIE bool `json:"onie,omitempty"`
+	//OperatingSystem refers to switch's operating system
+	//+kubebuilder:validation:Required
+	OperatingSystem string `json:"operatingSystem"`
+	//Version refers to the operating system version
+	//+kubebuilder:validation:Optional
+	Version string `json:"version,omitempty"`
+	//ASIC refers to the switch's ASIC manufacturer
+	//+kubebuilder:validation:Optional
+	ASIC string `json:"asic,omitempty"`
+}
+
+// LocationSpec defines switch's location
 //+kubebuilder:object:generate=true
 type LocationSpec struct {
 	//Room refers to room name
@@ -87,218 +204,190 @@ type LocationSpec struct {
 	HU int16 `json:"hu,omitempty"`
 }
 
-//SwitchDistroSpec defines switch OS details
-//+kubebuilder:object:generate=true
-type SwitchDistroSpec struct {
-	//OS refers to switch operating system
-	//+kubebuilder:validation:Optional
-	OS string `json:"os,omitempty"`
-	//Version refers to switch OS version
-	//+kubebuilder:validation:Optional
-	Version string `json:"version,omitempty"`
-	//ASIC
-	//+kubebuilder:validation:Optional
-	ASIC string `json:"asic,omitempty"`
-}
-
-// SwitchSubnetSpec defines switch subnet details
-//+kubebuilder:object:generate=true
-type SwitchSubnetSpec struct {
-	// ParentSubnet refers to the subnet resource namespaced name where CIDR was booked
-	//+kubebuilder:validation:Optional
-	ParentSubnet *ParentSubnetSpec `json:"parentSubnet"`
-	// CIDR refers to the assigned subnet
-	//+kubebuilder:validation:Optional
-	CIDR string `json:"cidr"`
-}
-
-// ParentSubnetSpec defines switch subnet name and namespace
-//+kubebuilder:object:generate=true
-type ParentSubnetSpec struct {
-	// Name refers to the subnet resource name where CIDR was booked
-	//+kubebuilder:validation:Optional
-	Name string `json:"name"`
-	// Namespace refers to the subnet resource name where CIDR was booked
-	//+kubebuilder:validation:Optional
-	Namespace string `json:"namespace"`
-	// Region refers to parent subnet regions
-	//+kubebuilder:validation:Optional
-	Region *RegionSpec `json:"region"`
-}
-
-//SwitchChassisSpec defines switch chassis details
-//+kubebuilder:object:generate=true
-type SwitchChassisSpec struct {
-	//Manufacturer refers to switch chassis manufacturer
-	//+kubebuilder:validation:Optional
-	Manufacturer string `json:"manufacturer,omitempty"`
-	//SKU
-	//+kubebuilder:validation:Optional
-	SKU string `json:"sku,omitempty"`
-	//Serial refers to switch chassis serial number
-	//+kubebuilder:validation:Optional
-	Serial string `json:"serial,omitempty"`
-	//ChassisID refers to switch chassis ID advertising via LLDP
-	//+kubebuilder:validation:Optional
-	ChassisID string `json:"chassisId,omitempty"`
-}
-
-//InterfaceSpec defines switch's network interface details
-//+kubebuilder:object:generate=true
-type InterfaceSpec struct {
-	//Speed refers to current interface speed
-	//+kubebuilder:Validation:Required
-	Speed uint32 `json:"speed"`
-	// MTU is refers to Maximum Transmission Unit
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Minimum=1
-	MTU uint16 `json:"mtu,omitempty"`
-	//Lanes refers to how many lanes are used by the interface based on its speed
-	//+kubebuilder:validation:Optional
-	Lanes uint8 `json:"lanes,omitempty"`
-	//FEC refers to error correction method
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=none;rs;fc
-	FEC string `json:"fec,omitempty"`
-	//MacAddress refers to interface's MAC address
-	//+kubebuilder:validation:Optional
-	MacAddress string `json:"macAddress,omitempty"`
-	//IPv4 refers to interface's IPv4 address
-	//+kubebuilder:validation:Optional
-	IPv4 string `json:"ipv4,omitempty"`
-	//IPv6 refers to interface's IPv6 address
-	//+kubebuilder:validation:Optional
-	IPv6 string `json:"ipv6,omitempty"`
-	//PeerType refers to neighbor type
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=Machine;Switch
-	PeerType PeerType `json:"peerType,omitempty"`
-	//PeerSystemName
-	//+kubebuilder:validation:Optional
-	PeerSystemName string `json:"peerSystemName,omitempty"`
-	//PeerChassisID
-	//+kubebuilder:validation:Optional
-	PeerChassisID string `json:"peerChassisId,omitempty"`
-	//PeerPortID
-	//+kubebuilder:validation:Optional
-	PeerPortID string `json:"peerPortId,omitempty"`
-	//PeerPortDescription
-	//+kubebuilder:validation:Optional
-	PeerPortDescription string `json:"peerPortDescription,omitempty"`
-}
-
 // SwitchStatus defines the observed state of Switch
 type SwitchStatus struct {
-	//Role refers to switch's role: leaf or spine
+	//TotalPorts refers to total number of ports
 	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Enum=Leaf;Spine
-	Role Role `json:"role"`
-	// ConnectionLevel refers the level of the connection
+	TotalPorts uint16 `json:"totalPorts"`
+	//SwitchPorts refers to the number of ports excluding management interfaces, loopback etc.
 	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Minimum=0
-	//+kubebuilder:validation:Maximum=255
+	SwitchPorts uint16 `json:"switchPorts"`
+	//Role refers to switch's role
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Enum=spine;leaf
+	Role SwitchRole `json:"role"`
+	//ConnectionLevel refers to switch's current position in connection hierarchy
+	//+kubebuilder:validation:Required
 	ConnectionLevel uint8 `json:"connectionLevel"`
-	//SouthSubnet refers to south IPv4 subnet
-	//+kubebuilder:validation:Optional
-	//+nullable
-	SouthSubnetV4 *SwitchSubnetSpec `json:"southSubnetV4,omitempty"`
-	//SouthSubnet refers to south IPv6 subnet
-	//+kubebuilder:validation:Optional
-	//+nullable
-	SouthSubnetV6 *SwitchSubnetSpec `json:"southSubnetV6,omitempty"`
-	// NorthSwitches refers to up-level switch
-	//+kubebuilder:validation:Optional
-	NorthConnections *ConnectionsSpec `json:"northConnections,omitempty"`
-	// SouthSwitches refers to down-level switch
-	//+kubebuilder:validation:Optional
-	SouthConnections *ConnectionsSpec `json:"southConnections,omitempty"`
-	//State refers to current switch state
-	//kubebuilder:validation:Enum=Finished;Deleting;Define peers;Define addresses
-	State State `json:"state"`
-	//ScanPorts flag determining whether scanning of ports is requested
+	//Interfaces refers to switch's interfaces configuration
 	//+kubebuilder:validation:Required
-	ScanPorts bool `json:"scanPorts"`
-	//LAGs refers to existing link aggregations
+	Interfaces map[string]*InterfaceSpec `json:"interfaces"`
+	//SubnetV4 refers to the switch's south IPv4 subnet
 	//+kubebuilder:validation:Optional
-	//+nullable
-	LAGs map[string]*LagSpec `json:"lags"`
-	//Configuration refers to current config management state
+	SubnetV4 *SubnetSpec `json:"subnetV4,omitempty"`
+	//SubnetV6 refers to the switch's south IPv6 subnet
 	//+kubebuilder:validation:Optional
+	SubnetV6 *SubnetSpec `json:"subnetV6,omitempty"`
+	//LoopbackV4 refers to the switch's loopback IPv4 address
+	//+kubebuilder:validation:Optional
+	LoopbackV4 *IPAddressSpec `json:"loopbackV4,omitempty"`
+	//LoopbackV6 refers to the switch's loopback IPv6 address
+	//+kubebuilder:validation:Optional
+	LoopbackV6 *IPAddressSpec `json:"loopbackV6,omitempty"`
+	//Configuration refers to how switch's configuration manager is defined
+	//+kubebuilder:validation:Required
 	Configuration *ConfigurationSpec `json:"configuration"`
+	//State refers to current switch's processing state
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Enum=initial;in progress;ready
+	State SwitchState `json:"state"`
 }
 
-// ConfigurationSpec defines how switch's config is managed
+// InterfaceSpec defines the state of switch's interface
 //+kubebuilder:object:generate=true
-type ConfigurationSpec struct {
-	//Managed refers to management state
-	Managed bool `json:"managed"`
-	//Type refers to management type
-	Type string `json:"type"`
-	//LastCheck refers to time of the last configuration check
-	LastCheck string `json:"lastCheck"`
+type InterfaceSpec struct {
+	//MACAddress refers to the interface's hardware address
+	//+kubebuilder:validation:Required
+	//validation pattern
+	MACAddress string `json:"macAddress"`
+	//FEC refers to the current interface's forward error correction type
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Enum=none;rs;fc
+	FEC FECType `json:"fec"`
+	//MTU refers to the current value of interface's MTU
+	//+kubebuilder:validation:Required
+	MTU uint16 `json:"mtu"`
+	//Speed refers to interface's speed
+	//+kubebuilder:validation:Required
+	Speed uint32 `json:"speed"`
+	//Lanes refers to the number of lanes used by interface
+	//+kubebuilder:validation:Required
+	Lanes uint8 `json:"lanes"`
+	//State refers to the current interface's operational state
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Enum=up;down
+	State NICState `json:"state"`
+	//IPv4 refers to the interface's IPv4 address
+	//+kubebuilder:validation:Optional
+	IPv4 *IPAddressSpec `json:"ipV4,omitempty"`
+	//IPv6 refers to the interface's IPv6 address
+	//+kubebuilder:validation:Optional
+	IPv6 *IPAddressSpec `json:"ipV6,omitempty"`
+	//Direction refers to the interface's connection 'direction'
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:Enum=north;south
+	Direction NICDirection `json:"direction"`
+	//Peer refers to the info about device connected to current switch port
+	//+kubebuilder:validation:Optional
+	Peer *PeerSpec `json:"peer,omitempty"`
 }
 
-// ConnectionsSpec defines upstream switches count and properties
-//+kubebuilder:object:generate=true
-type ConnectionsSpec struct {
-	// Count refers to upstream switches count
-	//+kubebuilder:validation:Optional
-	Count int `json:"count"`
-	// Peers refers to connected upstream switches
-	//+kubebuilder:validation:Optional
-	Peers map[string]*PeerSpec `json:"peers"`
-}
-
-// PeerSpec defines switch connected to another switch
+// PeerSpec defines peer info
 //+kubebuilder:object:generate=true
 type PeerSpec struct {
-	// Name refers to switch's name
+	//ChassisID refers to the chassis identificator - either MAC-address or system uuid
 	//+kubebuilder:validation:Optional
-	Name string `json:"name,omitempty"`
-	// Namespace refers to switch's namespace
+	//validation pattern
+	ChassisID string `json:"chassisId,omitempty"`
+	//SystemName refers to the advertised peer's name
 	//+kubebuilder:validation:Optional
-	Namespace string `json:"namespace,omitempty"`
-	// ChassisID refers to switch's chassis id
-	//+kubebuilder:validation:Required
-	ChassisID string `json:"chassisId"`
-	//Type refers to neighbor type
+	SystemName string `json:"systemName,omitempty"`
+	//PortID refers to the advertised peer's port ID
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=Machine;Switch
-	Type PeerType `json:"type,omitempty"`
-	//PortName
+	PortID string `json:"portId,omitempty"`
+	//PortDescription refers to the advertised peer's port description
 	//+kubebuilder:validation:Optional
-	PortName string `json:"portName,omitempty"`
+	PortDescription string `json:"portDescription,omitempty"`
+	//Type refers to the peer type
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:Enum=machine;switch;router;undefined
+	Type string `json:"type,omitempty"`
+	//ResourceReference refers to the related resource definition
+	//+kubebuilder:validation:Optional
+	ResourceReference *ResourceReferenceSpec `json:"resourceReference,omitempty"`
 }
 
-// LagSpec defines link aggregation config
-type LagSpec struct {
-	//IPv4 refers to interface's IPv4 address
+// SubnetSpec defines switch's subnet info
+//+kubebuilder:object:generate=true
+type SubnetSpec struct {
+	//CIDR refers to subnet CIDR
 	//+kubebuilder:validation:Optional
-	IPv4 string `json:"ipv4,omitempty"`
-	//IPv6 refers to interface's IPv6 address
+	//validation pattern
+	CIDR string `json:"cidr,omitempty"`
+	//Region refers to switch's region
 	//+kubebuilder:validation:Optional
-	IPv6 string `json:"ipv6,omitempty"`
-	//Fallback refers to fallback flag
+	Region *RegionSpec `json:"region,omitempty"`
+	//ResourceReference refers to the related resource definition
+	//+kubebuilder:validation:Optional
+	ResourceReference *ResourceReferenceSpec `json:"resourceReference,omitempty"`
+}
+
+// IPAddressSpec defines interface's ip address info
+//+kubebuilder:object:generate=true
+type IPAddressSpec struct {
+	//Address refers to the ip address value
+	//+kubebuilder:validation:Optional
+	//validation pattern
+	Address string `json:"address,omitempty"`
+	//ResourceReference refers to the related resource definition
+	//+kubebuilder:validation:Optional
+	ResourceReference *ResourceReferenceSpec `json:"resourceReference,omitempty"`
+}
+
+// ResourceReferenceSpec defines related resource info
+//+kubebuilder:object:generate=true
+type ResourceReferenceSpec struct {
+	//APIVersion refers to the resource API version
+	//+kubebuilder:validation:Optional
+	APIVersion string `json:"apiVersion,omitempty"`
+	//Kind refers to the resource kind
+	//+kubebuilder:validation:Optional
+	Kind string `json:"kind,omitempty"`
+	//Name refers to the resource name
+	//+kubebuilder:validation:Optional
+	Name string `json:"name,omitempty"`
+	//Namespace refers to the resource namespace
+	//+kubebuilder:validation:Optional
+	Namespace string `json:"namespace,omitempty"`
+}
+
+// ConfigurationSpec defines switch's computed configuration
+//+kubebuilder:object:generate=true
+type ConfigurationSpec struct {
+	//Managed refers to whether switch configuration is managed or not
 	//+kubebuilder:validation:Required
-	Fallback bool `json:"fallback"`
-	//Members refers to the aggregation members names
+	Managed bool `json:"managed"`
+	//State refers to current switch's configuration processing state
 	//+kubebuilder:validation:Required
-	Members []string `json:"members"`
+	//+kubebuilder:validation:Enum=initial;applied;in progress;pending
+	State SwitchConfState `json:"state"`
+	//Type refers to configuration manager type
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:Enum=local;remote
+	ManagerType ConfManagerType `json:"managerType,omitempty"`
+	//State refers to configuration manager state
+	//+kubebuilder:validation:Optional
+	//+kubebuilder:validation:Enum=active;failed
+	ManagerState ConfManagerState `json:"managerState,omitempty"`
+	//LastCheck refers to the last timestamp when configuration was applied
+	//+kubebuilder:validation:Optional
+	LastCheck string `json:"lastCheck,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=sw
 //+kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.hostname`,description="Switch's hostname"
-//+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.distro.os`,description="OS running on switch"
-//+kubebuilder:printcolumn:name="SwitchPorts",type=integer,JSONPath=`.spec.switchPorts`,description="Total amount of non-management network interfaces"
+//+kubebuilder:printcolumn:name="OS",type=string,JSONPath=`.spec.softwarePlatform.operatingSystem`,description="OS running on switch"
+//+kubebuilder:printcolumn:name="Ports",type=integer,JSONPath=`.status.switchPorts`,description="Total amount of non-management network interfaces"
 //+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.status.role`,description="switch's role"
-//+kubebuilder:printcolumn:name="ConnectionLevel",type=integer,JSONPath=`.status.connectionLevel`,description="Vertical level of switch connection"
-//+kubebuilder:printcolumn:name="SouthSubnetV4",type=string,JSONPath=`.status.southSubnetV4.cidr`,description="South IPv4 subnet"
-//+kubebuilder:printcolumn:name="SouthSubnetV6",type=string,JSONPath=`.status.southSubnetV6.cidr`,description="South IPv6 subnet"
-//+kubebuilder:printcolumn:name="ScanPorts",type=boolean,JSONPath=`.status.scanPorts`,description="Request for scan ports"
-//+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Switch processing state"
-//+kubebuilder:printcolumn:name="Manager",type=string,JSONPath=`.status.configuration.type`,description="Switch manager type"
+//+kubebuilder:printcolumn:name="Conn Level",type=integer,JSONPath=`.status.connectionLevel`,description="Vertical level of switch connection"
+//+kubebuilder:printcolumn:name="Subnet V4",type=string,priority=1,JSONPath=`.status.subnetV4.cidr`,description="South IPv4 subnet"
+//+kubebuilder:printcolumn:name="Subnet V6",type=string,priority=1,JSONPath=`.status.subnetV6.cidr`,description="South IPv6 subnet"
+//+kubebuilder:printcolumn:name="Switch State",type=string,JSONPath=`.status.state`,description="Switch state"
+//+kubebuilder:printcolumn:name="Conf State",type=string,priority=1,JSONPath=`.status.configuration.state`,description="Switch configuration processing state"
+//+kubebuilder:printcolumn:name="Manager Type",type=string,priority=1,JSONPath=`.status.configuration.managerType`,description="Switch manager type"
+//+kubebuilder:printcolumn:name="Manager State",type=string,priority=1,JSONPath=`.status.configuration.managerState`,description="Switch manager state"
 
 // Switch is the Schema for the switches API
 type Switch struct {
@@ -322,20 +411,364 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
-// Determines whether Switch resources with connection
-// level equals to zero already exists.
-// Return true if exists, false otherwise.
-func (in *ConnectionsMap) topLevelSpinesDefined() bool {
-	if switches, ok := (*in)[0]; !ok {
-		return false
-	} else {
-		for _, sw := range switches {
-			if sw.Status.State == CEmptyString {
+// NamespacedName returns referenced resource name and namespaced converted
+// to native types.NamespacedName format
+func (in *ResourceReferenceSpec) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{Namespace: in.Namespace, Name: in.Name}
+}
+
+// NamespacedName returns switch's name and namespaced converted to native
+// types.NamespacedName format
+func (in *Switch) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{Namespace: in.Namespace, Name: in.Name}
+}
+
+// SetSwitchState sets certain state for switch
+func (in *Switch) SetSwitchState(state SwitchState) {
+	in.Status.State = state
+}
+
+// SetConfState sets certain state for switch config
+func (in *Switch) SetConfState(state SwitchConfState) {
+	in.Status.Configuration.State = state
+}
+
+// SwitchFromInventory builds switch resource from inventory resource data
+func (in *Switch) SwitchFromInventory(src *inventoriesv1alpha1.Inventory) {
+	in.ObjectMeta = metav1.ObjectMeta{
+		Name:      src.Name,
+		Namespace: CNamespace,
+	}
+	in.Spec = SwitchSpec{
+		Hostname: src.Spec.Host.Name,
+		Chassis: &ChassisSpec{
+			ChassisID: func(nics []inventoriesv1alpha1.NICSpec) string {
+				var chassisID string
+				for _, nic := range nics {
+					if nic.Name == "eth0" {
+						chassisID = nic.MACAddress
+					}
+				}
+				return chassisID
+			}(src.Spec.NICs),
+			Manufacturer: src.Spec.System.Manufacturer,
+			SerialNumber: src.Spec.System.SerialNumber,
+			SKU:          src.Spec.System.ProductSKU,
+		},
+		SoftwarePlatform: &SoftwarePlatformSpec{
+			ONIE:            false,
+			OperatingSystem: CSonicSwitchOs,
+			Version:         src.Spec.Distro.CommitId,
+			ASIC:            src.Spec.Distro.AsicType,
+		},
+		Location: &LocationSpec{},
+	}
+}
+
+// FillInitialStatus fills switch's status with initial values
+func (in *Switch) FillInitialStatus(src *inventoriesv1alpha1.Inventory, switches *SwitchList) {
+	in.Status = SwitchStatus{
+		TotalPorts:      uint16(len(src.Spec.NICs)),
+		SwitchPorts:     0,
+		Role:            CSwitchRoleSpine,
+		ConnectionLevel: 255,
+		Interfaces:      InterfacesFromInventory(src.Spec.NICs, switches),
+		SubnetV4:        &SubnetSpec{},
+		SubnetV6:        &SubnetSpec{},
+		LoopbackV4:      &IPAddressSpec{},
+		LoopbackV6:      &IPAddressSpec{},
+		Configuration: &ConfigurationSpec{
+			Managed: false,
+			State:   CSwitchConfInitial,
+		},
+		State: CSwitchStateInitial,
+	}
+	in.Status.SwitchPorts = uint16(len(in.Status.Interfaces))
+}
+
+// InterfacesFromInventory builds interfaces map based on inventory resource data
+func InterfacesFromInventory(nics []inventoriesv1alpha1.NICSpec, switches *SwitchList) map[string]*InterfaceSpec {
+	interfaces := make(map[string]*InterfaceSpec)
+	for _, nic := range nics {
+		if !(strings.HasPrefix(nic.Name, CSwitchPortPrefix)) {
+			continue
+		}
+		iface := &InterfaceSpec{
+			MACAddress: nic.MACAddress,
+			FEC: func(nicFEC string) FECType {
+				if nicFEC == CEmptyString {
+					nicFEC = "none"
+				}
+				return FECType(nicFEC)
+			}(nic.ActiveFEC),
+			MTU:       CSwitchPortMTU,
+			Speed:     nic.Speed,
+			Lanes:     nic.Lanes,
+			State:     CNICUp, //TODO: extend inventory CR with NIC state field
+			IPv4:      &IPAddressSpec{},
+			IPv6:      &IPAddressSpec{},
+			Direction: CDirectionSouth,
+			Peer:      &PeerSpec{Type: CPeerTypeUndefined},
+		}
+		for _, lldpData := range nic.LLDPs {
+			var lldpEmpty inventoriesv1alpha1.LLDPSpec
+			if reflect.DeepEqual(lldpData, lldpEmpty) {
+				continue
+			}
+			iface.Peer.ChassisID = lldpData.ChassisID
+			iface.Peer.SystemName = lldpData.SystemName
+			iface.Peer.PortID = lldpData.PortID
+			iface.Peer.PortDescription = lldpData.PortDescription
+			iface.Peer.Type = func(caps []inventoriesv1alpha1.LLDPCapabilities) string {
+				if len(caps) == 0 {
+					return CPeerTypeMachine
+				}
+				for _, cap := range caps {
+					if cap == CStationCapability {
+						return CPeerTypeMachine
+					}
+				}
+				return CPeerTypeSwitch
+			}(lldpData.Capabilities)
+			iface.Peer.ResourceReference = &ResourceReferenceSpec{}
+		}
+
+		// FIXME: if there is no lldp data on nics connected to another switch we have a problem:
+		//  no way to determine what interfaces were use for switches interconnection
+
+		// for _, ndpData := range nic.NDPs {
+		// 	if iface.Peer.ChassisID != CEmptyString {
+		// 		break
+		// 	}
+		// 	if ndpData.State != CNDPReachable {
+		// 		continue
+		// 	}
+		// 	iface.Peer.ChassisID = ndpData.MACAddress
+		// 	iface.Peer.Type = func(switches *SwitchList) string {
+		// 		for _, sw := range switches.Items {
+		// 			if sw.Spec.Chassis.ChassisID == ndpData.MACAddress {
+		// 				return CPeerTypeSwitch
+		// 			}
+		// 		}
+		// 		return CPeerTypeMachine
+		// 	}(switches)
+		// 	iface.Peer.ResourceReference = &ResourceReferenceSpec{}
+		// }
+		interfaces[nic.Name] = iface
+	}
+	return interfaces
+}
+
+// InterfacesDataOk checks stored interfaces data, that can be changed, is
+// equal to received from inventory
+func (in *Switch) InterfacesDataOk(src *inventoriesv1alpha1.Inventory, switches *SwitchList) bool {
+	recievedInterfaces := InterfacesFromInventory(src.Spec.NICs, switches)
+	storedInterfaces := in.Status.Interfaces
+	for nicName, nicData := range recievedInterfaces {
+		storedData, ok := storedInterfaces[nicName]
+		if !ok {
+			return false
+		}
+		if nicData.MACAddress != storedData.MACAddress {
+			return false
+		}
+		if nicData.FEC != storedData.FEC {
+			return false
+		}
+		if nicData.Lanes != storedData.Lanes {
+			return false
+		}
+		if nicData.State != storedData.State {
+			return false
+		}
+		if nicData.Speed != storedData.Speed {
+			return false
+		}
+		if nicData.Peer.ChassisID != storedData.Peer.ChassisID {
+			return false
+		}
+		if nicData.Peer.Type != storedData.Peer.Type {
+			return false
+		}
+	}
+	for iface := range storedInterfaces {
+		if _, ok := recievedInterfaces[iface]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// StateEqualTo checks whether switch resource state is equal to state
+// passed as argument
+func (in *Switch) StateEqualTo(state string) bool {
+	return string(in.Status.State) == state
+}
+
+// PeersDefined checkes whether peers data is filled and match to the
+// existing resources
+func (in *Switch) PeersDefined(list *SwitchList) bool {
+	for _, data := range in.Status.Interfaces {
+		if data.Direction == CDirectionNorth && in.Status.ConnectionLevel == 0 {
+			return false
+		}
+	}
+	for _, item := range list.Items {
+		for _, nicData := range item.Status.Interfaces {
+			if nicData.Peer.ChassisID != in.Spec.Chassis.ChassisID {
+				continue
+			}
+			nic := in.Status.Interfaces[nicData.Peer.PortDescription] // portDescription may be absent!
+			if nic.Peer.Type != CPeerTypeSwitch {
+				return false
+			}
+			if nic.Peer.ResourceReference.Name != item.Name {
+				return false
+			}
+			if nic.Peer.ResourceReference.Namespace != item.Namespace {
 				return false
 			}
 		}
 	}
 	return true
+}
+
+// FillPeerSwitches fills references info in interfaces data for
+// interfaces connected to another switches
+func (in *Switch) FillPeerSwitches(list *SwitchList) {
+	for _, item := range list.Items {
+		for _, nicData := range item.Status.Interfaces {
+			if nicData.Peer.ChassisID != in.Spec.Chassis.ChassisID {
+				continue
+			}
+			nic := in.Status.Interfaces[nicData.Peer.PortDescription]
+			nic.Peer.Type = CPeerTypeSwitch
+			nic.Peer.ResourceReference.APIVersion = item.APIVersion
+			nic.Peer.ResourceReference.Kind = item.Kind
+			nic.Peer.ResourceReference.Name = item.Name
+			nic.Peer.ResourceReference.Namespace = item.Namespace
+		}
+	}
+}
+
+// RoleMatchPeers checks whether switch's role match stored peers info
+func (in *Switch) RoleMatchPeers() bool {
+	machinesInPeers := false
+	for _, nicData := range in.Status.Interfaces {
+		if nicData.Peer.Type == CPeerTypeMachine {
+			machinesInPeers = true
+		}
+	}
+	if machinesInPeers && in.Status.Role == CSwitchRoleSpine {
+		return false
+	}
+	if !machinesInPeers && in.Status.Role == CSwitchRoleLeaf {
+		return false
+	}
+	return true
+}
+
+// ConnectionLevelMatchPeers checks whether switch's interfaces' directions
+// are defined correct and match connection levels of peers
+func (in *Switch) ConnectionLevelMatchPeers(list *SwitchList) bool {
+	for _, item := range list.Items {
+		for _, nicData := range in.Status.Interfaces {
+			if nicData.Peer.ChassisID != item.Spec.Chassis.ChassisID {
+				continue
+			}
+			if nicData.Direction == CDirectionNorth && in.Status.ConnectionLevel != item.Status.ConnectionLevel+1 {
+				return false
+			}
+			if nicData.Direction == CDirectionSouth && in.Status.ConnectionLevel != item.Status.ConnectionLevel-1 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// ComputeConnectionLevel calculates switch's connection level
+// according to peers connection levels
+func (in *Switch) ComputeConnectionLevel(list *SwitchList) {
+	connectionsMap, keys := list.buildConnectionMap()
+	if _, ok := connectionsMap[0]; !ok {
+		return
+	}
+	if in.Status.ConnectionLevel == 0 {
+		for _, nicData := range in.Status.Interfaces {
+			nicData.Direction = CDirectionSouth
+		}
+		return
+	}
+	for _, connectionLevel := range keys {
+		if connectionLevel == 255 {
+			continue
+		}
+		if connectionLevel >= in.Status.ConnectionLevel {
+			continue
+		}
+		switches := connectionsMap[connectionLevel]
+		northPeers := in.getPeers(switches)
+		if len(northPeers.Items) == 0 {
+			continue
+		}
+		in.Status.ConnectionLevel = connectionLevel + 1
+		in.fillNorthPeers(northPeers)
+		in.setNICsDirections(list)
+	}
+}
+
+// Determines what Switch resources are the known
+// peers for current Switch.
+func (in *Switch) getPeers(list *SwitchList) (result *SwitchList) {
+	result = &SwitchList{Items: make([]Switch, 0)}
+	for _, item := range list.Items {
+		for _, data := range in.Status.Interfaces {
+			if data.Peer.ChassisID == item.Spec.Chassis.ChassisID {
+				result.Items = append(result.Items, item)
+			}
+		}
+	}
+	return
+}
+
+// fillNorthPeers fills resource reference info for switch's
+// north peers
+func (in *Switch) fillNorthPeers(list *SwitchList) {
+	for _, item := range list.Items {
+		for _, nicData := range in.Status.Interfaces {
+			if nicData.Peer.ChassisID == item.Spec.Chassis.ChassisID {
+				nicData.Peer.ResourceReference.APIVersion = item.APIVersion
+				nicData.Peer.ResourceReference.Kind = item.Kind
+				nicData.Peer.ResourceReference.Name = item.Name
+				nicData.Peer.ResourceReference.Namespace = item.Namespace
+			}
+		}
+	}
+}
+
+// setNICsDirections updates NICs' direction field according to
+// the computed connection levels
+func (in *Switch) setNICsDirections(list *SwitchList) {
+	if in.Status.ConnectionLevel == 0 {
+		for _, nicData := range in.Status.Interfaces {
+			nicData.Direction = CDirectionSouth
+		}
+		return
+	}
+	for _, item := range list.Items {
+		for _, nicData := range in.Status.Interfaces {
+			peerFound := nicData.Peer.ChassisID == item.Spec.Chassis.ChassisID
+			peerIsNorth := in.Status.ConnectionLevel > item.Status.ConnectionLevel
+			peerIsSouth := in.Status.ConnectionLevel < item.Status.ConnectionLevel
+			if peerFound && peerIsNorth {
+				nicData.Direction = CDirectionNorth
+			}
+			if peerFound && peerIsSouth {
+				nicData.Direction = CDirectionSouth
+			}
+		}
+	}
 }
 
 // Creates map with switches' connection levels as keys
@@ -346,12 +779,18 @@ func (in *SwitchList) buildConnectionMap() (ConnectionsMap, []uint8) {
 	connectionsMap := make(ConnectionsMap)
 	keys := make([]uint8, 0)
 	for _, item := range in.Items {
-		if _, ok := connectionsMap[item.Status.ConnectionLevel]; !ok {
-			connectionsMap[item.Status.ConnectionLevel] = []Switch{item}
-			keys = append(keys, item.Status.ConnectionLevel)
-		} else {
-			connectionsMap[item.Status.ConnectionLevel] = append(connectionsMap[item.Status.ConnectionLevel], item)
+		if item.Status.State == CEmptyString {
+			continue
 		}
+		list, ok := connectionsMap[item.Status.ConnectionLevel]
+		if !ok {
+			list = &SwitchList{}
+			list.Items = append(list.Items, item)
+			connectionsMap[item.Status.ConnectionLevel] = list
+			keys = append(keys, item.Status.ConnectionLevel)
+			continue
+		}
+		list.Items = append(list.Items, item)
 	}
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i] < keys[j]
@@ -359,775 +798,246 @@ func (in *SwitchList) buildConnectionMap() (ConnectionsMap, []uint8) {
 	return connectionsMap, keys
 }
 
-// Returns minimal existing connection level value.
-func (in *SwitchList) minimumConnectionLevel() uint8 {
-	result := uint8(255)
-	for _, item := range in.Items {
-		if item.Status.ConnectionLevel < result {
-			result = item.Status.ConnectionLevel
-		}
-	}
-	return result
+// SubnetsDefined checks whether switch subnets are defined
+func (in *Switch) SubnetsDefined() bool {
+	return in.Status.SubnetV4.CIDR != CEmptyString && in.Status.SubnetV6.CIDR != CEmptyString
 }
 
-// GetTopLevelSwitch searches for Switch resource with
-// connection level equals to zero in ConnectionsMap.
-// Return nil in case Switch was not found.
-func (in *SwitchList) GetTopLevelSwitch() *Switch {
-	connectionsMap, _ := in.buildConnectionMap()
-	if switches, ok := connectionsMap[0]; ok {
-		return &switches[0]
-	}
-	return nil
-}
-
-// Constructs map of PeerSpec objects based on stored
-// Switch interfaces.
-// Return map where interface name is a key and PeerSpec
-// is a value.
-func (in *Switch) getBaseConnections() map[string]*PeerSpec {
-	result := make(map[string]*PeerSpec)
-	for name, data := range in.Spec.Interfaces {
-		if strings.HasPrefix(name, CSwitchPortPrefix) && data.PeerChassisID != CEmptyString {
-			result[name] = &PeerSpec{
-				Name:      CEmptyString,
-				Namespace: CEmptyString,
-				ChassisID: data.PeerChassisID,
-				Type:      data.PeerType,
-				PortName:  data.PeerPortDescription,
-			}
-		}
-	}
-	return result
-}
-
-// Defines the Switch role according to existing peers
-func (in *Switch) getRole(peers map[string]*PeerSpec) Role {
-	for _, data := range peers {
-		if data.Type == CMachineType {
-			return CLeafRole
-		}
-	}
-	return CSpineRole
-}
-
-// Moves peers between south and north peer lists
-// according to changes in peers connection levels.
-func (in *Switch) MovePeers(swl *SwitchList) {
-	if in.Status.ConnectionLevel == 0 {
-		for name, data := range in.Status.NorthConnections.Peers {
-			in.Status.SouthConnections.Peers[name] = data
-			delete(in.Status.NorthConnections.Peers, name)
-		}
-		return
-	}
-
-	for _, sw := range swl.Items {
-		for name, data := range in.Status.SouthConnections.Peers {
-			southPeerFound := data.ChassisID == sw.Spec.Chassis.ChassisID
-			higherConnLevel := sw.Status.ConnectionLevel < in.Status.ConnectionLevel
-			if southPeerFound && higherConnLevel {
-				in.Status.NorthConnections.Peers[name] = data
-				delete(in.Status.SouthConnections.Peers, name)
-			}
-		}
-		for name, data := range in.Status.NorthConnections.Peers {
-			northPeerFound := data.ChassisID == sw.Spec.Chassis.ChassisID
-			lowerConnLevel := sw.Status.ConnectionLevel > in.Status.ConnectionLevel
-			if northPeerFound && lowerConnLevel {
-				in.Status.SouthConnections.Peers[name] = data
-				delete(in.Status.NorthConnections.Peers, name)
-			}
-		}
-	}
-}
-
-func (in *Switch) CleanUpPeers() {
-	for inf, data := range in.Status.SouthConnections.Peers {
-		if data.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
-			delete(in.Status.SouthConnections.Peers, inf)
-		}
-	}
-	for inf, data := range in.Status.NorthConnections.Peers {
-		if data.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
-			delete(in.Status.NorthConnections.Peers, inf)
-		}
-	}
-}
-
-// Determines what Switch resources are the known
-// peers for current Switch.
-// Return SwitchList containing peers.
-func (in *Switch) getPeers(list []Switch) *SwitchList {
-	result := &SwitchList{}
-	for _, item := range list {
-		for _, data := range in.Spec.Interfaces {
-			if data.PeerChassisID == item.Spec.Chassis.ChassisID {
-				result.Items = append(result.Items, item)
-			}
-		}
-	}
-	return result
-}
-
-// Rewrites stored north peers info with fully defined PeerSpec
-func (in *Switch) updateNorthPeers(list *SwitchList) {
-	for _, item := range list.Items {
-		for name, data := range item.Spec.Interfaces {
-			if data.PeerChassisID == in.Spec.Chassis.ChassisID {
-				in.Status.NorthConnections.Peers[data.PeerPortDescription] = &PeerSpec{
-					Name:      item.Name,
-					Namespace: item.Namespace,
-					ChassisID: item.Spec.Chassis.ChassisID,
-					Type:      CSwitchType,
-					PortName:  name,
-				}
-			}
-		}
-	}
-}
-
-// Checks whether all stored peers are unique and fully defined.
-// Return true if so, false otherwise.
-func (in *Switch) peersOk(swl *SwitchList) bool {
-	if in.Status.ConnectionLevel == 0 && len(in.Status.NorthConnections.Peers) > 0 {
-		return false
-	}
-
-	for _, sw := range swl.Items {
-		for inf, peer := range in.Status.SouthConnections.Peers {
-			if peer.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
-				return false
-			}
-			southPeerFound := peer.ChassisID == sw.Spec.Chassis.ChassisID
-			higherConnLevel := sw.Status.ConnectionLevel < in.Status.ConnectionLevel
-			if southPeerFound && higherConnLevel {
-				return false
-			}
-		}
-		for inf, peer := range in.Status.NorthConnections.Peers {
-			if peer.ChassisID != in.Spec.Interfaces[inf].PeerChassisID {
-				return false
-			}
-			northPeerFound := peer.ChassisID == sw.Spec.Chassis.ChassisID
-			lowerConnLevel := sw.Status.ConnectionLevel > in.Status.ConnectionLevel
-			if northPeerFound && lowerConnLevel {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func (in *Switch) peersDefined() bool {
-	for inf, data := range in.Spec.Interfaces {
-		if !strings.HasPrefix(inf, CSwitchPortPrefix) || data.PeerChassisID == CEmptyString {
-			continue
-		}
-		southPeer, southPeerFound := in.Status.SouthConnections.Peers[inf]
-		northPeer, northPeerFound := in.Status.NorthConnections.Peers[inf]
-		if southPeerFound && northPeerFound {
-			return false
-		}
-		if !(southPeerFound || northPeerFound) {
-			return false
-		}
-		if southPeerFound && southPeer.ChassisID != data.PeerChassisID {
-			return false
-		}
-		if northPeerFound && northPeer.ChassisID != data.PeerChassisID {
-			return false
-		}
-		if data.PeerType == CMachineType && !southPeerFound {
-			return false
-		}
-	}
-	return true
-}
-
-// Checks whether all stored peers defined correctly: north
-// peers should have connection level less by one than current
-// Switch, south peers should have connection level greater by
-// one than current switch.
-// Return true if peers defined correctly, false otherwise.
-func (in *Switch) connectionsOk(list *SwitchList) bool {
-	if in.Status.ConnectionLevel == 0 && in.Status.NorthConnections.Count != 0 {
-		return false
-	}
-	for _, item := range list.Items {
-		for _, peer := range in.Status.NorthConnections.Peers {
-			if peer.ChassisID == item.Spec.Chassis.ChassisID {
-				if !item.switchInSouthPeers(in) {
-					return false
-				}
-				if in.Status.ConnectionLevel != item.Status.ConnectionLevel+1 {
-					return false
-				}
-			}
-		}
-		for _, peer := range in.Status.SouthConnections.Peers {
-			if peer.ChassisID == item.Spec.Chassis.ChassisID {
-				if !item.switchInNorthPeers(in) {
-					return false
-				}
-				if in.Status.ConnectionLevel != item.Status.ConnectionLevel-1 {
-					return false
-				}
-			}
-		}
-	}
-	return true
-}
-
-// Checks whether Switch provided as argument is in the south
-// peers of current Switch.
-func (in *Switch) switchInSouthPeers(tgt *Switch) bool {
-	if in.Status.SouthConnections == nil {
-		return false
-	}
-	for _, peer := range in.Status.SouthConnections.Peers {
-		if peer.ChassisID == tgt.Spec.Chassis.ChassisID {
-			return true
-		}
-	}
-	return false
-}
-
-// Checks whether Switch provided as argument is in the north
-// peers of current Switch.
-func (in *Switch) switchInNorthPeers(tgt *Switch) bool {
-	if in.Status.NorthConnections == nil {
-		return false
-	}
-	for _, peer := range in.Status.NorthConnections.Peers {
-		if peer.ChassisID == tgt.Spec.Chassis.ChassisID {
-			return true
-		}
-	}
-	return false
-}
-
-// Defines the amount of needed ip addresses according to the
-// number of switch ports, used lanes and address type (IPv4 or IPv6).
-func (in *Switch) GetAddressCount(addrType subnetv1alpha1.SubnetAddressType) int64 {
-	count := int64(0)
-	multiplier := uint8(0)
-	switch addrType {
-	case subnetv1alpha1.CIPv4SubnetType:
-		multiplier = CIPv4AddressesPerLane
-	case subnetv1alpha1.CIPv6SubnetType:
-		multiplier = CIPv6AddressesPerLane
-	}
-	for inf, portData := range in.Spec.Interfaces {
-		if strings.HasPrefix(inf, CSwitchPortPrefix) {
-			count += int64(portData.Lanes * multiplier)
-		}
-	}
-	return count
-}
-
-// NamespacedName returns switch's name and namespace as
-// built-in type.
-func (in *Switch) NamespacedName() types.NamespacedName {
-	return types.NamespacedName{
-		Namespace: in.Namespace,
-		Name:      in.Name,
-	}
-}
-
-// Prepare constructs Switch resource for creation from
-// provided Inventory resource.
-func (in *Switch) Prepare(src *inventoriesv1alpha1.Inventory) {
-	interfaces, switchPorts := PrepareInterfaces(src.Spec.NICs.NICs)
-	in.ObjectMeta = metav1.ObjectMeta{
-		Name:      src.Name,
-		Namespace: CNamespace,
-	}
-	in.Spec = SwitchSpec{
-		Hostname:    src.Spec.Host.Name,
-		Location:    &LocationSpec{},
-		TotalPorts:  src.Spec.NICs.Count,
-		SwitchPorts: switchPorts,
-		Distro: &SwitchDistroSpec{
-			OS:      CSonicSwitchOs,
-			Version: src.Spec.Distro.CommitId,
-			ASIC:    src.Spec.Distro.AsicType,
-		},
-		Chassis: &SwitchChassisSpec{
-			Manufacturer: src.Spec.System.Manufacturer,
-			SKU:          src.Spec.System.ProductSKU,
-			Serial:       src.Spec.System.SerialNumber,
-			ChassisID:    getChassisId(src.Spec.NICs.NICs),
-		},
-		Interfaces: interfaces,
-	}
-}
-
-// FillStatusOnCreate fills Switch status on resource creation.
-func (in *Switch) FillStatusOnCreate() {
-	peers := in.getBaseConnections()
-	in.Status = SwitchStatus{
-		Role:            in.getRole(peers),
-		ConnectionLevel: 255,
-		SouthSubnetV4:   nil,
-		SouthSubnetV6:   nil,
-		NorthConnections: &ConnectionsSpec{
-			Count: 0,
-			Peers: make(map[string]*PeerSpec),
-		},
-		SouthConnections: &ConnectionsSpec{
-			Count: len(peers),
-			Peers: peers,
-		},
-		State:     CSwitchStateInitializing,
-		ScanPorts: false,
-		LAGs:      nil,
-		Configuration: &ConfigurationSpec{
-			Managed: false,
-		},
-	}
-}
-
-func (in *Switch) FinalizerOk() bool {
-	return controllerutil.ContainsFinalizer(in, CSwitchFinalizer)
-}
-
-// SetState updates switch's resource state
-func (in *Switch) SetState(state State) {
-	if in.Status.State != state {
-		in.Status.State = state
-	}
-}
-
-func (in *Switch) CheckState(state State) bool {
-	return in.Status.State == state
-}
-
-func (in *Switch) GetUsedNICs() []string {
-	result := make([]string, 0)
-	for nic := range in.Status.SouthConnections.Peers {
-		result = append(result, nic)
-	}
-	for nic := range in.Status.NorthConnections.Peers {
-		result = append(result, nic)
-	}
-	return result
-}
-
-// SetDiscoveredPeers rewrites existing south peers data
-// with fully filled PeerSpec according to info stored
-// in interfaces specs.
-func (in *Switch) SetDiscoveredPeers(swl *SwitchList) {
-	for name, data := range in.Spec.Interfaces {
-		if !strings.HasPrefix(name, CSwitchPortPrefix) || data.PeerChassisID == CEmptyString {
-			continue
-		}
-		_, found := in.Status.NorthConnections.Peers[name]
-		if found {
-			continue
-		}
-		for _, sw := range swl.Items {
-			if sw.Spec.Chassis.ChassisID == data.PeerChassisID {
-				in.Status.SouthConnections.Peers[name] = &PeerSpec{
-					Name:      sw.Name,
-					Namespace: sw.Namespace,
-					ChassisID: data.PeerChassisID,
-					Type:      data.PeerType,
-					PortName:  data.PeerPortDescription,
-				}
-			}
-		}
-	}
-}
-
-// UpdateConnectionLevel updates switch's connection level
-// and peers info.
-func (in *Switch) UpdateConnectionLevel(list *SwitchList) {
-	connectionsMap, keys := list.buildConnectionMap()
-	if !connectionsMap.topLevelSpinesDefined() {
-		return
-	}
-	if in.Status.ConnectionLevel == 0 {
-		in.MovePeers(list)
-	} else {
-		for _, connectionLevel := range keys {
-			switches := connectionsMap[connectionLevel]
-			northPeers := in.getPeers(switches)
-			if len(northPeers.Items) > 0 {
-				minConnectionLevel := northPeers.minimumConnectionLevel()
-				if minConnectionLevel != 255 && minConnectionLevel < in.Status.ConnectionLevel {
-					in.Status.ConnectionLevel = minConnectionLevel + 1
-					in.updateNorthPeers(northPeers)
-					in.MovePeers(list)
-				}
-			}
-		}
-	}
-	in.Status.NorthConnections.Count = len(in.Status.NorthConnections.Peers)
-	in.Status.SouthConnections.Count = len(in.Status.SouthConnections.Peers)
-}
-
-// PeersProcessingFinished checks whether peers are
-// correctly determined for all existing switches.
-func (in *Switch) PeersProcessingFinished(swl *SwitchList) bool {
-	return in.peersDefined() && in.peersOk(swl)
-}
-
-// ConnectionLevelDefined checks whether connection
-// level is already defined
-func (in *Switch) ConnectionLevelDefined(swl *SwitchList, swa *SwitchAssignment) bool {
-	if swa != nil && in.Status.ConnectionLevel != 0 {
-		return false
-	}
-	if in.Status.ConnectionLevel == 255 {
-		return false
-	}
-	if !in.connectionsOk(swl) {
-		return false
-	}
-	return true
-}
-
-// UpdateInterfacesFromInventory fulfills switch's interfaces
-// data according to updated inventory data
-func (in *Switch) UpdateInterfacesFromInventory(updated map[string]*InterfaceSpec) []string {
-	result := make([]string, 0)
-	for inf := range in.Spec.Interfaces {
-		if _, ok := updated[inf]; !ok {
-			delete(in.Spec.Interfaces, inf)
-			delete(in.Status.SouthConnections.Peers, inf)
-			delete(in.Status.NorthConnections.Peers, inf)
-			result = append(result, inf)
-		}
-	}
-	for inf, data := range updated {
-		stored, ok := in.Spec.Interfaces[inf]
-		if !ok {
-			in.Spec.Interfaces[inf] = data
-		} else {
-			if data.PeerChassisID != stored.PeerChassisID {
-				stored.IPv4 = CEmptyString
-				stored.IPv6 = CEmptyString
-			}
-			stored.PeerType = data.PeerType
-			stored.PeerChassisID = data.PeerChassisID
-			stored.PeerSystemName = data.PeerSystemName
-			stored.PeerPortID = data.PeerPortID
-			stored.PeerPortDescription = data.PeerPortDescription
-		}
-	}
-	return result
-}
-
-// UpdateStoredPeers updates peers data and switch role
-// according to connected peers.
-func (in *Switch) UpdateStoredPeers() {
-	for name, data := range in.Spec.Interfaces {
-		if !strings.HasPrefix(name, CSwitchPortPrefix) || data.PeerChassisID == CEmptyString {
-			continue
-		}
-		_, northPeer := in.Status.NorthConnections.Peers[name]
-		_, southPeer := in.Status.SouthConnections.Peers[name]
-		noPeerStored := northPeer || southPeer
-		if !noPeerStored {
-			in.Status.SouthConnections.Peers[name] = &PeerSpec{
-				Name:      CEmptyString,
-				Namespace: CEmptyString,
-				ChassisID: data.PeerChassisID,
-				Type:      data.PeerType,
-				PortName:  data.PeerPortDescription,
-			}
-		}
-	}
-}
-
-func (in *Switch) RoleOk() bool {
-	machineConnected := false
-	for _, peerData := range in.Status.SouthConnections.Peers {
-		if peerData.Type == CMachineType {
-			machineConnected = true
-		}
-	}
-	if machineConnected && in.Status.Role == CSpineRole {
-		return false
-	}
-	if !machineConnected && in.Status.Role == CLeafRole {
-		return false
-	}
-	return true
-}
-
-func (in *Switch) UpdateRole() {
-	machineConnected := false
-	for _, peerData := range in.Status.SouthConnections.Peers {
-		if peerData.Type == CMachineType {
-			machineConnected = true
-		}
-	}
-	if machineConnected {
-		in.Status.Role = CLeafRole
-	} else {
-		in.Status.Role = CSpineRole
-	}
-}
-
-// UpdateSouthInterfacesAddresses defines addresses for
-// switch interfaces according to the switch's south subnets.
-func (in *Switch) UpdateSouthInterfacesAddresses() {
-	if in.Status.SouthSubnetV4 != nil && in.Status.SouthSubnetV4.CIDR != CEmptyString {
-		_, network, _ := net.ParseCIDR(in.Status.SouthSubnetV4.CIDR)
-		for iface, data := range in.Spec.Interfaces {
-			if !strings.HasPrefix(iface, CSwitchPortPrefix) {
-				continue
-			}
-			if _, ok := in.Status.SouthConnections.Peers[iface]; !ok {
-				continue
-			}
-			ifaceSubnet := getInterfaceSubnet(iface, CSwitchPortPrefix, network, subnetv1alpha1.CIPv4SubnetType)
-			ifaceAddress, _ := gocidr.Host(ifaceSubnet, 1)
-			data.IPv4 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv4InterfaceSubnetMask)
-		}
-	}
-	if in.Status.SouthSubnetV6 != nil && in.Status.SouthSubnetV6.CIDR != CEmptyString {
-		_, network, _ := net.ParseCIDR(in.Status.SouthSubnetV6.CIDR)
-		for iface, data := range in.Spec.Interfaces {
-			if !strings.HasPrefix(iface, CSwitchPortPrefix) {
-				continue
-			}
-			if _, ok := in.Status.SouthConnections.Peers[iface]; !ok {
-				continue
-			}
-			ifaceSubnet := getInterfaceSubnet(iface, CSwitchPortPrefix, network, subnetv1alpha1.CIPv6SubnetType)
-			ifaceAddress, _ := gocidr.Host(ifaceSubnet, 0)
-			data.IPv6 = fmt.Sprintf("%s/%d", ifaceAddress.String(), CIPv6InterfaceSubnetMask)
-		}
-	}
-}
-
-// UpdateNorthInterfacesAddresses defines addresses for
-// switch interfaces, that are connected to upstream switches,
-// according to the peers' interfaces addresses.
-func (in *Switch) UpdateNorthInterfacesAddresses(swl *SwitchList) {
-	for inf, peer := range in.Status.NorthConnections.Peers {
-		for _, item := range swl.Items {
-			if peer.ChassisID == item.Spec.Chassis.ChassisID {
-				iface := in.Spec.Interfaces[inf]
-				peerIface := item.Spec.Interfaces[peer.PortName]
-				ipv4Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv4SubnetType)
-				ipv6Addr := peerIface.RequestAddress(subnetv1alpha1.CIPv6SubnetType)
-				if ipv4Addr != nil {
-					iface.IPv4 = fmt.Sprintf("%s/%d", ipv4Addr.String(), CIPv4InterfaceSubnetMask)
-				}
-				if ipv6Addr != nil {
-					iface.IPv6 = fmt.Sprintf("%s/%d", ipv6Addr.String(), CIPv6InterfaceSubnetMask)
-				}
-			}
-		}
-	}
-}
-
-func (in *Switch) subnetsNotNil() bool {
-	return in.Status.SouthSubnetV4 != nil && in.Status.SouthSubnetV6 != nil
-}
-
-func (in *Switch) subnetsCorrect() bool {
-	return in.Status.SouthSubnetV4.ParentSubnet.Name == in.GetSwitchSubnetName(subnetv1alpha1.CIPv4SubnetType) &&
-		in.Status.SouthSubnetV6.ParentSubnet.Name == in.GetSwitchSubnetName(subnetv1alpha1.CIPv6SubnetType)
-}
-
-func (in *Switch) subnetsCIDRDefined() bool {
-	return in.Status.SouthSubnetV4.CIDR != CEmptyString && in.Status.SouthSubnetV6.CIDR != CEmptyString
-}
-
-// SubnetsOk checks whether south subnets are defined for the switch
-func (in *Switch) SubnetsOk() bool {
-	return in.subnetsNotNil() && in.subnetsCorrect() && in.subnetsCIDRDefined()
-}
-
-// AddressesDefined checks whether ip addresses defined
-// for all used switch interfaces.
-func (in *Switch) AddressesDefined() bool {
-	for inf, data := range in.Spec.Interfaces {
-		_, northNIC := in.Status.NorthConnections.Peers[inf]
-		_, southNIC := in.Status.SouthConnections.Peers[inf]
-		nicUsed := northNIC || southNIC
-		if strings.HasPrefix(inf, "Ethernet") && nicUsed {
-			if data.IPv4 == CEmptyString || data.IPv6 == CEmptyString {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-// AddressesOk checks whether ip addresses defined for
-// "north" interfaces are in the same subnet with
-// addresses defined for peer's interfaces with which
-// they are interconnected.
-func (in *Switch) AddressesOk(swl *SwitchList) bool {
-	bookedAddresses := map[string]string{}
-	for inf, peer := range in.Status.NorthConnections.Peers {
-		for _, sw := range swl.Items {
-			if sw.Name == peer.Name {
-				peerNic := sw.Spec.Interfaces[peer.PortName]
-				localNic := in.Spec.Interfaces[inf]
-				_, peerV4Net, _ := net.ParseCIDR(peerNic.IPv4)
-				_, localV4Net, _ := net.ParseCIDR(localNic.IPv4)
-				if !reflect.DeepEqual(peerV4Net, localV4Net) {
-					return false
-				}
-				_, peerV6Net, _ := net.ParseCIDR(peerNic.IPv6)
-				_, localV6Net, _ := net.ParseCIDR(localNic.IPv6)
-				if !reflect.DeepEqual(peerV6Net, localV6Net) {
-					return false
-				}
-			}
-		}
-	}
-
-	for inf, data := range in.Spec.Interfaces {
-		if data.IPv4 == CEmptyString || data.IPv6 == CEmptyString {
-			continue
-		}
-		storedNic, ok := bookedAddresses[data.IPv4]
-		if ok && storedNic != inf {
-			return false
-		}
-		if !ok {
-			bookedAddresses[data.IPv4] = inf
-		}
-		storedNic, ok = bookedAddresses[data.IPv6]
-		if ok && storedNic != inf {
-			return false
-		}
-		if !ok {
-			bookedAddresses[data.IPv6] = inf
-		}
-	}
-	return true
-}
-
-func (in *Switch) InterfacesMatchInventory(inv *inventoriesv1alpha1.Inventory) bool {
-	interfaces, _ := PrepareInterfaces(inv.Spec.NICs.NICs)
-	for name := range in.Spec.Interfaces {
-		if _, ok := interfaces[name]; !ok {
-			return false
-		}
-	}
-	for name, data := range interfaces {
-		stored, ok := in.Spec.Interfaces[name]
-		if !ok {
-			return false
-		}
-		if data.Lanes != stored.Lanes {
-			return false
-		}
-		if data.FEC != stored.FEC {
-			return false
-		}
-		if data.PeerChassisID != stored.PeerChassisID {
-			return false
-		}
-		if data.PeerPortID != stored.PeerPortID {
-			return false
-		}
-		if data.PeerPortDescription != stored.PeerPortDescription {
-			return false
-		}
-		if data.PeerType != stored.PeerType {
-			return false
-		}
-		if data.PeerSystemName != stored.PeerSystemName {
-			return false
-		}
-	}
-	return true
-}
-
-func (in *Switch) SwitchAddressesDefined() bool {
-	return in.Spec.IPv4 != CEmptyString && in.Spec.IPv6 != CEmptyString
-}
-
-func (in *Switch) ConfigManagerStatusOk() bool {
-	return in.Status.Configuration != nil
-}
-
-func (in *Switch) SetConfigManagerStatus(managerType string) {
-	if managerType == CEmptyString {
-		in.Status.Configuration = &ConfigurationSpec{
-			Managed: false,
-		}
-	} else {
-		in.Status.Configuration.Type = managerType
-	}
-}
-
-func (in *Switch) ConfigManagerTimeoutOk() bool {
-	if in.Status.Configuration.Managed {
-		loc, _ := time.LoadLocation("UTC")
-		lastCheck, _ := time.ParseInLocation(time.UnixDate, in.Status.Configuration.LastCheck, loc)
-		return time.Now().In(loc).Sub(lastCheck).Seconds() < CSwitchConfigCheckTimeout.Seconds()
-	} else {
-		return true
-	}
-}
-
-func (in *Switch) GetSwitchSubnetName(addressType subnetv1alpha1.SubnetAddressType) string {
-	var suffix string
-	switch addressType {
-	case subnetv1alpha1.CIPv4SubnetType:
-		suffix = "v4"
-	case subnetv1alpha1.CIPv6SubnetType:
+// SwitchSubnetName returns the switch south subnet resource name
+// depending on address family
+func (in *Switch) SwitchSubnetName(af ipamv1alpha1.SubnetAddressType) string {
+	suffix := "v4"
+	if af == ipamv1alpha1.CIPv6SubnetType {
 		suffix = "v6"
 	}
 	return fmt.Sprintf("%s-%s", in.Name, suffix)
 }
 
-func (in *Switch) GetLoopbackSubnetName(addressType subnetv1alpha1.SubnetAddressType) string {
-	var suffix string
-	switch addressType {
-	case subnetv1alpha1.CIPv4SubnetType:
-		suffix = "v4"
-	case subnetv1alpha1.CIPv6SubnetType:
-		suffix = "v6"
+// LoopbackIPResourceName returns the switch loopback IP resource name
+// depending on address family
+func (in *Switch) LoopbackIPResourceName(af ipamv1alpha1.SubnetAddressType) string {
+	suffix := "ipv4"
+	if af == ipamv1alpha1.CIPv6SubnetType {
+		suffix = "ipv6"
 	}
 	return fmt.Sprintf("%s-lo-%s", in.Name, suffix)
 }
 
-func (in *Switch) GetInterfaceSubnetName(nic string, addressType subnetv1alpha1.SubnetAddressType) string {
-	var suffix string
-	switch addressType {
-	case subnetv1alpha1.CIPv4SubnetType:
-		suffix = "v4"
-	case subnetv1alpha1.CIPv6SubnetType:
+// InterfaceSubnetName returns the interface subnet resource name
+// depending on address family
+func (in *Switch) InterfaceSubnetName(nic string, af ipamv1alpha1.SubnetAddressType) string {
+	suffix := "v4"
+	if af == ipamv1alpha1.CIPv6SubnetType {
 		suffix = "v6"
 	}
 	return fmt.Sprintf("%s-%s-%s", in.Name, strings.ToLower(nic), suffix)
 }
 
-func (in Switch) StatusDeepEqual(prev Switch) bool {
-	in.Status.Configuration = &ConfigurationSpec{}
-	prev.Status.Configuration = &ConfigurationSpec{}
-	return reflect.DeepEqual(in.Status, prev.Status)
+// InterfaceSubnetName returns the interface subnet resource name
+// depending on address family
+func (in *Switch) InterfaceIPName(nic string, af ipamv1alpha1.SubnetAddressType) string {
+	suffix := "ipv4"
+	if af == ipamv1alpha1.CIPv6SubnetType {
+		suffix = "ipv6"
+	}
+	return fmt.Sprintf("%s-%s-%s", in.Name, strings.ToLower(nic), suffix)
+}
+
+// Defines the amount of needed ip addresses according to the
+// number of switch ports, used lanes and address type (IPv4 or IPv6).
+func (in *Switch) GetAddressCount(af ipamv1alpha1.SubnetAddressType) (count int64) {
+	multiplier := CIPv4AddressesPerLane
+	if af == ipamv1alpha1.CIPv6SubnetType {
+		multiplier = CIPv6AddressesPerLane
+	}
+	for nic, nicData := range in.Status.Interfaces {
+		if strings.HasPrefix(nic, CSwitchPortPrefix) {
+			count += int64(nicData.Lanes * multiplier)
+		}
+	}
+	return
+}
+
+// LoopbackAddressesDefined checks whether loopback addresses are filled
+// for the switch
+func (in *Switch) LoopbackAddressesDefined() bool {
+	return in.Status.LoopbackV4.Address != CEmptyString && in.Status.LoopbackV6.Address != CEmptyString
+}
+
+// UndefinedLoopbackAF returns the list of address families for which
+// loopback addresses are not defined
+func (in *Switch) UndefinedLoopbackAF() (afs []ipamv1alpha1.SubnetAddressType) {
+	if in.Status.LoopbackV4.Address == CEmptyString {
+		afs = append(afs, ipamv1alpha1.CIPv4SubnetType)
+	}
+	if in.Status.LoopbackV6.Address == CEmptyString {
+		afs = append(afs, ipamv1alpha1.CIPv6SubnetType)
+	}
+	return
+}
+
+// NICsAddressesDefined checks whether switch interfaces addresses
+// are defined and match interface's direction
+func (in *Switch) NICsAddressesDefined(list *SwitchList) bool {
+	return in.nicsIPsFilled() && in.nicsIPsCorrect(list)
+}
+
+func (in *Switch) nicsIPsFilled() bool {
+	for _, nicData := range in.Status.Interfaces {
+		if nicData.IPv4.Address == CEmptyString || nicData.IPv6.Address == CEmptyString {
+			return false
+		}
+	}
+	return true
+}
+
+func (in *Switch) nicsIPsCorrect(list *SwitchList) bool {
+	for _, nicData := range in.Status.Interfaces {
+		if nicData.Direction == CDirectionNorth {
+			if !in.nicIPsMatchNorthPeers(nicData, list) {
+				return false
+			}
+			continue
+		}
+		_, subnetV4, _ := net.ParseCIDR(in.Status.SubnetV4.CIDR)
+		nicIPv4, _, _ := net.ParseCIDR(nicData.IPv4.Address)
+		if !subnetV4.Contains(nicIPv4) {
+			return false
+		}
+		_, subnetV6, _ := net.ParseCIDR(in.Status.SubnetV6.CIDR)
+		nicIPv6, _, _ := net.ParseCIDR(nicData.IPv6.Address)
+		if !subnetV6.Contains(nicIPv6) {
+			return false
+		}
+	}
+	return true
+}
+
+func (in *Switch) nicIPsMatchNorthPeers(nicData *InterfaceSpec, list *SwitchList) bool {
+	for _, peer := range list.Items {
+		if peer.NamespacedName() != nicData.Peer.ResourceReference.NamespacedName() {
+			continue
+		}
+		peerSubnetV4Defined := peer.Status.SubnetV4.CIDR != CEmptyString
+		nicAddressV4Defined := nicData.IPv4.Address != CEmptyString
+		if !peerSubnetV4Defined || !nicAddressV4Defined {
+			return false
+		}
+		_, subnetV4, _ := net.ParseCIDR(peer.Status.SubnetV4.CIDR)
+		nicIPv4, _, _ := net.ParseCIDR(nicData.IPv4.Address)
+		if !subnetV4.Contains(nicIPv4) {
+			return false
+		}
+
+		peerSubnetV6Defined := peer.Status.SubnetV4.CIDR != CEmptyString
+		nicAddressV6Defined := nicData.IPv4.Address != CEmptyString
+		if !peerSubnetV6Defined || !nicAddressV6Defined {
+			return false
+		}
+		_, subnetV6, _ := net.ParseCIDR(peer.Status.SubnetV6.CIDR)
+		nicIPv6, _, _ := net.ParseCIDR(nicData.IPv6.Address)
+		if !subnetV6.Contains(nicIPv6) {
+			return false
+		}
+		break
+	}
+	return true
+}
+
+// UpdateNorthNICsIP updates interfaces specs with ipv4 and ipv6 addresses
+func (in *Switch) UpdateNorthNICsIP(list *SwitchList) (err error) {
+	for nic, nicData := range in.Status.Interfaces {
+		if !strings.HasPrefix(nic, CSwitchPortPrefix) {
+			continue
+		}
+		if nicData.Direction == CDirectionSouth {
+			continue
+		}
+		for _, item := range list.Items {
+			if nicData.Peer.ResourceReference.NamespacedName() != item.NamespacedName() {
+				continue
+			}
+			peerNICData := item.Status.Interfaces[nicData.Peer.PortDescription]
+			if nicAddressV4 := peerNICData.RequestAddress(ipamv1alpha1.CIPv4SubnetType); nicAddressV4 != nil {
+				nicData.IPv4.Address = fmt.Sprintf("%s/%d", nicAddressV4.String(), CIPv4InterfaceSubnetMask)
+			}
+			if nicAddressV6 := peerNICData.RequestAddress(ipamv1alpha1.CIPv6SubnetType); nicAddressV6 != nil {
+				nicData.IPv6.Address = fmt.Sprintf("%s/%d", nicAddressV6.String(), CIPv6InterfaceSubnetMask)
+			}
+		}
+	}
+	return
+}
+
+func (in *Switch) UpdateSouthNICsIP() (err error) {
+	for nic, nicData := range in.Status.Interfaces {
+		_, switchSubnetV4, err := net.ParseCIDR(in.Status.SubnetV4.CIDR)
+		if err != nil {
+			return err
+		}
+		nicSubnetV4 := getInterfaceSubnet(nic, CSwitchPortPrefix, switchSubnetV4, ipamv1alpha1.CIPv4SubnetType)
+		nicAddressV4, err := gocidr.Host(nicSubnetV4, 1)
+		if err != nil {
+			return err
+		}
+		nicData.IPv4.Address = fmt.Sprintf("%s/%d", nicAddressV4.String(), CIPv4InterfaceSubnetMask)
+
+		_, switchSubnetV6, err := net.ParseCIDR(in.Status.SubnetV6.CIDR)
+		if err != nil {
+			return err
+		}
+		nicSubnetV6 := getInterfaceSubnet(nic, CSwitchPortPrefix, switchSubnetV6, ipamv1alpha1.CIPv6SubnetType)
+		nicAddressV6, err := gocidr.Host(nicSubnetV6, 0)
+		if err != nil {
+			return err
+		}
+		nicData.IPv6.Address = fmt.Sprintf("%s/%d", nicAddressV6.String(), CIPv6InterfaceSubnetMask)
+	}
+	return
+}
+
+func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, af ipamv1alpha1.SubnetAddressType) *net.IPNet {
+	index, _ := strconv.Atoi(strings.ReplaceAll(name, namePrefix, CEmptyString))
+	prefix, _ := network.Mask.Size()
+	ifaceNet, _ := gocidr.Subnet(network, getInterfaceSubnetMaskLength(af)-prefix, index)
+	return ifaceNet
+}
+
+func getInterfaceSubnetMaskLength(af ipamv1alpha1.SubnetAddressType) int {
+	if af == ipamv1alpha1.CIPv4SubnetType {
+		return CIPv4InterfaceSubnetMask
+	}
+	return CIPv6InterfaceSubnetMask
 }
 
 // RequestAddress returns the IP address next for the
 // IP address of the interface.
-func (in *InterfaceSpec) RequestAddress(addrType subnetv1alpha1.SubnetAddressType) net.IP {
-	addr := net.IP{}
-	switch addrType {
-	case subnetv1alpha1.CIPv4SubnetType:
-		if in.IPv4 == CEmptyString {
-			return nil
+func (in *InterfaceSpec) RequestAddress(af ipamv1alpha1.SubnetAddressType) (ip net.IP) {
+	switch af {
+	case ipamv1alpha1.CIPv4SubnetType:
+		if in.IPv4.Address == CEmptyString {
+			return
 		}
-		_, cidr, _ := net.ParseCIDR(in.IPv4)
-		addr, _ = gocidr.Host(cidr, 2)
-	case subnetv1alpha1.CIPv6SubnetType:
-		if in.IPv6 == CEmptyString {
-			return nil
+		_, cidr, _ := net.ParseCIDR(in.IPv4.Address)
+		ip, _ = gocidr.Host(cidr, 2)
+	case ipamv1alpha1.CIPv6SubnetType:
+		if in.IPv6.Address == CEmptyString {
+			return
 		}
-		_, cidr, _ := net.ParseCIDR(in.IPv6)
-		addr, _ = gocidr.Host(cidr, 1)
+		_, cidr, _ := net.ParseCIDR(in.IPv6.Address)
+		ip, _ = gocidr.Host(cidr, 1)
 	}
-	return addr
+	return
+}
+
+func (in *Switch) IPAMResourcesCreated() bool {
+	for _, nicData := range in.Status.Interfaces {
+		if nicData.Direction == CDirectionNorth {
+			continue
+		}
+		if nicData.IPv4.ResourceReference == nil || nicData.IPv6.ResourceReference == nil {
+			return false
+		}
+	}
+	return true
 }

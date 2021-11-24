@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"encoding/json"
+	"bytes"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -25,7 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,17 +54,12 @@ var _ = Describe("Switch Webhook", func() {
 	Context("On Switch creation", func() {
 		It("Should set label", func() {
 			By("Create Switch resource")
-			sample := filepath.Join("..", "..", "config", "samples", "switches", "spine-0-1.fra3.infra.onmetal.de.yaml")
-			rawInfo := make(map[string]interface{})
+			sample := filepath.Join("..", "..", "config", "samples", "switch.switch.onmetal.de.yaml")
 			sw := &Switch{}
 			sampleBytes, err := ioutil.ReadFile(sample)
 			Expect(err).NotTo(HaveOccurred())
-			err = yaml.Unmarshal(sampleBytes, rawInfo)
-			Expect(err).NotTo(HaveOccurred())
-			data, err := json.Marshal(rawInfo)
-			Expect(err).NotTo(HaveOccurred())
-			err = json.Unmarshal(data, sw)
-			Expect(err).NotTo(HaveOccurred())
+			dec := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+			Expect(dec.Decode(sw)).NotTo(HaveOccurred())
 			Expect(k8sClient.Create(ctx, sw)).To(Succeed())
 			Expect(sw.Labels).Should(Equal(map[string]string{LabelChassisId: strings.ReplaceAll(sw.Spec.Chassis.ChassisID, ":", "-")}))
 		})

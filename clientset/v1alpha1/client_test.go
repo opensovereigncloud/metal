@@ -58,64 +58,18 @@ var _ = Describe("Switch client", func() {
 					Namespace: SwitchesNamespace,
 				},
 				Spec: switchv1alpha1.SwitchSpec{
-					Hostname:    SwitchName,
-					Location:    &switchv1alpha1.LocationSpec{},
-					TotalPorts:  5,
-					SwitchPorts: 4,
-					Distro: &switchv1alpha1.SwitchDistroSpec{
-						OS:      "SONiC",
-						Version: "1.0.0",
-						ASIC:    "broadcom",
+					Hostname: SwitchName,
+					Location: &switchv1alpha1.LocationSpec{},
+					SoftwarePlatform: &switchv1alpha1.SoftwarePlatformSpec{
+						OperatingSystem: "SONiC",
+						Version:         "1.0.0",
+						ASIC:            "broadcom",
 					},
-					Chassis: &switchv1alpha1.SwitchChassisSpec{
+					Chassis: &switchv1alpha1.ChassisSpec{
 						Manufacturer: "Edgecore",
 						SKU:          "1",
-						Serial:       "00000X00001",
+						SerialNumber: "00000X00001",
 						ChassisID:    "68:21:5f:47:0d:6e",
-					},
-					Interfaces: map[string]*switchv1alpha1.InterfaceSpec{
-						"eth0": {
-							Speed:               1000,
-							MTU:                 1500,
-							Lanes:               1,
-							FEC:                 "none",
-							MacAddress:          "68:21:5f:47:0d:6e",
-							IPv4:                "",
-							IPv6:                "",
-							PeerType:            "Switch",
-							PeerSystemName:      "mgmt-sw-1",
-							PeerChassisID:       "64:9d:99:15:56:1c",
-							PeerPortID:          "Eth 1/44",
-							PeerPortDescription: "Ethernet Port on unit 1, port 44",
-						},
-						"Ethernet0": {
-							Speed:      100000,
-							MTU:        9100,
-							Lanes:      4,
-							FEC:        "none",
-							MacAddress: "68:21:5f:47:0d:6e",
-						},
-						"Ethernet4": {
-							Speed:      100000,
-							MTU:        9100,
-							Lanes:      4,
-							FEC:        "none",
-							MacAddress: "68:21:5f:47:0d:6e",
-						},
-						"Ethernet8": {
-							Speed:      100000,
-							MTU:        9100,
-							Lanes:      4,
-							FEC:        "none",
-							MacAddress: "68:21:5f:47:0d:6e",
-						},
-						"Ethernet12": {
-							Speed:      100000,
-							MTU:        9100,
-							Lanes:      4,
-							FEC:        "none",
-							MacAddress: "68:21:5f:47:0d:6e",
-						},
 					},
 				},
 			}
@@ -202,7 +156,26 @@ var _ = Describe("Switch client", func() {
 			By("Updating Switch status")
 			createdSwitch, err = client.Get(ctx, SwitchName, v1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			createdSwitch.FillStatusOnCreate()
+			createdSwitch.Status = switchv1alpha1.SwitchStatus{
+				TotalPorts:      1,
+				SwitchPorts:     1,
+				Role:            switchv1alpha1.CSwitchRoleSpine,
+				ConnectionLevel: 0,
+				Interfaces: map[string]*switchv1alpha1.InterfaceSpec{"Ethernet0": {
+					MACAddress: "00:00:00:00:00:01",
+					FEC:        switchv1alpha1.CFECNone,
+					MTU:        9100,
+					Speed:      100000,
+					Lanes:      4,
+					State:      switchv1alpha1.CNICUp,
+					Direction:  switchv1alpha1.CDirectionSouth,
+				}},
+				Configuration: &switchv1alpha1.ConfigurationSpec{
+					Managed: false,
+					State:   switchv1alpha1.CSwitchConfInitial,
+				},
+				State: switchv1alpha1.CSwitchStateInitial,
+			}
 			go func() {
 				defer GinkgoRecover()
 				var updatedSwitch *switchv1alpha1.Switch

@@ -1,0 +1,10 @@
+apiVersion: switch.onmetal.de/v1alpha1
+kind: SwitchAssignment
+metadata:
+  name: assignment-sp2
+  namespace: onmetal
+spec:
+  chassisId: 68:21:5f:47:0d:6e
+  region:
+    availabilityZone: A
+    name: eu-west
