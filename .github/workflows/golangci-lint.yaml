@@ -1,0 +1,21 @@
+name: golangci-lint
+
+on:
+  pull_request:
+
+jobs:
+  golangci:
+    name: lint
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Configure git for private modules
+        run: git config --global url."https://${{ secrets.GIT_USER }}:${{ secrets.GIT_PASSWORD }}@github.com".insteadOf "https://github.com"
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.43.0
+          args: --timeout 5m
+ 
