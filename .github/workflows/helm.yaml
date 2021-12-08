@@ -17,7 +17,7 @@ jobs:
 
       - name: Lint Helm
         run: |
-          helm lint deploy/charts/hardware-api-gateway --strict
+          helm lint deploy/charts/hardware-api --strict
 
       - name: Checkout
         uses: actions/checkout@v2
@@ -38,7 +38,7 @@ jobs:
         uses: goodsmileduck/helm-push-action@v3.3.1
         env:
           SOURCE_DIR: 'deploy/charts'
-          CHART_FOLDER: 'hardware-api-gateway'
+          CHART_FOLDER: 'hardware-api'
           FORCE: 'True'
           CHARTMUSEUM_URL: ' https://core.harbor.onmetal.de/chartrepo/onmetal'
           CHARTMUSEUM_USER: '${{ secrets.CHARTMUSEUM_USER }}'
