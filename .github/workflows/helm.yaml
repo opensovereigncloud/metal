@@ -15,10 +15,6 @@ jobs:
         with:
           version: 'v3.6.2'
 
-      - name: Lint Helm
-        run: |
-          helm lint deploy/charts/hardware-api --strict
-
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -34,11 +30,11 @@ jobs:
         with:
           version: v3.4.0
 
-      - name: Run chart-releaser
+      - name: Run benchmark-releaser
         uses: goodsmileduck/helm-push-action@v3.3.1
         env:
-          SOURCE_DIR: 'deploy/charts'
-          CHART_FOLDER: 'hardware-api'
+          SOURCE_DIR: 'deploy/charts/apis'
+          CHART_FOLDER: 'benchmark'
           FORCE: 'True'
           CHARTMUSEUM_URL: ' https://core.harbor.onmetal.de/chartrepo/onmetal'
           CHARTMUSEUM_USER: '${{ secrets.CHARTMUSEUM_USER }}'
