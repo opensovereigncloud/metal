@@ -41,52 +41,8 @@ uint64
 </tr>
 </tbody>
 </table>
-<h3 id="benchmark.onmetal.de/v1alpha3.Deviation">Deviation
+<h3 id="benchmark.onmetal.de/v1alpha3.BenchmarkDeviation">BenchmarkDeviation
 </h3>
-<p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.MachineStatus">MachineStatus</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>disks</code><br/>
-<em>
-<a href="#benchmark.onmetal.de/v1alpha3.DiskDeviation">
-[]DiskDeviation
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>networks</code><br/>
-<em>
-<a href="#benchmark.onmetal.de/v1alpha3.NetworkDeviation">
-[]NetworkDeviation
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="benchmark.onmetal.de/v1alpha3.DiskDeviation">DiskDeviation
-</h3>
-<p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.Deviation">Deviation</a>)
-</p>
 <div>
 </div>
 <table>
@@ -105,94 +61,16 @@ string
 </em>
 </td>
 <td>
-<p>Name contains full device name (like &ldquo;/dev/hda&rdquo; etc)</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>value</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.DiskValue">
-[]DiskValue
-</a>
-</em>
-</td>
-<td>
-<p>Results contains disk benchmark results.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="benchmark.onmetal.de/v1alpha3.DiskValue">DiskValue
-</h3>
-<p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.DiskDeviation">DiskDeviation</a>)
-</p>
-<div>
-<p>DiskValue contains block (device) changes.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>ioPattern</code><br/>
-<em>
 string
 </em>
 </td>
 <td>
-<p>IOPattern defines type of I/O pattern (like &ldquo;read/write/readwrite&rdquo; etc)
-more types could be found here: <a href="https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite">https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite</a></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>smallBlockReadIops</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>smallBlockWriteIops</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>SmallBlockWriteIOPS contains benchmark result for write IOPS with small block size (device specified block size)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>bandwidthReadIops</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>BandwidthReadIOPS contains benchmark result for read IOPS with large block size (much larger then device specified block size)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>bandwidthWriteIops</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>BandwidthWriteIOPS contains benchmark result for write IOPS with large block size (much larger then device specified block size)</p>
 </td>
 </tr>
 </tbody>
@@ -314,54 +192,15 @@ map[string][]..Benchmark
 <tbody>
 <tr>
 <td>
-<code>deviation</code><br/>
+<code>machine_deviation</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.Deviation">
-Deviation
+<a href="#benchmark.onmetal.de/v1alpha3.[]..BenchmarkDeviation">
+map[string][]..BenchmarkDeviation
 </a>
 </em>
 </td>
 <td>
-<p>Deviation shows the difference between last and current benchmark results.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="benchmark.onmetal.de/v1alpha3.NetworkDeviation">NetworkDeviation
-</h3>
-<p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.Deviation">Deviation</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>name</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Name defines a name of network device</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>value</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Results contains disk benchmark results.</p>
+<p>MachineDeviation shows the difference between last and current benchmark results.</p>
 </td>
 </tr>
 </tbody>
@@ -369,5 +208,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>674c389</code>.
+on git commit <code>c1d9b53</code>.
 </em></p>
