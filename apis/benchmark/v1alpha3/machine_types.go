@@ -37,45 +37,7 @@ type MachineStatus struct {
 }
 
 type Deviation struct {
-	Disks    []DiskDeviation    `json:"disks,omitempty"`
-	Networks []NetworkDeviation `json:"networks,omitempty"`
-}
-
-type DiskDeviation struct {
-	// Name contains full device name (like "/dev/hda" etc)
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-	// Results contains disk benchmark results.
-	Value []DiskValue `json:"value"`
-}
-
-// DiskValue contains block (device) changes.
-// +kubebuilder:object:generate=true
-type DiskValue struct {
-	// IOPattern defines type of I/O pattern (like "read/write/readwrite" etc)
-	// more types could be found here: https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite
-	// +kubebuilder:validation:Required
-	IOPattern string `json:"ioPattern"`
-	// SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)
-	// +kubebuilder:validation:Required
-	SmallBlockReadIOPS string `json:"smallBlockReadIops"`
-	// SmallBlockWriteIOPS contains benchmark result for write IOPS with small block size (device specified block size)
-	// +kubebuilder:validation:Optional
-	SmallBlockWriteIOPS string `json:"smallBlockWriteIops"`
-	// BandwidthReadIOPS contains benchmark result for read IOPS with large block size (much larger then device specified block size)
-	// +kubebuilder:validation:Optional
-	BandwidthReadIOPS string `json:"bandwidthReadIops"`
-	// BandwidthWriteIOPS contains benchmark result for write IOPS with large block size (much larger then device specified block size)
-	// +kubebuilder:validation:Optional
-	BandwidthWriteIOPS string `json:"bandwidthWriteIops"`
-}
-
-type NetworkDeviation struct {
-	// Name defines a name of network device
-	// +kubebuilder:validation:Required
-	Name string `json:"name"`
-	// Results contains disk benchmark results.
-	Value string `json:"value"`
+	MachineDeviation map[string][]Benchmark `json:"benchmarks,omitempty"`
 }
 
 //+kubebuilder:object:root=true

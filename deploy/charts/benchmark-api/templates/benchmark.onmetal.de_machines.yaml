@@ -58,67 +58,20 @@ spec:
                 description: Deviation shows the difference between last and current
                   benchmark results.
                 properties:
-                  disks:
-                    items:
-                      properties:
-                        name:
-                          description: Name contains full device name (like "/dev/hda"
-                            etc)
-                          type: string
-                        value:
-                          description: Results contains disk benchmark results.
-                          items:
-                            description: DiskValue contains block (device) changes.
-                            properties:
-                              bandwidthReadIops:
-                                description: BandwidthReadIOPS contains benchmark
-                                  result for read IOPS with large block size (much
-                                  larger then device specified block size)
-                                type: string
-                              bandwidthWriteIops:
-                                description: BandwidthWriteIOPS contains benchmark
-                                  result for write IOPS with large block size (much
-                                  larger then device specified block size)
-                                type: string
-                              ioPattern:
-                                description: 'IOPattern defines type of I/O pattern
-                                  (like "read/write/readwrite" etc) more types could
-                                  be found here: https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite'
-                                type: string
-                              smallBlockReadIops:
-                                description: SmallBlockReadIOPS contains benchmark
-                                  result for read IOPS with small block size (device
-                                  specified block size)
-                                type: string
-                              smallBlockWriteIops:
-                                description: SmallBlockWriteIOPS contains benchmark
-                                  result for write IOPS with small block size (device
-                                  specified block size)
-                                type: string
-                            required:
-                            - ioPattern
-                            - smallBlockReadIops
-                            type: object
-                          type: array
-                      required:
-                      - name
-                      - value
-                      type: object
-                    type: array
-                  networks:
-                    items:
-                      properties:
-                        name:
-                          description: Name defines a name of network device
-                          type: string
-                        value:
-                          description: Results contains disk benchmark results.
-                          type: string
-                      required:
-                      - name
-                      - value
-                      type: object
-                    type: array
+                  benchmarks:
+                    additionalProperties:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            format: int64
+                            type: integer
+                        required:
+                        - name
+                        type: object
+                      type: array
+                    type: object
                 type: object
             type: object
         type: object

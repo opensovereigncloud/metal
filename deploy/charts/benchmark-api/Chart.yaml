@@ -2,8 +2,8 @@ apiVersion: v2
 name: benchmark-api
 description: A Helm chart with CRD for Hardware benchmark 
 
-type: library
+type: application
 
 version: 0.0.1
 
-appVersion: "0.0.1"
+appVersion: "0.0.2"
