@@ -1,5 +1,5 @@
 apiVersion: v2
-name: benchmark
+name: benchmark-api
 description: A Helm chart with CRD for Hardware benchmark 
 
 type: library

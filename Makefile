@@ -11,7 +11,7 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 	go generate ./...
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-BENCH_CHART_PATH := deploy/charts/apis/benchmark/templates
+BENCH_CHART_PATH := deploy/charts/benchmark-api/templates
 .PHONY: manifests
 manifests:
 	$(CONTROLLER_GEN) $(CRD_OPTIONS)  paths="./apis/benchmark/..." output:crd:artifacts:config=$(BENCH_CHART_PATH)
