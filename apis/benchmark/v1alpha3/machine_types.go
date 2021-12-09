@@ -32,12 +32,13 @@ type Benchmark struct {
 
 // MachineStatus contains machine benchmarks deviations.
 type MachineStatus struct {
-	// Deviation shows the difference between last and current benchmark results.
-	*Deviation `json:"deviation,omitempty"`
+	// MachineDeviation shows the difference between last and current benchmark results.
+	MachineDeviation map[string][]BenchmarkDeviation `json:"machine_deviation,omitempty"`
 }
 
-type Deviation struct {
-	MachineDeviation map[string][]Benchmark `json:"benchmarks,omitempty"`
+type BenchmarkDeviation struct {
+	Name  string `json:"name"`
+	Value string `json:"value,omitempty"`
 }
 
 //+kubebuilder:object:root=true

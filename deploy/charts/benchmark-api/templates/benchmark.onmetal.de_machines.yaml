@@ -54,24 +54,20 @@ spec:
           status:
             description: MachineStatus contains machine benchmarks deviations.
             properties:
-              deviation:
-                description: Deviation shows the difference between last and current
-                  benchmark results.
-                properties:
-                  benchmarks:
-                    additionalProperties:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          value:
-                            format: int64
-                            type: integer
-                        required:
-                        - name
-                        type: object
-                      type: array
+              machine_deviation:
+                additionalProperties:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                    required:
+                    - name
                     type: object
+                  type: array
+                description: MachineDeviation shows the difference between last and
+                  current benchmark results.
                 type: object
             type: object
         type: object

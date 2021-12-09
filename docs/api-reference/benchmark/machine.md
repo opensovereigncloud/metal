@@ -41,11 +41,8 @@ uint64
 </tr>
 </tbody>
 </table>
-<h3 id="benchmark.onmetal.de/v1alpha3.Deviation">Deviation
+<h3 id="benchmark.onmetal.de/v1alpha3.BenchmarkDeviation">BenchmarkDeviation
 </h3>
-<p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.MachineStatus">MachineStatus</a>)
-</p>
 <div>
 </div>
 <table>
@@ -58,11 +55,19 @@ uint64
 <tbody>
 <tr>
 <td>
-<code>benchmarks</code><br/>
+<code>name</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.[]..Benchmark">
-map[string][]..Benchmark
-</a>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
 </em>
 </td>
 <td>
@@ -187,15 +192,15 @@ map[string][]..Benchmark
 <tbody>
 <tr>
 <td>
-<code>deviation</code><br/>
+<code>machine_deviation</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.Deviation">
-Deviation
+<a href="#benchmark.onmetal.de/v1alpha3.[]..BenchmarkDeviation">
+map[string][]..BenchmarkDeviation
 </a>
 </em>
 </td>
 <td>
-<p>Deviation shows the difference between last and current benchmark results.</p>
+<p>MachineDeviation shows the difference between last and current benchmark results.</p>
 </td>
 </tr>
 </tbody>
@@ -203,5 +208,5 @@ Deviation
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>2717ceb</code>.
+on git commit <code>c1d9b53</code>.
 </em></p>
