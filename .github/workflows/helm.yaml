@@ -39,3 +39,13 @@ jobs:
           CHARTMUSEUM_URL: ' https://core.harbor.onmetal.de/chartrepo/onmetal'
           CHARTMUSEUM_USER: '${{ secrets.CHARTMUSEUM_USER }}'
           CHARTMUSEUM_PASSWORD: ${{ secrets.CHARTMUSEUM_PASSWORD }}
+
+      - name: Run benchmark-releaser
+        uses: goodsmileduck/helm-push-action@v3.3.1
+        env:
+          SOURCE_DIR: 'deploy/charts'
+          CHART_FOLDER: 'machine-api'
+          FORCE: 'True'
+          CHARTMUSEUM_URL: ' https://core.harbor.onmetal.de/chartrepo/onmetal'
+          CHARTMUSEUM_USER: '${{ secrets.CHARTMUSEUM_USER }}'
+          CHARTMUSEUM_PASSWORD: ${{ secrets.CHARTMUSEUM_PASSWORD }}

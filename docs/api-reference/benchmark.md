@@ -208,5 +208,5 @@ map[string][]..BenchmarkDeviation
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>c1d9b53</code>.
+on git commit <code>172f4e7</code>.
 </em></p>
