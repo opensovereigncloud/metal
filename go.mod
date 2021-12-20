@@ -1,4 +1,4 @@
-module github.com/onmetal/hardware-api
+module github.com/onmetal/metal-api
 
 go 1.17
 

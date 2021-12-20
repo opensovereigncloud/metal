@@ -40,7 +40,7 @@ jobs:
           CHARTMUSEUM_USER: '${{ secrets.CHARTMUSEUM_USER }}'
           CHARTMUSEUM_PASSWORD: ${{ secrets.CHARTMUSEUM_PASSWORD }}
 
-      - name: Run benchmark-releaser
+      - name: Run machine-releaser
         uses: goodsmileduck/helm-push-action@v3.3.1
         env:
           SOURCE_DIR: 'deploy/charts'
