@@ -4,6 +4,6 @@ description: A Helm chart with CRD for Hardware benchmark
 
 type: application
 
-version: 0.0.2
+version: 0.0.4
 
 appVersion: "0.0.4"
