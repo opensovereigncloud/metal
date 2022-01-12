@@ -523,8 +523,8 @@ func InterfacesFromInventory(nics []inventoriesv1alpha1.NICSpec, switches *Switc
 				if len(caps) == 0 {
 					return CPeerTypeMachine
 				}
-				for _, cap := range caps {
-					if cap == CStationCapability {
+				for _, capacity := range caps {
+					if capacity == CStationCapability {
 						return CPeerTypeMachine
 					}
 				}
@@ -562,9 +562,9 @@ func InterfacesFromInventory(nics []inventoriesv1alpha1.NICSpec, switches *Switc
 // InterfacesDataOk checks stored interfaces data, that can be changed, is
 // equal to received from inventory
 func (in *Switch) InterfacesDataOk(src *inventoriesv1alpha1.Inventory, switches *SwitchList) bool {
-	recievedInterfaces := InterfacesFromInventory(src.Spec.NICs, switches)
+	receivedInterfaces := InterfacesFromInventory(src.Spec.NICs, switches)
 	storedInterfaces := in.Status.Interfaces
-	for nicName, nicData := range recievedInterfaces {
+	for nicName, nicData := range receivedInterfaces {
 		storedData, ok := storedInterfaces[nicName]
 		if !ok {
 			return false
@@ -592,7 +592,7 @@ func (in *Switch) InterfacesDataOk(src *inventoriesv1alpha1.Inventory, switches 
 		}
 	}
 	for iface := range storedInterfaces {
-		if _, ok := recievedInterfaces[iface]; !ok {
+		if _, ok := receivedInterfaces[iface]; !ok {
 			return false
 		}
 	}
@@ -605,7 +605,7 @@ func (in *Switch) StateEqualTo(state string) bool {
 	return string(in.Status.State) == state
 }
 
-// PeersDefined checkes whether peers data is filled and match to the
+// PeersDefined checks whether peers data is filled and match to the
 // existing resources
 func (in *Switch) PeersDefined(list *SwitchList) bool {
 	for _, data := range in.Status.Interfaces {
@@ -833,7 +833,7 @@ func (in *Switch) InterfaceSubnetName(nic string, af ipamv1alpha1.SubnetAddressT
 	return fmt.Sprintf("%s-%s-%s", in.Name, strings.ToLower(nic), suffix)
 }
 
-// InterfaceSubnetName returns the interface subnet resource name
+// InterfaceIPName returns the interface subnet resource name
 // depending on address family
 func (in *Switch) InterfaceIPName(nic string, af ipamv1alpha1.SubnetAddressType) string {
 	suffix := "ipv4"
@@ -843,7 +843,7 @@ func (in *Switch) InterfaceIPName(nic string, af ipamv1alpha1.SubnetAddressType)
 	return fmt.Sprintf("%s-%s-%s", in.Name, strings.ToLower(nic), suffix)
 }
 
-// Defines the amount of needed ip addresses according to the
+// GetAddressCount defines the amount of needed ip addresses according to the
 // number of switch ports, used lanes and address type (IPv4 or IPv6).
 func (in *Switch) GetAddressCount(af ipamv1alpha1.SubnetAddressType) (count int64) {
 	multiplier := CIPv4AddressesPerLane
