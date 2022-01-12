@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"strings"
+	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
@@ -173,6 +174,26 @@ var _ = Describe("Controllers interaction", func() {
 				}
 				return true
 			})
+
+			By("Update switch config status to emulate switch-configurer persistence")
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: OnmetalNamespace,
+				Name:      "044ca7d1-c6f8-37d8-83ce-bf6a18318f2d"},
+				leafSw)).To(Succeed())
+			leafSw.Status.Configuration.Managed = true
+			leafSw.Status.Configuration.ManagerState = switchv1alpha1.CConfManagerSActive
+			leafSw.Status.Configuration.ManagerType = switchv1alpha1.CConfManagerTLocal
+			leafSw.Status.Configuration.State = switchv1alpha1.CSwitchConfApplied
+			loc, _ := time.LoadLocation("UTC")
+			leafSw.Status.Configuration.LastCheck = time.Now().In(loc).Format(time.UnixDate)
+			Expect(k8sClient.Status().Update(ctx, leafSw)).To(Succeed())
+			time.Sleep(time.Second * 11)
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: OnmetalNamespace,
+				Name:      "044ca7d1-c6f8-37d8-83ce-bf6a18318f2d"},
+				leafSw)).To(Succeed())
+			Expect(leafSw.Status.Configuration.State).Should(Equal(switchv1alpha1.CSwitchConfPending))
+			Expect(leafSw.Status.Configuration.ManagerState).Should(Equal(switchv1alpha1.CConfManagerSFailed))
 		})
 	})
 })

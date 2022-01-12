@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"time"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -145,7 +146,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			"name", obj.NamespacedName())
 		return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, nil
 	}
-	stateMachine := r.prepareStateMachine(obj)
+	stateMachine := r.prepareStateMachine()
 	result, err = stateMachine.launch(ctx, obj)
 	r.Background.assignment = &switchv1alpha1.SwitchAssignment{}
 	r.Background.inventory = &inventoriesv1alpha1.Inventory{}
@@ -181,8 +182,8 @@ func (r *SwitchReconciler) getBackground(ctx context.Context, obj *switchv1alpha
 }
 
 func (r *SwitchReconciler) findAssignment(ctx context.Context, obj *switchv1alpha1.Switch) (*switchv1alpha1.SwitchAssignment, error) {
-	labels := labelsMap{include: map[string][]string{switchv1alpha1.LabelChassisId: {switchv1alpha1.MacToLabel(obj.Spec.Chassis.ChassisID)}}}
-	opts, err := getListFilter(labels)
+	lbl := labelsMap{include: map[string][]string{switchv1alpha1.LabelChassisId: {switchv1alpha1.MacToLabel(obj.Spec.Chassis.ChassisID)}}}
+	opts, err := getListFilter(lbl)
 	if err != nil {
 		r.Log.Error(err, "failed to construct list options")
 		return nil, err
@@ -247,8 +248,9 @@ func getLabelsRequirementExcluded(label string, values []string) (*labels.Requir
 	return labelsReq, nil
 }
 
-func (r *SwitchReconciler) prepareStateMachine(obj *switchv1alpha1.Switch) *stateMachine {
-	updateStatus := newStep(r.stateReadyOk, r.completeProcessing, r.updateResStatus, nil)
+func (r *SwitchReconciler) prepareStateMachine() *stateMachine {
+	updateConfState := newStep(r.configManaged, r.setConfigState, r.updateResStatus, nil)
+	updateStatus := newStep(r.stateReadyOk, r.completeProcessing, r.updateResStatus, updateConfState)
 	// FIXME: commented temporary
 	// updateIPAMResources := newStep(r.ipamResOk, r.createNetworkResources, r.updateResStatus, updateStatus)
 	// updateNICsAddresses := newStep(r.nicsAddressesOk, r.updateNICsAddresses, r.updateResStatus, updateIPAMResources)
@@ -288,15 +290,15 @@ func (r *SwitchReconciler) finalize(ctx context.Context, obj *switchv1alpha1.Swi
 	}
 
 	// here we'll filter only IPs and subnets related to switch ports.
-	// Subnets related to switch and switch's loopback IPs will be left as is.
-	labels := labelsMap{
+	// Subnets related to switch and switch loopback IPs will be left as is.
+	lbl := labelsMap{
 		include: map[string][]string{
 			switchv1alpha1.LabelSwitchName:       {obj.Name},
 			switchv1alpha1.LabelResourceRelation: {CLabelSwitchPortRel},
 		},
 		exclude: map[string][]string{switchv1alpha1.LabelResourceRelation: {CLabelLoopbackRel}},
 	}
-	filter, err := getListFilter(labels)
+	filter, err := getListFilter(lbl)
 	if err != nil {
 		r.Log.Error(err, "failed to build list filter for finalizer")
 	}
@@ -498,8 +500,8 @@ func (r *SwitchReconciler) setV4Subnet(ctx context.Context, obj *switchv1alpha1.
 			Regions:     region.ConvertToSubnetRegion(),
 		}
 		subnetName := obj.SwitchSubnetName(ipamv1alpha1.CIPv4SubnetType)
-		labels := map[string]string{switchv1alpha1.LabelSwitchName: obj.Name}
-		subnet, err = r.createSubnet(ctx, obj, CSouthParentSubnetPrefix, subnetName, ipamv1alpha1.CIPv4SubnetType, region, spec, labels)
+		lbl := map[string]string{switchv1alpha1.LabelSwitchName: obj.Name}
+		subnet, err = r.createSubnet(ctx, obj, CSouthParentSubnetPrefix, subnetName, ipamv1alpha1.CIPv4SubnetType, spec, lbl)
 		if err != nil {
 			return err
 		}
@@ -536,8 +538,8 @@ func (r *SwitchReconciler) setV6Subnet(ctx context.Context, obj *switchv1alpha1.
 			Regions:     region.ConvertToSubnetRegion(),
 		}
 		subnetName := obj.SwitchSubnetName(ipamv1alpha1.CIPv6SubnetType)
-		labels := map[string]string{switchv1alpha1.LabelSwitchName: obj.Name}
-		subnet, err = r.createSubnet(ctx, obj, CSouthParentSubnetPrefix, subnetName, ipamv1alpha1.CIPv6SubnetType, region, spec, labels)
+		lbl := map[string]string{switchv1alpha1.LabelSwitchName: obj.Name}
+		subnet, err = r.createSubnet(ctx, obj, CSouthParentSubnetPrefix, subnetName, ipamv1alpha1.CIPv6SubnetType, spec, lbl)
 		if err != nil {
 			return err
 		}
@@ -594,7 +596,6 @@ func (r *SwitchReconciler) getTopLevelSpine(ctx context.Context, obj *switchv1al
 }
 
 func (r *SwitchReconciler) findParentSubnet(
-	ctx context.Context,
 	prefix string,
 	af ipamv1alpha1.SubnetAddressType,
 	list *ipamv1alpha1.SubnetList) (*ipamv1alpha1.Subnet, error) {
@@ -620,7 +621,6 @@ func (r *SwitchReconciler) createSubnet(
 	prefix string,
 	subnetName string,
 	af ipamv1alpha1.SubnetAddressType,
-	region *switchv1alpha1.RegionSpec,
 	spec ipamv1alpha1.SubnetSpec,
 	labels map[string]string) (subnet *ipamv1alpha1.Subnet, err error) {
 	subnets := &ipamv1alpha1.SubnetList{}
@@ -628,7 +628,7 @@ func (r *SwitchReconciler) createSubnet(
 		r.Log.Error(err, "failed to list resources", "gvk", subnets.GroupVersionKind().String())
 		return
 	}
-	parentSubnet, err := r.findParentSubnet(ctx, prefix, af, subnets)
+	parentSubnet, err := r.findParentSubnet(prefix, af, subnets)
 	if err != nil {
 		return
 	}
@@ -689,11 +689,11 @@ func (r *SwitchReconciler) setLoopbackIP(
 		if err != nil {
 			return err
 		}
-		labels := map[string]string{
+		lbl := map[string]string{
 			switchv1alpha1.LabelSwitchName:       obj.Name,
 			switchv1alpha1.LabelResourceRelation: CLabelLoopbackRel,
 		}
-		loopbackIP, err = r.createIP(ctx, obj, parentSubnet, obj.LoopbackIPResourceName(af), af, 0, true, labels)
+		loopbackIP, err = r.createIP(ctx, obj, parentSubnet, obj.LoopbackIPResourceName(af), af, 0, true, lbl)
 		if err != nil {
 			return err
 		}
@@ -722,9 +722,9 @@ func (r *SwitchReconciler) getParentSubnet(subnets *ipamv1alpha1.SubnetList, af 
 		suffix = "v6"
 	}
 	parentSubnetName := fmt.Sprintf("%s-%s", CLoopbackParentSubnetPrefix, suffix)
-	for _, net := range subnets.Items {
-		if net.Name == parentSubnetName {
-			parentSubnet = &net
+	for _, subnet := range subnets.Items {
+		if subnet.Name == parentSubnetName {
+			parentSubnet = &subnet
 			break
 		}
 	}
@@ -869,6 +869,27 @@ func (r *SwitchReconciler) stateReadyOk(obj *switchv1alpha1.Switch) bool {
 func (r *SwitchReconciler) completeProcessing(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
 	obj.SetSwitchState(switchv1alpha1.CSwitchStateReady)
 	obj.SetConfState(switchv1alpha1.CSwitchConfPending)
+	return
+}
+
+func (r *SwitchReconciler) configManaged(obj *switchv1alpha1.Switch) bool {
+	return !obj.Status.Configuration.Managed
+}
+
+func (r *SwitchReconciler) setConfigState(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
+	if !obj.Status.Configuration.Managed {
+		return
+	}
+	loc, _ := time.LoadLocation("UTC")
+	now := time.Now().In(loc)
+	lastCheck, err := time.Parse(time.UnixDate, obj.Status.Configuration.LastCheck)
+	if err != nil {
+		return
+	}
+	if now.Sub(lastCheck) > time.Second*10 {
+		obj.Status.Configuration.ManagerState = switchv1alpha1.CConfManagerSFailed
+		obj.Status.Configuration.State = switchv1alpha1.CSwitchConfPending
+	}
 	return
 }
 
