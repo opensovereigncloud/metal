@@ -873,7 +873,7 @@ func (r *SwitchReconciler) completeProcessing(ctx context.Context, obj *switchv1
 }
 
 func (r *SwitchReconciler) configManaged(obj *switchv1alpha1.Switch) bool {
-	return !obj.Status.Configuration.Managed
+	return obj.Status.Configuration.LastCheck == switchv1alpha1.CEmptyString
 }
 
 func (r *SwitchReconciler) setConfigState(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
@@ -889,7 +889,10 @@ func (r *SwitchReconciler) setConfigState(ctx context.Context, obj *switchv1alph
 	if now.Sub(lastCheck) > time.Second*10 {
 		obj.Status.Configuration.ManagerState = switchv1alpha1.CConfManagerSFailed
 		obj.Status.Configuration.State = switchv1alpha1.CSwitchConfPending
+		return
 	}
+	obj.Status.Configuration.ManagerState = switchv1alpha1.CConfManagerSActive
+	obj.Status.Configuration.State = switchv1alpha1.CSwitchConfApplied
 	return
 }
 
