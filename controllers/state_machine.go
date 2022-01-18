@@ -71,7 +71,9 @@ func (s *processingStep) execute(ctx context.Context, newState *switchv1alpha1.S
 	}
 	if s.resourceUpdateFunc != nil {
 		s.setNext(nil)
-		err = s.resourceUpdateFunc(ctx, newState)
+		if !reflect.DeepEqual(newState.Status, oldState.Status) {
+			err = s.resourceUpdateFunc(ctx, newState)
+		}
 	}
 	return
 }
@@ -91,8 +93,17 @@ func (s *stateMachine) launch(ctx context.Context, curState *switchv1alpha1.Swit
 	if err := s.executeStep(ctx, curState, prevState); err != nil {
 		return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, err
 	}
-	if reflect.DeepEqual(curState.Status, prevState.Status) {
-		return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, nil
+	stateChanged := !reflect.DeepEqual(curState.Status, prevState.Status)
+	switch stateChanged {
+	case true:
+		return ctrl.Result{}, nil
+	case false:
+		if curState.Status.State != switchv1alpha1.CSwitchStateReady {
+			return ctrl.Result{RequeueAfter: CSwitchRequeueInterval}, nil
+		}
+		if curState.Status.Configuration.Managed {
+			return ctrl.Result{RequeueAfter: CSwitchRequeueInterval * 5}, nil
+		}
 	}
 	return ctrl.Result{}, nil
 }

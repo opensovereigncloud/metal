@@ -249,7 +249,7 @@ func getLabelsRequirementExcluded(label string, values []string) (*labels.Requir
 }
 
 func (r *SwitchReconciler) prepareStateMachine() *stateMachine {
-	updateConfState := newStep(r.configManaged, r.setConfigState, r.updateResStatus, nil)
+	updateConfState := newStep(r.configUnmanaged, r.setConfigState, r.updateResStatus, nil)
 	updateStatus := newStep(r.stateReadyOk, r.completeProcessing, r.updateResStatus, updateConfState)
 	// FIXME: commented temporary
 	// updateIPAMResources := newStep(r.ipamResOk, r.createNetworkResources, r.updateResStatus, updateStatus)
@@ -872,27 +872,22 @@ func (r *SwitchReconciler) completeProcessing(ctx context.Context, obj *switchv1
 	return
 }
 
-func (r *SwitchReconciler) configManaged(obj *switchv1alpha1.Switch) bool {
-	return obj.Status.Configuration.LastCheck == switchv1alpha1.CEmptyString
-}
-
-func (r *SwitchReconciler) setConfigState(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
+func (r *SwitchReconciler) configUnmanaged(obj *switchv1alpha1.Switch) bool {
 	if !obj.Status.Configuration.Managed {
-		return
+		return true
+	}
+	if obj.Status.Configuration.LastCheck == switchv1alpha1.CEmptyString {
+		return true
 	}
 	loc, _ := time.LoadLocation("UTC")
 	now := time.Now().In(loc)
-	lastCheck, err := time.Parse(time.UnixDate, obj.Status.Configuration.LastCheck)
-	if err != nil {
-		return
-	}
-	if now.Sub(lastCheck) > time.Second*10 {
-		obj.Status.Configuration.ManagerState = switchv1alpha1.CConfManagerSFailed
-		obj.Status.Configuration.State = switchv1alpha1.CSwitchConfPending
-		return
-	}
-	obj.Status.Configuration.ManagerState = switchv1alpha1.CConfManagerSActive
-	obj.Status.Configuration.State = switchv1alpha1.CSwitchConfApplied
+	lastCheck, _ := time.Parse(time.UnixDate, obj.Status.Configuration.LastCheck)
+	return now.Sub(lastCheck) < time.Second*10
+}
+
+func (r *SwitchReconciler) setConfigState(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
+	obj.Status.Configuration.ManagerState = switchv1alpha1.CConfManagerSFailed
+	obj.Status.Configuration.State = switchv1alpha1.CSwitchConfPending
 	return
 }
 
