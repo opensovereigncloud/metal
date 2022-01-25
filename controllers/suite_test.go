@@ -56,27 +56,16 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 const (
-	DefaultNamespace     = "default"
-	OnmetalNamespace     = "onmetal"
-	timeout              = time.Second * 60
-	interval             = time.Millisecond * 250
-	UnderlayNetwork      = "underlay"
-	SubnetNameV4         = "switch-ranges-v4"
-	LoopbackSubnetV4     = "switches-v4"
-	SubnetNameV6         = "switch-ranges-v6"
-	LoopbackSubnetV6     = "switches-v6"
-	SubnetIPv4CIDR       = "100.64.0.0/16"
-	LoopbackIPv4CIDR     = "100.64.0.0/24"
-	SubnetIPv6CIDR       = "64:ff9b:1::/112"
-	LoopbackIPv6CIDR     = "64:ff9b:1::/120"
-	TestRegion           = "eu-west"
-	TestAvailabilityZone = "A"
+	OnmetalNamespace = "onmetal"
+	timeout          = time.Second * 45
+	interval         = time.Millisecond * 250
 )
 
 var k8sClient client.Client
 var ctx context.Context
 var testEnv *envtest.Environment
 var cancel context.CancelFunc
+var ipv4Used, ipv6Used = false, false
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -211,9 +200,6 @@ var _ = BeforeSuite(func() {
 
 	namespace := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: switchv1alpha1.CNamespace}}
 	Expect(k8sClient.Create(ctx, namespace)).To(Succeed())
-
-	prepareNetwork()
-	prepareEnv()
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -288,7 +274,7 @@ func prepareEnv() {
 	}
 }
 
-func prepareNetwork() {
+func prepareNetwork(subnetsSamples []string) {
 	By("Prepare network")
 	networkSample := filepath.Join("..", "config", "samples", "testdata", "underlay-network.yaml")
 	network := &ipamv1alpha1.Network{}
@@ -299,12 +285,6 @@ func prepareNetwork() {
 	Expect(k8sClient.Create(ctx, network)).To(Succeed())
 
 	By("Prepare subnets")
-	subnetsSamples := []string{
-		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v4.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v6.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switches-v4.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switches-v6.yaml"),
-	}
 	for _, sample := range subnetsSamples {
 		subnet := &ipamv1alpha1.Subnet{}
 		sampleBytes, err := ioutil.ReadFile(sample)
@@ -316,6 +296,12 @@ func prepareNetwork() {
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: subnet.Namespace, Name: subnet.Name}, subnet)).To(Succeed())
 			return subnet.Status.State == ipamv1alpha1.CFinishedSubnetState
 		}, timeout, interval).Should(BeTrue())
+		if subnet.Status.Type == ipamv1alpha1.CIPv4SubnetType {
+			ipv4Used = true
+		}
+		if subnet.Status.Type == ipamv1alpha1.CIPv6SubnetType {
+			ipv6Used = true
+		}
 	}
 }
 
@@ -392,6 +378,20 @@ func cleanUp() {
 	Expect(k8sClient.DeleteAllOf(ctx, &ipamv1alpha1.Subnet{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
 	Eventually(func() bool {
 		list := &ipamv1alpha1.SubnetList{}
+		err := k8sClient.List(ctx, list)
+		if err != nil {
+			return false
+		}
+		if len(list.Items) > 0 {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	By("Remove networks")
+	Expect(k8sClient.DeleteAllOf(ctx, &ipamv1alpha1.Network{}, client.InNamespace(OnmetalNamespace))).To(Succeed())
+	Eventually(func() bool {
+		list := &ipamv1alpha1.NetworkList{}
 		err := k8sClient.List(ctx, list)
 		if err != nil {
 			return false

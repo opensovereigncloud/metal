@@ -67,6 +67,8 @@ type background struct {
 	inventory  *inventoriesv1alpha1.Inventory
 	assignment *switchv1alpha1.SwitchAssignment
 	loopbacks  []net.IP
+	ipv4Used   bool
+	ipv6Used   bool
 }
 
 type labelsMap struct {
@@ -177,7 +179,37 @@ func (r *SwitchReconciler) getBackground(ctx context.Context, obj *switchv1alpha
 		return
 	}
 	r.Background.assignment, err = r.findAssignment(ctx, obj)
-	// r.Background = background
+	if err != nil {
+		return
+	}
+
+	subnet := &ipamv1alpha1.Subnet{}
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: obj.Namespace,
+		Name:      fmt.Sprintf("%s-%s", CSouthParentSubnetPrefix, CIPAMv4Suffix),
+	}, subnet)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return
+		}
+		r.Background.ipv4Used = false
+		err = nil
+	} else {
+		r.Background.ipv4Used = true
+	}
+	err = r.Get(ctx, types.NamespacedName{
+		Namespace: obj.Namespace,
+		Name:      fmt.Sprintf("%s-%s", CSouthParentSubnetPrefix, CIPAMv6Suffix),
+	}, subnet)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return
+		}
+		r.Background.ipv6Used = false
+		err = nil
+	} else {
+		r.Background.ipv6Used = true
+	}
 	return
 }
 
@@ -464,19 +496,23 @@ func (r *SwitchReconciler) processAssignment(ctx context.Context, obj *switchv1a
 }
 
 func (r *SwitchReconciler) subnetsOk(obj *switchv1alpha1.Switch) bool {
-	return obj.SubnetsDefined()
+	return obj.SubnetsDefined(r.Background.ipv4Used, r.Background.ipv6Used)
 }
 
 func (r *SwitchReconciler) setSubnets(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
 	obj.SetSwitchState(switchv1alpha1.CSwitchStateInProgress)
 	obj.SetConfState(switchv1alpha1.CSwitchConfInProgress)
-	if err = r.setV4Subnet(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to setup switch V4 subnet")
-		return
+	if r.Background.ipv4Used {
+		if err = r.setV4Subnet(ctx, obj); err != nil {
+			r.Log.Error(err, "failed to setup switch V4 subnet")
+			return
+		}
 	}
-	if err = r.setV6Subnet(ctx, obj); err != nil {
-		r.Log.Error(err, "failed to setup switch V6 subnet")
-		return
+	if r.Background.ipv6Used {
+		if err = r.setV6Subnet(ctx, obj); err != nil {
+			r.Log.Error(err, "failed to setup switch V6 subnet")
+			return
+		}
 	}
 	return
 }
@@ -654,7 +690,7 @@ func (r *SwitchReconciler) createSubnet(
 }
 
 func (r *SwitchReconciler) loopbackAddressesOk(obj *switchv1alpha1.Switch) bool {
-	return obj.LoopbackAddressesDefined()
+	return obj.LoopbackAddressesDefined(r.Background.ipv4Used, r.Background.ipv6Used)
 }
 
 func (r *SwitchReconciler) updateLoopbacks(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
@@ -665,8 +701,14 @@ func (r *SwitchReconciler) updateLoopbacks(ctx context.Context, obj *switchv1alp
 		r.Log.Error(err, "failed to list resources", "gvk", subnets.GroupVersionKind().String())
 		return
 	}
-	for _, af := range obj.UndefinedLoopbackAF() {
-		err = r.setLoopbackIP(ctx, obj, subnets, af)
+	if r.Background.ipv4Used && obj.Status.LoopbackV4.Address == switchv1alpha1.CEmptyString {
+		err = r.setLoopbackIP(ctx, obj, subnets, ipamv1alpha1.CIPv4SubnetType)
+		if err != nil {
+			return
+		}
+	}
+	if r.Background.ipv6Used && obj.Status.LoopbackV6.Address == switchv1alpha1.CEmptyString {
+		err = r.setLoopbackIP(ctx, obj, subnets, ipamv1alpha1.CIPv6SubnetType)
 		if err != nil {
 			return
 		}
@@ -685,7 +727,7 @@ func (r *SwitchReconciler) setLoopbackIP(
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
-		parentSubnet, err := r.getParentSubnet(subnets, af)
+		parentSubnet, err := r.findParentSubnet(CLoopbackParentSubnetPrefix, af, subnets)
 		if err != nil {
 			return err
 		}
@@ -713,26 +755,6 @@ func (r *SwitchReconciler) setLoopbackIP(
 		obj.Status.LoopbackV6.ResourceReference = ref
 	}
 	return nil
-}
-
-func (r *SwitchReconciler) getParentSubnet(subnets *ipamv1alpha1.SubnetList, af ipamv1alpha1.SubnetAddressType) (*ipamv1alpha1.Subnet, error) {
-	var parentSubnet *ipamv1alpha1.Subnet
-	suffix := "v4"
-	if af == ipamv1alpha1.CIPv6SubnetType {
-		suffix = "v6"
-	}
-	parentSubnetName := fmt.Sprintf("%s-%s", CLoopbackParentSubnetPrefix, suffix)
-	for _, subnet := range subnets.Items {
-		if subnet.Name == parentSubnetName {
-			parentSubnet = &subnet
-			break
-		}
-	}
-	if parentSubnet == nil {
-		err := fmt.Errorf("failed to get parent subnet")
-		return nil, err
-	}
-	return parentSubnet, nil
 }
 
 func (r *SwitchReconciler) createIP(
@@ -805,13 +827,13 @@ func (r *SwitchReconciler) ipAddressUsed(address net.IP) bool {
 }
 
 func (r *SwitchReconciler) nicsAddressesOk(obj *switchv1alpha1.Switch) bool {
-	return obj.NICsAddressesDefined(r.Background.switches)
+	return obj.NICsAddressesDefined(r.Background.ipv4Used, r.Background.ipv6Used, r.Background.switches)
 }
 
 func (r *SwitchReconciler) updateNICsAddresses(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
 	obj.SetSwitchState(switchv1alpha1.CSwitchStateInProgress)
 	obj.SetConfState(switchv1alpha1.CSwitchConfInProgress)
-	if err = obj.UpdateSouthNICsIP(); err != nil {
+	if err = obj.UpdateSouthNICsIP(r.Background.ipv4Used, r.Background.ipv6Used); err != nil {
 		r.Log.Error(err, "failed to setup south NICs subnets")
 		return
 	}
@@ -823,15 +845,28 @@ func (r *SwitchReconciler) updateNICsAddresses(ctx context.Context, obj *switchv
 			if item.NamespacedName() != nicData.Peer.ResourceReference.NamespacedName() {
 				continue
 			}
-			peerV4SubnetOk := item.Status.SubnetV4.CIDR != switchv1alpha1.CEmptyString
-			peerV6SubnetOk := item.Status.SubnetV6.CIDR != switchv1alpha1.CEmptyString
+			peerV4SubnetOk := false
+			if !r.Background.ipv4Used {
+				peerV4SubnetOk = true
+			}
+			if r.Background.ipv4Used && item.Status.SubnetV4.CIDR != switchv1alpha1.CEmptyString {
+				peerV4SubnetOk = true
+			}
+			peerV6SubnetOk := false
+			if !r.Background.ipv6Used {
+				peerV6SubnetOk = true
+			}
+			if r.Background.ipv6Used && item.Status.SubnetV6.CIDR != switchv1alpha1.CEmptyString {
+				peerV6SubnetOk = true
+			}
 			if !(peerV4SubnetOk && peerV6SubnetOk) {
 				err = fmt.Errorf("peer's subnets not defined")
 				return
 			}
 		}
 	}
-	return obj.UpdateNorthNICsIP(r.Background.switches)
+	err = obj.UpdateNorthNICsIP(r.Background.ipv4Used, r.Background.ipv6Used, r.Background.switches)
+	return
 }
 
 // FIXME: commented temporary

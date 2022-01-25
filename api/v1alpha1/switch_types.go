@@ -799,8 +799,18 @@ func (in *SwitchList) buildConnectionMap() (ConnectionsMap, []uint8) {
 }
 
 // SubnetsDefined checks whether switch subnets are defined
-func (in *Switch) SubnetsDefined() bool {
-	return in.Status.SubnetV4.CIDR != CEmptyString && in.Status.SubnetV6.CIDR != CEmptyString
+func (in *Switch) SubnetsDefined(ipv4Used, ipv6Used bool) bool {
+	ipv4SubnetOk := false
+	if (ipv4Used && in.Status.SubnetV4.CIDR != CEmptyString) ||
+		(!ipv4Used && in.Status.SubnetV4.CIDR == CEmptyString) {
+		ipv4SubnetOk = true
+	}
+	ipv6SubnetOk := false
+	if (ipv6Used && in.Status.SubnetV6.CIDR != CEmptyString) ||
+		(!ipv6Used && in.Status.SubnetV6.CIDR == CEmptyString) {
+		ipv6SubnetOk = true
+	}
+	return ipv4SubnetOk && ipv6SubnetOk
 }
 
 // SwitchSubnetName returns the switch south subnet resource name
@@ -860,8 +870,18 @@ func (in *Switch) GetAddressCount(af ipamv1alpha1.SubnetAddressType) (count int6
 
 // LoopbackAddressesDefined checks whether loopback addresses are filled
 // for the switch
-func (in *Switch) LoopbackAddressesDefined() bool {
-	return in.Status.LoopbackV4.Address != CEmptyString && in.Status.LoopbackV6.Address != CEmptyString
+func (in *Switch) LoopbackAddressesDefined(ipv4Used, ipv6Used bool) bool {
+	loopbackV4Ok := false
+	if (ipv4Used && in.Status.LoopbackV4.Address != CEmptyString) ||
+		(!ipv4Used && in.Status.LoopbackV4.Address == CEmptyString) {
+		loopbackV4Ok = true
+	}
+	loopbackV6Ok := false
+	if (ipv6Used && in.Status.LoopbackV6.Address != CEmptyString) ||
+		(!ipv6Used && in.Status.LoopbackV6.Address == CEmptyString) {
+		loopbackV6Ok = true
+	}
+	return loopbackV4Ok && loopbackV6Ok
 }
 
 // UndefinedLoopbackAF returns the list of address families for which
@@ -878,74 +898,88 @@ func (in *Switch) UndefinedLoopbackAF() (afs []ipamv1alpha1.SubnetAddressType) {
 
 // NICsAddressesDefined checks whether switch interfaces addresses
 // are defined and match interface's direction
-func (in *Switch) NICsAddressesDefined(list *SwitchList) bool {
-	return in.nicsIPsFilled() && in.nicsIPsCorrect(list)
+func (in *Switch) NICsAddressesDefined(ipv4Used, ipv6Used bool, list *SwitchList) bool {
+	nicIPsFilled := in.nicsIPsFilled(ipv4Used, ipv6Used)
+	nicIPsCorrect := in.nicsIPsCorrect(ipv4Used, ipv6Used, list)
+	return nicIPsFilled && nicIPsCorrect
 }
 
-func (in *Switch) nicsIPsFilled() bool {
+func (in *Switch) nicsIPsFilled(ipv4Used, ipv6Used bool) bool {
 	for _, nicData := range in.Status.Interfaces {
-		if nicData.IPv4.Address == CEmptyString || nicData.IPv6.Address == CEmptyString {
+		if ipv4Used && nicData.IPv4.Address == CEmptyString {
+			return false
+		}
+		if ipv6Used && nicData.IPv6.Address == CEmptyString {
 			return false
 		}
 	}
 	return true
 }
 
-func (in *Switch) nicsIPsCorrect(list *SwitchList) bool {
+func (in *Switch) nicsIPsCorrect(ipv4Used, ipv6Used bool, list *SwitchList) bool {
 	for _, nicData := range in.Status.Interfaces {
 		if nicData.Direction == CDirectionNorth {
-			if !in.nicIPsMatchNorthPeers(nicData, list) {
+			if !in.nicIPsMatchNorthPeers(ipv4Used, ipv6Used, nicData, list) {
 				return false
 			}
 			continue
 		}
-		_, subnetV4, _ := net.ParseCIDR(in.Status.SubnetV4.CIDR)
-		nicIPv4, _, _ := net.ParseCIDR(nicData.IPv4.Address)
-		if !subnetV4.Contains(nicIPv4) {
-			return false
+		if ipv4Used {
+			_, subnetV4, _ := net.ParseCIDR(in.Status.SubnetV4.CIDR)
+			nicIPv4, _, _ := net.ParseCIDR(nicData.IPv4.Address)
+			if !subnetV4.Contains(nicIPv4) {
+				return false
+			}
 		}
-		_, subnetV6, _ := net.ParseCIDR(in.Status.SubnetV6.CIDR)
-		nicIPv6, _, _ := net.ParseCIDR(nicData.IPv6.Address)
-		if !subnetV6.Contains(nicIPv6) {
-			return false
+		if ipv6Used {
+			_, subnetV6, _ := net.ParseCIDR(in.Status.SubnetV6.CIDR)
+			nicIPv6, _, _ := net.ParseCIDR(nicData.IPv6.Address)
+			if !subnetV6.Contains(nicIPv6) {
+				return false
+			}
 		}
 	}
 	return true
 }
 
-func (in *Switch) nicIPsMatchNorthPeers(nicData *InterfaceSpec, list *SwitchList) bool {
+func (in *Switch) nicIPsMatchNorthPeers(ipv4Used, ipv6Used bool, nicData *InterfaceSpec, list *SwitchList) bool {
 	for _, peer := range list.Items {
 		if peer.NamespacedName() != nicData.Peer.ResourceReference.NamespacedName() {
 			continue
 		}
-		peerSubnetV4Defined := peer.Status.SubnetV4.CIDR != CEmptyString
-		nicAddressV4Defined := nicData.IPv4.Address != CEmptyString
-		if !peerSubnetV4Defined || !nicAddressV4Defined {
-			return false
-		}
-		_, subnetV4, _ := net.ParseCIDR(peer.Status.SubnetV4.CIDR)
-		nicIPv4, _, _ := net.ParseCIDR(nicData.IPv4.Address)
-		if !subnetV4.Contains(nicIPv4) {
-			return false
+		if ipv4Used {
+			peerSubnetV4Defined := peer.Status.SubnetV4.CIDR != CEmptyString
+			nicAddressV4Defined := nicData.IPv4.Address != CEmptyString
+			if !peerSubnetV4Defined || !nicAddressV4Defined {
+				return false
+			}
+			_, subnetV4, _ := net.ParseCIDR(peer.Status.SubnetV4.CIDR)
+			nicIPv4, _, _ := net.ParseCIDR(nicData.IPv4.Address)
+			if !subnetV4.Contains(nicIPv4) {
+				return false
+			}
 		}
 
-		peerSubnetV6Defined := peer.Status.SubnetV4.CIDR != CEmptyString
-		nicAddressV6Defined := nicData.IPv4.Address != CEmptyString
-		if !peerSubnetV6Defined || !nicAddressV6Defined {
-			return false
-		}
-		_, subnetV6, _ := net.ParseCIDR(peer.Status.SubnetV6.CIDR)
-		nicIPv6, _, _ := net.ParseCIDR(nicData.IPv6.Address)
-		if !subnetV6.Contains(nicIPv6) {
-			return false
+		if ipv6Used {
+			peerSubnetV6Defined := peer.Status.SubnetV6.CIDR != CEmptyString
+			nicAddressV6Defined := nicData.IPv6.Address != CEmptyString
+			if !peerSubnetV6Defined || !nicAddressV6Defined {
+				return false
+			}
+			_, subnetV6, _ := net.ParseCIDR(peer.Status.SubnetV6.CIDR)
+			nicIPv6, _, _ := net.ParseCIDR(nicData.IPv6.Address)
+			if !subnetV6.Contains(nicIPv6) {
+				return false
+			}
 		}
 		break
 	}
 	return true
 }
 
-// UpdateNorthNICsIP updates interfaces specs with ipv4 and ipv6 addresses
-func (in *Switch) UpdateNorthNICsIP(list *SwitchList) (err error) {
+// UpdateNorthNICsIP updates ipv4 and ipv6 addresses of interfaces
+//// that considered to be north
+func (in *Switch) UpdateNorthNICsIP(ipv4Used, ipv6Used bool, list *SwitchList) (err error) {
 	for nic, nicData := range in.Status.Interfaces {
 		if !strings.HasPrefix(nic, CSwitchPortPrefix) {
 			continue
@@ -958,40 +992,50 @@ func (in *Switch) UpdateNorthNICsIP(list *SwitchList) (err error) {
 				continue
 			}
 			peerNICData := item.Status.Interfaces[nicData.Peer.PortDescription]
-			if nicAddressV4 := peerNICData.RequestAddress(ipamv1alpha1.CIPv4SubnetType); nicAddressV4 != nil {
-				nicData.IPv4.Address = fmt.Sprintf("%s/%d", nicAddressV4.String(), CIPv4InterfaceSubnetMask)
+			if ipv4Used {
+				if nicAddressV4 := peerNICData.RequestAddress(ipamv1alpha1.CIPv4SubnetType); nicAddressV4 != nil {
+					nicData.IPv4.Address = fmt.Sprintf("%s/%d", nicAddressV4.String(), CIPv4InterfaceSubnetMask)
+				}
 			}
-			if nicAddressV6 := peerNICData.RequestAddress(ipamv1alpha1.CIPv6SubnetType); nicAddressV6 != nil {
-				nicData.IPv6.Address = fmt.Sprintf("%s/%d", nicAddressV6.String(), CIPv6InterfaceSubnetMask)
+			if ipv6Used {
+				if nicAddressV6 := peerNICData.RequestAddress(ipamv1alpha1.CIPv6SubnetType); nicAddressV6 != nil {
+					nicData.IPv6.Address = fmt.Sprintf("%s/%d", nicAddressV6.String(), CIPv6InterfaceSubnetMask)
+				}
 			}
 		}
 	}
 	return
 }
 
-func (in *Switch) UpdateSouthNICsIP() (err error) {
+// UpdateSouthNICsIP updates ipv4 and ipv6 addresses of interfaces
+// that considered to be south
+func (in *Switch) UpdateSouthNICsIP(ipv4Used, ipv6Used bool) (err error) {
 	for nic, nicData := range in.Status.Interfaces {
-		_, switchSubnetV4, err := net.ParseCIDR(in.Status.SubnetV4.CIDR)
-		if err != nil {
-			return err
+		if ipv4Used {
+			_, switchSubnetV4, err := net.ParseCIDR(in.Status.SubnetV4.CIDR)
+			if err != nil {
+				return err
+			}
+			nicSubnetV4 := getInterfaceSubnet(nic, CSwitchPortPrefix, switchSubnetV4, ipamv1alpha1.CIPv4SubnetType)
+			nicAddressV4, err := gocidr.Host(nicSubnetV4, 1)
+			if err != nil {
+				return err
+			}
+			nicData.IPv4.Address = fmt.Sprintf("%s/%d", nicAddressV4.String(), CIPv4InterfaceSubnetMask)
 		}
-		nicSubnetV4 := getInterfaceSubnet(nic, CSwitchPortPrefix, switchSubnetV4, ipamv1alpha1.CIPv4SubnetType)
-		nicAddressV4, err := gocidr.Host(nicSubnetV4, 1)
-		if err != nil {
-			return err
-		}
-		nicData.IPv4.Address = fmt.Sprintf("%s/%d", nicAddressV4.String(), CIPv4InterfaceSubnetMask)
 
-		_, switchSubnetV6, err := net.ParseCIDR(in.Status.SubnetV6.CIDR)
-		if err != nil {
-			return err
+		if ipv6Used {
+			_, switchSubnetV6, err := net.ParseCIDR(in.Status.SubnetV6.CIDR)
+			if err != nil {
+				return err
+			}
+			nicSubnetV6 := getInterfaceSubnet(nic, CSwitchPortPrefix, switchSubnetV6, ipamv1alpha1.CIPv6SubnetType)
+			nicAddressV6, err := gocidr.Host(nicSubnetV6, 0)
+			if err != nil {
+				return err
+			}
+			nicData.IPv6.Address = fmt.Sprintf("%s/%d", nicAddressV6.String(), CIPv6InterfaceSubnetMask)
 		}
-		nicSubnetV6 := getInterfaceSubnet(nic, CSwitchPortPrefix, switchSubnetV6, ipamv1alpha1.CIPv6SubnetType)
-		nicAddressV6, err := gocidr.Host(nicSubnetV6, 0)
-		if err != nil {
-			return err
-		}
-		nicData.IPv6.Address = fmt.Sprintf("%s/%d", nicAddressV6.String(), CIPv6InterfaceSubnetMask)
 	}
 	return
 }
