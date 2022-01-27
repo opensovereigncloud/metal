@@ -23,7 +23,6 @@ import (
 	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
-	benchmarkv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
 	oobonmetal "github.com/onmetal/oob-controller/api/v1"
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
@@ -74,8 +73,8 @@ var _ = BeforeSuite(func() {
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "config", "crd", "additional"),
-			filepath.Join("..", "config", "crd", "bases"),
+			filepath.Join("..", "..", "config", "crd", "additional"),
+			filepath.Join("..", "..", "config", "crd", "bases"),
 		},
 		ErrorIfCRDPathMissing: true,
 	}
@@ -85,7 +84,6 @@ var _ = BeforeSuite(func() {
 	machinev1lpha1.SchemeBuilder.Register(&machinev1lpha1.Machine{}, &machinev1lpha1.MachineList{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
 	switchv1alpha1.SchemeBuilder.Register(&switchv1alpha1.Switch{}, &switchv1alpha1.SwitchList{})
-	benchmarkv1alpha3.SchemeBuilder.Register()
 
 	var err error
 	cfg, err = testEnv.Start()
@@ -96,7 +94,6 @@ var _ = BeforeSuite(func() {
 	Expect(switchv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(machinev1lpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(benchmarkv1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
