@@ -1,0 +1,114 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: machines.oob.onmetal.de
+spec:
+  group: oob.onmetal.de
+  names:
+    kind: Machine
+    listKind: MachineList
+    plural: machines
+    singular: machine
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Machine is the Schema for the machines API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MachineSpec defines the desired state of Machine
+            properties:
+              console:
+                properties:
+                  kind:
+                    minLength: 1
+                    type: string
+                  port:
+                    description: optional
+                    maximum: 65536
+                    minimum: 0
+                    type: integer
+                type: object
+              ip:
+                pattern: ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$
+                type: string
+              locatorLED:
+                pattern: ^(?:On|Off|Blinking|Unknown)$
+                type: string
+              mac:
+                pattern: ^[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$
+                type: string
+              manufacturer:
+                minLength: 1
+                type: string
+              passwordExpiration:
+                format: date-time
+                type: string
+              port:
+                maximum: 65536
+                minimum: 0
+                type: integer
+              powerState:
+                pattern: ^(?:On|Reset|ResetImmediate|Off|OffImmediate)$
+                type: string
+              preferredInterface:
+                minLength: 1
+                type: string
+              serialNumber:
+                minLength: 1
+                type: string
+              shutdownDeadline:
+                format: date-time
+                type: string
+              sku:
+                minLength: 1
+                type: string
+              tags:
+                items:
+                  type: string
+                type: array
+              uuid:
+                pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+                type: string
+              uuidSource:
+                type: string
+            type: object
+          status:
+            description: MachineStatus defines the observed state of Machine
+            properties:
+              locatorLED:
+                pattern: ^(?:On|Off|Blinking|Unknown)$
+                type: string
+              powerState:
+                pattern: ^(?:On|Off)$
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
