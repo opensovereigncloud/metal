@@ -22,8 +22,10 @@ import (
 
 // MachineSpec contains machine benchmark results.
 type MachineSpec struct {
-	Benchmarks map[string][]Benchmark `json:"benchmarks,omitempty"`
+	Benchmarks map[string]Benchmarks `json:"benchmarks,omitempty"`
 }
+
+type Benchmarks []Benchmark
 
 type Benchmark struct {
 	Name  string `json:"name"`
@@ -33,8 +35,10 @@ type Benchmark struct {
 // MachineStatus contains machine benchmarks deviations.
 type MachineStatus struct {
 	// MachineDeviation shows the difference between last and current benchmark results.
-	MachineDeviation map[string][]BenchmarkDeviation `json:"machine_deviation,omitempty"`
+	MachineDeviation map[string]BenchmarkDeviations `json:"machine_deviation,omitempty"`
 }
+
+type BenchmarkDeviations []BenchmarkDeviation
 
 type BenchmarkDeviation struct {
 	Name  string `json:"name"`
@@ -44,7 +48,7 @@ type BenchmarkDeviation struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Machine is the Schema for the machines API
+// Machine is the Schema for the machines API.
 type Machine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -56,7 +60,7 @@ type Machine struct {
 //+kubebuilder:object:root=true
 //+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MachineList contains a list of Machine
+// MachineList contains a list of Machine.
 type MachineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

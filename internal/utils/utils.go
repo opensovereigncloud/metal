@@ -1,5 +1,3 @@
-//go:build tools
-
 /*
 Copyright (c) 2021 T-Systems International GmbH, SAP SE or an SAP affiliate company. All right reserved
 
@@ -16,11 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package hack
+package utils
 
-import (
-	// Use gen-crd-api-reference-docs for doc generation.
-	_ "github.com/ahmetb/gen-crd-api-reference-docs"
-	// Use addlicense for adding license headers.
-	_ "github.com/google/addlicense"
-)
+func ContainsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+func RemoveString(slice []string, s string) (result []string) {
+	for _, item := range slice {
+		if item == s {
+			continue
+		}
+		result = append(result, item)
+	}
+	return
+}

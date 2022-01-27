@@ -1,0 +1,129 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - benchmark.onmetal.de
+  resources:
+  - machines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - benchmark.onmetal.de
+  resources:
+  - machines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - benchmark.onmetal.de
+  resources:
+  - machines/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - inventories
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - inventories/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - inventories/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - machines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - machines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - machines/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - oob.onmetal.de
+  resources:
+  - machines
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - oob.onmetal.de
+  resources:
+  - machines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - oob.onmetal.de
+  resources:
+  - machines/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switches
+  verbs:
+  - get
+  - list
+  - watch
