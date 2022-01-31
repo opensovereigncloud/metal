@@ -28,7 +28,7 @@ import (
 	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
-
+	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -112,10 +112,10 @@ func startReconcilers(mgr ctrl.Manager) {
 	}
 	if err = (&machinecontroller.InventoryReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Inventory"),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-inventory"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Inventory")
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-inventory")
 		os.Exit(1)
 	}
 	if err = (&machinecontroller.MachineReconciler{
@@ -129,10 +129,26 @@ func startReconcilers(mgr ctrl.Manager) {
 	}
 	if err = (&machinecontroller.SwitchReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-switch"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Switch")
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-switch")
+		os.Exit(1)
+	}
+	if err = (&machinecontroller.OnboardingReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-onboarding"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-onboarding")
+		os.Exit(1)
+	}
+	if err = (&switchcontroller.OnboardingReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Switch-onboarding"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Switch-onboarding")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

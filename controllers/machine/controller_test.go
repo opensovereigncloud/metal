@@ -14,13 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package machine
+package controllers
 
 import (
 	"context"
+	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+	oobv1 "github.com/onmetal/oob-controller/api/v1"
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,19 +33,22 @@ import (
 var _ = Describe("machine-controller", func() {
 	var (
 		name      = "a969952c-3475-2b82-a85c-84d8b4f8cd2d"
-		namespace = switchv1alpha1.CNamespace
+		namespace = "default"
 	)
 
 	Context("Controller Test", func() {
 		It("Test machine creation and update", func() {
 			testMachine(name, namespace)
 		})
+		It("Test machine onboarding ", func() {
+			testMachineOnboarding(name, namespace)
+		})
 	})
 })
 
 func testMachine(name, namespace string) {
 	ctx := context.Background()
-	preparedMachine := prepareMachine(name, namespace)
+	preparedMachine := prepareMachineForTest(name, namespace)
 	inventory := prepareInventory(name, namespace)
 	switches := prepareSwitch(namespace)
 
@@ -96,7 +101,38 @@ func testMachine(name, namespace string) {
 	Expect(k8sClient.Delete(ctx, machine)).Should(Succeed())
 }
 
-func prepareMachine(name, namespace string) *machinev1alpha1.Machine {
+func testMachineOnboarding(name, namespace string) {
+	ctx := context.Background()
+	oob := prepareOOB()
+
+	By("Expect successful oob creation")
+	err := k8sClient.Create(ctx, oob)
+	Expect(err).Should(BeNil())
+
+	time.Sleep(5 * time.Second)
+
+	By("Expect successful machine creation")
+	m := &machinev1alpha1.Machine{}
+	err = k8sClient.Get(ctx, types.NamespacedName{Name: oob.Name, Namespace: oob.Namespace}, m)
+	Expect(err).Should(BeNil())
+
+	By("Expect oob status to be true")
+	Expect(m.Status.OOB).To(BeTrue())
+
+	By("Expect successful oob deletion")
+	Expect(k8sClient.Delete(ctx, oob)).Should(BeNil())
+	time.Sleep(2 * time.Second)
+
+	By("Expect oob status to be false")
+	err = k8sClient.Get(ctx, types.NamespacedName{Name: oob.Name, Namespace: oob.Namespace}, m)
+	Expect(err).Should(BeNil())
+	Expect(m.Status.OOB).To(BeFalse())
+
+	By("Expect successful machine deletion")
+	Expect(k8sClient.Delete(ctx, m)).Should(BeNil())
+}
+
+func prepareMachineForTest(name, namespace string) *machinev1alpha1.Machine {
 	return &machinev1alpha1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -230,5 +266,23 @@ func getSwitchesStatus() switchv1alpha1.SwitchStatus {
 			State:   "applied",
 		},
 		State: "ready",
+	}
+}
+
+func prepareOOB() *oobv1.Machine {
+	var (
+		name      = "a237952c-3475-2b82-a85c-84d8b4f8cd2d"
+		namespace = "default"
+	)
+	return &oobv1.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: oobv1.MachineSpec{
+			UUID:             name,
+			PowerState:       "Off",
+			ShutdownDeadline: metav1.Now(),
+		},
 	}
 }
