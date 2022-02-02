@@ -58,6 +58,7 @@ spec:
       mtu: 1500
       speed: 1000
       lldps:
+<<<<<<< HEAD
         - chassisId: 68:21:5f:47:17:6e
           systemName: EC1817001226
           systemDescription: ECS4100-52T
@@ -78,6 +79,13 @@ spec:
           systemDescription: ECS4100-52T
           portId: 3c:2c:99:9d:cd:78
           portDescription: Ethernet102
+=======
+        - chassisId: 3c:2c:99:9d:cd:48
+          systemName: EC1817001226
+          systemDescription: ECS4100-52T
+          portId: 3c:2c:99:9d:cd:77
+          portDescription: Ethernet Port on unit 1, port 47
+>>>>>>> master-holder
       ndps:
         - ipAddress: ff02::1:3
           macAddress: 33:33:00:01:00:03
@@ -97,4 +105,8 @@ spec:
           smallBlockReadIops: 0
     networks:
       - interfaceName: "enp0s31f6"
+<<<<<<< HEAD
         averageNetworkThroughputBps: 20703931946
+=======
+        averageNetworkThroughputBps: 20703931946
+>>>>>>> master-holder

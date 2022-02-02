@@ -1,0 +1,14 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Size
+metadata:
+  name: v1-s-x86
+spec:
+  constraints:
+    - path: "status.computed.default.cpus.cores"
+      eq: 2
+    - path: "spec.memory.total"
+      gte: "2Gi"
+    - path: "spec.cpus[*].mhz"
+      lt: "1000.00"
+    - path: "spec.system.manufacturer"
+      neq: "LENOVO"

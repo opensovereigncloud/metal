@@ -1,0 +1,24 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Aggregate
+metadata:
+  name: default
+spec:
+  aggregates:
+    - sourcePath: spec.blocks[*]
+      targetPath: blocks.count
+      aggregate: count
+    - sourcePath: spec.blocks[*].size
+      targetPath: blocks.capacity
+      aggregate: sum
+    - sourcePath: spec.cpus[*]
+      targetPath: cpus.sockets
+      aggregate: count
+    - sourcePath: spec.cpus[*].cores
+      targetPath: cpus.cores
+      aggregate: sum
+    - sourcePath: spec.cpus[*].siblings
+      targetPath: cpus.threads
+      aggregate: sum
+    - sourcePath: spec.nics[*]
+      targetPath: nics.count
+      aggregate: count

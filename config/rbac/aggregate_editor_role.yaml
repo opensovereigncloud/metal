@@ -1,0 +1,24 @@
+# permissions for end users to edit aggregates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aggregate-editor-role
+rules:
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - aggregates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - aggregates/status
+  verbs:
+  - get

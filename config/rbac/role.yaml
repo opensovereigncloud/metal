@@ -4,6 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
+<<<<<<< HEAD
   name: metal-api-role
 rules:
 - apiGroups:
@@ -23,6 +24,14 @@ rules:
   - benchmark.onmetal.de
   resources:
   - machines
+=======
+  name: manager-role
+rules:
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - aggregates
+>>>>>>> master-holder
   verbs:
   - create
   - delete
@@ -32,6 +41,7 @@ rules:
   - update
   - watch
 - apiGroups:
+<<<<<<< HEAD
   - benchmark.onmetal.de
   resources:
   - machines/finalizers
@@ -41,6 +51,17 @@ rules:
   - benchmark.onmetal.de
   resources:
   - machines/status
+=======
+  - machine.onmetal.de
+  resources:
+  - aggregates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - machine.onmetal.de
+  resources:
+  - aggregates/status
+>>>>>>> master-holder
   verbs:
   - get
   - patch
@@ -50,6 +71,11 @@ rules:
   resources:
   - inventories
   verbs:
+<<<<<<< HEAD
+=======
+  - create
+  - delete
+>>>>>>> master-holder
   - get
   - list
   - patch
@@ -72,7 +98,11 @@ rules:
 - apiGroups:
   - machine.onmetal.de
   resources:
+<<<<<<< HEAD
   - machines
+=======
+  - sizes
+>>>>>>> master-holder
   verbs:
   - create
   - delete
@@ -84,17 +114,26 @@ rules:
 - apiGroups:
   - machine.onmetal.de
   resources:
+<<<<<<< HEAD
   - machines/finalizers
+=======
+  - sizes/finalizers
+>>>>>>> master-holder
   verbs:
   - update
 - apiGroups:
   - machine.onmetal.de
   resources:
+<<<<<<< HEAD
   - machines/status
+=======
+  - sizes/status
+>>>>>>> master-holder
   verbs:
   - get
   - patch
   - update
+<<<<<<< HEAD
 - apiGroups:
   - oob.onmetal.de
   resources:
@@ -133,3 +172,5 @@ rules:
   - patch
   - update
   - watch
+=======
+>>>>>>> master-holder
