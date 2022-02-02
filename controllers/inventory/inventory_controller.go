@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 const (

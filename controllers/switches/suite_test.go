@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo"

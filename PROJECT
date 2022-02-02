@@ -1,8 +1,8 @@
 domain: machine.onmetal.de
 layout: go.kubebuilder.io/v3
 multigroup: true
-projectName: machine-operator
-repo: github.com/onmetal/machine-operator
+projectName: metal-api
+repo: github.com/onmetal/metal-api
 resources:
 - api:
     crdVersion: v1
@@ -10,6 +10,28 @@ resources:
   controller: true
   domain: machine.onmetal.de
   kind: Machine
-  path: github.com/onmetal/machine-operator/apis/machine/v1alpha1
+  path: github.com/onmetal/metal-api/apis/machine/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  group: machine
+  kind: Inventory
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  group: machine
+  kind: Aggregate
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  group: machine
+  kind: Size
+  version: v1alpha1
+  webhookVersion: v1
 version: "3"

@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 const (

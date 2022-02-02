@@ -95,7 +95,7 @@ var _ = BeforeSuite(func() {
 			id.Gvk().Version == "v1"
 	})
 
-	crds := make([]client.Object, 0)
+	crds := make([]*v1.CustomResourceDefinition, 0)
 
 	for _, resId := range resIds {
 		res := resMap[resId]

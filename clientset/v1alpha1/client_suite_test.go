@@ -13,7 +13,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/onmetal/k8s-inventory/api/v1alpha1"
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 var cfg *rest.Config

@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/onmetal/k8s-inventory/api/v1alpha1"
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 var _ = Describe("Aggregate client", func() {
@@ -166,17 +166,11 @@ var _ = Describe("Aggregate client", func() {
 			By("Requesting created Aggregate")
 			Eventually(func() bool {
 				_, err = client.Get(ctx, AggregateName, v1.GetOptions{})
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			Eventually(func() bool {
 				_, err = client.Get(ctx, AggregateToDeleteName, v1.GetOptions{})
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeFalse())
 
 			Eventually(events).Should(Receive(event))

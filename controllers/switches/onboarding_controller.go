@@ -17,7 +17,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -61,7 +61,7 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	sw := &switchv1alpha1.Switch{}
 	if err := r.Get(ctx, types.NamespacedName{Namespace: switchv1alpha1.CNamespace, Name: invObj.Name}, sw); err != nil {
 		if apierrors.IsNotFound(err) {
-			sw.SwitchFromInventory(invObj)
+			// sw.SwitchFromInventory(invObj)
 			if err = r.Client.Create(ctx, sw); err != nil {
 				if apierrors.IsAlreadyExists(err) {
 					return ctrl.Result{}, nil

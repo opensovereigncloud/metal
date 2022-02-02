@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	inventoryv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 var _ = Describe("Size controller", func() {

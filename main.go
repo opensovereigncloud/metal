@@ -23,10 +23,11 @@ import (
 	"os"
 	"strconv"
 
-	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
+	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
 	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
@@ -151,10 +152,44 @@ func startReconcilers(mgr ctrl.Manager) {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch-onboarding")
 		os.Exit(1)
 	}
+	if err = (&inventorycontrollers.InventoryReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Inventory"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Inventory")
+		os.Exit(1)
+	}
+	if err = (&inventorycontrollers.SizeReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Size"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Size")
+		os.Exit(1)
+	}
+	if err = (&inventorycontrollers.AggregateReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Aggregate"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Aggregate")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 }
 
 func addHandlers(mgr ctrl.Manager, profiling bool) {
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err := (&inventoriesv1alpha1.Size{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Size")
+			os.Exit(1)
+		}
+		if err := (&inventoriesv1alpha1.Aggregate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Aggregate")
+			os.Exit(1)
+		}
+	}
 	if healthErr := mgr.AddHealthzCheck("healthz", healthz.Ping); healthErr != nil {
 		setupLog.Error(healthErr, "unable to set up health check")
 		os.Exit(1)

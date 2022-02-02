@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/kustomize/pkg/resource"
 	"sigs.k8s.io/kustomize/pkg/target"
 
-	machinev1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -86,7 +86,7 @@ var _ = BeforeSuite(func() {
 			id.Gvk().Version == "v1"
 	})
 
-	crds := make([]client.Object, 0)
+	crds := make([]*v1.CustomResourceDefinition, 0)
 
 	for _, resId := range resIds {
 		res := resMap[resId]

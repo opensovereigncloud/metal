@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/onmetal/k8s-inventory/api/v1alpha1"
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 var _ = Describe("Size client", func() {
@@ -159,17 +159,11 @@ var _ = Describe("Size client", func() {
 			By("Requesting created Size")
 			Eventually(func() bool {
 				_, err = client.Get(ctx, SizeName, v1.GetOptions{})
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			Eventually(func() bool {
 				_, err = client.Get(ctx, SizeToDeleteName, v1.GetOptions{})
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeFalse())
 
 			Eventually(events).Should(Receive(event))

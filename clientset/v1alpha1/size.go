@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	"github.com/onmetal/k8s-inventory/api/v1alpha1"
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 const (
