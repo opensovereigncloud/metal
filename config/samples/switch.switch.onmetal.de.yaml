@@ -2,8 +2,7 @@ apiVersion: switch.onmetal.de/v1alpha1
 kind: Switch
 metadata:
   name: a177382d-a3b4-3ecd-97a4-01cc15e749e4
-  labels:
-    "switch.onmetal.de/chassisId": "68-21-5f-47-17-6e"
+  namespace: onmetal
 spec:
   chassis:
     chassisId: 68:21:5f:47:17:6e
@@ -11,10 +10,7 @@ spec:
     serialNumber: 772632X1950125
     sku: "1"
   hostname: sonic-spine-1
-  location:
-    room: room627
-    row: 10
-    rack: 2
+  location: {}
   softwarePlatform:
     asic: broadcom
     operatingSystem: SONiC
@@ -104,30 +100,6 @@ status:
         type: undefined
       speed: 100000
       state: up
-    Ethernet100:
-      direction: north
-      fec: none
-      mtu: 1500
-      speed: 100000
-      state: up
-      lanes: 2
-      ipV4:
-        address: 100.64.6.70/30
-      ipV6:
-        address: 64:ff9b:1::220/127
-      macAddress: 68:21:5f:47:0d:6e
-    Ethernet104:
-      direction: north
-      fec: none
-      mtu: 1500
-      speed: 100000
-      state: up
-      lanes: 2
-      ipV4:
-        address: 100.64.6.74/30
-      ipV6:
-        address: 64:ff9b:1::220/127
-      macAddress: 68:21:5f:47:0d:6e
   loopbackV4:
     address: 100.64.11.3
     resourceReference:

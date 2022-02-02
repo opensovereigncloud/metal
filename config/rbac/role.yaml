@@ -76,14 +76,33 @@ rules:
   resources:
   - inventories
   verbs:
+<<<<<<< HEAD
   - create
   - delete
+=======
+  - get
+  - list
+  - watch
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switchassignments
+  verbs:
+>>>>>>> main-holder
   - get
   - list
   - patch
   - update
   - watch
 - apiGroups:
+<<<<<<< HEAD
   - machine.onmetal.de
   resources:
   - inventories/finalizers
@@ -174,6 +193,18 @@ rules:
   verbs:
   - get
   - patch
+=======
+  - switch.onmetal.de
+  resources:
+  - switchassignments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switchassignments/status
+  verbs:
+>>>>>>> main-holder
   - update
 - apiGroups:
   - switch.onmetal.de
@@ -187,3 +218,20 @@ rules:
   - patch
   - update
   - watch
+<<<<<<< HEAD
+=======
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switches/status
+  verbs:
+  - get
+  - patch
+  - update
+>>>>>>> main-holder

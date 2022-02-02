@@ -1,6 +1,54 @@
 
 ---
 apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-switch-onmetal-de-v1alpha1-switch
+  failurePolicy: Fail
+  name: mswitch.kb.io
+  rules:
+  - apiGroups:
+    - switch.onmetal.de
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - switches
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-switch-onmetal-de-v1alpha1-switchassignment
+  failurePolicy: Fail
+  name: mswitchassignment.kb.io
+  rules:
+  - apiGroups:
+    - switch.onmetal.de
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    resources:
+    - switchassignments
+  sideEffects: None
+
+---
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null
@@ -19,6 +67,12 @@ webhooks:
   rules:
   - apiGroups:
     - machine.onmetal.de
+      path: /validate-switch-onmetal-de-v1alpha1-switch
+  failurePolicy: Fail
+  name: vswitch.kb.io
+  rules:
+  - apiGroups:
+    - switch.onmetal.de
     apiVersions:
     - v1alpha1
     operations:
@@ -26,6 +80,7 @@ webhooks:
     - UPDATE
     resources:
     - aggregates
+    - switches
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -40,6 +95,12 @@ webhooks:
   rules:
   - apiGroups:
     - machine.onmetal.de
+      path: /validate-switch-onmetal-de-v1alpha1-switchassignment
+  failurePolicy: Fail
+  name: vswitchassignment.kb.io
+  rules:
+  - apiGroups:
+    - switch.onmetal.de
     apiVersions:
     - v1alpha1
     operations:
@@ -47,4 +108,5 @@ webhooks:
     - UPDATE
     resources:
     - sizes
+    - switchassignments
   sideEffects: None

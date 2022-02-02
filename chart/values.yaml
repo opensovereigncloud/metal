@@ -1,0 +1,92 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: []
+nameOverride: "controller-manager"
+
+proxy:
+  image:
+    repository: gcr.io/kubebuilder/kube-rbac-proxy
+    pullPolicy: IfNotPresent
+    tag: "v0.5.0"
+
+manager:
+  image:
+    repository: core.harbor.onmetal.de/onmetal/switch-operator
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 30Mi
+  requests:
+    cpu: 100m
+    memory: 20Mi
+
+securityContext:
+  allowPrivilegeEscalation: false
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsUser: 65532
+
+replicaCount: 1
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+service:
+  type: ClusterIP
+  port: 8443
+
+crd:
+  switch:
+    group: switch.onmetal.de
+    plural: switches
+    singular: switch
+    kind: Switch
+    listKind: SwitchList
+    scope: Namespaced
+    shortNames:
+      - sw
+  switchAssignment:
+    group: switch.onmetal.de
+    plural: switchassignments
+    singular: switchassignment
+    kind: SwitchAssignment
+    listKind: SwitchAssignmentList
+    scope: Namespaced
+    shortNames:
+      - swa
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "onmetal-switch-controller-manager"
+
+namespace: "onmetal"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+ingress:
+  enabled: false
+
+webhooks:
+  cert:
+    nameSuffix: "-serving-cert"
+  secret:
+    name: "webhook-server-cert"
+  service:
+    nameSuffix: "-webhook-service"
+    port: 443

@@ -8,9 +8,5 @@ roleRef:
   name: manager-role
 subjects:
 - kind: ServiceAccount
-<<<<<<< HEAD
   name: controller-manager
-=======
-  name: default
->>>>>>> master-holder
   namespace: system

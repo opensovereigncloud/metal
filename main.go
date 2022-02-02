@@ -26,11 +26,11 @@ import (
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/apimachinery/pkg/runtime"

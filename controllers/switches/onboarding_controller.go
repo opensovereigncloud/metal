@@ -18,13 +18,12 @@ import (
 
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 )
 
 const CMachineType = "Machine"
