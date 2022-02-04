@@ -8,11 +8,11 @@ The Gardener on Metal project uses Github to manage reviews of pull requests.
 
 * If you have a trivial fix or improvement, go ahead and create a pull request and
 address (with @...) a suitable maintainer of this repository 
-(see [CODEOWNERS](https://raw.githubusercontent.com/onmetal/hardware-api/master/CODEOWNERS) 
+(see [CODEOWNERS](https://raw.githubusercontent.com/onmetal/metal-api/main/CODEOWNERS) 
 of this repository) in the description of the pull request.
 
 * If you plan to do something more involved, first discuss your ideas by creating an 
-[issue](https://github.com/onmetal/hardware-api/issues) for this repository. This will avoid unnecessary work and surely give you 
+[issue](https://github.com/onmetal/metal-api/issues) for this repository. This will avoid unnecessary work and surely give you 
 and us a good deal of inspiration.
 
 !!! note 
@@ -62,14 +62,14 @@ process. We use [the standard DCO text of the Linux Foundation](https://develope
 * Fork and clone the repository to you local machine.
 
 ```shell
-git clone git@github.com:YOUR_GITHUB_USER/hardware-api.git
-cd hardware-api
+git clone git@github.com:YOUR_GITHUB_USER/metal-api.git
+cd metal-api
 ```
 
-* Create a branch from the `master`  using 'git checkout' command. 
+* Create a branch from the `main`  using 'git checkout' command. 
 !!! note 
-    If needed, rebase to the current `master` branch before submitting  your pull request. If it doesn't merge properly
-    with `master` you may be asked to rebase your changes.
+    If needed, rebase to the current `main` branch before submitting  your pull request. If it doesn't merge properly
+    with `main` you may be asked to rebase your changes.
 
     ```shell
     git checkout -b my_feature
@@ -111,4 +111,4 @@ for a review in the pull request or a comment.
 We use GitHub issues to track bugs and enhancement requests. Please provide as much context as possible when you open  an issue. The information you provide must be comprehensive enough to understand, reproduce the behavior and find related reports of  that issue for the assignee. 
 Therefore, contributors may use but aren't restricted to the issue template provided by the Gardener on Metal maintainers.
 
-Issues and pull requests are tracked in the [backlog](https://github.com/onmetal/hardware-api/projects/1) for this project.
+Issues and pull requests are tracked in the [backlog](https://github.com/onmetal/metal-api/projects/1) for this project.

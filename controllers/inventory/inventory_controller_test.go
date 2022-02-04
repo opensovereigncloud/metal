@@ -384,10 +384,7 @@ var _ = Describe("Inventory controller", func() {
 					return false
 				}
 				maxLogicalId := iface.(string)
-				if maxLogicalId != "3" {
-					return false
-				}
-				return true
+				return maxLogicalId == "3"
 			}, timeout, interval).Should(BeTrue())
 
 			By("Inventory is updated")
@@ -481,10 +478,7 @@ var _ = Describe("Inventory controller", func() {
 					return false
 				}
 				maxLogicalId := iface.(string)
-				if maxLogicalId != "5" {
-					return false
-				}
-				return true
+				return maxLogicalId == "5"
 			}, timeout, interval).Should(BeTrue())
 
 			By("Inventory is deleted")
@@ -493,10 +487,7 @@ var _ = Describe("Inventory controller", func() {
 			Expect(k8sClient.Delete(ctx, &updatedInventory)).Should(Succeed())
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &updatedInventory)
-				if apierrors.IsNotFound(err) {
-					return true
-				}
-				return false
+				return apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
 		})
 	})

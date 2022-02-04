@@ -37,6 +37,7 @@ const (
 // AggregateReconciler reconciles a Aggregate object
 type AggregateReconciler struct {
 	client.Client
+
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }

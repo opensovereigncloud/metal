@@ -34,6 +34,7 @@ const CMachineType = "Machine"
 // InventoryReconciler reconciles a Switch object
 type InventoryReconciler struct {
 	client.Client
+
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }

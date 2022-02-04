@@ -57,6 +57,7 @@ const (
 // SwitchReconciler reconciles a Switch object
 type SwitchReconciler struct {
 	client.Client
+
 	Log        logr.Logger
 	Scheme     *runtime.Scheme
 	Background *background

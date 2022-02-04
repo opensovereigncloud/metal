@@ -29,14 +29,9 @@ import (
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/json"
-	"sigs.k8s.io/kustomize/k8sdeps/kunstruct"
-	"sigs.k8s.io/kustomize/k8sdeps/transformer"
-	"sigs.k8s.io/kustomize/pkg/fs"
-	"sigs.k8s.io/kustomize/pkg/loader"
-	"sigs.k8s.io/kustomize/pkg/resid"
-	"sigs.k8s.io/kustomize/pkg/resmap"
-	"sigs.k8s.io/kustomize/pkg/resource"
-	"sigs.k8s.io/kustomize/pkg/target"
+	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
+	"sigs.k8s.io/kustomize/kyaml/resid"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	// +kubebuilder:scaffold:imports
@@ -73,33 +68,23 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	// Since kubebuilder is not allowing to set complex types for fields with markers
 	// we have to build patched configuration with kustomize first
-	unstructuredFactory := kunstruct.NewKunstructuredFactoryImpl()
-	resourceFactory := resource.NewFactory(unstructuredFactory)
-	resmapFactory := resmap.NewFactory(resourceFactory)
-	transformerFactory := transformer.NewFactoryImpl()
-	crdPath := filepath.Join("..", "..", "config", "crd")
-	kfs := fs.MakeRealFS()
+	crdPath := filepath.Join("..", "..", "..", "config", "crd")
+	kfs := filesys.MakeFsOnDisk()
+	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 
-	loader, err := loader.NewLoader(crdPath, kfs)
+	resMap, err := k.Run(kfs, crdPath)
 	Expect(err).NotTo(HaveOccurred())
 
-	kt, err := target.NewKustTarget(loader, resmapFactory, transformerFactory)
-	Expect(err).NotTo(HaveOccurred())
-
-	resMap, err := kt.MakeCustomizedResMap()
-	Expect(err).NotTo(HaveOccurred())
-
-	resIds := resMap.GetMatchingIds(func(id resid.ResId) bool {
-		return id.Gvk().Kind == "CustomResourceDefinition" &&
-			id.Gvk().Group == "apiextensions.k8s.io" &&
-			id.Gvk().Version == "v1"
+	resIds := resMap.GetMatchingResourcesByCurrentId(func(id resid.ResId) bool {
+		return id.Kind == "CustomResourceDefinition" &&
+			id.Group == "apiextensions.k8s.io" &&
+			id.Version == "v1"
 	})
 
 	crds := make([]*v1.CustomResourceDefinition, 0)
 
 	for _, resId := range resIds {
-		res := resMap[resId]
-		resJsonBytes, err := res.MarshalJSON()
+		resJsonBytes, err := resId.MarshalJSON()
 		Expect(err).NotTo(HaveOccurred())
 
 		crd := &v1.CustomResourceDefinition{}
@@ -112,7 +97,7 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDs: crds,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
 	}
 

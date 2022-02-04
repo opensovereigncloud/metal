@@ -22,11 +22,11 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	machinerr "github.com/onmetal/metal-api/internal/errors"
 	"github.com/onmetal/metal-api/internal/provider"
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

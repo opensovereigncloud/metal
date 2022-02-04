@@ -1,4 +1,5 @@
 # Installation
+
 ## Prerequisites
 The following tools are required to make changes on that package.
 
@@ -8,16 +9,15 @@ The following tools are required to make changes on that package.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) - to interact with k8s cluster via CLI
 - [kustomize](https://kustomize.io/) - to generate deployment configs
 - [kubebuilder](https://book.kubebuilder.io) - framework to build operators
-- [operator framework](https://operatorframework.io/) - framework to maintain project structure
-- [helm](https://helm.sh/) - to work with helm charts
 
  > If you have to build Docker images on your host,
 you also need to have [Docker](https://www.docker.com/) or its alternative installed.
 
 ## Required operators
 Current operator depends on the following operators:
-- [onmetal/k8s-inventory](https://github.com/onmetal/k8s-inventory)
 - [onmetal/ipam](https://github.com/onmetal/ipam)
+- [onmetal/oob-controller](https://github.com/onmetal/oob-controller)
+
 
 ## Prepare environment
 If you have access to the docker registry and k8s installation that you can use for development purposes, you may skip corresponding steps. 
@@ -58,3 +58,28 @@ In order to build and deploy, execute following command set:
 
 Check `Makefile` for the full list of `make` goals with descriptions.
 
+## Inventory Usage
+
+`./config/samples/` directory contains examples of manifests. They can be used to try out the controller.
+
+    # apply inventory config
+    kubectl apply -f config/samples/machine_v1alpha1_inventory.yaml
+    # apply size config
+    kubectl apply -f config/samples/machine_v1alpha1_size.yaml
+    # apply aggregate config
+    kubectl apply -f config/samples/machine_v1alpha1_aggregate.yaml
+    # get resources
+    kubectl get inventories
+    # get sample resource
+    kubectl describe inventory a967954c-3475-11b2-a85c-84d8b4f8cd2d
+
+### Clean
+
+After development is done, clean up local environment.
+
+    # generate deployment config and delete corresponding entities
+    kustomize build config/default | kubectl delete -f -
+    # remove registry bridge
+    docker stop registry-bridge
+    # stop minikube
+    minikube stop

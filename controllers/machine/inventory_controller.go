@@ -21,7 +21,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
 	machinerr "github.com/onmetal/metal-api/internal/errors"
 	"github.com/onmetal/metal-api/internal/inventory"

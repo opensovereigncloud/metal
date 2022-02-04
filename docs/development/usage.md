@@ -22,5 +22,6 @@ Clean up local environment, after you've done with development:
 
 ## Test 
 To run tests:
-
-    make test
+```shell
+make test
+```

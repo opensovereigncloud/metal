@@ -30,18 +30,18 @@ import (
 
 var subnetsSamples = [][]string{
 	{
-		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v4.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v6.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switches-v4.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switches-v6.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switch-ranges-v4.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switch-ranges-v6.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switches-v4.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switches-v6.yaml"),
 	},
 	{
-		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v4.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switches-v4.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switch-ranges-v4.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switches-v4.yaml"),
 	},
 	{
-		filepath.Join("..", "config", "samples", "testdata", "switch-ranges-v6.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "switches-v6.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switch-ranges-v6.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "switches-v6.yaml"),
 	},
 }
 

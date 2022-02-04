@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/k8s-inventory/api/v1alpha1"
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,6 +37,7 @@ const (
 // SizeReconciler reconciles a Size object
 type SizeReconciler struct {
 	client.Client
+
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }

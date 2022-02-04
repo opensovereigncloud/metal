@@ -2,12 +2,13 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-<<<<<<< HEAD
 - bases/machine.onmetal.de_inventories.yaml
 - bases/machine.onmetal.de_aggregates.yaml
 - bases/machine.onmetal.de_sizes.yaml
 - bases/machine.onmetal.de_machines.yaml
 - bases/benchmark.onmetal.de_machines.yaml
+- bases/switch.onmetal.de_switches.yaml
+- bases/switch.onmetal.de_switchassignments.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesJson6902:
@@ -17,16 +18,12 @@ patchesJson6902:
       kind: CustomResourceDefinition
       name: sizes.machine.onmetal.de
     path: constraint_val_type_patch.yaml
-=======
-- bases/switch.onmetal.de_switches.yaml
-- bases/switch.onmetal.de_switchassignments.yaml
+
 #+kubebuilder:scaffold:crdkustomizeresource
->>>>>>> main-holder
 
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-<<<<<<< HEAD
 #- patches/webhook_in_inventories.yaml
 #- patches/webhook_in_aggregates.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
@@ -37,7 +34,6 @@ patchesStrategicMerge:
 - patches/cainjection_in_aggregates.yaml
 - patches/cainjection_in_sizes.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
-=======
 - patches/webhook_in_switches.yaml
 - patches/webhook_in_switchassignments.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
@@ -47,7 +43,6 @@ patchesStrategicMerge:
 - patches/cainjection_in_switches.yaml
 - patches/cainjection_in_switchassignments.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
->>>>>>> main-holder
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:

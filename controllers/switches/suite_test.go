@@ -80,14 +80,13 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
-	inventoryGlobalCrdPath := getCrdPath(inventoriesv1alpha1.Inventory{})
 	subnetGlobalCrdPath := getCrdPath(ipamv1alpha1.Subnet{})
-	switchGlobalCrdPath := filepath.Join("..", "config", "crd", "bases")
+	switchGlobalCrdPath := filepath.Join("..", "..", "config", "crd", "bases")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{switchGlobalCrdPath, inventoryGlobalCrdPath, subnetGlobalCrdPath},
+		CRDDirectoryPaths:     []string{switchGlobalCrdPath, subnetGlobalCrdPath},
 		ErrorIfCRDPathMissing: true,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},
 	}
 	cfg, err := testEnv.Start()
@@ -212,7 +211,7 @@ var _ = AfterSuite(func() {
 
 func getCrdPath(crdPackageScheme interface{}) string {
 	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
-	goModData, err := ioutil.ReadFile(filepath.Join("..", "go.mod"))
+	goModData, err := ioutil.ReadFile(filepath.Join("..", "..", "go.mod"))
 	Expect(err).NotTo(HaveOccurred())
 	goModFile, err := modfile.Parse("", goModData, nil)
 	Expect(err).NotTo(HaveOccurred())
@@ -230,12 +229,12 @@ func getCrdPath(crdPackageScheme interface{}) string {
 func prepareEnv() {
 	By("Prepare inventories")
 	switchesSamples := []string{
-		filepath.Join("..", "config", "samples", "testdata", "edge-leaf-1.fra3.infra.onmetal.de.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "edge-leaf-2.fra3.infra.onmetal.de.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "leaf-1.fra3.infra.onmetal.de.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "leaf-2.fra3.infra.onmetal.de.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "spine-1.fra3.infra.onmetal.de.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "spine-2.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "edge-leaf-1.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "edge-leaf-2.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "leaf-1.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "leaf-2.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "spine-1.fra3.infra.onmetal.de.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "spine-2.fra3.infra.onmetal.de.yaml"),
 	}
 	for _, sample := range switchesSamples {
 		inv := &inventoriesv1alpha1.Inventory{}
@@ -248,8 +247,8 @@ func prepareEnv() {
 
 	By("Prepare assignments")
 	assignmentsSamples := []string{
-		filepath.Join("..", "config", "samples", "testdata", "assignment-sp1.yaml"),
-		filepath.Join("..", "config", "samples", "testdata", "assignment-sp2.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "assignment-sp1.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "assignment-sp2.yaml"),
 	}
 	for _, sample := range assignmentsSamples {
 		swa := &switchv1alpha1.SwitchAssignment{}
@@ -276,7 +275,7 @@ func prepareEnv() {
 
 func prepareNetwork(subnetsSamples []string) {
 	By("Prepare network")
-	networkSample := filepath.Join("..", "config", "samples", "testdata", "underlay-network.yaml")
+	networkSample := filepath.Join("..", "..", "config", "samples", "testdata", "underlay-network.yaml")
 	network := &ipamv1alpha1.Network{}
 	sampleBytes, err := ioutil.ReadFile(networkSample)
 	Expect(err).NotTo(HaveOccurred())

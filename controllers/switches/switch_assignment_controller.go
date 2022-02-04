@@ -33,6 +33,7 @@ const CSwitchAssignmentFinalizer = "switchassignments.switch.onmetal.de/finalize
 
 type SwitchAssignmentReconciler struct {
 	client.Client
+
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }

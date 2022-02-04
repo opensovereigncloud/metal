@@ -2,10 +2,8 @@ apiVersion: oob.onmetal.de/v1
 kind: Machine
 metadata:
   name: machine-sample
+  namespace: onmetal
 spec:
   uuid: a967954c-3475-11b2-a85c-84d8b4f8cd2d
-  ip: 10.20.30.40
-  mac: ab:cd:de:01:23:45
-  passwordExpiration: 2030-01-01T00:00:00Z
   locatorLED: "Off"
   powerState: "Off"

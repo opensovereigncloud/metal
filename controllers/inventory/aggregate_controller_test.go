@@ -233,10 +233,8 @@ var _ = Describe("Aggregate controller", func() {
 					return false
 				}
 				maxLogicalId := iface.(string)
-				if maxLogicalId != "3" {
-					return false
-				}
-				return true
+
+				return maxLogicalId == "3"
 			}, timeout, interval).Should(BeTrue())
 
 			By("Aggregate is updated")
@@ -285,10 +283,7 @@ var _ = Describe("Aggregate controller", func() {
 					return false
 				}
 				_, err = nestedMapLookup(inventory.Status.Computed.Object, testAggregate.Name, "cpus", "maxLogicalId")
-				if err == nil {
-					return false
-				}
-				return true
+				return err != nil
 			}, timeout, interval).Should(BeTrue())
 
 			By("Aggregate is deleted")

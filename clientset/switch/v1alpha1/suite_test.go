@@ -29,7 +29,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 )
 
 var cfg *rest.Config
@@ -47,7 +47,7 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
-	crdPath := filepath.Join("..", "..", "config", "crd", "bases")
+	crdPath := filepath.Join("..", "..", "..", "config", "crd", "bases")
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{crdPath},

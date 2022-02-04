@@ -54,7 +54,7 @@ var _ = Describe("Switch Webhook", func() {
 	Context("On Switch creation", func() {
 		It("Should set label", func() {
 			By("Create Switch resource")
-			sample := filepath.Join("..", "..", "config", "samples", "switch.switch.onmetal.de.yaml")
+			sample := filepath.Join("..", "..", "..", "config", "samples", "switch.switch.onmetal.de.yaml")
 			sw := &Switch{}
 			sampleBytes, err := ioutil.ReadFile(sample)
 			Expect(err).NotTo(HaveOccurred())

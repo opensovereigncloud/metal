@@ -20,10 +20,10 @@ import (
 	"context"
 	"time"
 
-	inventoriesv1alpha1 "github.com/onmetal/k8s-inventory/api/v1alpha1"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

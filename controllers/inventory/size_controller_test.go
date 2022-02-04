@@ -321,10 +321,7 @@ var _ = Describe("Size controller", func() {
 			Expect(k8sClient.Delete(ctx, &updatedSize)).Should(Succeed())
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, sizeNamespacedName, &updatedSize)
-				if apierrors.IsNotFound(err) {
-					return true
-				}
-				return false
+				return apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
 
 			By("All size labels are unset")

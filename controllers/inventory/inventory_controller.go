@@ -41,6 +41,7 @@ const (
 // InventoryReconciler reconciles a Inventory object
 type InventoryReconciler struct {
 	client.Client
+
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }

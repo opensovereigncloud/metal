@@ -22,10 +22,10 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	machinerr "github.com/onmetal/metal-api/internal/errors"
 	"github.com/onmetal/metal-api/internal/provider"
 	oobonmetal "github.com/onmetal/oob-controller/api/v1"
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"

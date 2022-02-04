@@ -31,6 +31,7 @@ import (
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
+	oobv1 "github.com/onmetal/oob-controller/api/v1"
 
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,7 +50,7 @@ var (
 
 func main() {
 	addToScheme()
-	webhookPort, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
+	webhookPort, err := strconv.Atoi(os.Getenv("WEBHOOK_PORT"))
 	if err != nil {
 		webhookPort = 9443
 	}
@@ -98,6 +99,7 @@ func addToScheme() {
 	utilruntime.Must(machinev1lpha1.AddToScheme(scheme))
 	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(oobv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -144,7 +146,7 @@ func startReconcilers(mgr ctrl.Manager) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-onboarding")
 		os.Exit(1)
 	}
-	if err = (&switchcontroller.OnboardingReconciler{
+	if err = (&switchcontroller.InventoryReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch-onboarding"),
 		Scheme: mgr.GetScheme(),
@@ -187,6 +189,14 @@ func addHandlers(mgr ctrl.Manager, profiling bool) {
 		}
 		if err := (&inventoriesv1alpha1.Aggregate{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Aggregate")
+			os.Exit(1)
+		}
+		if err := (&switchv1alpha1.SwitchAssignment{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "SwitchAssignment")
+			os.Exit(1)
+		}
+		if err := (&switchv1alpha1.Switch{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Switch")
 			os.Exit(1)
 		}
 	}

@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	switchv1alpha1 "github.com/onmetal/switch-operator/api/v1alpha1"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 )
 
 type SwitchV1Alpha1Interface interface {

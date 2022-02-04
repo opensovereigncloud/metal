@@ -38,6 +38,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.43
+          args: -e S1008
 
   go-test:
     runs-on: [ self-hosted, Linux, X64 ]

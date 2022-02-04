@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: metal-api-role
+  name: manager-role
 rules:
 - apiGroups:
   - ""
@@ -46,6 +46,42 @@ rules:
   - patch
   - update
 - apiGroups:
+  - ipam.onmetal.de
+  resources:
+  - ips
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.onmetal.de
+  resources:
+  - ips/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ipam.onmetal.de
+  resources:
+  - subnets
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.onmetal.de
+  resources:
+  - subnets/status
+  verbs:
+  - get
+  - update
+- apiGroups:
   - machine.onmetal.de
   resources:
   - aggregates
@@ -76,33 +112,14 @@ rules:
   resources:
   - inventories
   verbs:
-<<<<<<< HEAD
   - create
   - delete
-=======
-  - get
-  - list
-  - watch
-- apiGroups:
-  - switch.onmetal.de
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
-- apiGroups:
-  - switch.onmetal.de
-  resources:
-  - switchassignments
-  verbs:
->>>>>>> main-holder
   - get
   - list
   - patch
   - update
   - watch
 - apiGroups:
-<<<<<<< HEAD
   - machine.onmetal.de
   resources:
   - inventories/finalizers
@@ -193,7 +210,25 @@ rules:
   verbs:
   - get
   - patch
-=======
+  - update
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - switch.onmetal.de
+  resources:
+  - switchassignments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - switch.onmetal.de
   resources:
   - switchassignments/finalizers
@@ -204,7 +239,6 @@ rules:
   resources:
   - switchassignments/status
   verbs:
->>>>>>> main-holder
   - update
 - apiGroups:
   - switch.onmetal.de
@@ -218,8 +252,6 @@ rules:
   - patch
   - update
   - watch
-<<<<<<< HEAD
-=======
 - apiGroups:
   - switch.onmetal.de
   resources:
@@ -234,4 +266,3 @@ rules:
   - get
   - patch
   - update
->>>>>>> main-holder

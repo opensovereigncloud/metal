@@ -6,7 +6,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/flowcontrol"
 
-	"github.com/onmetal/k8s-inventory/clientset/v1alpha1"
+	"github.com/onmetal/metal-api/clientset/inventory/v1alpha1"
 )
 
 type Clientset interface {
