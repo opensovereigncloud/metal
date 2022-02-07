@@ -73,14 +73,3 @@ spec:
   host:
     type: Machine
     name: node1
-  benchmark:
-    blocks:
-    - name: "/dev/nvme0n1"
-      results:
-        - ioPattern: "read"
-          smallBlockReadIops: 0
-        - ioPattern: "readwrite"
-          smallBlockReadIops: 0
-    networks:
-      - interfaceName: "enp0s31f6"
-        averageNetworkThroughputBps: 20703931946

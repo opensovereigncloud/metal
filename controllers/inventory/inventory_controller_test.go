@@ -290,10 +290,6 @@ var _ = Describe("Inventory controller", func() {
 						Type: "Machine",
 						Name: "dummy.localdomain",
 					},
-					Benchmark: &inventoryv1alpha1.BenchmarkSpec{
-						Blocks:   []inventoryv1alpha1.BlockBenchmarkCollection{},
-						Networks: []inventoryv1alpha1.NetworkBenchmarkResult{},
-					},
 				},
 			}
 
@@ -393,23 +389,6 @@ var _ = Describe("Inventory controller", func() {
 			createdInventory.Spec.CPUs[0].LogicalIDs = append(createdInventory.Spec.CPUs[0].LogicalIDs, 5)
 			createdInventory.Spec.CPUs[0].Cores = 8
 			createdInventory.Spec.CPUs[0].Siblings = 16
-			createdInventory.Spec.Benchmark = &inventoryv1alpha1.BenchmarkSpec{
-				Blocks: []inventoryv1alpha1.BlockBenchmarkCollection{
-					{
-						Name: "/dev/hda",
-						Results: []inventoryv1alpha1.BlockBenchmarkResult{
-							{
-								IOPattern:           "read",
-								SmallBlockReadIOPS:  10000,
-								SmallBlockWriteIOPS: 9000,
-								BandwidthReadIOPS:   8000,
-								BandwidthWriteIOPS:  7000,
-							},
-						},
-					},
-				},
-				Networks: []inventoryv1alpha1.NetworkBenchmarkResult{{InterfaceName: "ens5f0np0", AverageNetworkThroughputBPS: 15000000000}},
-			}
 
 			Expect(k8sClient.Update(ctx, &createdInventory)).To(Succeed())
 

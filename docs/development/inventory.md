@@ -66,7 +66,7 @@ This includes:
 
 ## Deployment
 
-Operator can be deployed with kubectl, kustomize or Helm. Use may choose one that is more suitable.
+Operator can be deployed with kubectl or kustomize. Use may choose one that is more suitable.
 
 ### With kubectl using kustomize configs
 
@@ -81,13 +81,6 @@ Operator can be deployed with kubectl, kustomize or Helm. Use may choose one tha
     kustomize build config/default | kubectl apply -f -
     # build and remove
     kustomize build config/default | kubectl delete -f -
-
-### With Helm chart
-
-    # install release "dev" to "onmetal" namespace
-    helm install dev ./chart/ -n onmetal --create-namespace
-    # remove release "dev" from "onmetal" namespace
-    helm uninstall dev -n onmetal
 
 ## Consuming API
 

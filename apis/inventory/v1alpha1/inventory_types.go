@@ -65,57 +65,6 @@ type InventorySpec struct {
 	// Distro contains info about OS distro
 	// +kubebuilder:validation:Optional
 	Distro *DistroSpec `json:"distro,omitempty"`
-	// Benchmark contains benchmarks results
-	// +kubebuilder:validation:Optional
-	Benchmark *BenchmarkSpec `json:"benchmark"`
-}
-
-// BenchmarkSpec contains benchmark results for inventory item
-// +kubebuilder:object:generate=true
-type BenchmarkSpec struct {
-	// +kubebuilder:validation:Required
-	Blocks []BlockBenchmarkCollection `json:"blocks"`
-	// +kubebuilder:validation:Required
-	Networks []NetworkBenchmarkResult `json:"networks"`
-}
-
-type BlockBenchmarkCollection struct {
-	// Name contains full device name (like "/dev/hda" etc)
-	// +kubebuilder:validation:Required
-	Name    string                 `json:"name"`
-	Results []BlockBenchmarkResult `json:"results"`
-}
-
-// BlockBenchmarkResult contains block (device) benchmark results
-// +kubebuilder:object:generate=true
-type BlockBenchmarkResult struct {
-	// IOPattern defines type of I/O pattern (like "read/write/readwrite" etc)
-	// more types could be found here: https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite
-	// +kubebuilder:validation:Required
-	IOPattern string `json:"ioPattern"`
-	// SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)
-	// +kubebuilder:validation:Required
-	SmallBlockReadIOPS uint64 `json:"smallBlockReadIops"`
-	// SmallBlockWriteIOPS contains benchmark result for write IOPS with small block size (device specified block size)
-	// +kubebuilder:validation:Optional
-	SmallBlockWriteIOPS uint64 `json:"smallBlockWriteIops"`
-	// BandwidthReadIOPS contains benchmark result for read IOPS with large block size (much larger then device specified block size)
-	// +kubebuilder:validation:Optional
-	BandwidthReadIOPS uint64 `json:"bandwidthReadIops"`
-	// BandwidthWriteIOPS contains benchmark result for write IOPS with large block size (much larger then device specified block size)
-	// +kubebuilder:validation:Optional
-	BandwidthWriteIOPS uint64 `json:"bandwidthWriteIops"`
-}
-
-// NetworkBenchmarkResult contains inventory machines network benchmark result
-// +kubebuilder:object:generate=true
-type NetworkBenchmarkResult struct {
-	// InterfaceName defines a name of network device
-	// +kubebuilder:validation:Required
-	InterfaceName string `json:"interfaceName"`
-	// AverageNetworkThroughputBPS contains network benchmark result in bytes/s
-	// +kubebuilder:validation:Required
-	AverageNetworkThroughputBPS uint64 `json:"averageNetworkThroughputBps"`
 }
 
 // SystemSpec contains DMI system information

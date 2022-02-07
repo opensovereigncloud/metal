@@ -162,10 +162,6 @@ func prepareSpecForInventory(name string) inventoriesv1alpha1.InventorySpec {
 			Type: "Machine",
 			Name: "node1",
 		},
-		Benchmark: &inventoriesv1alpha1.BenchmarkSpec{
-			Blocks:   []inventoriesv1alpha1.BlockBenchmarkCollection{},
-			Networks: []inventoriesv1alpha1.NetworkBenchmarkResult{},
-		},
 		Blocks: []inventoriesv1alpha1.BlockSpec{},
 		Memory: &inventoriesv1alpha1.MemorySpec{},
 		CPUs:   []inventoriesv1alpha1.CPUSpec{},
