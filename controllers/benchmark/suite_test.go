@@ -24,9 +24,6 @@ import (
 
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
-	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
-	oobonmetal "github.com/onmetal/oob-controller/api/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -73,17 +70,13 @@ var _ = BeforeSuite(func() {
 
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "..", "config", "crd", "additional"),
 			filepath.Join("..", "..", "config", "crd", "bases"),
 		},
 		ErrorIfCRDPathMissing: true,
 	}
 	ctx, cancel = context.WithCancel(context.TODO())
 
-	oobonmetal.SchemeBuilder.Register(&oobonmetal.Machine{}, &oobonmetal.MachineList{})
-	machinev1lpha1.SchemeBuilder.Register(&machinev1lpha1.Machine{}, &machinev1lpha1.MachineList{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
-	switchv1alpha1.SchemeBuilder.Register(&switchv1alpha1.Switch{}, &switchv1alpha1.SwitchList{})
 	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})
 
 	var err error
@@ -93,9 +86,6 @@ var _ = BeforeSuite(func() {
 
 	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(benchv1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(switchv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(machinev1lpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
@@ -107,22 +97,9 @@ var _ = BeforeSuite(func() {
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, Host: "127.0.0.1", MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&MachineReconciler{
-		Client:   k8sManager.GetClient(),
-		Recorder: k8sManager.GetEventRecorderFor("machine-operator"),
-		Log:      ctrl.Log.WithName("controllers").WithName("machine"),
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&InventoryReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("machine-inventory"),
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
 	err = (&OnboardingReconciler{
 		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("machine-onboarding"),
+		Log:    ctrl.Log.WithName("controllers").WithName("benchmark-onboarding"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -142,24 +119,10 @@ var _ = AfterSuite(func() {
 })
 
 func cleanUp() {
-	By("Remove oob")
-	Expect(k8sClient.DeleteAllOf(ctx, &oobonmetal.Machine{}, client.InNamespace("default"))).To(Succeed())
+	By("Remove benchmarks")
+	Expect(k8sClient.DeleteAllOf(ctx, &benchv1alpha3.Machine{}, client.InNamespace("default"))).To(Succeed())
 	Eventually(func() bool {
-		list := &oobonmetal.MachineList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-
-	By("Remove switches")
-	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace("default"))).To(Succeed())
-	Eventually(func() bool {
-		list := &switchv1alpha1.SwitchList{}
+		list := &benchv1alpha3.MachineList{}
 		err := k8sClient.List(ctx, list)
 		if err != nil {
 			return false

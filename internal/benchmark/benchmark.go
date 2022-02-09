@@ -30,9 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const UUIDLabel = "machine.onmetal.de/uuid"
-
 const percentageModifier = 100
+
+const UUIDLabel = "machine.onmetal.de/uuid"
 
 var (
 	ErrAlreadyExist     = errors.New("already exist")
@@ -48,9 +48,8 @@ type Benchmark struct {
 }
 
 func New(ctx context.Context, c client.Client, l logr.Logger, req ctrl.Request) (*Benchmark, bool) {
-	exist := true
-	if !isExist(ctx, c, req) {
-		exist = false
+	if isExist(ctx, c, req) {
+		return &Benchmark{}, true
 	}
 	return &Benchmark{
 		Client:    c,
@@ -58,7 +57,7 @@ func New(ctx context.Context, c client.Client, l logr.Logger, req ctrl.Request) 
 		log:       l,
 		name:      req.Name,
 		namespace: req.Namespace,
-	}, exist
+	}, false
 }
 
 func (b *Benchmark) Create() error {

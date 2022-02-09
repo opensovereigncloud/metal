@@ -113,6 +113,14 @@ func startReconcilers(mgr ctrl.Manager) {
 		setupLog.Error(err, "unable to create controller", "controller", "Benchmark")
 		os.Exit(1)
 	}
+	if err = (&benchmarkcontroller.OnboardingReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Benchmark-onboarding"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Benchmark-onboarding")
+		os.Exit(1)
+	}
 	if err = (&machinecontroller.InventoryReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-inventory"),
