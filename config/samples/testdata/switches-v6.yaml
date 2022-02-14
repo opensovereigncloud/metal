@@ -5,8 +5,10 @@ metadata:
   namespace: onmetal
 spec:
   capacity: 255
-  parentSubnetName: switch-ranges-v6
-  networkName: underlay
+  parentSubnet:
+    name: switch-ranges-v6
+  network:
+    name: underlay
   regions:
     - name: eu-west
       availabilityZones:

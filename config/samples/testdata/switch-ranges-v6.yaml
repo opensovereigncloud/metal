@@ -5,7 +5,8 @@ metadata:
   namespace: onmetal
 spec:
   cidr: "64:ff9b:1::/112"
-  networkName: underlay
+  network:
+    name: underlay
   regions:
     - name: eu-west
       availabilityZones:

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -536,9 +537,9 @@ func (r *SwitchReconciler) setV4Subnet(ctx context.Context, obj *switchv1alpha1.
 		}
 		addressesCount := obj.GetAddressCount(ipamv1alpha1.CIPv4SubnetType)
 		spec := ipamv1alpha1.SubnetSpec{
-			Capacity:    resource.NewQuantity(addressesCount, resource.DecimalSI),
-			NetworkName: CUnderlayNetwork,
-			Regions:     region.ConvertToSubnetRegion(),
+			Capacity: resource.NewQuantity(addressesCount, resource.DecimalSI),
+			Network:  v1.LocalObjectReference{Name: CUnderlayNetwork},
+			Regions:  region.ConvertToSubnetRegion(),
 		}
 		subnetName := obj.SwitchSubnetName(ipamv1alpha1.CIPv4SubnetType)
 		lbl := map[string]string{switchv1alpha1.LabelSwitchName: obj.Name}
@@ -574,9 +575,9 @@ func (r *SwitchReconciler) setV6Subnet(ctx context.Context, obj *switchv1alpha1.
 		}
 		addressesCount := obj.GetAddressCount(ipamv1alpha1.CIPv6SubnetType)
 		spec := ipamv1alpha1.SubnetSpec{
-			Capacity:    resource.NewQuantity(addressesCount, resource.DecimalSI),
-			NetworkName: CUnderlayNetwork,
-			Regions:     region.ConvertToSubnetRegion(),
+			Capacity: resource.NewQuantity(addressesCount, resource.DecimalSI),
+			Network:  v1.LocalObjectReference{Name: CUnderlayNetwork},
+			Regions:  region.ConvertToSubnetRegion(),
 		}
 		subnetName := obj.SwitchSubnetName(ipamv1alpha1.CIPv6SubnetType)
 		lbl := map[string]string{switchv1alpha1.LabelSwitchName: obj.Name}
@@ -684,7 +685,7 @@ func (r *SwitchReconciler) createSubnet(
 		},
 		Spec: spec,
 	}
-	subnet.Spec.ParentSubnetName = parentSubnet.Name
+	subnet.Spec.ParentSubnet = v1.LocalObjectReference{Name: parentSubnet.Name}
 	if err = r.Create(ctx, subnet); err != nil {
 		r.Log.Error(err, "failed to create resource",
 			"gvk", subnet.GroupVersionKind().String(),
@@ -783,8 +784,8 @@ func (r *SwitchReconciler) createIP(
 			Labels:    labels,
 		},
 		Spec: ipamv1alpha1.IPSpec{
-			SubnetName: parentSubnet.Name,
-			ResourceReference: &ipamv1alpha1.ResourceReference{
+			Subnet: v1.LocalObjectReference{Name: parentSubnet.Name},
+			Consumer: &ipamv1alpha1.ResourceReference{
 				APIVersion: obj.APIVersion,
 				Kind:       obj.Kind,
 				Name:       obj.Name,
@@ -803,10 +804,10 @@ func (r *SwitchReconciler) getIPAddress(
 	offset int,
 	loopback bool) (ip net.IP, err error) {
 	if !loopback && subnet.Spec.CIDR != nil {
-		ip, _ = gocidr.Host(subnet.Spec.CIDR.Net, offset)
+		ip, _ = gocidr.Host(subnet.Spec.CIDR.Net.IPNet(), offset)
 		return
 	}
-	ip, _ = gocidr.Host(subnet.Status.Reserved.Net, offset)
+	ip, _ = gocidr.Host(subnet.Status.Reserved.Net.IPNet(), offset)
 	if !loopback {
 		return
 	}
