@@ -41,6 +41,7 @@ var subnetsSamples = [][]string{
 	},
 	{
 		filepath.Join("..", "..", "config", "samples", "testdata", "switch-ranges-v6.yaml"),
+		filepath.Join("..", "..", "config", "samples", "testdata", "standalone-switches-v4.yaml"),
 		filepath.Join("..", "..", "config", "samples", "testdata", "switches-v6.yaml"),
 	},
 }
@@ -102,7 +103,7 @@ var _ = Describe("Controllers interaction", func() {
 						if !item.SubnetsDefined(ipv4Used, ipv6Used) {
 							return false
 						}
-						if !item.LoopbackAddressesDefined(ipv4Used, ipv6Used) {
+						if !item.LoopbackAddressesDefined(v6loopback) {
 							return false
 						}
 						if item.Status.State != switchv1alpha1.CSwitchStateReady {

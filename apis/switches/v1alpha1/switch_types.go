@@ -870,12 +870,8 @@ func (in *Switch) GetAddressCount(af ipamv1alpha1.SubnetAddressType) (count int6
 
 // LoopbackAddressesDefined checks whether loopback addresses are filled
 // for the switch
-func (in *Switch) LoopbackAddressesDefined(ipv4Used, ipv6Used bool) bool {
-	loopbackV4Ok := false
-	if (ipv4Used && in.Status.LoopbackV4.Address != CEmptyString) ||
-		(!ipv4Used && in.Status.LoopbackV4.Address == CEmptyString) {
-		loopbackV4Ok = true
-	}
+func (in *Switch) LoopbackAddressesDefined(ipv6Used bool) bool {
+	loopbackV4Ok := in.Status.LoopbackV4.Address != CEmptyString
 	loopbackV6Ok := false
 	if (ipv6Used && in.Status.LoopbackV6.Address != CEmptyString) ||
 		(!ipv6Used && in.Status.LoopbackV6.Address == CEmptyString) {

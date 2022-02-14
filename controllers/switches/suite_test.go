@@ -65,7 +65,7 @@ var k8sClient client.Client
 var ctx context.Context
 var testEnv *envtest.Environment
 var cancel context.CancelFunc
-var ipv4Used, ipv6Used = false, false
+var ipv4Used, ipv6Used, v6loopback = false, false, false
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -295,12 +295,21 @@ func prepareNetwork(subnetsSamples []string) {
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: subnet.Namespace, Name: subnet.Name}, subnet)).To(Succeed())
 			return subnet.Status.State == ipamv1alpha1.CFinishedSubnetState
 		}, timeout, interval).Should(BeTrue())
-		if subnet.Status.Type == ipamv1alpha1.CIPv4SubnetType {
+		if subnet.Name == fmt.Sprintf("%s-%s", CSouthParentSubnetPrefix, CIPAMv4Suffix) {
 			ipv4Used = true
 		}
-		if subnet.Status.Type == ipamv1alpha1.CIPv6SubnetType {
+		if subnet.Name == fmt.Sprintf("%s-%s", CSouthParentSubnetPrefix, CIPAMv6Suffix) {
 			ipv6Used = true
 		}
+		if subnet.Name == fmt.Sprintf("%s-%s", CLoopbackParentSubnetPrefix, CIPAMv6Suffix) {
+			v6loopback = true
+		}
+		//if subnet.Status.Type == ipamv1alpha1.CIPv4SubnetType {
+		//	ipv4Used = true
+		//}
+		//if subnet.Status.Type == ipamv1alpha1.CIPv6SubnetType {
+		//	ipv6Used = true
+		//}
 	}
 }
 

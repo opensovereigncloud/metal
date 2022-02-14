@@ -68,6 +68,7 @@ type background struct {
 	inventory  *inventoriesv1alpha1.Inventory
 	assignment *switchv1alpha1.SwitchAssignment
 	loopbacks  []net.IP
+	v6loopback bool
 	ipv4Used   bool
 	ipv6Used   bool
 }
@@ -184,32 +185,35 @@ func (r *SwitchReconciler) getBackground(ctx context.Context, obj *switchv1alpha
 		return
 	}
 
+	r.Background.ipv4Used, err = r.subnetExists(ctx, obj.Namespace, CSouthParentSubnetPrefix, CIPAMv4Suffix)
+	if err != nil {
+		return
+	}
+	r.Background.ipv6Used, err = r.subnetExists(ctx, obj.Namespace, CSouthParentSubnetPrefix, CIPAMv6Suffix)
+	if err != nil {
+		return
+	}
+	r.Background.v6loopback, err = r.subnetExists(ctx, obj.Namespace, CLoopbackParentSubnetPrefix, CIPAMv6Suffix)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (r *SwitchReconciler) subnetExists(ctx context.Context, namespace, prefix, af string) (exist bool, err error) {
 	subnet := &ipamv1alpha1.Subnet{}
 	err = r.Get(ctx, types.NamespacedName{
-		Namespace: obj.Namespace,
-		Name:      fmt.Sprintf("%s-%s", CSouthParentSubnetPrefix, CIPAMv4Suffix),
+		Namespace: namespace,
+		Name:      fmt.Sprintf("%s-%s", prefix, af),
 	}, subnet)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return
 		}
-		r.Background.ipv4Used = false
+		exist = false
 		err = nil
 	} else {
-		r.Background.ipv4Used = true
-	}
-	err = r.Get(ctx, types.NamespacedName{
-		Namespace: obj.Namespace,
-		Name:      fmt.Sprintf("%s-%s", CSouthParentSubnetPrefix, CIPAMv6Suffix),
-	}, subnet)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return
-		}
-		r.Background.ipv6Used = false
-		err = nil
-	} else {
-		r.Background.ipv6Used = true
+		exist = true
 	}
 	return
 }
@@ -691,7 +695,7 @@ func (r *SwitchReconciler) createSubnet(
 }
 
 func (r *SwitchReconciler) loopbackAddressesOk(obj *switchv1alpha1.Switch) bool {
-	return obj.LoopbackAddressesDefined(r.Background.ipv4Used, r.Background.ipv6Used)
+	return obj.LoopbackAddressesDefined(r.Background.v6loopback)
 }
 
 func (r *SwitchReconciler) updateLoopbacks(ctx context.Context, obj *switchv1alpha1.Switch) (err error) {
@@ -702,13 +706,13 @@ func (r *SwitchReconciler) updateLoopbacks(ctx context.Context, obj *switchv1alp
 		r.Log.Error(err, "failed to list resources", "gvk", subnets.GroupVersionKind().String())
 		return
 	}
-	if r.Background.ipv4Used && obj.Status.LoopbackV4.Address == switchv1alpha1.CEmptyString {
+	if obj.Status.LoopbackV4.Address == switchv1alpha1.CEmptyString {
 		err = r.setLoopbackIP(ctx, obj, subnets, ipamv1alpha1.CIPv4SubnetType)
 		if err != nil {
 			return
 		}
 	}
-	if r.Background.ipv6Used && obj.Status.LoopbackV6.Address == switchv1alpha1.CEmptyString {
+	if r.Background.v6loopback && obj.Status.LoopbackV6.Address == switchv1alpha1.CEmptyString {
 		err = r.setLoopbackIP(ctx, obj, subnets, ipamv1alpha1.CIPv6SubnetType)
 		if err != nil {
 			return

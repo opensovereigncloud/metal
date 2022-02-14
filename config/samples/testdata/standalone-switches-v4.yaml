@@ -1,0 +1,12 @@
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: Subnet
+metadata:
+  name: switches-v4
+  namespace: onmetal
+spec:
+  cidr: "100.64.11.0/24"
+  networkName: underlay
+  regions:
+    - name: eu-west
+      availabilityZones:
+      - A
