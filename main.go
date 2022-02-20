@@ -23,6 +23,7 @@ import (
 	"os"
 	"strconv"
 
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
@@ -100,6 +101,7 @@ func addToScheme() {
 	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(oobv1.AddToScheme(scheme))
+	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
