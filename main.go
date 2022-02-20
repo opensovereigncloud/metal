@@ -162,6 +162,22 @@ func startReconcilers(mgr ctrl.Manager) {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch-onboarding")
 		os.Exit(1)
 	}
+	if err = (&switchcontroller.SwitchReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Switch")
+		os.Exit(1)
+	}
+	if err = (&switchcontroller.SwitchAssignmentReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SwitchAssignment"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SwitchAssignment")
+		os.Exit(1)
+	}
 	if err = (&inventorycontrollers.InventoryReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Inventory"),
