@@ -619,6 +619,9 @@ func (in *Switch) PeersDefined(list *SwitchList) bool {
 				continue
 			}
 			nic := in.Status.Interfaces[nicData.Peer.PortDescription] // portDescription may be absent!
+			if nic == nil || nic.Peer == nil {
+				return false
+			}
 			if nic.Peer.Type != CPeerTypeSwitch {
 				return false
 			}
