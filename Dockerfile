@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM core.harbor.onmetal.de/proxy/library/golang:1.17 as builder
+FROM golang:1.17 as builder
 
 ARG GOARCH
 ARG GOPRIVATE

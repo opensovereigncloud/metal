@@ -618,8 +618,8 @@ func (in *Switch) PeersDefined(list *SwitchList) bool {
 			if nicData.Peer.ChassisID != in.Spec.Chassis.ChassisID {
 				continue
 			}
-			nic := in.Status.Interfaces[nicData.Peer.PortDescription] // portDescription may be absent!
-			if nic == nil || nic.Peer == nil {
+			nic, ok := in.Status.Interfaces[nicData.Peer.PortDescription] // portDescription may be absent!
+			if !ok {
 				return false
 			}
 			if nic.Peer.Type != CPeerTypeSwitch {
@@ -644,7 +644,10 @@ func (in *Switch) FillPeerSwitches(list *SwitchList) {
 			if nicData.Peer.ChassisID != in.Spec.Chassis.ChassisID {
 				continue
 			}
-			nic := in.Status.Interfaces[nicData.Peer.PortDescription]
+			nic, ok := in.Status.Interfaces[nicData.Peer.PortDescription]
+			if !ok {
+				continue
+			}
 			nic.Peer.Type = CPeerTypeSwitch
 			nic.Peer.ResourceReference.APIVersion = item.APIVersion
 			nic.Peer.ResourceReference.Kind = item.Kind
@@ -990,7 +993,10 @@ func (in *Switch) UpdateNorthNICsIP(ipv4Used, ipv6Used bool, list *SwitchList) (
 			if nicData.Peer.ResourceReference.NamespacedName() != item.NamespacedName() {
 				continue
 			}
-			peerNICData := item.Status.Interfaces[nicData.Peer.PortDescription]
+			peerNICData, ok := item.Status.Interfaces[nicData.Peer.PortDescription]
+			if !ok {
+				continue
+			}
 			if ipv4Used {
 				if nicAddressV4 := peerNICData.RequestAddress(ipamv1alpha1.CIPv4SubnetType); nicAddressV4 != nil {
 					nicData.IPv4.Address = fmt.Sprintf("%s/%d", nicAddressV4.String(), CIPv4InterfaceSubnetMask)
