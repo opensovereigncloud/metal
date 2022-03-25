@@ -42,6 +42,7 @@ const (
 	uuidNotExist     StatusReason = "uuid not exist"
 	notFound         StatusReason = "not found"
 	underDeletion    StatusReason = "under deletion"
+	notLabeled       StatusReason = "not labeled"
 	notAMachine      StatusReason = "not a machine"
 	castType         StatusReason = "casting failed"
 	unknown          StatusReason = "unknown"
@@ -132,6 +133,12 @@ func NotFound(name string) *MachineError {
 func UnderDeletion() *MachineError {
 	return &MachineError{
 		ErrStatus: Reason{Message: "component is under deletion", StatusReason: underDeletion},
+	}
+}
+
+func NotLabeled() *MachineError {
+	return &MachineError{
+		ErrStatus: Reason{Message: "size labels are not present yet", StatusReason: notLabeled},
 	}
 }
 

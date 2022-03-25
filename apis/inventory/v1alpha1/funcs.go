@@ -411,7 +411,6 @@ func getDummyInventoryForValidation() *ValidationInventory {
 				VMType: "",
 			},
 			Host: &HostSpec{
-				Type: "",
 				Name: "",
 			},
 			Distro: &DistroSpec{

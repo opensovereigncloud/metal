@@ -148,8 +148,14 @@ func prepareMachineForTest(name, namespace string) *machinev1alpha1.Machine {
 
 func prepareInventory(name, namespace string) *inventoriesv1alpha1.Inventory {
 	return &inventoriesv1alpha1.Inventory{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		Spec:       prepareSpecForInventory(name),
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"machine.onmetal.de/size-machine": "",
+			},
+		},
+		Spec: prepareSpecForInventory(name),
 	}
 }
 
@@ -159,7 +165,6 @@ func prepareSpecForInventory(name string) inventoriesv1alpha1.InventorySpec {
 			ID: name,
 		},
 		Host: &inventoriesv1alpha1.HostSpec{
-			Type: "Machine",
 			Name: "node1",
 		},
 		Blocks: []inventoriesv1alpha1.BlockSpec{},

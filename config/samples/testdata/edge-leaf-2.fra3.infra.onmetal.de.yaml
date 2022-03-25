@@ -5,6 +5,7 @@ metadata:
     machine.onmetal.de/mac-address-903cb33382fb: ""
     machine.onmetal.de/mac-address-903cb33382fc: ""
     machine.onmetal.de/mac-address-903cb33382fd: ""
+    machine.onmetal.de/size-switch: ""
   name: fff5c0db-b0cb-3059-a60f-4015d5963588
   namespace: onmetal
 spec:
@@ -197,7 +198,6 @@ spec:
     kernelVersion: 4.19.0-6-2-amd64
   host:
     name: edge-leaf-2.fra3.infra.onmetal.de
-    type: Switch
   memory:
     total: 16716156928
   nics:

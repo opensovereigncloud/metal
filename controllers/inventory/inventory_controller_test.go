@@ -287,7 +287,6 @@ var _ = Describe("Inventory controller", func() {
 						},
 					},
 					Host: &inventoryv1alpha1.HostSpec{
-						Type: "Machine",
 						Name: "dummy.localdomain",
 					},
 				},

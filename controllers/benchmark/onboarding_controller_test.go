@@ -52,7 +52,6 @@ func prepareSpecForInventory(name string) inventoriesv1alpha1.InventorySpec {
 			ID: name,
 		},
 		Host: &inventoriesv1alpha1.HostSpec{
-			Type: "Machine",
 			Name: "node1",
 		},
 		Blocks: []inventoriesv1alpha1.BlockSpec{},

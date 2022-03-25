@@ -29,7 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const CMachineType = "Machine"
+const (
+	CMachineType    = "Machine"
+	CSwitchSizeName = "switch"
+)
 
 // InventoryReconciler reconciles a Switch object
 type InventoryReconciler struct {
@@ -60,9 +63,18 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if res.Spec.Host.Type == CMachineType {
+	labels := res.GetLabels()
+	if len(labels) == 0 {
+		// We should wait until sizes would be attached to
 		return ctrl.Result{}, nil
 	}
+
+	switchSizeLabel := inventoriesv1alpha1.GetSizeMatchLabel(CSwitchSizeName)
+	if _, ok := labels[switchSizeLabel]; !ok {
+		// Not a switch, don't need to process
+		return ctrl.Result{}, nil
+	}
+
 	sw := &switchv1alpha1.Switch{}
 	if err := r.Get(ctx, types.NamespacedName{Namespace: switchv1alpha1.CNamespace, Name: res.Name}, sw); err != nil {
 		if apierrors.IsNotFound(err) {

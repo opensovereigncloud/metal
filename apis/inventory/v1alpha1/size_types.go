@@ -66,6 +66,10 @@ func init() {
 	SchemeBuilder.Register(&Size{}, &SizeList{})
 }
 
+func GetSizeMatchLabel(sizeName string) string {
+	return CLabelPrefix + sizeName
+}
+
 func (in *Size) GetMatchLabel() string {
 	return CLabelPrefix + in.Name
 }

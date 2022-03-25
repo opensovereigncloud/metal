@@ -386,7 +386,6 @@ func inventoryTemplate() *inventoryv1alpha1.Inventory {
 				},
 			},
 			Host: &inventoryv1alpha1.HostSpec{
-				Type: "Machine",
 				Name: "dummy.localdomain",
 			},
 		},

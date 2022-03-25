@@ -158,7 +158,6 @@ var _ = Describe("Aggregate controller", func() {
 						},
 					},
 					Host: &inventoryv1alpha1.HostSpec{
-						Type: "Machine",
 						Name: "dummy.localdomain",
 					},
 				},
