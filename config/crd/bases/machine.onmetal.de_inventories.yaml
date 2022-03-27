@@ -21,10 +21,6 @@ spec:
       jsonPath: .spec.host.name
       name: Hostname
       type: string
-    - description: Type
-      jsonPath: .spec.host.type
-      name: Type
-      type: string
     - description: Total amount of cores
       jsonPath: .status.computed.default.cpus.cores
       name: Cores
@@ -275,16 +271,8 @@ spec:
                   name:
                     description: Hostname contains hostname
                     type: string
-                  type:
-                    description: Type referring either to Machine or Switch inventorying
-                      object type
-                    enum:
-                    - Machine
-                    - Switch
-                    type: string
                 required:
                 - name
-                - type
                 type: object
               ipmis:
                 description: IPMIs contains info about IPMI interfaces on the host

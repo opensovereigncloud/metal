@@ -3,6 +3,8 @@ kind: Inventory
 metadata:
   name: a967954c-3475-11b2-a85c-84d8b4f8cd2d
   namespace: onmetal
+  labels:
+    machine.onmetal.de/size-machine: ""
 spec:
   system:
     id: a967954c-3475-11b2-a85c-84d8b4f8cd2d
@@ -71,5 +73,4 @@ spec:
   virt:
     vmType: none
   host:
-    type: Machine
     name: node1

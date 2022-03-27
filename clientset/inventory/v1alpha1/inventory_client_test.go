@@ -90,7 +90,6 @@ var _ = Describe("Inventory client", func() {
 						},
 					},
 					Host: &v1alpha1.HostSpec{
-						Type: "Machine",
 						Name: "dummy.localdomain",
 					},
 				},

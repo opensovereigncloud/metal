@@ -392,10 +392,6 @@ type VirtSpec struct {
 // HostSpec contains type of inventorying object and in case it is a switch - SONiC version
 // +kubebuilder:object:generate=true
 type HostSpec struct {
-	// Type referring either to Machine or Switch inventorying object type
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Machine;Switch
-	Type string `json:"type"`
 	// Hostname contains hostname
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
@@ -433,7 +429,6 @@ type InventoryStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.host.name`,description="Hostname"
-// +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.host.type`,description="Type"
 // +kubebuilder:printcolumn:name="Cores",type=string,JSONPath=`.status.computed.default.cpus.cores`,description="Total amount of cores"
 // +kubebuilder:printcolumn:name="Memory",type=integer,JSONPath=`.spec.memory.total`,description="RAM amount in bytes"
 // +kubebuilder:printcolumn:name="Disks",type=string,JSONPath=`.status.computed.default.blocks.count`,description="Hardware disk count"

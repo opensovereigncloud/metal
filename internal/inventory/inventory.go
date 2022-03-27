@@ -32,17 +32,11 @@ import (
 )
 
 const (
-	subnetSize = 30
-)
-
-const (
-	healthy = true
-)
-
-const defaultNumberOfInterfaces = 2
-
-const (
-	machineLeasedByLabel = "machine.onmetal.de/leased-by"
+	machineLeasedByLabel      = "machine.onmetal.de/leased-by"
+	defaultNumberOfInterfaces = 2
+	healthy                   = true
+	subnetSize                = 30
+	machineSizeName           = "machine"
 )
 
 type Inventory struct {
@@ -63,7 +57,12 @@ func New(ctx context.Context, c ctrlclient.Client, l logr.Logger, req ctrl.Reque
 	if !ok {
 		return &Inventory{}, machinerr.CastType()
 	}
-	if inventory.Spec.Host.Type != "Machine" {
+	labels := inventory.GetLabels()
+	if len(labels) == 0 {
+		return nil, machinerr.NotLabeled()
+	}
+	machineSizeLabel := inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)
+	if _, ok := labels[machineSizeLabel]; !ok {
 		return nil, machinerr.NotAMachine()
 	}
 	return &Inventory{
