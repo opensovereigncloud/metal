@@ -16,6 +16,14 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
+  domain: machine.onmetal.de
+  kind: Machine
+  path: github.com/onmetal/metal-api/apis/machine/v1alpha2
+  version: v1alpha2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
   group: machine
   kind: Inventory
   version: v1alpha1

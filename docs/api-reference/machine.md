@@ -1,18 +1,19 @@
 <p>Packages:</p>
 <ul>
 <li>
-<a href="#machine.onmetal.de%2fv1alpha1">machine.onmetal.de/v1alpha1</a>
+<a href="#machine.onmetal.de%2fv1alpha2">machine.onmetal.de/v1alpha2</a>
 </li>
 </ul>
-<h2 id="machine.onmetal.de/v1alpha1">machine.onmetal.de/v1alpha1</h2>
+<h2 id="machine.onmetal.de/v1alpha2">machine.onmetal.de/v1alpha2</h2>
 Resource Types:
 <ul></ul>
-<h3 id="machine.onmetal.de/v1alpha1.Action">Action
+<h3 id="machine.onmetal.de/v1alpha2.IPAddressSpec">IPAddressSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.MachineSpec">MachineSpec</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Interface">Interface</a>)
 </p>
 <div>
+<p>IPAddressSpec defines interface&rsquo;s ip address info</p>
 </div>
 <table>
 <thead>
@@ -24,22 +25,34 @@ Resource Types:
 <tbody>
 <tr>
 <td>
-<code>power_state</code><br/>
+<code>address</code><br/>
 <em>
 string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>PowerState - defines desired machine power state</p>
+<p>Address refers to the ip address value</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resource_reference</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ResourceReference">
+ResourceReference
+</a>
+</em>
+</td>
+<td>
+<p>ResourceReference refers to the related resource definition</p>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.Identity">Identity
+<h3 id="machine.onmetal.de/v1alpha2.Identity">Identity
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.MachineSpec">MachineSpec</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineSpec">MachineSpec</a>)
 </p>
 <div>
 <p>Identity - defines hardware information about machine.</p>
@@ -91,7 +104,7 @@ string
 <td>
 <code>internal</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.Internal">
+<a href="#machine.onmetal.de/v1alpha2.Internal">
 []Internal
 </a>
 </em>
@@ -101,10 +114,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.Interface">Interface
+<h3 id="machine.onmetal.de/v1alpha2.Interface">Interface
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.MachineStatus">MachineStatus</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineStatus">MachineStatus</a>)
 </p>
 <div>
 <p>Interface - defines information about machine interfaces.</p>
@@ -131,21 +144,25 @@ string
 </tr>
 <tr>
 <td>
-<code>switch_uuid</code><br/>
+<code>switch_reference</code><br/>
 <em>
-string
+<a href="#machine.onmetal.de/v1alpha2.ResourceReference">
+ResourceReference
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>SwitchUUID - defines unique switch identification</p>
+<p>SwitchReference - defines unique switch identification</p>
 </td>
 </tr>
 <tr>
 <td>
 <code>ipv4</code><br/>
 <em>
-string
+<a href="#machine.onmetal.de/v1alpha2.IPAddressSpec">
+IPAddressSpec
+</a>
 </em>
 </td>
 <td>
@@ -157,7 +174,9 @@ string
 <td>
 <code>ipv6</code><br/>
 <em>
-string
+<a href="#machine.onmetal.de/v1alpha2.IPAddressSpec">
+IPAddressSpec
+</a>
 </em>
 </td>
 <td>
@@ -167,56 +186,21 @@ string
 </tr>
 <tr>
 <td>
-<code>lldp_system_name</code><br/>
+<code>peer</code><br/>
 <em>
-string
+<a href="#machine.onmetal.de/v1alpha2.Peer">
+Peer
+</a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol -
-layer 2 neighbor discovery protocol</p>
+<p>Peer - defines lldp peer info.</p>
 </td>
 </tr>
 <tr>
 <td>
-<code>lldp_chassis_id</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>lldp_port_id</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>lldp_port_description</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>LLDPPortDescription - defines switch definition obtained from Link Layer Discovery Protocol</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>lane</code><br/>
+<code>lanes</code><br/>
 <em>
 byte
 </em>
@@ -252,10 +236,10 @@ bool
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.Internal">Internal
+<h3 id="machine.onmetal.de/v1alpha2.Internal">Internal
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Identity">Identity</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Identity">Identity</a>)
 </p>
 <div>
 </div>
@@ -289,109 +273,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.Location">Location
-</h3>
-<p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.MachineSpec">MachineSpec</a>)
-</p>
-<div>
-<p>Location - defines information about place where machines are stored.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>datacenter</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Datacenter - name of building where machine lies</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>data_hall</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>DataHall - name of room in Datacenter where machine lies</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>shelf</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Shelf - defines place for server in Datacenter (an alternative name of Rack)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>slot</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Slot - defines switch location in rack (an alternative name for Row)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>hu</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>HU - is a unit of measure defined 44.45 mm</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>row</code><br/>
-<em>
-int16
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Row - switch location in rack</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>rack</code><br/>
-<em>
-int16
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Rack - is a place for server in DataCenter</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="machine.onmetal.de/v1alpha1.Machine">Machine
+<h3 id="machine.onmetal.de/v1alpha2.Machine">Machine
 </h3>
 <div>
 <p>Machine - is the data structure for a Machine resource.
@@ -423,7 +305,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.MachineSpec">
+<a href="#machine.onmetal.de/v1alpha2.MachineSpec">
 MachineSpec
 </a>
 </em>
@@ -432,6 +314,20 @@ MachineSpec
 <br/>
 <br/>
 <table>
+<tr>
+<td>
+<code>taints</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.Taint">
+[]Taint
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Taints - defines list of Taint that applied on the Machine</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>hostname</code><br/>
@@ -458,37 +354,9 @@ string
 </tr>
 <tr>
 <td>
-<code>location</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.Location">
-Location
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Location - defines machine location in datacenter</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>action</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.Action">
-Action
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Action - defines desired operation on machine</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>identity</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.Identity">
+<a href="#machine.onmetal.de/v1alpha2.Identity">
 Identity
 </a>
 </em>
@@ -496,17 +364,6 @@ Identity
 <td>
 <em>(Optional)</em>
 <p>Identity - defines machine hardware info</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>scan_ports</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>ScanPorts - trigger manual port scan</p>
 </td>
 </tr>
 <tr>
@@ -527,7 +384,7 @@ bool
 <td>
 <code>status</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.MachineStatus">
+<a href="#machine.onmetal.de/v1alpha2.MachineStatus">
 MachineStatus
 </a>
 </em>
@@ -537,10 +394,10 @@ MachineStatus
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.MachineSpec">MachineSpec
+<h3 id="machine.onmetal.de/v1alpha2.MachineSpec">MachineSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Machine">Machine</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Machine">Machine</a>)
 </p>
 <div>
 <p>MachineSpec - defines the desired spec of Machine.</p>
@@ -553,6 +410,20 @@ MachineStatus
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>taints</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.Taint">
+[]Taint
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Taints - defines list of Taint that applied on the Machine</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>hostname</code><br/>
@@ -579,37 +450,9 @@ string
 </tr>
 <tr>
 <td>
-<code>location</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.Location">
-Location
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Location - defines machine location in datacenter</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>action</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.Action">
-Action
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Action - defines desired operation on machine</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>identity</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.Identity">
+<a href="#machine.onmetal.de/v1alpha2.Identity">
 Identity
 </a>
 </em>
@@ -617,17 +460,6 @@ Identity
 <td>
 <em>(Optional)</em>
 <p>Identity - defines machine hardware info</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>scan_ports</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>ScanPorts - trigger manual port scan</p>
 </td>
 </tr>
 <tr>
@@ -643,10 +475,32 @@ bool
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.MachineStatus">MachineStatus
+<h3 id="machine.onmetal.de/v1alpha2.MachineState">MachineState
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineStatus">MachineStatus</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Healthy&#34;</p></td>
+<td><p>When State is <code>Healthy</code> Machine` is allowed to be booked.</p>
+</td>
+</tr><tr><td><p>&#34;Unhealthy&#34;</p></td>
+<td><p>When State is <code>Unhealthy</code>` Machine isn&rsquo;t allowed to be booked.</p>
+</td>
+</tr></tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.MachineStatus">MachineStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Machine">Machine</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Machine">Machine</a>)
 </p>
 <div>
 <p>MachineStatus - defines machine aggregated info.</p>
@@ -663,7 +517,7 @@ bool
 <td>
 <code>interfaces</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.Interface">
+<a href="#machine.onmetal.de/v1alpha2.Interface">
 []Interface
 </a>
 </em>
@@ -689,7 +543,9 @@ string
 <td>
 <code>health</code><br/>
 <em>
-string
+<a href="#machine.onmetal.de/v1alpha2.MachineState">
+MachineState
+</a>
 </em>
 </td>
 <td>
@@ -702,7 +558,7 @@ string
 <td>
 <code>network</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.Network">
+<a href="#machine.onmetal.de/v1alpha2.Network">
 Network
 </a>
 </em>
@@ -710,6 +566,34 @@ Network
 <td>
 <em>(Optional)</em>
 <p>Network - defines machine network status</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>oob</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ObjectReference">
+ObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>OOB - defines status of OOB</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>inventory</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ObjectReference">
+ObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Inventory - defines status of Inventory</p>
 </td>
 </tr>
 <tr>
@@ -724,34 +608,12 @@ bool
 <p>Orphaned - defines machine condition whether OOB or Inventory is missing or not</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>inventory</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Inventory - defines status, if Inventory is presented or not</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>oob</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>OOB define status, OOB is presented or not</p>
-</td>
-</tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.Network">Network
+<h3 id="machine.onmetal.de/v1alpha2.Network">Network
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.MachineStatus">MachineStatus</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineStatus">MachineStatus</a>)
 </p>
 <div>
 <p>Network - defines machine network status.</p>
@@ -774,7 +636,7 @@ string
 <td>
 <em>(Optional)</em>
 <p>Redundancy - defines machine redundancy status.
-Available values: &ldquo;Single&rdquo;, &ldquo;High Availability&rdquo; or &ldquo;None&rdquo;</p>
+Available values: &ldquo;Single&rdquo;, &ldquo;HighAvailability&rdquo; or &ldquo;None&rdquo;</p>
 </td>
 </tr>
 <tr>
@@ -803,8 +665,296 @@ int
 </tr>
 </tbody>
 </table>
+<h3 id="machine.onmetal.de/v1alpha2.ObjectReference">ObjectReference
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineStatus">MachineStatus</a>)
+</p>
+<div>
+<p>ObjectReference - defines object reference status and additional information</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>exist</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Exist - defines where referenced object exist or not</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reference</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ResourceReference">
+ResourceReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Reference - defines underlaying referenced object e.g. Inventory or OOB kind.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.Peer">Peer
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Interface">Interface</a>)
+</p>
+<div>
+<p>Peer - contains machine neighbor information collected from LLDP.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>lldp_system_name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol
+layer 2 neighbor discovery protocol</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lldp_chassi_id</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lldp_port_id</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lldp_port_description</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>LLDPPortDescription - defines switch definition obtained from Link Layer Discovery Protocol</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resource_reference</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ResourceReference">
+ResourceReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResourceReference refers to the related resource definition</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.ResourceReference">ResourceReference
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.IPAddressSpec">IPAddressSpec</a>, <a href="#machine.onmetal.de/v1alpha2.Interface">Interface</a>, <a href="#machine.onmetal.de/v1alpha2.ObjectReference">ObjectReference</a>, <a href="#machine.onmetal.de/v1alpha2.Peer">Peer</a>)
+</p>
+<div>
+<p>ResourceReference defines related resource info</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>APIVersion refers to the resource API version</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Kind refers to the resource kind</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Name refers to the resource name</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>namespace</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Namespace refers to the resource namespace</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.Taint">Taint
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineSpec">MachineSpec</a>)
+</p>
+<div>
+<p>Taint represents taint that can be applied to the machine.
+The machine this Taint is attached to has the &ldquo;effect&rdquo; on
+any pod that does not tolerate the Taint.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>key</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Key - applied to the machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value - corresponding to the taint key.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.TaintStatus">
+TaintStatus
+</a>
+</em>
+</td>
+<td>
+<p>Effect - defines taint effect on the Machine.
+Valid effects are NotAvailable and Suspended.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>time_added</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TimeAdded represents the time at which the taint was added.
+It is only written for NoExecute taints.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.TaintStatus">TaintStatus
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Taint">Taint</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Error&#34;</p></td>
+<td><p>When Machine status is Error it&rsquo;s impossible to order machine</p>
+</td>
+</tr><tr><td><p>&#34;NotAvailable&#34;</p></td>
+<td><p>When Machine status is NotAvailable it&rsquo;s not possible to order it.</p>
+</td>
+</tr><tr><td><p>&#34;Suspended&#34;</p></td>
+<td><p>When Machine status is Suspended that&rsquo;s meant that there is some issues
+and need to run stress test.</p>
+</td>
+</tr></tbody>
+</table>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>172f4e7</code>.
+on git commit <code>effbf2c</code>.
 </em></p>

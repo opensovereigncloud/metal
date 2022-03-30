@@ -26,7 +26,8 @@ import (
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+
+	machinev1lpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
@@ -97,7 +98,7 @@ func main() {
 func addToScheme() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(benchv1alpha3.AddToScheme(scheme))
-	utilruntime.Must(machinev1lpha1.AddToScheme(scheme))
+	utilruntime.Must(machinev1lpha2.AddToScheme(scheme))
 	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(oobv1.AddToScheme(scheme))
@@ -124,9 +125,10 @@ func startReconcilers(mgr ctrl.Manager) {
 		os.Exit(1)
 	}
 	if err = (&machinecontroller.InventoryReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Machine-inventory"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Machine-inventory"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("Machine-inventory"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-inventory")
 		os.Exit(1)
@@ -135,25 +137,18 @@ func startReconcilers(mgr ctrl.Manager) {
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("Machine"),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("machine-controller"),
+		Recorder: mgr.GetEventRecorderFor("Machine-controller"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine")
 		os.Exit(1)
 	}
-	if err = (&machinecontroller.SwitchReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Machine-switch"),
-		Scheme: mgr.GetScheme(),
+	if err = (&machinecontroller.OOBReconciler{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Machine-OOB"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("Machine-OOB"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine-switch")
-		os.Exit(1)
-	}
-	if err = (&machinecontroller.OnboardingReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Machine-onboarding"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine-onboarding")
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-OOB")
 		os.Exit(1)
 	}
 	if err = (&switchcontroller.InventoryReconciler{

@@ -20,11 +20,14 @@ spec:
     - jsonPath: .status.health
       name: Healthy
       type: string
-    - jsonPath: .status.inventory
+    - jsonPath: .status.inventory.exist
       name: Inventory
       type: boolean
-    - jsonPath: .status.oob
+    - jsonPath: .status.oob.exist
       name: OOB
+      type: boolean
+    - jsonPath: .status.orphaned
+      name: Orphaned
       type: boolean
     - jsonPath: .status.network.redundancy
       name: Redundancy
@@ -32,7 +35,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    name: v1alpha1
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         description: Machine - is the data structure for a Machine resource. It contains
@@ -53,14 +56,6 @@ spec:
           spec:
             description: MachineSpec - defines the desired spec of Machine.
             properties:
-              action:
-                description: Action - defines desired operation on machine
-                properties:
-                  power_state:
-                    description: PowerState - defines desired machine power state
-                    pattern: ^(?:On|Reset|ResetImmediate|Off|OffImmediate)$
-                    type: string
-                type: object
               description:
                 description: Description - summary info about machine
                 type: string
@@ -93,38 +88,34 @@ spec:
                 description: InventoryRequested - defines if inventory requested or
                   not
                 type: boolean
-              location:
-                description: Location - defines machine location in datacenter
-                properties:
-                  data_hall:
-                    description: DataHall - name of room in Datacenter where machine
-                      lies
-                    type: string
-                  datacenter:
-                    description: Datacenter - name of building where machine lies
-                    type: string
-                  hu:
-                    description: HU - is a unit of measure defined 44.45 mm
-                    type: string
-                  rack:
-                    description: Rack - is a place for server in DataCenter
-                    type: integer
-                  row:
-                    description: Row - switch location in rack
-                    type: integer
-                  shelf:
-                    description: Shelf - defines place for server in Datacenter (an
-                      alternative name of Rack)
-                    type: string
-                  slot:
-                    description: Slot - defines switch location in rack (an alternative
-                      name for Row)
-                    type: string
-                type: object
-              scan_ports:
-                default: false
-                description: ScanPorts - trigger manual port scan
-                type: boolean
+              taints:
+                description: Taints - defines list of Taint that applied on the Machine
+                items:
+                  description: Taint represents taint that can be applied to the machine.
+                    The machine this Taint is attached to has the "effect" on any
+                    pod that does not tolerate the Taint.
+                  properties:
+                    key:
+                      description: Key - applied to the machine.
+                      type: string
+                    status:
+                      description: Effect - defines taint effect on the Machine. Valid
+                        effects are NotAvailable and Suspended.
+                      type: string
+                    time_added:
+                      description: TimeAdded represents the time at which the taint
+                        was added. It is only written for NoExecute taints.
+                      format: date-time
+                      type: string
+                    value:
+                      description: Value - corresponding to the taint key.
+                      type: string
+                  required:
+                  - key
+                  - status
+                  - value
+                  type: object
+                type: array
             type: object
           status:
             description: MachineStatus - defines machine aggregated info.
@@ -140,30 +131,55 @@ spec:
                   properties:
                     ipv4:
                       description: IPv4 - defines machine IPv4 address
-                      type: string
+                      properties:
+                        address:
+                          description: Address refers to the ip address value
+                          type: string
+                        resource_reference:
+                          description: ResourceReference refers to the related resource
+                            definition
+                          properties:
+                            apiVersion:
+                              description: APIVersion refers to the resource API version
+                              type: string
+                            kind:
+                              description: Kind refers to the resource kind
+                              type: string
+                            name:
+                              description: Name refers to the resource name
+                              type: string
+                            namespace:
+                              description: Namespace refers to the resource namespace
+                              type: string
+                          type: object
+                      type: object
                     ipv6:
                       description: IPv6 - defines machine IPv6 address
-                      type: string
-                    lane:
+                      properties:
+                        address:
+                          description: Address refers to the ip address value
+                          type: string
+                        resource_reference:
+                          description: ResourceReference refers to the related resource
+                            definition
+                          properties:
+                            apiVersion:
+                              description: APIVersion refers to the resource API version
+                              type: string
+                            kind:
+                              description: Kind refers to the resource kind
+                              type: string
+                            name:
+                              description: Name refers to the resource name
+                              type: string
+                            namespace:
+                              description: Namespace refers to the resource namespace
+                              type: string
+                          type: object
+                      type: object
+                    lanes:
                       description: Lane - defines number of lines per interface
                       type: integer
-                    lldp_chassis_id:
-                      description: LLDPChassisID - defines switch ID for chassis obtained
-                        from Link Layer Discovery Protocol
-                      type: string
-                    lldp_port_description:
-                      description: LLDPPortDescription - defines switch definition
-                        obtained from Link Layer Discovery Protocol
-                      type: string
-                    lldp_port_id:
-                      description: LLDPPortID - defines switch port ID obtained from
-                        Link Layer Discovery Protocol
-                      type: string
-                    lldp_system_name:
-                      description: LLDPSystemName - defines switch name obtained from
-                        Link Layer Discovery Protocol - layer 2 neighbor discovery
-                        protocol
-                      type: string
                     moved:
                       description: Moved  - defines if interface was reconnected to
                         another switch or not
@@ -171,9 +187,60 @@ spec:
                     name:
                       description: Name - machine interface name
                       type: string
-                    switch_uuid:
-                      description: SwitchUUID - defines unique switch identification
-                      type: string
+                    peer:
+                      description: Peer - defines lldp peer info.
+                      properties:
+                        lldp_chassi_id:
+                          description: LLDPChassisID - defines switch ID for chassis
+                            obtained from Link Layer Discovery Protocol
+                          type: string
+                        lldp_port_description:
+                          description: LLDPPortDescription - defines switch definition
+                            obtained from Link Layer Discovery Protocol
+                          type: string
+                        lldp_port_id:
+                          description: LLDPPortID - defines switch port ID obtained
+                            from Link Layer Discovery Protocol
+                          type: string
+                        lldp_system_name:
+                          description: LLDPSystemName - defines switch name obtained
+                            from Link Layer Discovery Protocol layer 2 neighbor discovery
+                            protocol
+                          type: string
+                        resource_reference:
+                          description: ResourceReference refers to the related resource
+                            definition
+                          properties:
+                            apiVersion:
+                              description: APIVersion refers to the resource API version
+                              type: string
+                            kind:
+                              description: Kind refers to the resource kind
+                              type: string
+                            name:
+                              description: Name refers to the resource name
+                              type: string
+                            namespace:
+                              description: Namespace refers to the resource namespace
+                              type: string
+                          type: object
+                      type: object
+                    switch_reference:
+                      description: SwitchReference - defines unique switch identification
+                      properties:
+                        apiVersion:
+                          description: APIVersion refers to the resource API version
+                          type: string
+                        kind:
+                          description: Kind refers to the resource kind
+                          type: string
+                        name:
+                          description: Name refers to the resource name
+                          type: string
+                        namespace:
+                          description: Namespace refers to the resource namespace
+                          type: string
+                      type: object
                     unknown:
                       description: Unknown - defines information availability about
                         interface
@@ -181,9 +248,30 @@ spec:
                   type: object
                 type: array
               inventory:
-                description: Inventory - defines status, if Inventory is presented
-                  or not
-                type: boolean
+                description: Inventory - defines status of Inventory
+                properties:
+                  exist:
+                    description: Exist - defines where referenced object exist or
+                      not
+                    type: boolean
+                  reference:
+                    description: Reference - defines underlaying referenced object
+                      e.g. Inventory or OOB kind.
+                    properties:
+                      apiVersion:
+                        description: APIVersion refers to the resource API version
+                        type: string
+                      kind:
+                        description: Kind refers to the resource kind
+                        type: string
+                      name:
+                        description: Name refers to the resource name
+                        type: string
+                      namespace:
+                        description: Namespace refers to the resource namespace
+                        type: string
+                    type: object
+                type: object
               network:
                 description: Network - defines machine network status
                 properties:
@@ -192,7 +280,8 @@ spec:
                     type: integer
                   redundancy:
                     description: 'Redundancy - defines machine redundancy status.
-                      Available values: "Single", "High Availability" or "None"'
+                      Available values: "Single", "HighAvailability" or "None"'
+                    pattern: ^(?:Single|HighAvailability|None)$
                     type: string
                   unknown_ports:
                     description: UnknownPorts - defines number of machine interface
@@ -200,8 +289,30 @@ spec:
                     type: integer
                 type: object
               oob:
-                description: OOB define status, OOB is presented or not
-                type: boolean
+                description: OOB - defines status of OOB
+                properties:
+                  exist:
+                    description: Exist - defines where referenced object exist or
+                      not
+                    type: boolean
+                  reference:
+                    description: Reference - defines underlaying referenced object
+                      e.g. Inventory or OOB kind.
+                    properties:
+                      apiVersion:
+                        description: APIVersion refers to the resource API version
+                        type: string
+                      kind:
+                        description: Kind refers to the resource kind
+                        type: string
+                      name:
+                        description: Name refers to the resource name
+                        type: string
+                      namespace:
+                        description: Namespace refers to the resource namespace
+                        type: string
+                    type: object
+                type: object
               orphaned:
                 description: Orphaned - defines machine condition whether OOB or Inventory
                   is missing or not

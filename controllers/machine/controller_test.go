@@ -18,10 +18,9 @@ package controllers
 
 import (
 	"context"
-	"time"
 
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 	. "github.com/onsi/ginkgo"
@@ -41,7 +40,7 @@ var _ = Describe("machine-controller", func() {
 			testMachine(name, namespace)
 		})
 		It("Test machine onboarding ", func() {
-			testMachineOnboarding(name, namespace)
+			testMachineOnboarding()
 		})
 	})
 })
@@ -66,12 +65,9 @@ func testMachine(name, namespace string) {
 	Expect(k8sClient.Create(ctx, inventory)).Should(BeNil())
 
 	By("Inspecting machine properties")
-	machine := &machinev1alpha1.Machine{}
+	machine := &machinev1alpha2.Machine{}
 	Eventually(func(g Gomega) {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
-		g.Expect(machine.Spec.Location.Row).To(Equal(int16(1)))
-		g.Expect(machine.Spec.Location.Rack).To(Equal(int16(2)))
-		g.Expect(machine.Spec.Location.DataHall).To(Equal("room1"))
 
 		interfaces := 0
 		for i := range machine.Status.Interfaces {
@@ -82,8 +78,8 @@ func testMachine(name, namespace string) {
 				interfaces++
 			}
 		}
-		g.Expect(interfaces).To(Equal(len(machine.Status.Interfaces)))
-		g.Expect(machine.Status.OOB).To(BeFalse())
+		Expect(interfaces).To(Equal(len(machine.Status.Interfaces)))
+		Expect(machine.Status.OOB.Exist).To(BeFalse())
 	}, timeout, interval).Should(Succeed())
 
 	By("Expecting successful inventory deletion")
@@ -91,7 +87,7 @@ func testMachine(name, namespace string) {
 
 	Eventually(func() bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
-		return machine.Status.Inventory
+		return machine.Status.Inventory.Exist
 	}, timeout, interval).Should(BeFalse())
 
 	By("Expecting successful switch deletion")
@@ -101,47 +97,56 @@ func testMachine(name, namespace string) {
 	Expect(k8sClient.Delete(ctx, machine)).Should(Succeed())
 }
 
-func testMachineOnboarding(name, namespace string) {
+func testMachineOnboarding() {
+	var (
+		name      = "a237952c-3475-2b82-a85c-84d8b4f8cd2d"
+		namespace = "default"
+	)
 	ctx := context.Background()
-	oob := prepareOOB()
+	oob := prepareOOB(name, namespace)
 
 	By("Expect successful oob creation")
 	err := k8sClient.Create(ctx, oob)
 	Expect(err).Should(BeNil())
 
-	time.Sleep(5 * time.Second)
-
-	By("Expect successful machine creation")
-	m := &machinev1alpha1.Machine{}
-	err = k8sClient.Get(ctx, types.NamespacedName{Name: oob.Name, Namespace: oob.Namespace}, m)
-	Expect(err).Should(BeNil())
-
 	By("Expect oob status to be true")
-	Expect(m.Status.OOB).To(BeTrue())
+
+	m := &machinev1alpha2.Machine{}
+	Eventually(func(g Gomega) bool {
+
+		if err := k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, m); err != nil {
+			return false
+		}
+		return m.Status.OOB.Exist
+
+	}, timeout, interval).Should(BeTrue())
 
 	By("Expect successful oob deletion")
 	Expect(k8sClient.Delete(ctx, oob)).Should(BeNil())
-	time.Sleep(2 * time.Second)
 
 	By("Expect oob status to be false")
-	err = k8sClient.Get(ctx, types.NamespacedName{Name: oob.Name, Namespace: oob.Namespace}, m)
-	Expect(err).Should(BeNil())
-	Expect(m.Status.OOB).To(BeFalse())
+	Eventually(func(g Gomega) bool {
+
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, m)).Should(BeNil())
+		return m.Status.OOB.Exist
+
+	}, timeout, interval).Should(BeFalse())
 
 	By("Expect successful machine deletion")
 	Expect(k8sClient.Delete(ctx, m)).Should(BeNil())
 }
 
-func prepareMachineForTest(name, namespace string) *machinev1alpha1.Machine {
-	return &machinev1alpha1.Machine{
+func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
+	return &machinev1alpha2.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
+			Labels: map[string]string{
+				"test": "test",
+			},
 		},
-		Spec: machinev1alpha1.MachineSpec{
-			ScanPorts:          false,
+		Spec: machinev1alpha2.MachineSpec{
 			InventoryRequested: true,
-			Location:           machinev1alpha1.Location{},
 		},
 	}
 }
@@ -270,11 +275,7 @@ func getSwitchesStatus() switchv1alpha1.SwitchStatus {
 	}
 }
 
-func prepareOOB() *oobv1.Machine {
-	var (
-		name      = "a237952c-3475-2b82-a85c-84d8b4f8cd2d"
-		namespace = "default"
-	)
+func prepareOOB(name, namespace string) *oobv1.Machine {
 	return &oobv1.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

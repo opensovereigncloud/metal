@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	benchmarkv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
-	"github.com/onmetal/metal-api/internal/benchmark"
+	"github.com/onmetal/metal-api/pkg/benchmark"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

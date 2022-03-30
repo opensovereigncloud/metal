@@ -21,9 +21,9 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
-	machinerr "github.com/onmetal/metal-api/internal/errors"
-	"github.com/onmetal/metal-api/internal/machine"
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machinerr "github.com/onmetal/metal-api/pkg/errors"
+	"github.com/onmetal/metal-api/pkg/machine"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,7 +43,7 @@ type MachineReconciler struct { //nolint:revive
 // SetupWithManager sets up the controller with the Manager.
 func (r *MachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&machinev1alpha1.Machine{}).
+		For(&machinev1alpha2.Machine{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
@@ -71,12 +71,14 @@ func (r *MachineReconciler) constructPredicates() predicate.Predicate {
 func (r *MachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("machine", req.NamespacedName)
 
-	m, err := machine.New(ctx, r.Client, reqLogger, r.Recorder, req)
+	mm := machine.New(ctx, r.Client, reqLogger, r.Recorder)
+
+	machineObj, err := mm.GetMachine(req.Name, req.Namespace)
 	if err != nil {
 		return machinerr.GetResultForError(reqLogger, err)
 	}
 
-	if updErr := m.Update(); updErr != nil {
+	if err := mm.Reservation(machineObj); err != nil {
 		return machinerr.GetResultForError(reqLogger, err)
 	}
 
@@ -84,20 +86,22 @@ func (r *MachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func isSpecOrStatusUpdated(e event.UpdateEvent) bool {
-	oldObj, oldOk := e.ObjectOld.(*machinev1alpha1.Machine)
-	newObj, newOk := e.ObjectNew.(*machinev1alpha1.Machine)
+	oldObj, oldOk := e.ObjectOld.(*machinev1alpha2.Machine)
+	newObj, newOk := e.ObjectNew.(*machinev1alpha2.Machine)
 	if !oldOk || !newOk {
 		return false
 	}
 	if oldObj.Status.Reboot != newObj.Status.Reboot {
 		return false
 	}
+
 	return !(reflect.DeepEqual(oldObj.Spec, newObj.Spec)) ||
-		!(reflect.DeepEqual(oldObj.Status, newObj.Status))
+		!(reflect.DeepEqual(oldObj.Status, newObj.Status)) ||
+		!(reflect.DeepEqual(oldObj.Labels, newObj.Labels))
 }
 
 func (r *MachineReconciler) recreateObject(e event.DeleteEvent) bool {
-	machineObj, ok := e.Object.(*machinev1alpha1.Machine)
+	machineObj, ok := e.Object.(*machinev1alpha2.Machine)
 	if !ok {
 		return false
 	}

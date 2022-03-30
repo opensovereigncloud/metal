@@ -22,11 +22,11 @@ import (
 
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
-	machinerr "github.com/onmetal/metal-api/internal/errors"
-	"github.com/onmetal/metal-api/internal/inventory"
+	machinerr "github.com/onmetal/metal-api/pkg/errors"
+	"github.com/onmetal/metal-api/pkg/inventory"
+	"github.com/onmetal/metal-api/pkg/machine"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -36,8 +36,9 @@ import (
 type InventoryReconciler struct {
 	client.Client
 
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -58,11 +59,17 @@ func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("inventory", req.NamespacedName)
 
-	i, err := inventory.New(ctx, r.Client, reqLogger, req)
+	i, err := inventory.New(ctx, r.Client, reqLogger, r.Recorder, req)
 	if err != nil {
 		return machinerr.GetResultForError(reqLogger, err)
 	}
-	if err := i.Update(); err != nil {
+
+	machineObj, getErr := i.Machiner.GetMachine(i.Spec.System.ID, i.Namespace)
+	if getErr != nil {
+		return machinerr.GetResultForError(reqLogger, getErr)
+	}
+
+	if err := i.UpdateMachine(machineObj); err != nil {
 		return machinerr.GetResultForError(reqLogger, err)
 	}
 
@@ -82,16 +89,23 @@ func isUpdatedOrDeleted(e event.UpdateEvent) bool {
 
 func (r *InventoryReconciler) updateMachineStatusOnDelete(e event.DeleteEvent) bool {
 	ctx := context.Background()
-	obj := &machinev1alpha1.Machine{}
-	if getErr := r.Get(ctx, types.NamespacedName{
-		Name: e.Object.GetName(), Namespace: e.Object.GetNamespace(),
-	}, obj); getErr != nil {
-		r.Log.Info("can't retrieve machine from cluster", "error", getErr)
+	invObj, ok := e.Object.(*inventoriesv1alpha1.Inventory)
+	if !ok {
+		r.Log.Info("inventory cast failed")
 		return false
 	}
-	obj.Status.Inventory = false
-	if updErr := r.Status().Update(ctx, obj); updErr != nil {
-		r.Log.Info("can't update machine status", "error", updErr)
+
+	mm := machine.New(ctx, r.Client, r.Log, r.Recorder)
+	machineObj, err := mm.GetMachine(invObj.Spec.System.ID, invObj.Namespace)
+	if err != nil {
+		r.Log.Info("failed to retrieve machine obkect from cluster", "error", err)
+		return false
+	}
+
+	machineObj.Status.Inventory.Exist = false
+	machineObj.Status.Inventory.Reference = nil
+	if updErr := mm.UpdateStatus(machineObj); updErr != nil {
+		r.Log.Info("can't update machine status for inventory", "error", updErr)
 		return false
 	}
 	return false

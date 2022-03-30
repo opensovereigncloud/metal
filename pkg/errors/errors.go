@@ -38,13 +38,14 @@ type StatusReason string
 
 const (
 	alreadyExist     StatusReason = "already exist"
-	recourceNotExist StatusReason = "resource not exist"
+	resourceNotExist StatusReason = "resource not exist"
 	uuidNotExist     StatusReason = "uuid not exist"
 	notFound         StatusReason = "not found"
 	underDeletion    StatusReason = "under deletion"
 	notLabeled       StatusReason = "not labeled"
 	notAMachine      StatusReason = "not a machine"
 	castType         StatusReason = "casting failed"
+	reserveration    StatusReason = "machine reservation impossible"
 	unknown          StatusReason = "unknown"
 )
 
@@ -60,7 +61,7 @@ func (e *MachineError) Error() string { return e.ErrStatus.Message }
 
 func (e *MachineError) Status() Reason { return e.ErrStatus }
 
-func IsNotExist(err error) bool { return ReasonForError(err) == recourceNotExist }
+func IsNotExist(err error) bool { return ReasonForError(err) == resourceNotExist }
 
 func IsNotFound(err error) bool { return ReasonForError(err) == notFound }
 
@@ -73,6 +74,8 @@ func IsUnderDeletion(err error) bool {
 }
 
 func IsNotAMachine(err error) bool { return ReasonForError(err) == notAMachine }
+
+func IsNotBookable(err error) bool { return ReasonForError(err) == reserveration }
 
 func ReasonForError(err error) StatusReason {
 	if reason := MachineStatus(nil); errors.As(err, &reason) {
@@ -120,7 +123,7 @@ func UUIDNotExist(s string) *MachineError {
 
 func NotExist(s string) *MachineError {
 	return &MachineError{
-		ErrStatus: Reason{Message: fmt.Sprintf("resource with uuid: %s, not exist", s), StatusReason: recourceNotExist},
+		ErrStatus: Reason{Message: fmt.Sprintf("resource with uuid: %s, not exist", s), StatusReason: resourceNotExist},
 	}
 }
 
@@ -151,6 +154,12 @@ func NotAMachine() *MachineError {
 func CastType() *MachineError {
 	return &MachineError{
 		ErrStatus: Reason{Message: "object casting failed", StatusReason: castType},
+	}
+}
+
+func NotBookable() *MachineError {
+	return &MachineError{
+		ErrStatus: Reason{Message: "impossible to reserve", StatusReason: reserveration},
 	}
 }
 

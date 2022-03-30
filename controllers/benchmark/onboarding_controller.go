@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/internal/benchmark"
-	machinerr "github.com/onmetal/metal-api/internal/errors"
+	"github.com/onmetal/metal-api/pkg/benchmark"
+	machinerr "github.com/onmetal/metal-api/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

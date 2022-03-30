@@ -24,7 +24,7 @@ import (
 
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1lpha1 "github.com/onmetal/metal-api/apis/machine/v1alpha1"
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	oobonmetal "github.com/onmetal/oob-controller/api/v1"
 
@@ -81,10 +81,10 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	oobonmetal.SchemeBuilder.Register(&oobonmetal.Machine{}, &oobonmetal.MachineList{})
-	machinev1lpha1.SchemeBuilder.Register(&machinev1lpha1.Machine{}, &machinev1lpha1.MachineList{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
 	switchv1alpha1.SchemeBuilder.Register(&switchv1alpha1.Switch{}, &switchv1alpha1.SwitchList{})
 	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})
+	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
 
 	var err error
 	cfg, err = testEnv.Start()
@@ -94,9 +94,9 @@ var _ = BeforeSuite(func() {
 	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(benchv1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(switchv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(machinev1lpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
 
@@ -115,14 +115,16 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&InventoryReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("machine-inventory"),
+		Client:   k8sManager.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("machine-inventory"),
+		Recorder: k8sManager.GetEventRecorderFor("inventory-controller"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&OnboardingReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("machine-onboarding"),
+	err = (&OOBReconciler{
+		Client:   k8sManager.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("machine-oob"),
+		Recorder: k8sManager.GetEventRecorderFor("Machine-OOB"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

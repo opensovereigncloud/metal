@@ -641,6 +641,9 @@ func (in *Switch) PeersDefined(list *SwitchList) bool {
 func (in *Switch) FillPeerSwitches(list *SwitchList) {
 	for _, item := range list.Items {
 		for _, nicData := range item.Status.Interfaces {
+			if nicData == nil {
+				continue
+			}
 			if nicData.Peer.ChassisID != in.Spec.Chassis.ChassisID {
 				continue
 			}
