@@ -23,7 +23,6 @@ import (
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
-	"github.com/onmetal/metal-api/pkg/machine"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -70,17 +69,6 @@ func (r *MachineReconciler) constructPredicates() predicate.Predicate {
 
 func (r *MachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("machine", req.NamespacedName)
-
-	mm := machine.New(ctx, r.Client, reqLogger, r.Recorder)
-
-	machineObj, err := mm.GetMachine(req.Name, req.Namespace)
-	if err != nil {
-		return machinerr.GetResultForError(reqLogger, err)
-	}
-
-	if err := mm.Reservation(machineObj); err != nil {
-		return machinerr.GetResultForError(reqLogger, err)
-	}
 
 	return machinerr.GetResultForError(reqLogger, nil)
 }
