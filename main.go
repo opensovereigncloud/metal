@@ -26,12 +26,13 @@ import (
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-
 	machinev1lpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
 	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
+	requestcontrollers "github.com/onmetal/metal-api/controllers/requests"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 
@@ -99,6 +100,7 @@ func addToScheme() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(benchv1alpha3.AddToScheme(scheme))
 	utilruntime.Must(machinev1lpha2.AddToScheme(scheme))
+	utilruntime.Must(requestv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(oobv1.AddToScheme(scheme))
@@ -131,15 +133,6 @@ func startReconcilers(mgr ctrl.Manager) {
 		Recorder: mgr.GetEventRecorderFor("Machine-inventory"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-inventory")
-		os.Exit(1)
-	}
-	if err = (&machinecontroller.MachineReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Machine"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Machine-controller"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine")
 		os.Exit(1)
 	}
 	if err = (&machinecontroller.OOBReconciler{
@@ -197,6 +190,24 @@ func startReconcilers(mgr ctrl.Manager) {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Aggregate")
+		os.Exit(1)
+	}
+	if err = (&requestcontrollers.RequestReconciler{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Request"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("Request"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Request")
+		os.Exit(1)
+	}
+	if err = (&requestcontrollers.MachineReconciler{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Machine-request"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("Machine-request-controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-request")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

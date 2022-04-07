@@ -26,16 +26,16 @@ const (
 	MachinePowerStateReset = "Reset"
 )
 
-type TaintStatus string
+type TaintEffect string
 
 const (
 	// When Machine status is NotAvailable it's not possible to order it.
-	TaintStatusNotAvailable TaintStatus = "NotAvailable"
+	TaintStatusNotAvailable TaintEffect = "NotAvailable"
 	// When Machine status is Suspended that's meant that there is some issues
 	// and need to run stress test.
-	TaintStatusSuspended TaintStatus = "Suspended"
+	TaintStatusSuspended TaintEffect = "Suspended"
 	// When Machine status is Error it's impossible to order machine
-	TaintStatusError TaintStatus = "Error"
+	TaintStatusError TaintEffect = "Error"
 )
 
 type MachineState string
@@ -71,6 +71,26 @@ type MachineSpec struct {
 	Identity Identity `json:"identity,omitempty"`
 	// InventoryRequested - defines if inventory requested or not
 	InventoryRequested bool `json:"inventory_requested,omitempty"`
+}
+
+// Taint represents taint that can be applied to the machine.
+// The machine this Taint is attached to has the "effect" on
+// any pod that does not tolerate the Taint.
+type Taint struct {
+	// Key - applied to the machine.
+	// +required
+	Key string `json:"key"`
+	// Value - corresponding to the taint key.
+	// +required
+	Value string `json:"value"`
+	// Effect - defines taint effect on the Machine.
+	// Valid effects are NotAvailable and Suspended.
+	// +required
+	Effect TaintEffect `json:"status"`
+	// TimeAdded represents the time at which the taint was added.
+	// It is only written for NoExecute taints.
+	// +optional
+	TimeAdded *metav1.Time `json:"time_added,omitempty"`
 }
 
 // Identity - defines hardware information about machine.
@@ -115,6 +135,9 @@ type MachineStatus struct {
 	// Orphaned - defines machine condition whether OOB or Inventory is missing or not
 	// +optional
 	Orphaned bool `json:"orphaned,omitempty"`
+	// Reserved - defines if machine is reserved by customer or not
+	// +optional
+	Reserved bool `json:"reserved,omitempty"`
 }
 
 // Interface - defines information about machine interfaces.
@@ -212,26 +235,6 @@ type ResourceReference struct {
 	// Namespace refers to the resource namespace
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
-}
-
-// Taint represents taint that can be applied to the machine.
-// The machine this Taint is attached to has the "effect" on
-// any pod that does not tolerate the Taint.
-type Taint struct {
-	// Key - applied to the machine.
-	// +required
-	Key string `json:"key"`
-	// Value - corresponding to the taint key.
-	// +required
-	Value string `json:"value"`
-	// Effect - defines taint effect on the Machine.
-	// Valid effects are NotAvailable and Suspended.
-	// +required
-	Status TaintStatus `json:"status"`
-	// TimeAdded represents the time at which the taint was added.
-	// It is only written for NoExecute taints.
-	// +optional
-	TimeAdded *metav1.Time `json:"time_added,omitempty"`
 }
 
 // +kubebuilder:object:root=true

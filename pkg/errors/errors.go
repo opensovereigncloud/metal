@@ -127,9 +127,9 @@ func NotExist(s string) *MachineError {
 	}
 }
 
-func NotFound(name string) *MachineError {
+func NotFound(kind string) *MachineError {
 	return &MachineError{
-		ErrStatus: Reason{Message: fmt.Sprintf("resource with name: %s, not found", name), StatusReason: notFound},
+		ErrStatus: Reason{Message: fmt.Sprintf("resource with kind: %s, not found", kind), StatusReason: notFound},
 	}
 }
 

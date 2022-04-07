@@ -117,6 +117,10 @@ var _ = Describe("Aggregate controller", func() {
 				ObjectMeta: controllerruntime.ObjectMeta{
 					Name:      InventoryName,
 					Namespace: AggregateNamespace,
+					// sometimes tests failed with nil map error.
+					Labels: map[string]string{
+						"test": "test",
+					},
 				},
 				Spec: inventoryv1alpha1.InventorySpec{
 					System: &inventoryv1alpha1.SystemSpec{

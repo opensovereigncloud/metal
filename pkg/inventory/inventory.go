@@ -178,6 +178,7 @@ func (i *Inventory) getInterfaces(m *machinev1alpha2.Machine) []machinev1alpha2.
 			interfaces = i.baseConnectionInfo(&nicsSpec[nic], interfaces, m)
 			continue
 		}
+
 		label := map[string]string{
 			switchv1alpha1.LabelChassisId: strings.ReplaceAll(nicsSpec[nic].LLDPs[0].ChassisID, ":", "-"),
 		}
@@ -309,21 +310,3 @@ func (i *Inventory) getMovedInterface(newInterfaceState *inventoriesv1alpha1.NIC
 	}
 	return false
 }
-
-// func (i *Inventory) updateInventoryStatus(status bool) error {
-// 	// i.machine.Status.Inventory.Exist = status
-// 	return i.Client.Status().Update(i.ctx, i.machine)
-// }
-
-// func updateRequired(m *machinev1alpha2.Machine) (switchPort, switchID string, required bool) {
-// 	if len(m.Status.Interfaces) == 0 {
-// 		return "", "", false
-// 	}
-// 	for i := range m.Status.Interfaces {
-// 		if m.Status.Interfaces[i].Moved {
-// 			return m.Status.Interfaces[i].Peer.LLDPPortDescription, m.Status.Interfaces[i].Peer.LLDPChassisID, true
-// 		}
-// 	}
-// 	return m.Status.Interfaces[0].Peer.LLDPPortDescription,
-// 		m.Status.Interfaces[0].Peer.LLDPChassisID
-// }

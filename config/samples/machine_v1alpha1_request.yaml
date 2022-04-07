@@ -1,0 +1,25 @@
+apiVersion: machine.onmetal.de/v1alpha1
+kind: Request
+metadata:
+  name: sample-request
+spec:
+  hostname: myhost
+  machineClass:
+    name: m5.metal
+  machinePool:
+    name: metal
+  image: myimage_repo_location
+  sshPublicKeys:
+    - name: mykey
+  interfaces:
+    - name: myinterface
+      priority: 0
+      target:
+        name: mySubnetName
+  securityGroups:
+    - name: mysecgroup1
+  ignition: {}
+  efiVars:
+    - name: PK
+      uuid: 8be4df61-93ca-11d2-aa0d-00e098032b8c
+      value: pki.Gardenlinux.io/kernel.crt

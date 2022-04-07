@@ -9,6 +9,7 @@ resources:
 - bases/benchmark.onmetal.de_machines.yaml
 - bases/switch.onmetal.de_switches.yaml
 - bases/switch.onmetal.de_switchassignments.yaml
+- bases/machine.onmetal.de_requests.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesJson6902:

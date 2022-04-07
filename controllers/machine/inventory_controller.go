@@ -56,6 +56,10 @@ func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/finalizers,verbs=update
+
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("inventory", req.NamespacedName)
 

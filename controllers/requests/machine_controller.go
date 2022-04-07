@@ -18,11 +18,11 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
+	"github.com/onmetal/metal-api/pkg/machine"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -49,7 +49,6 @@ func (r *MachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *MachineReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
-		UpdateFunc: isSpecOrStatusUpdated,
 		DeleteFunc: r.recreateObject,
 	}
 }
@@ -57,35 +56,34 @@ func (r *MachineReconciler) constructPredicates() predicate.Predicate {
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
-//+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=get;list;watch
 
 func (r *MachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("machine", req.NamespacedName)
 
+	m := machine.New(ctx, r.Client, reqLogger, r.Recorder)
+
+	machineObj, err := m.GetMachine(req.Name, req.Namespace)
+	if err != nil {
+		return machinerr.GetResultForError(reqLogger, err)
+	}
+
+	key, ok := machineObj.Labels[machine.LeasedLabel]
+	if key == "true" && ok {
+		if err := m.CheckIn(machineObj); err != nil {
+			return machinerr.GetResultForError(reqLogger, err)
+		}
+	} else if !ok {
+		if err := m.CheckOut(machineObj); err != nil {
+			return machinerr.GetResultForError(reqLogger, err)
+		}
+	}
+
 	return machinerr.GetResultForError(reqLogger, nil)
-}
-
-func isSpecOrStatusUpdated(e event.UpdateEvent) bool {
-	oldObj, oldOk := e.ObjectOld.(*machinev1alpha2.Machine)
-	newObj, newOk := e.ObjectNew.(*machinev1alpha2.Machine)
-	if !oldOk || !newOk {
-		return false
-	}
-	if oldObj.Status.Reboot != newObj.Status.Reboot {
-		return false
-	}
-
-	return !(reflect.DeepEqual(oldObj.Spec, newObj.Spec)) ||
-		!(reflect.DeepEqual(oldObj.Status, newObj.Status)) ||
-		!(reflect.DeepEqual(oldObj.Labels, newObj.Labels))
 }
 
 func (r *MachineReconciler) recreateObject(e event.DeleteEvent) bool {
