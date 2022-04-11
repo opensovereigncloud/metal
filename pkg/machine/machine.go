@@ -34,6 +34,7 @@ import (
 
 type Machiner interface {
 	Reserve(*machinev1alpha2.Machine, *requestv1alpha1.Request) error
+	DeleteReservation(machine *machinev1alpha2.Machine) error
 	CheckIn(*machinev1alpha2.Machine) error
 	CheckOut(*machinev1alpha2.Machine) error
 
@@ -79,7 +80,7 @@ func (m *Machine) Reserve(machine *machinev1alpha2.Machine, request *requestv1al
 	return m.UpdateSpec(machine)
 }
 
-func (m *Machine) DeleteReservation(machine *machinev1alpha2.Machine, request *requestv1alpha1.Request) error {
+func (m *Machine) DeleteReservation(machine *machinev1alpha2.Machine) error {
 	delete(machine.Labels, LeasedLabel)
 	delete(machine.Labels, MetalRequestLabel)
 
@@ -139,7 +140,7 @@ func (m *Machine) FindVacantMachine(metalRequest *requestv1alpha1.Request) (*mac
 		}
 	}
 
-	return &machinev1alpha2.Machine{}, metalerr.NotFound(string(requestv1alpha1.Machine))
+	return &machinev1alpha2.Machine{}, metalerr.NotFound("machines for request")
 }
 
 func (m *Machine) UpdateSpec(machine *machinev1alpha2.Machine) error {
@@ -211,7 +212,7 @@ func (m *Machine) getOOBMachineByUUIDLabel(name, namespace string) (*oobonmetal.
 	}
 
 	if len(oobs.Items) == 0 {
-		return nil, metalerr.NotFound(name)
+		return nil, metalerr.ObjectNotFound(name, "oob")
 	}
 	return &oobs.Items[0], nil
 }

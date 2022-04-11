@@ -21,7 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
-	metalerr "github.com/onmetal/metal-api/pkg/errors"
+	machinerr "github.com/onmetal/metal-api/pkg/errors"
 	"github.com/onmetal/metal-api/pkg/scheduler"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -65,17 +65,13 @@ func (r *RequestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	request, err := r.GetRequest(ctx, req)
 	if err != nil {
-		return ctrl.Result{}, err
+		return machinerr.GetResultForError(reqLogger, err)
 	}
 
 	s := r.newScheduler(ctx, request.Spec.Kind, reqLogger)
 
 	if err := s.Schedule(request); err != nil {
-		if metalerr.IsNotFound(err) {
-			reqLogger.Info("no objects for reservation found", "error", err)
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
+		return machinerr.GetResultForError(reqLogger, err)
 	}
 
 	return ctrl.Result{}, nil

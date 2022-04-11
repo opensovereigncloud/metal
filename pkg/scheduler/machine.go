@@ -48,12 +48,16 @@ func (m *machine) Schedule(metalRequest *requestv1alpha1.Request) error {
 }
 
 func (m *machine) DeleteScheduling(metalRequest *requestv1alpha1.Request) error {
+	if metalRequest.Status.Reference == nil {
+		m.log.Info("machine reference not found", "request", metalRequest.Name)
+		return nil
+	}
 	machineObj, err := m.GetMachine(metalRequest.Status.Reference.Name, metalRequest.Status.Reference.Namespace)
 	if err != nil {
 		return err
 	}
 
-	return m.CheckOut(machineObj)
+	return m.Machiner.DeleteReservation(machineObj)
 }
 
 func getObjectReference(m *machinev1alpha2.Machine) *requestv1alpha1.ResourceReference {
