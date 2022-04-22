@@ -35,7 +35,8 @@
 
 ## Deployment
 
-* [Getting started locally](deployment/getting_started_locally.md)
+* [Getting started locally](deployment/deployment.md)
+* [Inventory examples](deployment/inventory.md)
 
 
 ## Monitoring
