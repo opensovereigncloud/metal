@@ -1,10 +1,4 @@
-# inventory
-
-inventory is a controller that allows to store results of machine inventarization process done with [inventory CLI](https://github.com/onmetal/inventory) in a form of k8s resource.
-
-inventory implements corresponding resource specification, controller and golang client for it.
-
-## Getting started 
+# Inventory Usage
 
 ## Extending API
 
@@ -63,24 +57,6 @@ This includes:
 - API objects
 - client
 - controller
-
-## Deployment
-
-Operator can be deployed with kubectl or kustomize. Use may choose one that is more suitable.
-
-### With kubectl using kustomize configs
-
-    # deploy
-    kubectl apply -k config/default/
-    # remove
-    kubectl delete -k config/default/
-
-### With kustomize
-
-    # build and apply
-    kustomize build config/default | kubectl apply -f -
-    # build and remove
-    kustomize build config/default | kubectl delete -f -
 
 ## Consuming API
 
@@ -213,9 +189,3 @@ func outbound() error {
 	return nil
 }
 ```
-
-### Libraries
-
-Apart from libraries required to developm the operator itself, project has some other includes:
-
-- [messagediff](https://github.com/d4l3k/messagediff) - used to compute the diff for resources on update 
