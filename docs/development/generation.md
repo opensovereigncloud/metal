@@ -1,6 +1,6 @@
-## Genereate
+## Generation Guide
  
-If you want to regenerate files after API changes, you need to run:
+To regenerate files after API changes, you need to run:
 ```shell
 make generate
 ```

@@ -1,1 +1,6 @@
-# if APIs are available, they are documented here
+# Metal-API Reference
+
+* [`benchmark` API Group](benchmark.md)
+* [`inventory` API Group](inventory.md)
+* [`switches` API Group](switches.md)
+* [`machine` API Group](machine.md)
