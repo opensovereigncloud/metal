@@ -20,7 +20,7 @@ type machine struct {
 	recorder record.EventRecorder
 }
 
-func NewMachine(ctx context.Context, c ctrlclient.Client, l logr.Logger, recorder record.EventRecorder) Scheduler {
+func New(ctx context.Context, c ctrlclient.Client, l logr.Logger, recorder record.EventRecorder) Scheduler {
 	mClient := machineclient.New(ctx, c, l, recorder)
 	return &machine{
 		Client:   c,
@@ -41,7 +41,7 @@ func (m *machine) Schedule(metalRequest *requestv1alpha1.Request) error {
 		return err
 	}
 
-	metalRequest.Status.State = requestv1alpha1.Reserved
+	metalRequest.Status.State = requestv1alpha1.RequestStateReserved
 	metalRequest.Status.Reference = getObjectReference(machineForRequest)
 
 	return m.Status().Update(m.ctx, metalRequest)

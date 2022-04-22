@@ -112,7 +112,6 @@ spec:
                   required:
                   - key
                   - status
-                  - value
                   type: object
                 type: array
             type: object

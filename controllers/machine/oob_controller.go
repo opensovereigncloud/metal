@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-const UUIDLabel = "machine.onmetal.de/uuid"
+const maintainedMachineLabel = "onmetal.de/oob-ignore"
 
 // MachineReconciler reconciles a Machine object.
 type OOBReconciler struct {
@@ -58,9 +58,6 @@ func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
@@ -98,6 +95,19 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		machineObj.Status.OOB = prepareRefenceSpec(oobObj)
 	}
 
+	if v, ok := oobObj.Labels[maintainedMachineLabel]; ok && v == "true" {
+		if !isNoScheduleTaintExist(machineObj.Spec.Taints) {
+			machineObj.Spec.Taints = append(machineObj.Spec.Taints, machinev1alpha2.Taint{
+				Effect: machinev1alpha2.TaintEffectNoSchedule,
+				Key:    machinev1alpha2.UnschedulableLabel,
+			})
+		}
+	}
+
+	if specUpdErr := mm.UpdateSpec(machineObj); specUpdErr != nil {
+		return ctrl.Result{}, specUpdErr
+	}
+
 	if statusUpdErr := mm.UpdateStatus(machineObj); statusUpdErr != nil {
 		return ctrl.Result{}, statusUpdErr
 	}
@@ -122,7 +132,7 @@ func prepareMachine(oob *oobv1.Machine) *machinev1alpha2.Machine {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      oob.Spec.UUID,
 			Namespace: oob.Namespace,
-			Labels:    map[string]string{UUIDLabel: oob.Spec.UUID},
+			Labels:    map[string]string{machinev1alpha2.UUIDLabel: oob.Spec.UUID},
 		},
 		Spec: machinev1alpha2.MachineSpec{InventoryRequested: true},
 	}
@@ -181,4 +191,14 @@ func setUpLabels(oobObj *oobv1.Machine) map[string]string {
 		oobObj.Labels[machinev1alpha2.UUIDLabel] = oobObj.Spec.UUID
 	}
 	return oobObj.Labels
+}
+
+func isNoScheduleTaintExist(taints []machinev1alpha2.Taint) bool {
+	for t := range taints {
+		if taints[t].Effect != machinev1alpha2.TaintEffectNoSchedule {
+			continue
+		}
+		return true
+	}
+	return false
 }

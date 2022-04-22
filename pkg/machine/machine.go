@@ -24,6 +24,7 @@ import (
 	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
 	metalerr "github.com/onmetal/metal-api/pkg/errors"
 	oobonmetal "github.com/onmetal/oob-controller/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,12 +34,12 @@ import (
 )
 
 type Machiner interface {
-	Reserve(*machinev1alpha2.Machine, *requestv1alpha1.Request) error
-	DeleteReservation(machine *machinev1alpha2.Machine) error
-	CheckIn(*machinev1alpha2.Machine) error
-	CheckOut(*machinev1alpha2.Machine) error
+	// Reserve(*machinev1alpha2.Machine, *requestv1alpha1.Request) error
+	// DeleteReservation(machine *machinev1alpha2.Machine) error
+	// CheckIn(metav1.Object) error
+	// CheckOut(*machinev1alpha2.Machine) error
 
-	GetMachine(string, string) (*machinev1alpha2.Machine, error)
+	GetMachine(string, string) (metav1.Object, error)
 
 	FindVacantMachine(*requestv1alpha1.Request) (*machinev1alpha2.Machine, error)
 
@@ -87,15 +88,16 @@ func (m *Machine) DeleteReservation(machine *machinev1alpha2.Machine) error {
 	return m.UpdateSpec(machine)
 }
 
-func (m *Machine) CheckIn(machineObj *machinev1alpha2.Machine) error {
-	return m.changeServerPowerState(machineObj.Name, machineObj.Namespace, machinev1alpha2.MachinePowerStateON)
+func (m *Machine) CheckIn(machineObj metav1.Object) error {
+
+	return m.changeServerPowerState(machineObj.GetName(), machineObj.GetNamespace(), machinev1alpha2.MachinePowerStateON)
 }
 
 func (m *Machine) CheckOut(machine *machinev1alpha2.Machine) error {
 	return m.changeServerPowerState(machine.Name, machine.Namespace, machinev1alpha2.MachinePowerStateOFF)
 }
 
-func (m *Machine) GetMachine(name, namespace string) (*machinev1alpha2.Machine, error) {
+func (m *Machine) GetMachine(name, namespace string) (metav1.Object, error) {
 	obj := &machinev1alpha2.Machine{}
 	if err := m.Client.Get(m.ctx, types.NamespacedName{Name: name, Namespace: namespace}, obj); err != nil {
 		return nil, err

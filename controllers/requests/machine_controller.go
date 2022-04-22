@@ -58,9 +58,6 @@ func (r *MachineReconciler) constructPredicates() predicate.Predicate {
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
 
 func (r *MachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("machine", req.NamespacedName)
@@ -94,7 +91,7 @@ func (r *MachineReconciler) recreateObject(e event.DeleteEvent) bool {
 	machineObj.ResourceVersion = ""
 
 	if err := r.Client.Create(context.Background(), machineObj); err != nil {
-		r.Log.Info("failed to revert deletion machine instance", "error", err)
+		r.Log.Info("failed to revert deletion of machine instance", "error", err)
 		return false
 	}
 	return false

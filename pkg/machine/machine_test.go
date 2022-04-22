@@ -12,14 +12,14 @@ func TestIsTolerated(t *testing.T) {
 		{
 			Key:    "uuid",
 			Value:  "123",
-			Effect: machinev1alpha2.TaintStatusNotAvailable,
+			Effect: machinev1alpha2.TaintEffectNotAvailable,
 		},
 	}
 	taints := []machinev1alpha2.Taint{
 		{
 			Key:    "uuid",
 			Value:  "123",
-			Effect: machinev1alpha2.TaintStatusNotAvailable,
+			Effect: machinev1alpha2.TaintEffectNotAvailable,
 		},
 	}
 
@@ -33,19 +33,19 @@ func TestIsNotTolerated(t *testing.T) {
 		{
 			Key:    "uuid",
 			Value:  "123",
-			Effect: machinev1alpha2.TaintStatusNotAvailable,
+			Effect: machinev1alpha2.TaintEffectNotAvailable,
 		},
 	}
 	taints := []machinev1alpha2.Taint{
 		{
 			Key:    "uuid",
 			Value:  "123",
-			Effect: machinev1alpha2.TaintStatusNotAvailable,
+			Effect: machinev1alpha2.TaintEffectNotAvailable,
 		},
 		{
 			Key:    "uuid",
 			Value:  "123",
-			Effect: machinev1alpha2.TaintStatusError,
+			Effect: machinev1alpha2.TaintEffectError,
 		},
 	}
 
@@ -59,24 +59,24 @@ func TestIsNotToleratedEqual(t *testing.T) {
 		{
 			Key:    "uuid",
 			Value:  "123",
-			Effect: machinev1alpha2.TaintStatusNotAvailable,
+			Effect: machinev1alpha2.TaintEffectNotAvailable,
 		},
 		{
 			Key:    "uuid",
 			Value:  "1234",
-			Effect: machinev1alpha2.TaintStatusSuspended,
+			Effect: machinev1alpha2.TaintEffectSuspended,
 		},
 	}
 	taints := []machinev1alpha2.Taint{
 		{
 			Key:    "uuid",
 			Value:  "123",
-			Effect: machinev1alpha2.TaintStatusNotAvailable,
+			Effect: machinev1alpha2.TaintEffectNotAvailable,
 		},
 		{
 			Key:    "uuid",
 			Value:  "1234",
-			Effect: machinev1alpha2.TaintStatusError,
+			Effect: machinev1alpha2.TaintEffectError,
 		},
 	}
 

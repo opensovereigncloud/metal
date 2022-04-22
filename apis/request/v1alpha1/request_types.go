@@ -34,8 +34,10 @@ const (
 type RequestState string
 
 const (
-	Reserved RequestState = "Reserved"
-	Pending  RequestState = "Pending"
+	RequestStateReserved RequestState = "Reserved"
+	RequestStatePending  RequestState = "Pending"
+	RequestStateError    RequestState = "Error"
+	RequestStateRunning  RequestState = "Running"
 )
 
 type RequestKind string

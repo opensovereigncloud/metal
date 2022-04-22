@@ -90,9 +90,9 @@ func (r *RequestReconciler) newScheduler(ctx context.Context,
 	kind requestv1alpha1.RequestKind, reqLogger logr.Logger) scheduler.Scheduler {
 	switch kind {
 	case requestv1alpha1.Machine:
-		return scheduler.NewMachine(ctx, r.Client, reqLogger, r.Recorder)
+		return scheduler.New(ctx, r.Client, reqLogger, r.Recorder)
 	default:
-		return scheduler.NewMachine(ctx, r.Client, reqLogger, r.Recorder)
+		return scheduler.New(ctx, r.Client, reqLogger, r.Recorder)
 	}
 }
 
@@ -102,7 +102,7 @@ func (r *RequestReconciler) onUpdate(e event.UpdateEvent) bool {
 		r.Log.Info("request delete event cast failed")
 		return false
 	}
-	if newObj.Status.State == requestv1alpha1.Reserved {
+	if newObj.Status.State == requestv1alpha1.RequestStateReserved {
 		return false
 	}
 	return true

@@ -29,13 +29,14 @@ const (
 type TaintEffect string
 
 const (
-	// When Machine status is NotAvailable it's not possible to order it.
-	TaintStatusNotAvailable TaintEffect = "NotAvailable"
-	// When Machine status is Suspended that's meant that there is some issues
-	// and need to run stress test.
-	TaintStatusSuspended TaintEffect = "Suspended"
-	// When Machine status is Error it's impossible to order machine
-	TaintStatusError TaintEffect = "Error"
+	// When Machine taint effect is NotAvailable that's mean that Inventory or OOB not exist.
+	TaintEffectNotAvailable TaintEffect = "NotAvailable"
+	// When Machine taint effect is Suspended
+	TaintEffectSuspended TaintEffect = "Suspended"
+	// When Machine taint effect is NoSchedule
+	TaintEffectNoSchedule TaintEffect = "NoSchedule"
+	// When Machine taint effect is Error it's impossible to order machine. And it requires to run stresstest.
+	TaintEffectError TaintEffect = "Error"
 )
 
 type MachineState string
@@ -53,7 +54,13 @@ const (
 	InterfaceRedundancyNone             = "None"
 )
 
-const UUIDLabel = "machine.onmetal.de/uuid"
+const (
+	UUIDLabel          = "machine.onmetal.de/uuid"
+	UnschedulableLabel = "machine.onmetal.de/unschedulable"
+	SuspendedLabel     = "machine.onmetal.de/suspended"
+	NotAvailableLabel  = "machine.onmetal.de/notavailable"
+	ErrorLabel         = "machine.onmetal.de/error"
+)
 
 // MachineSpec - defines the desired spec of Machine.
 type MachineSpec struct {
@@ -81,8 +88,8 @@ type Taint struct {
 	// +required
 	Key string `json:"key"`
 	// Value - corresponding to the taint key.
-	// +required
-	Value string `json:"value"`
+	//+optional
+	Value string `json:"value,omitempty"`
 	// Effect - defines taint effect on the Machine.
 	// Valid effects are NotAvailable and Suspended.
 	// +required
