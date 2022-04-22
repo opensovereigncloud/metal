@@ -1,0 +1,1 @@
+# how to interact with this component as an user
