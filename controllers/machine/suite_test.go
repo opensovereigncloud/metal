@@ -104,7 +104,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
 
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, Host: "127.0.0.1", MetricsBindAddress: "0"})
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&InventoryReconciler{

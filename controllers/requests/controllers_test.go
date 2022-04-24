@@ -63,6 +63,19 @@ func testScheduler(name, namespace string) {
 		return true
 	}, timeout, interval).Should(BeTrue())
 
+	By("Check status is running")
+
+	request := &requestv1alpha1.Request{}
+	Eventually(func(g Gomega) bool {
+		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, request); err != nil {
+			return false
+		}
+
+		if request.Status.State != machinev1alpha2.RequestStateRunning {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
 }
 
 func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
