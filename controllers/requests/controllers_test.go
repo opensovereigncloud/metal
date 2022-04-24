@@ -5,7 +5,6 @@ import (
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
-	machineclient "github.com/onmetal/metal-api/pkg/machine"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -53,11 +52,11 @@ func testScheduler(name, namespace string) {
 	Eventually(func(g Gomega) bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
 
-		key, ok = machine.Labels[machineclient.LeasedLabel]
+		key, ok = machine.Labels[machinev1alpha2.LeasedLabel]
 		if key != "true" && !ok {
 			return false
 		}
-		key, ok = machine.Labels[machineclient.MetalRequestLabel]
+		key, ok = machine.Labels[machinev1alpha2.MetalRequestLabel]
 		if key != "sample-request" && !ok {
 			return false
 		}

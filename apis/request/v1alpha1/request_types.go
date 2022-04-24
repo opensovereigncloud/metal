@@ -31,15 +31,6 @@ const (
 	TolerationOpExists TolerationOperator = "Exists"
 )
 
-type RequestState string
-
-const (
-	RequestStateReserved RequestState = "Reserved"
-	RequestStatePending  RequestState = "Pending"
-	RequestStateError    RequestState = "Error"
-	RequestStateRunning  RequestState = "Running"
-)
-
 type RequestKind string
 
 const (
@@ -163,8 +154,8 @@ type Toleration struct {
 
 // RequestStatus defines the observed state of Request
 type RequestStatus struct {
-	State     RequestState       `json:"state,omitempty"`
-	Reference *ResourceReference `json:"reference,omitempty"`
+	State     machinev1alpha2.RequestState `json:"state,omitempty"`
+	Reference *ResourceReference           `json:"reference,omitempty"`
 }
 
 // ResourceReference defines related resource info

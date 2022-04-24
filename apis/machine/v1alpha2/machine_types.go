@@ -26,6 +26,15 @@ const (
 	MachinePowerStateReset = "Reset"
 )
 
+type RequestState string
+
+const (
+	RequestStateReserved RequestState = "Reserved"
+	RequestStatePending  RequestState = "Pending"
+	RequestStateError    RequestState = "Error"
+	RequestStateRunning  RequestState = "Running"
+)
+
 type TaintEffect string
 
 const (
@@ -60,6 +69,13 @@ const (
 	SuspendedLabel     = "machine.onmetal.de/suspended"
 	NotAvailableLabel  = "machine.onmetal.de/notavailable"
 	ErrorLabel         = "machine.onmetal.de/error"
+)
+
+const (
+	LeasedSizeLabel   = "machine.onmetal.de/leased-size"
+	LeasedPoolLabel   = "machine.onmetal.de/leasing-pool"
+	LeasedLabel       = "machine.onmetal.de/leased"
+	MetalRequestLabel = "machine.onmetal.de/metal-request"
 )
 
 // MachineSpec - defines the desired spec of Machine.
@@ -142,9 +158,9 @@ type MachineStatus struct {
 	// Orphaned - defines machine condition whether OOB or Inventory is missing or not
 	// +optional
 	Orphaned bool `json:"orphaned,omitempty"`
-	// Reserved - defines if machine is reserved by customer or not
+	// RequestState - defines Machine Request state provided by OOB Machine Resources
 	// +optional
-	Reserved bool `json:"reserved,omitempty"`
+	RequestState RequestState `json:"request_state,omitempty"`
 }
 
 // Interface - defines information about machine interfaces.

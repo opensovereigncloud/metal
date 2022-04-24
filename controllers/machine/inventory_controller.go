@@ -22,9 +22,11 @@ import (
 
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
 	"github.com/onmetal/metal-api/pkg/inventory"
 	"github.com/onmetal/metal-api/pkg/machine"
+	"github.com/onmetal/metal-api/pkg/provider"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -68,13 +70,16 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return machinerr.GetResultForError(reqLogger, err)
 	}
 
-	machineObj, getErr := i.Machiner.GetMachine(i.Spec.System.ID, i.Namespace)
-	if getErr != nil {
+	machineObj := &machinev1alpha2.Machine{}
+	if getErr := provider.GetObject(ctx, i.Spec.System.ID, i.Namespace, r.Client, machineObj); getErr != nil {
 		return machinerr.GetResultForError(reqLogger, getErr)
 	}
 
-	if err := i.UpdateMachine(machineObj); err != nil {
-		return machinerr.GetResultForError(reqLogger, err)
+	i.UpdateMachine(machineObj)
+
+	mm := machine.New(ctx, r.Client, reqLogger, r.Recorder)
+	if err := mm.UpdateSpec(machineObj); err != nil {
+		return machinerr.GetResultForError(reqLogger, nil)
 	}
 
 	return machinerr.GetResultForError(reqLogger, nil)
@@ -100,9 +105,9 @@ func (r *InventoryReconciler) updateMachineStatusOnDelete(e event.DeleteEvent) b
 	}
 
 	mm := machine.New(ctx, r.Client, r.Log, r.Recorder)
-	machineObj, err := mm.GetMachine(invObj.Spec.System.ID, invObj.Namespace)
-	if err != nil {
-		r.Log.Info("failed to retrieve machine obkect from cluster", "error", err)
+	machineObj := &machinev1alpha2.Machine{}
+	if getErr := provider.GetObject(ctx, invObj.Spec.System.ID, invObj.Namespace, r.Client, machineObj); getErr != nil {
+		r.Log.Info("failed to retrieve machine object from cluster", "error", getErr)
 		return false
 	}
 

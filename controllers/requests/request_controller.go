@@ -22,9 +22,9 @@ import (
 	"github.com/go-logr/logr"
 	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
+	"github.com/onmetal/metal-api/pkg/provider"
 	"github.com/onmetal/metal-api/pkg/scheduler"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,7 +63,8 @@ func (r *RequestReconciler) constructPredicates() predicate.Predicate {
 func (r *RequestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("metal-request", req.NamespacedName)
 
-	request, err := r.GetRequest(ctx, req)
+	request := &requestv1alpha1.Request{}
+	err := provider.GetObject(ctx, req.Name, req.Namespace, r.Client, request)
 	if err != nil {
 		return machinerr.GetResultForError(reqLogger, err)
 	}
@@ -75,15 +76,6 @@ func (r *RequestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *RequestReconciler) GetRequest(ctx context.Context, req ctrl.Request) (*requestv1alpha1.Request, error) {
-	metalRequest := &requestv1alpha1.Request{}
-	if err := r.Client.Get(ctx,
-		types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, metalRequest); err != nil {
-		return metalRequest, err
-	}
-	return metalRequest, nil
 }
 
 func (r *RequestReconciler) newScheduler(ctx context.Context,
@@ -102,7 +94,7 @@ func (r *RequestReconciler) onUpdate(e event.UpdateEvent) bool {
 		r.Log.Info("request delete event cast failed")
 		return false
 	}
-	if newObj.Status.State == requestv1alpha1.RequestStateReserved {
+	if newObj.Status.Reference != nil {
 		return false
 	}
 	return true
