@@ -67,10 +67,9 @@ func testScheduler(name, namespace string) {
 
 	request := &requestv1alpha1.Request{}
 	Eventually(func(g Gomega) bool {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, request); err != nil {
+		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: "sample-request"}, request); err != nil {
 			return false
 		}
-
 		if request.Status.State != machinev1alpha2.RequestStateRunning {
 			return false
 		}
