@@ -30,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
@@ -51,14 +50,10 @@ const (
 	interval = time.Millisecond * 250
 )
 
-var scheme = runtime.NewScheme()
-
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Request Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -74,6 +69,8 @@ var _ = BeforeSuite(func() {
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
+
+	var scheme = runtime.NewScheme()
 
 	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
 	requestv1alpha1.SchemeBuilder.Register(&requestv1alpha1.Request{}, &requestv1alpha1.RequestList{})
@@ -93,7 +90,7 @@ var _ = BeforeSuite(func() {
 	err = (&RequestReconciler{
 		Client:   k8sManager.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("request"),
-		Recorder: k8sManager.GetEventRecorderFor("reqest"),
+		Recorder: k8sManager.GetEventRecorderFor("request"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

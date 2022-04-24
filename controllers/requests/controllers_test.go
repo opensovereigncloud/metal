@@ -27,8 +27,8 @@ var _ = Describe("machine-controller", func() {
 
 func testScheduler(name, namespace string) {
 	ctx := context.Background()
-
-	preparedRequest := prepareMetalRequest(namespace)
+	requestName := "sample-request"
+	preparedRequest := prepareMetalRequest(requestName, namespace)
 	preparedMachine := prepareMachineForTest(name, namespace)
 	preparedMachineStatus := prepareMachineStatus()
 
@@ -47,7 +47,6 @@ func testScheduler(name, namespace string) {
 
 	var key string
 	var ok bool
-
 	machine := &machinev1alpha2.Machine{}
 	Eventually(func(g Gomega) bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
@@ -57,23 +56,32 @@ func testScheduler(name, namespace string) {
 			return false
 		}
 		key, ok = machine.Labels[machinev1alpha2.MetalRequestLabel]
-		if key != "sample-request" && !ok {
+		if key != requestName && !ok {
 			return false
 		}
 		return true
 	}, timeout, interval).Should(BeTrue())
 
-	By("Check status is running")
+	By("Check request state is reserved")
 
 	request := &requestv1alpha1.Request{}
 	Eventually(func(g Gomega) bool {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: "sample-request"}, request); err != nil {
-			return false
-		}
-		if request.Status.State != machinev1alpha2.RequestStateRunning {
-			return false
-		}
-		return true
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
+
+		return request.Status.State == machinev1alpha2.RequestStateReserved
+	}, timeout, interval).Should(BeTrue())
+
+	By("Expect successful machine status update to running")
+
+	machine.Status.RequestState = machinev1alpha2.RequestStateRunning
+	Expect(k8sClient.Status().Update(ctx, machine)).Should(BeNil())
+
+	By("Check request state is running")
+
+	Eventually(func(g Gomega) bool {
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
+
+		return request.Status.State == machinev1alpha2.RequestStateRunning
 	}, timeout, interval).Should(BeTrue())
 }
 
@@ -105,10 +113,10 @@ func prepareMachineStatus() machinev1alpha2.MachineStatus {
 	}
 }
 
-func prepareMetalRequest(namespace string) *requestv1alpha1.Request {
+func prepareMetalRequest(name, namespace string) *requestv1alpha1.Request {
 	return &requestv1alpha1.Request{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "sample-request",
+			Name:      name,
 			Namespace: namespace,
 		},
 		Spec: requestv1alpha1.RequestSpec{

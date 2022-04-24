@@ -36,7 +36,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -53,7 +52,7 @@ var (
 )
 
 const (
-	timeout  = time.Second * 60
+	timeout  = time.Second * 30
 	interval = time.Millisecond * 250
 )
 
@@ -62,9 +61,7 @@ var scheme = runtime.NewScheme()
 func TestMachineController(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Machine Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
