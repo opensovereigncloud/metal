@@ -318,10 +318,10 @@ spec:
               reboot:
                 description: Reboot - defines machine reboot status
                 type: string
-              reserved:
-                description: Reserved - defines if machine is reserved by customer
-                  or not
-                type: boolean
+              request_state:
+                description: RequestState - defines Machine Request state provided
+                  by OOB Machine Resources
+                type: string
             type: object
         type: object
     served: true
