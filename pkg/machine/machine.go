@@ -21,36 +21,19 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
 	metalerr "github.com/onmetal/metal-api/pkg/errors"
-	oobonmetal "github.com/onmetal/oob-controller/api/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Machiner interface {
-	Reserve(*machinev1alpha2.Machine, *requestv1alpha1.Request) error
-	CheckIn(*machinev1alpha2.Machine) error
-	CheckOut(*machinev1alpha2.Machine) error
-
-	GetMachine(string, string) (*machinev1alpha2.Machine, error)
-
-	FindVacantMachine(*requestv1alpha1.Request) (*machinev1alpha2.Machine, error)
-
-	UpdateSpec(*machinev1alpha2.Machine) error
-	UpdateStatus(*machinev1alpha2.Machine) error
+	FindVacantMachine(*machinev1alpha2.MachineAssignment) (*machinev1alpha2.Machine, error)
+	PatchSpec(*machinev1alpha2.Machine) error
+	PatchStatus(*machinev1alpha2.Machine) error
 }
-
-const (
-	LeasedSizeLabel   = "machine.onmetal.de/leased-size"
-	LeasedPoolLabel   = "machine.onmetal.de/leasing-pool"
-	LeasedLabel       = "machine.onmetal.de/leased"
-	MetalRequestLabel = "machine.onmetal.de/metal-request"
-)
 
 const pageListLimit = 1000
 
@@ -72,39 +55,9 @@ func New(ctx context.Context, c ctrlclient.Client, l logr.Logger,
 	}
 }
 
-func (m *Machine) Reserve(machine *machinev1alpha2.Machine, request *requestv1alpha1.Request) error {
-	machine.Labels[LeasedLabel] = "true"
-	machine.Labels[MetalRequestLabel] = request.Name
-
-	return m.UpdateSpec(machine)
-}
-
-func (m *Machine) DeleteReservation(machine *machinev1alpha2.Machine, request *requestv1alpha1.Request) error {
-	delete(machine.Labels, LeasedLabel)
-	delete(machine.Labels, MetalRequestLabel)
-
-	return m.UpdateSpec(machine)
-}
-
-func (m *Machine) CheckIn(machineObj *machinev1alpha2.Machine) error {
-	return m.changeServerPowerState(machineObj.Name, machineObj.Namespace, machinev1alpha2.MachinePowerStateON)
-}
-
-func (m *Machine) CheckOut(machine *machinev1alpha2.Machine) error {
-	return m.changeServerPowerState(machine.Name, machine.Namespace, machinev1alpha2.MachinePowerStateOFF)
-}
-
-func (m *Machine) GetMachine(name, namespace string) (*machinev1alpha2.Machine, error) {
-	obj := &machinev1alpha2.Machine{}
-	if err := m.Client.Get(m.ctx, types.NamespacedName{Name: name, Namespace: namespace}, obj); err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-func (m *Machine) FindVacantMachine(metalRequest *requestv1alpha1.Request) (*machinev1alpha2.Machine, error) {
-	size, pool := metalRequest.Spec.MachineClass.Name, metalRequest.Spec.MachinePool.Name
-	metalSelector, err := getLabelSelectorForAvailableMachine(size, pool)
+func (m *Machine) FindVacantMachine(metalRequest *machinev1alpha2.MachineAssignment) (*machinev1alpha2.Machine, error) {
+	size := metalRequest.Spec.MachineClass.Name
+	metalSelector, err := getLabelSelectorForAvailableMachine(size)
 	if err != nil {
 		return &machinev1alpha2.Machine{}, err
 	}
@@ -139,19 +92,25 @@ func (m *Machine) FindVacantMachine(metalRequest *requestv1alpha1.Request) (*mac
 		}
 	}
 
-	return &machinev1alpha2.Machine{}, metalerr.NotFound(string(requestv1alpha1.Machine))
+	return &machinev1alpha2.Machine{}, metalerr.NotFound("machines for request")
 }
 
-func (m *Machine) UpdateSpec(machine *machinev1alpha2.Machine) error {
-	return m.Client.Update(m.ctx, machine)
+func (m *Machine) PatchSpec(machine *machinev1alpha2.Machine) error {
+	m.updateEventLog("", machine)
+
+	return m.Client.Patch(m.ctx, machine, ctrlclient.Merge, &ctrlclient.PatchOptions{
+		FieldManager: "machine",
+	})
 }
 
-func (m *Machine) UpdateStatus(machine *machinev1alpha2.Machine) error {
+func (m *Machine) PatchStatus(machine *machinev1alpha2.Machine) error {
 	m.updateEventLog("", machine)
 
 	m.updateHealthStatus(machine)
 
-	return m.Client.Status().Update(m.ctx, machine)
+	return m.Client.Status().Patch(m.ctx, machine, ctrlclient.Merge, &ctrlclient.PatchOptions{
+		FieldManager: "machine",
+	})
 }
 
 func (m *Machine) updateEventLog(eventType string, machine *machinev1alpha2.Machine) {
@@ -180,63 +139,23 @@ func (m *Machine) updateHealthStatus(machine *machinev1alpha2.Machine) {
 	}
 }
 
-func (m *Machine) changeServerPowerState(name, namespace, powerState string) error {
-	oobObj, err := m.getOOBMachineByUUIDLabel(name, namespace)
-	if err != nil {
-		return err
-	}
-
-	if powerState == oobObj.Spec.PowerState {
-		powerState = machinev1alpha2.MachinePowerStateReset
-	}
-
-	oobObj.Spec.PowerState = powerState
-
-	m.log.Info("oob state changed", "uuid", "namespace", oobObj.Name, oobObj.Namespace)
-	return m.Client.Patch(m.ctx, oobObj, ctrlclient.Merge, &ctrlclient.PatchOptions{
-		FieldManager: "machine-controller",
-	})
-}
-
-func (m *Machine) getOOBMachineByUUIDLabel(name, namespace string) (*oobonmetal.Machine, error) {
-	oobs := &oobonmetal.MachineList{}
-	listOptions := &ctrlclient.ListOptions{
-		Namespace: namespace,
-		LabelSelector: ctrlclient.MatchingLabelsSelector{
-			Selector: labels.SelectorFromSet(map[string]string{
-				machinev1alpha2.UUIDLabel: name,
-			})}}
-	if err := m.Client.List(m.ctx, oobs, listOptions); err != nil {
-		return nil, err
-	}
-
-	if len(oobs.Items) == 0 {
-		return nil, metalerr.NotFound(name)
-	}
-	return &oobs.Items[0], nil
-}
-
-func getLabelSelectorForAvailableMachine(size, pool string) (labels.Selector, error) {
-	labelSizeRequirement, err := labels.NewRequirement(LeasedSizeLabel, selection.Equals, []string{size})
+func getLabelSelectorForAvailableMachine(size string) (labels.Selector, error) {
+	labelSizeRequirement, err := labels.NewRequirement(machinev1alpha2.LeasedSizeLabel, selection.Equals, []string{size})
 	if err != nil {
 		return nil, err
 	}
-	labelPoolRequirement, err := labels.NewRequirement(LeasedPoolLabel, selection.Equals, []string{pool})
-	if err != nil {
-		return nil, err
-	}
-	labelNotReserved, err := labels.NewRequirement(LeasedLabel, selection.DoesNotExist, []string{})
+
+	labelNotReserved, err := labels.NewRequirement(machinev1alpha2.LeasedLabel, selection.DoesNotExist, []string{})
 	if err != nil {
 		return nil, err
 	}
 	return labels.NewSelector().
-			Add(*labelPoolRequirement).
 			Add(*labelSizeRequirement).
 			Add(*labelNotReserved),
 		nil
 }
 
-func isTolerated(tolerations []requestv1alpha1.Toleration, taints []machinev1alpha2.Taint) bool {
+func isTolerated(tolerations []machinev1alpha2.Toleration, taints []machinev1alpha2.Taint) bool {
 	if len(taints) == 0 {
 		return true
 	}
@@ -255,7 +174,7 @@ func isTolerated(tolerations []requestv1alpha1.Toleration, taints []machinev1alp
 	return tolerated == len(taints)
 }
 
-func toleratesTaint(toleration requestv1alpha1.Toleration, taint machinev1alpha2.Taint) bool {
+func toleratesTaint(toleration machinev1alpha2.Toleration, taint machinev1alpha2.Taint) bool {
 	if toleration.Effect != taint.Effect {
 		return false
 	}
@@ -265,9 +184,9 @@ func toleratesTaint(toleration requestv1alpha1.Toleration, taint machinev1alpha2
 	}
 
 	switch toleration.Operator {
-	case "", requestv1alpha1.TolerationOpEqual: // empty operator means Equal
+	case "", machinev1alpha2.TolerationOpEqual: // empty operator means Equal
 		return toleration.Value == taint.Value
-	case requestv1alpha1.TolerationOpExists:
+	case machinev1alpha2.TolerationOpExists:
 		return true
 	default:
 		return false

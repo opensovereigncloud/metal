@@ -1,10 +1,14 @@
 package scheduler
 
 import (
-	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
 type Scheduler interface {
-	Schedule(*requestv1alpha1.Request) error
-	DeleteScheduling(*requestv1alpha1.Request) error
+	Schedule(*machinev1alpha2.MachineAssignment) error
+	DeleteScheduling(*machinev1alpha2.MachineAssignment) error
+}
+
+func IsAldreadyScheduled(metalRequest *machinev1alpha2.MachineAssignment) bool {
+	return metalRequest.Status.Reference != nil
 }

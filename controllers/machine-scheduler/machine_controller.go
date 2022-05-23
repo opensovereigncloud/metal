@@ -22,16 +22,16 @@ import (
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
-	"github.com/onmetal/metal-api/pkg/machine"
+	"github.com/onmetal/metal-api/pkg/provider"
+	"github.com/onmetal/metal-api/pkg/reserve"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-type MachineReconciler struct { //nolint:revive
+type MachineReconciler struct {
 	client.Client
 
 	Log      logr.Logger
@@ -43,14 +43,7 @@ type MachineReconciler struct { //nolint:revive
 func (r *MachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&machinev1alpha2.Machine{}).
-		WithEventFilter(r.constructPredicates()).
 		Complete(r)
-}
-
-func (r *MachineReconciler) constructPredicates() predicate.Predicate {
-	return predicate.Funcs{
-		DeleteFunc: r.recreateObject,
-	}
 }
 
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
@@ -58,44 +51,58 @@ func (r *MachineReconciler) constructPredicates() predicate.Predicate {
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
 
 func (r *MachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("machine", req.NamespacedName)
 
-	m := machine.New(ctx, r.Client, reqLogger, r.Recorder)
+	var err error
 
-	machineObj, err := m.GetMachine(req.Name, req.Namespace)
+	machineObj := &machinev1alpha2.Machine{}
+	if err = provider.GetObject(ctx, req.Name, req.Namespace, r.Client, machineObj); err != nil {
+		return machinerr.GetResultForError(reqLogger, err)
+	}
+
+	metalName, metalNamespace := machineObj.Labels[machinev1alpha2.MetalRequestLabel], machineObj.Namespace
+
+	var reserver reserve.Reserver //nolint:gosimple
+	reserver = reserve.NewMachineReserver(ctx, r.Client, reqLogger, r.Recorder, machineObj)
+
+	key, ok := machineObj.Labels[machinev1alpha2.LeasedLabel]
+	if key == "true" && ok && machineObj.Status.Reservation.RequestState == machinev1alpha2.RequestStateReserved {
+		err = reserver.CheckIn()
+	} else if machineObj.Status.Reservation.RequestState == machinev1alpha2.RequestStateAvailable {
+		if checkoutErr := reserver.CheckOut(); checkoutErr != nil {
+			return machinerr.GetResultForError(reqLogger, checkoutErr)
+		}
+		return machinerr.GetResultForError(reqLogger, nil)
+	}
+
 	if err != nil {
 		return machinerr.GetResultForError(reqLogger, err)
 	}
 
-	key, ok := machineObj.Labels[machine.LeasedLabel]
-	if key == "true" && ok {
-		if err := m.CheckIn(machineObj); err != nil {
-			return machinerr.GetResultForError(reqLogger, err)
+	request := &machinev1alpha2.MachineAssignment{}
+	if err = provider.GetObject(ctx, metalName, metalNamespace, r.Client, request); err != nil {
+		if apierrors.IsNotFound(err) {
+			return machinerr.GetResultForError(reqLogger, nil)
 		}
-	} else if !ok {
-		if err := m.CheckOut(machineObj); err != nil {
-			return machinerr.GetResultForError(reqLogger, err)
-		}
+		return machinerr.GetResultForError(reqLogger, err)
+	}
+
+	if syncErr := r.syncStatusState(ctx, request, machineObj); syncErr != nil {
+		return machinerr.GetResultForError(reqLogger, syncErr)
 	}
 
 	return machinerr.GetResultForError(reqLogger, nil)
 }
 
-func (r *MachineReconciler) recreateObject(e event.DeleteEvent) bool {
-	machineObj, ok := e.Object.(*machinev1alpha2.Machine)
-	if !ok {
-		return false
+func (r *MachineReconciler) syncStatusState(ctx context.Context,
+	request *machinev1alpha2.MachineAssignment, machineObj *machinev1alpha2.Machine) error {
+	if request.Status.State != machineObj.Status.Reservation.RequestState {
+		request.Status.State = machineObj.Status.Reservation.RequestState
 	}
-	machineObj.ResourceVersion = ""
-
-	if err := r.Client.Create(context.Background(), machineObj); err != nil {
-		r.Log.Info("failed to revert deletion machine instance", "error", err)
-		return false
+	if machineObj.Status.Reservation.RequestState == machinev1alpha2.RequestStateError {
+		request.Status.Reference = nil
 	}
-	return false
+	return r.Client.Status().Update(ctx, request)
 }

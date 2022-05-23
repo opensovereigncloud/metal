@@ -20,11 +20,11 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
-	metalerr "github.com/onmetal/metal-api/pkg/errors"
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machinerr "github.com/onmetal/metal-api/pkg/errors"
+	"github.com/onmetal/metal-api/pkg/provider"
 	"github.com/onmetal/metal-api/pkg/scheduler"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// RequestReconciler reconciles a Request object
-type RequestReconciler struct {
+// SchedulerReconciler reconciles a Request object
+type SchedulerReconciler struct {
 	ctrlclient.Client
 
 	Log      logr.Logger
@@ -42,14 +42,14 @@ type RequestReconciler struct {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RequestReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SchedulerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&requestv1alpha1.Request{}).
+		For(&machinev1alpha2.MachineAssignment{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
 
-func (r *RequestReconciler) constructPredicates() predicate.Predicate {
+func (r *SchedulerReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
 		UpdateFunc: r.onUpdate,
 		DeleteFunc: r.onDelete,
@@ -60,67 +60,49 @@ func (r *RequestReconciler) constructPredicates() predicate.Predicate {
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=requests/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=requests/finalizers,verbs=update
 
-func (r *RequestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("metal-request", req.NamespacedName)
 
-	request, err := r.GetRequest(ctx, req)
-	if err != nil {
-		return ctrl.Result{}, err
+	request := &machinev1alpha2.MachineAssignment{}
+	if err := provider.GetObject(ctx, req.Name, req.Namespace, r.Client, request); err != nil {
+		return machinerr.GetResultForError(reqLogger, err)
 	}
 
-	s := r.newScheduler(ctx, request.Spec.Kind, reqLogger)
-
-	if err := s.Schedule(request); err != nil {
-		if metalerr.IsNotFound(err) {
-			reqLogger.Info("no objects for reservation found", "error", err)
-			return ctrl.Result{}, nil
+	if !scheduler.IsAldreadyScheduled(request) {
+		if err := r.newScheduler(ctx, reqLogger).Schedule(request); err != nil {
+			return machinerr.GetResultForError(reqLogger, err)
 		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *RequestReconciler) GetRequest(ctx context.Context, req ctrl.Request) (*requestv1alpha1.Request, error) {
-	metalRequest := &requestv1alpha1.Request{}
-	if err := r.Client.Get(ctx,
-		types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, metalRequest); err != nil {
-		return metalRequest, err
-	}
-	return metalRequest, nil
+func (r *SchedulerReconciler) newScheduler(ctx context.Context, reqLogger logr.Logger) scheduler.Scheduler {
+	return scheduler.NewMachine(ctx, r.Client, reqLogger, r.Recorder)
 }
 
-func (r *RequestReconciler) newScheduler(ctx context.Context,
-	kind requestv1alpha1.RequestKind, reqLogger logr.Logger) scheduler.Scheduler {
-	switch kind {
-	case requestv1alpha1.Machine:
-		return scheduler.NewMachine(ctx, r.Client, reqLogger, r.Recorder)
-	default:
-		return scheduler.NewMachine(ctx, r.Client, reqLogger, r.Recorder)
-	}
-}
-
-func (r *RequestReconciler) onUpdate(e event.UpdateEvent) bool {
-	newObj, ok := e.ObjectNew.(*requestv1alpha1.Request)
+func (r *SchedulerReconciler) onUpdate(e event.UpdateEvent) bool {
+	newObj, ok := e.ObjectNew.(*machinev1alpha2.MachineAssignment)
 	if !ok {
 		r.Log.Info("request delete event cast failed")
 		return false
 	}
-	if newObj.Status.State == requestv1alpha1.Reserved {
+	if newObj.Status.Reference != nil {
 		return false
 	}
 	return true
 }
 
-func (r *RequestReconciler) onDelete(e event.DeleteEvent) bool {
-	obj, ok := e.Object.(*requestv1alpha1.Request)
+func (r *SchedulerReconciler) onDelete(e event.DeleteEvent) bool {
+	obj, ok := e.Object.(*machinev1alpha2.MachineAssignment)
 	if !ok {
 		r.Log.Info("request delete event cast failed")
 		return false
 	}
 	ctx := context.Background()
 
-	s := r.newScheduler(ctx, obj.Spec.Kind, r.Log)
+	s := r.newScheduler(ctx, r.Log)
 
 	if err := s.DeleteScheduling(obj); err != nil {
 		r.Log.Info("scheduling deletion unsuccessful", "error", err)

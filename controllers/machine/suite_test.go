@@ -36,7 +36,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -53,7 +52,7 @@ var (
 )
 
 const (
-	timeout  = time.Second * 60
+	timeout  = time.Second * 75
 	interval = time.Millisecond * 250
 )
 
@@ -62,9 +61,7 @@ var scheme = runtime.NewScheme()
 func TestMachineController(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Machine Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -104,7 +101,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
 
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, Host: "127.0.0.1", MetricsBindAddress: "0"})
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&InventoryReconciler{
@@ -115,9 +112,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&OOBReconciler{
-		Client:   k8sManager.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("machine-oob"),
-		Recorder: k8sManager.GetEventRecorderFor("Machine-OOB"),
+		Client:    k8sManager.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("machine-oob"),
+		Recorder:  k8sManager.GetEventRecorderFor("Machine-OOB"),
+		Namespace: "default",
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -129,53 +127,8 @@ var _ = BeforeSuite(func() {
 }, 60)
 
 var _ = AfterSuite(func() {
-	cleanUp()
 	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
-
-func cleanUp() {
-	By("Remove oob")
-	Expect(k8sClient.DeleteAllOf(ctx, &oobonmetal.Machine{}, client.InNamespace("default"))).To(Succeed())
-	Eventually(func() bool {
-		list := &oobonmetal.MachineList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-
-	By("Remove switches")
-	Expect(k8sClient.DeleteAllOf(ctx, &switchv1alpha1.Switch{}, client.InNamespace("default"))).To(Succeed())
-	Eventually(func() bool {
-		list := &switchv1alpha1.SwitchList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-
-	By("Remove invetories")
-	Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace("default"))).To(Succeed())
-	Eventually(func() bool {
-		list := &inventoriesv1alpha1.InventoryList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-}

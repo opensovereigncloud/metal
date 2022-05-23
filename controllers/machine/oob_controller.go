@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/onmetal/metal-api/pkg/machine"
+	"github.com/onmetal/metal-api/pkg/provider"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,15 +34,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-const UUIDLabel = "machine.onmetal.de/uuid"
+const maintainedMachineLabel = "onmetal.de/oob-ignore"
 
 // MachineReconciler reconciles a Machine object.
 type OOBReconciler struct {
 	client.Client
 
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Log       logr.Logger
+	Scheme    *runtime.Scheme
+	Recorder  record.EventRecorder
+	Namespace string
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -58,9 +60,6 @@ func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
@@ -69,13 +68,12 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	reqLogger := r.Log.WithValues("machine-oob", req.NamespacedName)
 
 	oobObj := &oobv1.Machine{}
-	if err := r.Get(ctx, req.NamespacedName, oobObj); err != nil {
+	if err := provider.GetObject(ctx, req.Name, req.Namespace, r.Client, oobObj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	mm := machine.New(ctx, r.Client, r.Log, r.Recorder)
-	machineObj, err := mm.GetMachine(oobObj.Spec.UUID, oobObj.Namespace)
-	if err != nil {
+	machineObj := &machinev1alpha2.Machine{}
+	if err := provider.GetObject(ctx, oobObj.Spec.UUID, r.Namespace, r.Client, machineObj); err != nil {
 		if apierrors.IsNotFound(err) {
 			if err := r.createAndEnableMachine(ctx, oobObj); err != nil {
 				if apierrors.IsAlreadyExists(err) {
@@ -87,6 +85,7 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{}, err
 	}
 
+	mm := machine.New(ctx, r.Client, r.Log, r.Recorder)
 	if _, ok := oobObj.Labels[machinev1alpha2.UUIDLabel]; !ok {
 		oobObj.Labels = setUpLabels(oobObj)
 		if err := r.Client.Update(ctx, oobObj); err != nil {
@@ -94,11 +93,19 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		}
 	}
 
+	updateTaints(oobObj, machineObj)
+
+	if specUpdErr := mm.PatchSpec(machineObj); specUpdErr != nil {
+		return ctrl.Result{}, specUpdErr
+	}
+
 	if !machineObj.Status.OOB.Exist {
 		machineObj.Status.OOB = prepareRefenceSpec(oobObj)
 	}
 
-	if statusUpdErr := mm.UpdateStatus(machineObj); statusUpdErr != nil {
+	syncStatusState(oobObj, machineObj)
+
+	if statusUpdErr := mm.PatchStatus(machineObj); statusUpdErr != nil {
 		return ctrl.Result{}, statusUpdErr
 	}
 
@@ -107,7 +114,7 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 }
 
 func (r *OOBReconciler) createAndEnableMachine(ctx context.Context, oobObj *oobv1.Machine) error {
-	obj := prepareMachine(oobObj)
+	obj := prepareMachine(oobObj, r.Namespace)
 	if err := r.Client.Create(ctx, obj); err != nil {
 		return err
 	}
@@ -117,12 +124,12 @@ func (r *OOBReconciler) createAndEnableMachine(ctx context.Context, oobObj *oobv
 	return r.Client.Update(ctx, oobObj)
 }
 
-func prepareMachine(oob *oobv1.Machine) *machinev1alpha2.Machine {
+func prepareMachine(oob *oobv1.Machine, namespace string) *machinev1alpha2.Machine {
 	return &machinev1alpha2.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      oob.Spec.UUID,
-			Namespace: oob.Namespace,
-			Labels:    map[string]string{UUIDLabel: oob.Spec.UUID},
+			Namespace: namespace,
+			Labels:    map[string]string{machinev1alpha2.UUIDLabel: oob.Spec.UUID},
 		},
 		Spec: machinev1alpha2.MachineSpec{InventoryRequested: true},
 	}
@@ -146,17 +153,17 @@ func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
 		return false
 	}
 
-	mm := machine.New(ctx, r.Client, r.Log, r.Recorder)
-	machineObj, err := mm.GetMachine(obj.Spec.UUID, obj.Namespace)
-	if err != nil {
+	machineObj := &machinev1alpha2.Machine{}
+	if err := provider.GetObject(ctx, obj.Spec.UUID, r.Namespace, r.Client, machineObj); err != nil {
 		r.Log.Info("failed to retrieve machine object from cluster", "error", err)
 		return false
 	}
 
 	machineObj.Status.OOB.Exist = false
 	machineObj.Status.OOB.Reference = nil
-	if updErr := mm.UpdateStatus(machineObj); updErr != nil {
-		r.Log.Info("can't update machine status for inventory", "error", updErr)
+
+	if updErr := r.Client.Status().Update(ctx, machineObj); updErr != nil {
+		r.Log.Info("can't update machine status for oob", "error", updErr)
 		return false
 	}
 	return false
@@ -166,7 +173,7 @@ func getPowerState(state string) string {
 	switch state {
 	case "On":
 		// In case when machine already running Reset is required.
-		// Because it will bring machine from scratch.
+		// Machine should be started from scratch.
 		return "Reset"
 	default:
 		return "On"
@@ -181,4 +188,41 @@ func setUpLabels(oobObj *oobv1.Machine) map[string]string {
 		oobObj.Labels[machinev1alpha2.UUIDLabel] = oobObj.Spec.UUID
 	}
 	return oobObj.Labels
+}
+
+func updateTaints(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
+	if len(machineObj.Spec.Taints) == 0 {
+		return
+	}
+	if v, ok := oobObj.Labels[maintainedMachineLabel]; ok && v == "true" {
+		if getNoScheduleTaintIdx(machineObj.Spec.Taints) == -1 {
+			machineObj.Spec.Taints = append(machineObj.Spec.Taints, machinev1alpha2.Taint{
+				Effect: machinev1alpha2.TaintEffectNoSchedule,
+				Key:    machinev1alpha2.UnschedulableLabel,
+			})
+		}
+	} else {
+		if idx := getNoScheduleTaintIdx(machineObj.Spec.Taints); idx >= 0 {
+			machineObj.Spec.Taints = append(machineObj.Spec.Taints[:idx], machineObj.Spec.Taints[idx+1:]...)
+		}
+	}
+}
+
+func getNoScheduleTaintIdx(taints []machinev1alpha2.Taint) int {
+	for t := range taints {
+		if taints[t].Effect != machinev1alpha2.TaintEffectNoSchedule {
+			continue
+		}
+		return t
+	}
+	return -1
+}
+
+func syncStatusState(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
+	switch {
+	case oobObj.Status.SystemStateReadTimeout:
+		machineObj.Status.Reservation.RequestState = machinev1alpha2.RequestStateError
+	case oobObj.Status.SystemState == "Ok" || oobObj.Status.SystemState == "Unknown":
+		machineObj.Status.Reservation.RequestState = machinev1alpha2.RequestStateRunning
+	}
 }

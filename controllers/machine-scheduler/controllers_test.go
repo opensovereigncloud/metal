@@ -4,8 +4,6 @@ import (
 	"context"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
-	machineclient "github.com/onmetal/metal-api/pkg/machine"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -28,8 +26,8 @@ var _ = Describe("machine-controller", func() {
 
 func testScheduler(name, namespace string) {
 	ctx := context.Background()
-
-	preparedRequest := prepareMetalRequest(namespace)
+	requestName := "sample-request"
+	preparedRequest := prepareMetalRequest(requestName, namespace)
 	preparedMachine := prepareMachineForTest(name, namespace)
 	preparedMachineStatus := prepareMachineStatus()
 
@@ -48,22 +46,44 @@ func testScheduler(name, namespace string) {
 
 	var key string
 	var ok bool
-
 	machine := &machinev1alpha2.Machine{}
 	Eventually(func(g Gomega) bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
 
-		key, ok = machine.Labels[machineclient.LeasedLabel]
+		key, ok = machine.Labels[machinev1alpha2.LeasedLabel]
 		if key != "true" && !ok {
 			return false
 		}
-		key, ok = machine.Labels[machineclient.MetalRequestLabel]
-		if key != "sample-request" && !ok {
+		key, ok = machine.Labels[machinev1alpha2.MetalRequestLabel]
+		if key != requestName && !ok {
 			return false
 		}
 		return true
 	}, timeout, interval).Should(BeTrue())
 
+	By("Check request state is pending")
+
+	request := &machinev1alpha2.MachineAssignment{}
+	Eventually(func(g Gomega) bool {
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
+
+		return request.Status.State == machinev1alpha2.RequestStatePending
+	}, timeout, interval).Should(BeTrue())
+
+	By("Expect successful machine status update to running")
+
+	machine.Status.Reservation.RequestState = machinev1alpha2.RequestStateRunning
+	Eventually(func(g Gomega) error {
+		return k8sClient.Status().Update(ctx, machine)
+	}, timeout, interval).Should(BeNil())
+
+	By("Check request state is running")
+
+	Eventually(func(g Gomega) bool {
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
+
+		return request.Status.State == machinev1alpha2.RequestStateRunning
+	}, timeout, interval).Should(BeTrue())
 }
 
 func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
@@ -94,20 +114,15 @@ func prepareMachineStatus() machinev1alpha2.MachineStatus {
 	}
 }
 
-func prepareMetalRequest(namespace string) *requestv1alpha1.Request {
-	return &requestv1alpha1.Request{
+func prepareMetalRequest(name, namespace string) *machinev1alpha2.MachineAssignment {
+	return &machinev1alpha2.MachineAssignment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "sample-request",
+			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: requestv1alpha1.RequestSpec{
-			Hostname: "myhost",
-			Kind:     "Machine",
+		Spec: machinev1alpha2.MachineAssignmentSpec{
 			MachineClass: v1.LocalObjectReference{
 				Name: "m5.metal",
-			},
-			MachinePool: v1.LocalObjectReference{
-				Name: "metal",
 			},
 			Image: "myimage_repo_location",
 		},

@@ -96,6 +96,9 @@ func GetResultForError(reqLogger logr.Logger, err error) (ctrl.Result, error) {
 		return ctrl.Result{Requeue: true}, nil
 	case IsNotAMachine(err):
 		return ctrl.Result{}, nil
+	case IsNotFound(err):
+		reqLogger.Info("can't operate over object", "error", err)
+		return ctrl.Result{}, nil
 	case err == nil:
 		reqLogger.Info("reconciliation finished")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -127,9 +130,15 @@ func NotExist(s string) *MachineError {
 	}
 }
 
-func NotFound(kind string) *MachineError {
+func NotFound(msg string) *MachineError {
 	return &MachineError{
-		ErrStatus: Reason{Message: fmt.Sprintf("resource with kind: %s, not found", kind), StatusReason: notFound},
+		ErrStatus: Reason{Message: fmt.Sprintf("%s, not found", msg), StatusReason: notFound},
+	}
+}
+
+func ObjectNotFound(obj, kind string) *MachineError {
+	return &MachineError{
+		ErrStatus: Reason{Message: fmt.Sprintf("object name: %s, kind: %s not found", obj, kind), StatusReason: notFound},
 	}
 }
 

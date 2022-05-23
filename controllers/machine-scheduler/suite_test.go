@@ -23,14 +23,12 @@ import (
 	"time"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
@@ -47,7 +45,7 @@ var (
 )
 
 const (
-	timeout  = time.Second * 60
+	timeout  = time.Second * 75
 	interval = time.Millisecond * 250
 )
 
@@ -56,9 +54,7 @@ var scheme = runtime.NewScheme()
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Request Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -71,15 +67,14 @@ var _ = BeforeSuite(func() {
 	}
 	ctx, cancel = context.WithCancel(context.TODO())
 
+	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
+	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.MachineAssignment{}, &machinev1alpha2.MachineAssignmentList{})
+
+	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
+
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
-
-	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
-	requestv1alpha1.SchemeBuilder.Register(&requestv1alpha1.Request{}, &requestv1alpha1.RequestList{})
-
-	Expect(requestv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
@@ -90,10 +85,10 @@ var _ = BeforeSuite(func() {
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&RequestReconciler{
+	err = (&SchedulerReconciler{
 		Client:   k8sManager.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("request"),
-		Recorder: k8sManager.GetEventRecorderFor("reqest"),
+		Recorder: k8sManager.GetEventRecorderFor("request"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -112,39 +107,8 @@ var _ = BeforeSuite(func() {
 }, 60)
 
 var _ = AfterSuite(func() {
-	cleanUp()
 	cancel()
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
-
-func cleanUp() {
-	By("Remove requests")
-	Expect(k8sClient.DeleteAllOf(ctx, &requestv1alpha1.Request{}, client.InNamespace("default"))).To(Succeed())
-	Eventually(func() bool {
-		list := &requestv1alpha1.RequestList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-
-	By("Remove machines")
-	Expect(k8sClient.DeleteAllOf(ctx, &machinev1alpha2.Machine{}, client.InNamespace("default"))).To(Succeed())
-	Eventually(func() bool {
-		list := &machinev1alpha2.MachineList{}
-		err := k8sClient.List(ctx, list)
-		if err != nil {
-			return false
-		}
-		if len(list.Items) > 0 {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-}

@@ -98,17 +98,8 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if inv.Labels == nil {
-		inv.Labels = make(map[string]string)
-	}
 	if inv.Status.Computed.Object == nil {
 		inv.Status.Computed.Object = make(map[string]interface{})
-	}
-
-	// Due to k8s validation which allows labels to consist of alphanumeric characters, '-', '_' or '.' need to replace
-	// colons in nic's MAC address
-	for _, nic := range inv.Spec.NICs {
-		inv.Labels[CMACAddressLabelPrefix+strings.ReplaceAll(nic.MACAddress, ":", "")] = ""
 	}
 
 	continueToken := ""
@@ -152,6 +143,16 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err = r.Status().Update(ctx, inv); err != nil {
 		log.Error(err, "unable to update inventory status resource", "name", req.NamespacedName)
 		return ctrl.Result{}, err
+	}
+
+	if inv.Labels == nil {
+		inv.Labels = make(map[string]string)
+	}
+
+	// Due to k8s validation which allows labels to consist of alphanumeric characters, '-', '_' or '.' need to replace
+	// colons in nic's MAC address
+	for _, nic := range inv.Spec.NICs {
+		inv.Labels[CMACAddressLabelPrefix+strings.ReplaceAll(nic.MACAddress, ":", "")] = ""
 	}
 
 	continueToken = ""

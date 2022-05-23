@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: requests.machine.onmetal.de
+  name: machineassignments.machine.onmetal.de
 spec:
   group: machine.onmetal.de
   names:
-    kind: Request
-    listKind: RequestList
-    plural: requests
-    singular: request
+    kind: MachineAssignment
+    listKind: MachineAssignmentList
+    plural: machineassignments
+    singular: machineassignment
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: Request is the Schema for the requests API
+        description: MachineAssignment is the Schema for the requests API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: RequestSpec defines the desired state of Request
+            description: MachineAssignmentSpec defines the desired state of Request
             properties:
               efiVars:
                 description: EFIVars are variables to pass to EFI while booting up.
@@ -50,9 +50,6 @@ spec:
                   - value
                   type: object
                 type: array
-              hostname:
-                description: Hostname is the hostname of the machine
-                type: string
               ignition:
                 description: Ignition is a reference to a config map containing the
                   ignition YAML for the machine to boot up. If key is empty, DefaultIgnitionKey
@@ -102,11 +99,6 @@ spec:
                   - target
                   type: object
                 type: array
-              kind:
-                default: Machine
-                description: Kind defines request server type. Machine or Switch or
-                  Router.
-                type: string
               machineClass:
                 description: MachineClass is a reference to the machine class/flavor
                   of the machine.
@@ -116,52 +108,6 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
-              machinePool:
-                description: MachinePool defines machine pool to run the machine in.
-                  If empty, a scheduler will figure out an appropriate pool to run
-                  the machine in.
-                properties:
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?'
-                    type: string
-                type: object
-              machinePoolSelector:
-                additionalProperties:
-                  type: string
-                description: MachinePoolSelector selects a suitable MachinePool by
-                  the given labels.
-                type: object
-              securityGroups:
-                description: SecurityGroups is a list of security groups of a machine
-                items:
-                  description: LocalObjectReference contains enough information to
-                    let you locate the referenced object inside the same namespace.
-                  properties:
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                  type: object
-                type: array
-              sshPublicKeys:
-                description: SSHPublicKeys is a list of SSH public key secret references
-                  of a machine.
-                items:
-                  description: ObjectSelector is a reference to a specific 'key' within
-                    a ConfigMap resource. In some instances, `key` is a required field.
-                  properties:
-                    key:
-                      description: The key of the entry in the ConfigMap resource's
-                        `data` field to be used. Some instances of this field may
-                        be defaulted, in others it may be required.
-                      type: string
-                    name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                        TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                  type: object
-                type: array
               tolerations:
                 description: Tolerations define tolerations the Machine has. Only
                   MachinePools whose taints covered by Tolerations will be considered
@@ -195,10 +141,10 @@ spec:
                       type: string
                   type: object
                 type: array
-              volumeAttachments:
-                description: VolumeAttachments are volumes attached to this machine.
+              volumes:
+                description: Volumes are volumes attached to this machine.
                 items:
-                  description: VolumeAttachment defines a volume attachment of a machine
+                  description: Volume defines a volume attachment of a machine
                   properties:
                     name:
                       description: Name is the name of the VolumeAttachment
@@ -227,12 +173,11 @@ spec:
                   type: object
                 type: array
             required:
-            - hostname
             - image
             - machineClass
             type: object
           status:
-            description: RequestStatus defines the observed state of Request
+            description: MachineAssignmentStatus defines the observed state of Request
             properties:
               reference:
                 description: ResourceReference defines related resource info

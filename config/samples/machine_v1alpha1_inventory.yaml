@@ -4,9 +4,8 @@ metadata:
   name: a967954c-3475-11b2-a85c-84d8b4f8cd2d
   namespace: onmetal
   labels:
-    machine.onmetal.de/size-machine: ""
-    machine.onmetal.de/leased-size: m5.metal
-    machine.onmetal.de/leasing-pool: metal
+    machine.onmetal.de/size-m5.metal: "true"
+    machine.onmetal.de/size-machine: "true"
 spec:
   system:
     id: a967954c-3475-11b2-a85c-84d8b4f8cd2d

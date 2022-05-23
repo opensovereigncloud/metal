@@ -31,6 +31,9 @@ spec:
     - jsonPath: .status.network.redundancy
       name: Redundancy
       type: string
+    - jsonPath: .status.request_state
+      name: Request State
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -112,7 +115,6 @@ spec:
                   required:
                   - key
                   - status
-                  - value
                   type: object
                 type: array
             type: object
@@ -319,10 +321,31 @@ spec:
               reboot:
                 description: Reboot - defines machine reboot status
                 type: string
-              reserved:
-                description: Reserved - defines if machine is reserved by customer
-                  or not
-                type: boolean
+              reservation:
+                description: Reservation - defines machine reservation state and reference
+                  object.
+                properties:
+                  reference:
+                    description: Reference - defines underlaying referenced object.
+                    properties:
+                      apiVersion:
+                        description: APIVersion refers to the resource API version
+                        type: string
+                      kind:
+                        description: Kind refers to the resource kind
+                        type: string
+                      name:
+                        description: Name refers to the resource name
+                        type: string
+                      namespace:
+                        description: Namespace refers to the resource namespace
+                        type: string
+                    type: object
+                  request_state:
+                    description: RequestState - defines Machine Request state provided
+                      by OOB Machine Resources
+                    type: string
+                type: object
             type: object
         type: object
     served: true

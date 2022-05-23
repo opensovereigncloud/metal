@@ -20,22 +20,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// A toleration operator is the set of operators that can be used in a toleration.
+type TolerationOperator string
+
+const (
+	TolerationOpEqual  TolerationOperator = "Equal"
+	TolerationOpExists TolerationOperator = "Exists"
+)
+
 const (
 	MachinePowerStateON    = "On"
 	MachinePowerStateOFF   = "Off"
 	MachinePowerStateReset = "Reset"
 )
 
+type RequestState string
+
+const (
+	RequestStateAvailable RequestState = "Available"
+	RequestStateReserved  RequestState = "Reserved"
+	RequestStatePending   RequestState = "Pending"
+	RequestStateError     RequestState = "Error"
+	RequestStateRunning   RequestState = "Running"
+)
+
 type TaintEffect string
 
 const (
-	// When Machine status is NotAvailable it's not possible to order it.
-	TaintStatusNotAvailable TaintEffect = "NotAvailable"
-	// When Machine status is Suspended that's meant that there is some issues
-	// and need to run stress test.
-	TaintStatusSuspended TaintEffect = "Suspended"
-	// When Machine status is Error it's impossible to order machine
-	TaintStatusError TaintEffect = "Error"
+	// When Machine taint effect is NotAvailable that's mean that Inventory or OOB not exist.
+	TaintEffectNotAvailable TaintEffect = "NotAvailable"
+	// When Machine taint effect is Suspended
+	TaintEffectSuspended TaintEffect = "Suspended"
+	// When Machine taint effect is NoSchedule
+	TaintEffectNoSchedule TaintEffect = "NoSchedule"
+	// When Machine taint effect is Error it's impossible to order machine. And it requires to run stresstest.
+	TaintEffectError TaintEffect = "Error"
 )
 
 type MachineState string
@@ -53,7 +72,20 @@ const (
 	InterfaceRedundancyNone             = "None"
 )
 
-const UUIDLabel = "machine.onmetal.de/uuid"
+const (
+	UUIDLabel          = "machine.onmetal.de/uuid"
+	UnschedulableLabel = "machine.onmetal.de/unschedulable"
+	SuspendedLabel     = "machine.onmetal.de/suspended"
+	NotAvailableLabel  = "machine.onmetal.de/notavailable"
+	ErrorLabel         = "machine.onmetal.de/error"
+)
+
+const (
+	LeasedSizeLabel   = "machine.onmetal.de/leased-size"
+	LeasedPoolLabel   = "machine.onmetal.de/leasing-pool"
+	LeasedLabel       = "machine.onmetal.de/leased"
+	MetalRequestLabel = "machine.onmetal.de/metal-request"
+)
 
 // MachineSpec - defines the desired spec of Machine.
 type MachineSpec struct {
@@ -81,8 +113,8 @@ type Taint struct {
 	// +required
 	Key string `json:"key"`
 	// Value - corresponding to the taint key.
-	// +required
-	Value string `json:"value"`
+	//+optional
+	Value string `json:"value,omitempty"`
 	// Effect - defines taint effect on the Machine.
 	// Valid effects are NotAvailable and Suspended.
 	// +required
@@ -91,6 +123,25 @@ type Taint struct {
 	// It is only written for NoExecute taints.
 	// +optional
 	TimeAdded *metav1.Time `json:"time_added,omitempty"`
+}
+
+// The resource this Toleration is attached to tolerates any taint that matches
+// the triple <key,value,effect> using the matching operator <operator>.
+type Toleration struct {
+	// Key is the taint key that the toleration applies to. Empty means match all taint keys.
+	// If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+	Key string `json:"key,omitempty"`
+	// Operator represents a key's relationship to the value.
+	// Valid operators are Exists and Equal. Defaults to Equal.
+	// Exists is equivalent to wildcard for value, so that a resource can
+	// tolerate all taints of a particular category.
+	Operator TolerationOperator `json:"operator,omitempty"`
+	// Value is the taint value the toleration matches to.
+	// If the operator is Exists, the value should be empty, otherwise just a regular string.
+	Value string `json:"value,omitempty"`
+	// Effect indicates the taint effect to match. Empty means match all taint effects.
+	// When specified, allowed values are NoSchedule.
+	Effect TaintEffect `json:"effect,omitempty"`
 }
 
 // Identity - defines hardware information about machine.
@@ -132,12 +183,15 @@ type MachineStatus struct {
 	// Inventory - defines status of Inventory
 	// +optional
 	Inventory ObjectReference `json:"inventory,omitempty"`
+	// Reservation - defines machine reservation state and reference object.
+	// +optional
+	Reservation Reservation `json:"reservation,omitempty"`
 	// Orphaned - defines machine condition whether OOB or Inventory is missing or not
 	// +optional
 	Orphaned bool `json:"orphaned,omitempty"`
-	// Reserved - defines if machine is reserved by customer or not
-	// +optional
-	Reserved bool `json:"reserved,omitempty"`
+	// // RequestState - defines Machine Request state provided by OOB Machine Resources
+	// // +optional
+	// RequestState RequestState `json:"request_state,omitempty"`
 }
 
 // Interface - defines information about machine interfaces.
@@ -221,6 +275,15 @@ type ObjectReference struct {
 	Reference *ResourceReference `json:"reference,omitempty"`
 }
 
+type Reservation struct {
+	// RequestState - defines Machine Request state provided by OOB Machine Resources
+	// +optional
+	RequestState RequestState `json:"request_state,omitempty"`
+	// Reference - defines underlaying referenced object.
+	// +optional
+	Reference *ResourceReference `json:"reference,omitempty"`
+}
+
 // ResourceReference defines related resource info
 type ResourceReference struct {
 	// APIVersion refers to the resource API version
@@ -244,6 +307,7 @@ type ResourceReference struct {
 // +kubebuilder:printcolumn:name="OOB",type=boolean,JSONPath=`.status.oob.exist`
 // +kubebuilder:printcolumn:name="Orphaned",type=boolean,JSONPath=`.status.orphaned`
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
+// +kubebuilder:printcolumn:name="Request State",type=string,JSONPath=`.status.request_state`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Machine - is the data structure for a Machine resource.

@@ -26,6 +26,7 @@ import (
 
 func init() {
 	SchemeBuilder.Register(&Machine{}, &MachineList{})
+	SchemeBuilder.Register(&MachineAssignment{}, &MachineAssignmentList{})
 }
 
 var (

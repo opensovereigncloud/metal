@@ -27,12 +27,11 @@ import (
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1lpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	requestv1alpha1 "github.com/onmetal/metal-api/apis/request/v1alpha1"
 	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
-	requestcontrollers "github.com/onmetal/metal-api/controllers/requests"
+	schedulercontrollers "github.com/onmetal/metal-api/controllers/machine-scheduler"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 
@@ -58,10 +57,11 @@ func main() {
 		webhookPort = 9443
 	}
 
-	var metricsAddr, probeAddr string
+	var metricsAddr, probeAddr, namespace string
 	var enableLeaderElection, profiling bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&namespace, "namespace", "default", "Namespace name for object creation")
 	flag.IntVar(&webhookPort, "webhook-bind-address", webhookPort, "The address the webhook endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -87,7 +87,7 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-	startReconcilers(mgr)
+	startReconcilers(mgr, namespace)
 	addHandlers(mgr, profiling)
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -100,7 +100,6 @@ func addToScheme() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(benchv1alpha3.AddToScheme(scheme))
 	utilruntime.Must(machinev1lpha2.AddToScheme(scheme))
-	utilruntime.Must(requestv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(oobv1.AddToScheme(scheme))
@@ -108,8 +107,9 @@ func addToScheme() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func startReconcilers(mgr ctrl.Manager) {
+func startReconcilers(mgr ctrl.Manager, namespace string) {
 	var err error
+
 	if err = (&benchmarkcontroller.Reconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Benchmark"),
@@ -136,10 +136,11 @@ func startReconcilers(mgr ctrl.Manager) {
 		os.Exit(1)
 	}
 	if err = (&machinecontroller.OOBReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Machine-OOB"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Machine-OOB"),
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("Machine-OOB"),
+		Scheme:    mgr.GetScheme(),
+		Recorder:  mgr.GetEventRecorderFor("Machine-OOB"),
+		Namespace: namespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-OOB")
 		os.Exit(1)
@@ -192,16 +193,16 @@ func startReconcilers(mgr ctrl.Manager) {
 		setupLog.Error(err, "unable to create controller", "controller", "Aggregate")
 		os.Exit(1)
 	}
-	if err = (&requestcontrollers.RequestReconciler{
+	if err = (&schedulercontrollers.SchedulerReconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("Request"),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("Request"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Request")
+		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
 		os.Exit(1)
 	}
-	if err = (&requestcontrollers.MachineReconciler{
+	if err = (&schedulercontrollers.MachineReconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("Machine-request"),
 		Scheme:   mgr.GetScheme(),

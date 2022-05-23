@@ -27,10 +27,10 @@ import (
 	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
 	"github.com/onmetal/metal-api/pkg/machine"
+	"github.com/onmetal/metal-api/pkg/provider"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,12 +57,12 @@ type Inventory struct {
 
 	ctx      context.Context
 	log      logr.Logger
-	Machiner machine.Machiner
+	recorder record.EventRecorder
 }
 
 func New(ctx context.Context, c ctrlclient.Client, l logr.Logger, r record.EventRecorder, req ctrl.Request) (*Inventory, error) {
-	i, err := getInventory(ctx, c, req.Name, req.Namespace)
-	if err != nil {
+	i := &inventoriesv1alpha1.Inventory{}
+	if err := provider.GetObject(ctx, req.Name, req.Namespace, c, i); err != nil {
 		return nil, err
 	}
 
@@ -70,31 +70,28 @@ func New(ctx context.Context, c ctrlclient.Client, l logr.Logger, r record.Event
 		return nil, machinerr.NotAMachine()
 	}
 
-	mm := machine.New(ctx, c, l, r)
 	return &Inventory{
 		Client:    c,
 		Inventory: i,
-		Machiner:  mm,
 		ctx:       ctx,
 		log:       l,
+		recorder:  r,
 	}, nil
-}
-
-func getInventory(ctx context.Context, c ctrlclient.Client,
-	name, namespace string) (*inventoriesv1alpha1.Inventory, error) {
-	obj := &inventoriesv1alpha1.Inventory{}
-	if err := c.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, obj); err != nil {
-		return nil, err
-	}
-	return obj, nil
 }
 
 func (i *Inventory) UpdateMachine(machineObj *machinev1alpha2.Machine) error {
 	machineObj.Spec.InventoryRequested = false
-	for key := range i.Labels {
-		machineObj.Labels[key] = i.Labels[key]
+	for key := range i.Inventory.Labels {
+		machineObj.Labels[key] = i.Inventory.Labels[key]
 	}
-	if err := i.Machiner.UpdateSpec(machineObj); err != nil {
+
+	mm := machine.New(i.ctx, i.Client, i.log, i.recorder)
+
+	i.updateIdentity(machineObj)
+
+	i.copySizeLabelsToMachine(machineObj)
+
+	if err := mm.PatchSpec(machineObj); err != nil {
 		return err
 	}
 
@@ -102,11 +99,11 @@ func (i *Inventory) UpdateMachine(machineObj *machinev1alpha2.Machine) error {
 
 	i.updateMachineInterfaces(machineObj)
 
-	i.updateIdentity(machineObj)
+	if err := mm.PatchStatus(machineObj); err != nil {
+		return err
+	}
 
-	i.copySizeLabelsToMachine(machineObj)
-
-	return i.Machiner.UpdateStatus(machineObj)
+	return nil
 }
 
 func (i *Inventory) updateMachineInterfaces(m *machinev1alpha2.Machine) {
@@ -142,12 +139,12 @@ func (i *Inventory) getUnknownPortsCount(m *machinev1alpha2.Machine) int {
 }
 
 func (i *Inventory) updateIdentity(m *machinev1alpha2.Machine) {
-	m.Spec.Identity.SKU = i.Spec.System.ProductSKU
-	m.Spec.Identity.SerialNumber = i.Spec.System.SerialNumber
+	m.Spec.Identity.SKU = i.Inventory.Spec.System.ProductSKU
+	m.Spec.Identity.SerialNumber = i.Inventory.Spec.System.SerialNumber
 }
 
 func (i *Inventory) copySizeLabelsToMachine(m *machinev1alpha2.Machine) {
-	for key, value := range i.Labels {
+	for key, value := range i.Inventory.Labels {
 		if !strings.Contains(key, inventoriesv1alpha1.CLabelPrefix) {
 			continue
 		}
@@ -157,6 +154,7 @@ func (i *Inventory) copySizeLabelsToMachine(m *machinev1alpha2.Machine) {
 
 func (i *Inventory) updateResourceReference(m *machinev1alpha2.Machine) {
 	if !m.Status.Inventory.Exist || m.Status.Inventory.Reference == nil {
+
 		m.Status.Inventory = i.prepareRefenceSpec()
 	}
 }
@@ -165,14 +163,14 @@ func (i *Inventory) prepareRefenceSpec() machinev1alpha2.ObjectReference {
 	return machinev1alpha2.ObjectReference{
 		Exist: true,
 		Reference: &machinev1alpha2.ResourceReference{
-			Kind: i.Kind, APIVersion: i.APIVersion,
-			Name: i.Name, Namespace: i.Namespace},
+			Kind: i.Inventory.Kind, APIVersion: i.Inventory.APIVersion,
+			Name: i.Inventory.Name, Namespace: i.Inventory.Namespace},
 	}
 }
 
 func (i *Inventory) getInterfaces(m *machinev1alpha2.Machine) []machinev1alpha2.Interface {
 	interfaces := make([]machinev1alpha2.Interface, 0, defaultNumberOfInterfaces)
-	nicsSpec := i.Spec.NICs
+	nicsSpec := i.Inventory.Spec.NICs
 	for nic := range nicsSpec {
 		if len(nicsSpec[nic].LLDPs) == 0 {
 			interfaces = i.baseConnectionInfo(&nicsSpec[nic], interfaces, m)
@@ -277,7 +275,7 @@ func (i *Inventory) baseConnectionInfo(nicsSpec *inventoriesv1alpha1.NICSpec,
 	interfaces []machinev1alpha2.Interface, m *machinev1alpha2.Machine) []machinev1alpha2.Interface {
 	if len(nicsSpec.LLDPs) != 1 {
 		i.log.Info("incorrect lldp neighbor count",
-			"inventory", i.Name,
+			"inventory", i.Inventory.Name,
 			"interface", nicsSpec.Name,
 			"count", len(nicsSpec.LLDPs))
 		return append(interfaces, machinev1alpha2.Interface{
