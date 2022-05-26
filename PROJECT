@@ -33,5 +33,4 @@ resources:
   group: machine
   kind: Size
   version: v1alpha1
-  webhookVersion: v1
 version: "3"

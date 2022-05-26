@@ -29,15 +29,13 @@ func testScheduler(name, namespace string) {
 	requestName := "sample-request"
 	preparedRequest := prepareMetalRequest(requestName, namespace)
 	preparedMachine := prepareMachineForTest(name, namespace)
-	preparedMachineStatus := prepareMachineStatus()
 
 	By("Expect successful machine creation")
 	Expect(k8sClient.Create(ctx, preparedMachine)).Should(BeNil())
 
-	preparedMachine.Status = preparedMachineStatus
-
 	By("Expect successful machine status update")
-	Expect(k8sClient.Status().Update(ctx, preparedMachine)).Should(BeNil())
+	preparedMachine.Status = prepareMachineStatus()
+	Expect(k8sClient.Status().Update(ctx, preparedMachine)).To(Succeed())
 
 	By("Expect successful metal request creation")
 	Expect(k8sClient.Create(ctx, preparedRequest)).Should(BeNil())

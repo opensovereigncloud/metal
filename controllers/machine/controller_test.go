@@ -40,14 +40,13 @@ var _ = Describe("machine-controller", func() {
 			testMachine(name, namespace)
 		})
 		It("Test machine onboarding ", func() {
-			testMachineOnboarding()
+			testMachineOOB()
 		})
 	})
 })
 
 func testMachine(name, namespace string) {
 	ctx := context.Background()
-	preparedMachine := prepareMachineForTest(name, namespace)
 	inventory := prepareInventory(name, namespace)
 	switches := prepareSwitch(namespace)
 
@@ -56,16 +55,21 @@ func testMachine(name, namespace string) {
 
 	By("Expect successful switch status update")
 	switches.Status = getSwitchesStatus()
-	Expect(k8sClient.Status().Update(ctx, switches)).Should(BeNil())
-
-	By("Expect successful machine creation")
-	Expect(k8sClient.Create(ctx, preparedMachine)).Should(BeNil())
+	Expect(k8sClient.Status().Update(ctx, switches)).To(Succeed())
 
 	By("Expect successful inventory creation")
 	Expect(k8sClient.Create(ctx, inventory)).Should(BeNil())
 
-	By("Inspecting machine properties")
 	machine := &machinev1alpha2.Machine{}
+	By("Expect successful machine creation")
+	Eventually(func() bool {
+		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+			return false
+		}
+		return true
+	}, timeout, interval).Should(BeTrue())
+
+	By("Inspecting machine properties")
 	Eventually(func(g Gomega) {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
 
@@ -83,7 +87,7 @@ func testMachine(name, namespace string) {
 	}, timeout, interval).Should(Succeed())
 
 	By("Expecting successful inventory deletion")
-	Expect(k8sClient.Delete(ctx, inventory)).Should(Succeed())
+	Expect(k8sClient.Delete(ctx, inventory)).To(Succeed())
 
 	Eventually(func() bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
@@ -97,7 +101,7 @@ func testMachine(name, namespace string) {
 	Expect(k8sClient.Delete(ctx, machine)).Should(Succeed())
 }
 
-func testMachineOnboarding() {
+func testMachineOOB() {
 	var (
 		name      = "a237952c-3475-2b82-a85c-84d8b4f8cd2d"
 		namespace = "default"
@@ -105,50 +109,41 @@ func testMachineOnboarding() {
 	ctx := context.Background()
 	oob := prepareOOB(name, namespace)
 
+	preparedMachine := prepareTestMachine(name, namespace)
+
+	By("Expect successful test machine for oob creation")
+	Expect(k8sClient.Create(ctx, preparedMachine)).To(Succeed())
+
 	By("Expect successful oob creation")
-	err := k8sClient.Create(ctx, oob)
-	Expect(err).Should(BeNil())
+
+	Expect(k8sClient.Create(ctx, oob)).To(Succeed())
+
+	By("Expect successful oob status update")
+	Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, oob)).To(Succeed())
+	oob.Status = prepareOOBStatus(name)
+
+	Expect(k8sClient.Status().Update(ctx, oob)).To(Succeed())
 
 	By("Expect oob status to be true")
 
 	m := &machinev1alpha2.Machine{}
 	Eventually(func(g Gomega) bool {
-
 		if err := k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, m); err != nil {
 			return false
 		}
 		return m.Status.OOB.Exist
-
 	}, timeout, interval).Should(BeTrue())
 
 	By("Expect successful oob deletion")
-	Expect(k8sClient.Delete(ctx, oob)).Should(BeNil())
+	Expect(k8sClient.Delete(ctx, oob)).To(Succeed())
 
 	By("Expect oob status to be false")
 	Eventually(func(g Gomega) bool {
-
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, m)).Should(BeNil())
+		if err := k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, m); err != nil {
+			return false
+		}
 		return m.Status.OOB.Exist
-
 	}, timeout, interval).Should(BeFalse())
-
-	By("Expect successful machine deletion")
-	Expect(k8sClient.Delete(ctx, m)).Should(BeNil())
-}
-
-func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
-	return &machinev1alpha2.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"test": "test",
-			},
-		},
-		Spec: machinev1alpha2.MachineSpec{
-			InventoryRequested: true,
-		},
-	}
 }
 
 func prepareInventory(name, namespace string) *inventoriesv1alpha1.Inventory {
@@ -157,7 +152,7 @@ func prepareInventory(name, namespace string) *inventoriesv1alpha1.Inventory {
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"machine.onmetal.de/size-machine": "",
+				"machine.onmetal.de/size-machine": "true",
 			},
 		},
 		Spec: prepareSpecForInventory(name),
@@ -282,9 +277,25 @@ func prepareOOB(name, namespace string) *oobv1.Machine {
 			Namespace: namespace,
 		},
 		Spec: oobv1.MachineSpec{
-			UUID:             name,
 			PowerState:       "Off",
 			ShutdownDeadline: metav1.Now(),
+			OSreadDeadline:   metav1.Now(),
 		},
+	}
+}
+
+func prepareOOBStatus(name string) oobv1.MachineStatus {
+	return oobv1.MachineStatus{
+		UUID: name,
+	}
+}
+
+func prepareTestMachine(name, namespace string) *machinev1alpha2.Machine {
+	return &machinev1alpha2.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: machinev1alpha2.MachineSpec{},
 	}
 }

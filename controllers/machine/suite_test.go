@@ -105,9 +105,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&InventoryReconciler{
-		Client:   k8sManager.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("machine-inventory"),
-		Recorder: k8sManager.GetEventRecorderFor("inventory-controller"),
+		Client:    k8sManager.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("machine-inventory"),
+		Recorder:  k8sManager.GetEventRecorderFor("inventory-controller"),
+		Namespace: "default",
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

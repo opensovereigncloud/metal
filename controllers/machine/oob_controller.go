@@ -21,11 +21,9 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/pkg/machine"
 	"github.com/onmetal/metal-api/pkg/provider"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -56,6 +54,8 @@ func (r *OOBReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
+		CreateFunc: isUUIDExist,
+		UpdateFunc: onUpdate,
 		DeleteFunc: r.onDelete,
 	}
 }
@@ -73,19 +73,16 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 
 	machineObj := &machinev1alpha2.Machine{}
-	if err := provider.GetObject(ctx, oobObj.Spec.UUID, r.Namespace, r.Client, machineObj); err != nil {
+	if err := provider.GetObject(ctx, oobObj.Status.UUID, r.Namespace, r.Client, machineObj); err != nil {
 		if apierrors.IsNotFound(err) {
-			if err := r.createAndEnableMachine(ctx, oobObj); err != nil {
-				if apierrors.IsAlreadyExists(err) {
-					return ctrl.Result{}, nil
-				}
+			if err := r.enableOOBMachineForInventory(ctx, oobObj); err != nil {
 				return ctrl.Result{}, err
 			}
+		} else {
+			return ctrl.Result{}, err
 		}
-		return ctrl.Result{}, err
 	}
 
-	mm := machine.New(ctx, r.Client, r.Log, r.Recorder)
 	if _, ok := oobObj.Labels[machinev1alpha2.UUIDLabel]; !ok {
 		oobObj.Labels = setUpLabels(oobObj)
 		if err := r.Client.Update(ctx, oobObj); err != nil {
@@ -95,17 +92,17 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	updateTaints(oobObj, machineObj)
 
-	if specUpdErr := mm.PatchSpec(machineObj); specUpdErr != nil {
+	if specUpdErr := r.Client.Update(ctx, machineObj); specUpdErr != nil {
 		return ctrl.Result{}, specUpdErr
 	}
 
 	if !machineObj.Status.OOB.Exist {
-		machineObj.Status.OOB = prepareRefenceSpec(oobObj)
+		machineObj.Status.OOB = prepareReferenceSpec(oobObj)
 	}
 
 	syncStatusState(oobObj, machineObj)
 
-	if statusUpdErr := mm.PatchStatus(machineObj); statusUpdErr != nil {
+	if statusUpdErr := r.Client.Status().Update(ctx, machineObj); statusUpdErr != nil {
 		return ctrl.Result{}, statusUpdErr
 	}
 
@@ -113,30 +110,13 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return ctrl.Result{}, nil
 }
 
-func (r *OOBReconciler) createAndEnableMachine(ctx context.Context, oobObj *oobv1.Machine) error {
-	obj := prepareMachine(oobObj, r.Namespace)
-	if err := r.Client.Create(ctx, obj); err != nil {
-		return err
-	}
-
+func (r *OOBReconciler) enableOOBMachineForInventory(ctx context.Context, oobObj *oobv1.Machine) error {
 	oobObj.Spec.PowerState = getPowerState(oobObj.Spec.PowerState)
 	oobObj.Labels = setUpLabels(oobObj)
 	return r.Client.Update(ctx, oobObj)
 }
 
-func prepareMachine(oob *oobv1.Machine, namespace string) *machinev1alpha2.Machine {
-	return &machinev1alpha2.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      oob.Spec.UUID,
-			Namespace: namespace,
-			Labels:    map[string]string{machinev1alpha2.UUIDLabel: oob.Spec.UUID},
-		},
-		Spec: machinev1alpha2.MachineSpec{InventoryRequested: true},
-	}
-
-}
-
-func prepareRefenceSpec(oob *oobv1.Machine) machinev1alpha2.ObjectReference {
+func prepareReferenceSpec(oob *oobv1.Machine) machinev1alpha2.ObjectReference {
 	return machinev1alpha2.ObjectReference{
 		Exist: true,
 		Reference: &machinev1alpha2.ResourceReference{
@@ -154,7 +134,7 @@ func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
 	}
 
 	machineObj := &machinev1alpha2.Machine{}
-	if err := provider.GetObject(ctx, obj.Spec.UUID, r.Namespace, r.Client, machineObj); err != nil {
+	if err := provider.GetObject(ctx, obj.Status.UUID, r.Namespace, r.Client, machineObj); err != nil {
 		r.Log.Info("failed to retrieve machine object from cluster", "error", err)
 		return false
 	}
@@ -167,6 +147,22 @@ func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
 		return false
 	}
 	return false
+}
+
+func isUUIDExist(e event.CreateEvent) bool {
+	obj, ok := e.Object.(*oobv1.Machine)
+	if !ok {
+		return false
+	}
+	return obj.Status.UUID != ""
+}
+
+func onUpdate(e event.UpdateEvent) bool {
+	obj, ok := e.ObjectNew.(*oobv1.Machine)
+	if !ok {
+		return false
+	}
+	return obj.Status.UUID != ""
 }
 
 func getPowerState(state string) string {
@@ -182,18 +178,15 @@ func getPowerState(state string) string {
 
 func setUpLabels(oobObj *oobv1.Machine) map[string]string {
 	if oobObj.Labels == nil {
-		return map[string]string{machinev1alpha2.UUIDLabel: oobObj.Spec.UUID}
+		return map[string]string{machinev1alpha2.UUIDLabel: oobObj.Status.UUID}
 	}
 	if _, ok := oobObj.Labels[machinev1alpha2.UUIDLabel]; !ok {
-		oobObj.Labels[machinev1alpha2.UUIDLabel] = oobObj.Spec.UUID
+		oobObj.Labels[machinev1alpha2.UUIDLabel] = oobObj.Status.UUID
 	}
 	return oobObj.Labels
 }
 
 func updateTaints(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
-	if len(machineObj.Spec.Taints) == 0 {
-		return
-	}
 	if v, ok := oobObj.Labels[maintainedMachineLabel]; ok && v == "true" {
 		if getNoScheduleTaintIdx(machineObj.Spec.Taints) == -1 {
 			machineObj.Spec.Taints = append(machineObj.Spec.Taints, machinev1alpha2.Taint{

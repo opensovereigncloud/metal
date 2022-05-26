@@ -17,12 +17,12 @@ spec:
   versions:
   - additionalPrinterColumns:
     - description: UUID
-      jsonPath: .spec.uuid
+      jsonPath: .status.uuid
       name: UUID
       priority: 10
       type: string
     - description: Manufacturer
-      jsonPath: .spec.manufacturer
+      jsonPath: .status.manufacturer
       name: MANUFACTURER
       type: string
     - description: Power State
@@ -52,26 +52,14 @@ spec:
               locatorLED:
                 pattern: ^(?:On|Off|Blinking|Unknown)$
                 type: string
-              manufacturer:
-                minLength: 1
-                type: string
-              mid:
-                minLength: 1
+              osReadDeadline:
+                format: date-time
                 type: string
               powerState:
                 pattern: ^(?:On|Reset|ResetImmediate|Off|OffImmediate)$
                 type: string
-              serialNumber:
-                minLength: 1
-                type: string
               shutdownDeadline:
                 format: date-time
-                type: string
-              sku:
-                minLength: 1
-                type: string
-              uuid:
-                pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
                 type: string
             type: object
           status:
@@ -80,8 +68,31 @@ spec:
               locatorLED:
                 pattern: ^(?:On|Off|Blinking|Unknown)$
                 type: string
+              manufacturer:
+                minLength: 1
+                type: string
+              mid:
+                minLength: 1
+                type: string
               powerState:
                 pattern: ^(?:On|Off)$
+                type: string
+              serialNumber:
+                minLength: 1
+                type: string
+              sku:
+                minLength: 1
+                type: string
+              systemState:
+                pattern: ^(?:Ok|Unknown)$
+                type: string
+              systemStateMessage:
+                minLength: 1
+                type: string
+              systemStateReadTimeout:
+                type: boolean
+              uuid:
+                pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
                 type: string
             type: object
         type: object

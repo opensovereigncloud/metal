@@ -127,10 +127,11 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		os.Exit(1)
 	}
 	if err = (&machinecontroller.InventoryReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Machine-inventory"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Machine-inventory"),
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("Machine-inventory"),
+		Scheme:    mgr.GetScheme(),
+		Recorder:  mgr.GetEventRecorderFor("Machine-inventory"),
+		Namespace: namespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-inventory")
 		os.Exit(1)

@@ -4,6 +4,7 @@ metadata:
   name: machine-sample
   namespace: onmetal
 spec:
-  uuid: a967954c-3475-11b2-a85c-84d8b4f8cd2d
   locatorLED: "Off"
   powerState: "Off"
+status:
+  uuid: a967954c-3475-11b2-a85c-84d8b4f8cd2d

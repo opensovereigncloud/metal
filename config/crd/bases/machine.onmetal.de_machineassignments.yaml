@@ -69,7 +69,16 @@ spec:
                 description: Image is the URL providing the operating system image
                   of the machine.
                 type: string
-              interfaces:
+              machineClass:
+                description: MachineClass is a reference to the machine class/flavor
+                  of the machine.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+              networkInterfaces:
                 description: Interfaces define a list of network interfaces present
                   on the machine
                 items:
@@ -99,15 +108,6 @@ spec:
                   - target
                   type: object
                 type: array
-              machineClass:
-                description: MachineClass is a reference to the machine class/flavor
-                  of the machine.
-                properties:
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?'
-                    type: string
-                type: object
               tolerations:
                 description: Tolerations define tolerations the Machine has. Only
                   MachinePools whose taints covered by Tolerations will be considered

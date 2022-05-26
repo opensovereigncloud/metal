@@ -118,6 +118,9 @@ func (m *Machine) updateEventLog(eventType string, machine *machinev1alpha2.Mach
 		m.log.Info("event recorder not provided")
 		return
 	}
+	if len(machine.ManagedFields) == 0 {
+		return
+	}
 	if eventType == "" {
 		eventType = "Updated"
 	}
