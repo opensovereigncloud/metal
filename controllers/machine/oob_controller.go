@@ -109,11 +109,11 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return ctrl.Result{}, nil
 }
 
-func (r *OOBReconciler) enableOOBMachineForInventory(ctx context.Context, oobObj *oobv1.Machine) error {
-	oobObj.Spec.PowerState = getPowerState(oobObj.Spec.PowerState)
-	oobObj.Labels = setUpLabels(oobObj)
-	return r.Client.Update(ctx, oobObj)
-}
+// func (r *OOBReconciler) enableOOBMachineForInventory(ctx context.Context, oobObj *oobv1.Machine) error {
+// 	oobObj.Spec.PowerState = getPowerState(oobObj.Spec.PowerState)
+// 	oobObj.Labels = setUpLabels(oobObj)
+// 	return r.Client.Update(ctx, oobObj)
+// }
 
 func prepareReferenceSpec(oob *oobv1.Machine) machinev1alpha2.ObjectReference {
 	return machinev1alpha2.ObjectReference{
@@ -164,17 +164,17 @@ func onUpdate(e event.UpdateEvent) bool {
 	return obj.Status.UUID != ""
 }
 
-func getPowerState(state string) string {
-	switch state {
-	case "On":
-		// In case when machine already running Reset is required.
-		// Machine should be started from scratch.
-		// return "Reset"
-		return state
-	default:
-		return "On"
-	}
-}
+// func getPowerState(state string) string {
+// 	switch state {
+// 	case "On":
+// 		// In case when machine already running Reset is required.
+// 		// Machine should be started from scratch.
+// 		// return "Reset"
+// 		return state
+// 	default:
+// 		return "On"
+// 	}
+// }
 
 func setUpLabels(oobObj *oobv1.Machine) map[string]string {
 	if oobObj.Labels == nil {
