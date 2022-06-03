@@ -46,14 +46,16 @@ func testScheduler(name, namespace string) {
 	var ok bool
 	machine := &machinev1alpha2.Machine{}
 	Eventually(func(g Gomega) bool {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
+		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+			return false
+		}
 
 		key, ok = machine.Labels[machinev1alpha2.LeasedLabel]
-		if key != "true" && !ok {
+		if key != "true" || !ok {
 			return false
 		}
 		key, ok = machine.Labels[machinev1alpha2.MetalRequestLabel]
-		if key != requestName && !ok {
+		if key != requestName || !ok {
 			return false
 		}
 		return true
@@ -90,8 +92,7 @@ func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"machine.onmetal.de/leased-size":  "m5.metal",
-				"machine.onmetal.de/leasing-pool": "metal",
+				"machine.onmetal.de/size-m5.metal": "true",
 			},
 		},
 		Spec: machinev1alpha2.MachineSpec{

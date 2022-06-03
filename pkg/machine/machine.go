@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	metalerr "github.com/onmetal/metal-api/pkg/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -67,7 +68,6 @@ func (m *Machine) FindVacantMachine(metalRequest *machinev1alpha2.MachineAssignm
 	for {
 		opts := &client.ListOptions{
 			LabelSelector: metalSelector,
-			Namespace:     metalRequest.Namespace,
 			Limit:         pageListLimit,
 			Continue:      continueToken,
 		}
@@ -143,7 +143,8 @@ func (m *Machine) updateHealthStatus(machine *machinev1alpha2.Machine) {
 }
 
 func getLabelSelectorForAvailableMachine(size string) (labels.Selector, error) {
-	labelSizeRequirement, err := labels.NewRequirement(machinev1alpha2.LeasedSizeLabel, selection.Equals, []string{size})
+	sizeLabel := inventoriesv1alpha1.CLabelPrefix + size
+	labelSizeRequirement, err := labels.NewRequirement(sizeLabel, selection.Exists, []string{})
 	if err != nil {
 		return nil, err
 	}

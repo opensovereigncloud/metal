@@ -91,13 +91,17 @@ func (i *Inventory) UpdateMachine(machineObj *machinev1alpha2.Machine) error {
 
 	i.copySizeLabelsToMachine(machineObj)
 
-	if err := mm.PatchSpec(machineObj); err != nil {
+	if err := i.Client.Update(i.ctx, machineObj); err != nil {
 		return err
 	}
 
 	i.updateResourceReference(machineObj)
 
 	i.updateMachineInterfaces(machineObj)
+
+	if !machineObj.Status.Inventory.Exist {
+		machineObj.Status.Inventory = i.prepareReferenceSpec()
+	}
 
 	if err := mm.PatchStatus(machineObj); err != nil {
 		return err
@@ -155,11 +159,11 @@ func (i *Inventory) copySizeLabelsToMachine(m *machinev1alpha2.Machine) {
 func (i *Inventory) updateResourceReference(m *machinev1alpha2.Machine) {
 	if !m.Status.Inventory.Exist || m.Status.Inventory.Reference == nil {
 
-		m.Status.Inventory = i.prepareRefenceSpec()
+		m.Status.Inventory = i.prepareReferenceSpec()
 	}
 }
 
-func (i *Inventory) prepareRefenceSpec() machinev1alpha2.ObjectReference {
+func (i *Inventory) prepareReferenceSpec() machinev1alpha2.ObjectReference {
 	return machinev1alpha2.ObjectReference{
 		Exist: true,
 		Reference: &machinev1alpha2.ResourceReference{

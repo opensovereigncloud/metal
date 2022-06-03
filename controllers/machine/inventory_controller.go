@@ -60,8 +60,8 @@ func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: r.createMachineObject,
-		DeleteFunc: r.updateMachineStatusOnDelete,
 		UpdateFunc: isUpdatedOrDeleted,
+		DeleteFunc: r.updateMachineStatusOnDelete,
 	}
 }
 
@@ -110,6 +110,17 @@ func (r *InventoryReconciler) createMachineObject(e event.CreateEvent) bool {
 	return true
 }
 
+func isUpdatedOrDeleted(e event.UpdateEvent) bool {
+	oldObj, oldOk := e.ObjectOld.(*inventoriesv1alpha1.Inventory)
+	newObj, newOk := e.ObjectNew.(*inventoriesv1alpha1.Inventory)
+	if !oldOk || !newOk {
+		return false
+	}
+	return !reflect.DeepEqual(oldObj.Spec, newObj.Spec) ||
+		!reflect.DeepEqual(oldObj.Labels, newObj.Labels) ||
+		!newObj.DeletionTimestamp.IsZero()
+}
+
 func (r *InventoryReconciler) updateMachineStatusOnDelete(e event.DeleteEvent) bool {
 	ctx := context.Background()
 	invObj, ok := e.Object.(*inventoriesv1alpha1.Inventory)
@@ -132,17 +143,6 @@ func (r *InventoryReconciler) updateMachineStatusOnDelete(e event.DeleteEvent) b
 		return false
 	}
 	return false
-}
-
-func isUpdatedOrDeleted(e event.UpdateEvent) bool {
-	oldObj, oldOk := e.ObjectOld.(*inventoriesv1alpha1.Inventory)
-	newObj, newOk := e.ObjectNew.(*inventoriesv1alpha1.Inventory)
-	if !oldOk || !newOk {
-		return false
-	}
-	return !reflect.DeepEqual(oldObj.Spec, newObj.Spec) ||
-		!reflect.DeepEqual(oldObj.Labels, newObj.Labels) ||
-		!newObj.DeletionTimestamp.IsZero()
 }
 
 func prepareMachine(name, namespace string) *machinev1alpha2.Machine {

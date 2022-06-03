@@ -81,8 +81,6 @@ const (
 )
 
 const (
-	LeasedSizeLabel   = "machine.onmetal.de/leased-size"
-	LeasedPoolLabel   = "machine.onmetal.de/leasing-pool"
 	LeasedLabel       = "machine.onmetal.de/leased"
 	MetalRequestLabel = "machine.onmetal.de/metal-request"
 )

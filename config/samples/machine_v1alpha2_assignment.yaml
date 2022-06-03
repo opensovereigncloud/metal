@@ -1,0 +1,10 @@
+apiVersion: machine.onmetal.de/v1alpha2
+kind: MachineAssignment
+metadata:
+  name: sample-assignment
+  namespace: onmetal
+spec:
+  image: "gardener"
+  machineClass: 
+    name: "m5.metal"
+    
