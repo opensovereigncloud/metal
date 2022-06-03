@@ -23,7 +23,6 @@ import (
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/onmetal/metal-api/pkg/provider"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -74,13 +73,13 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	machineObj := &machinev1alpha2.Machine{}
 	if err := provider.GetObject(ctx, oobObj.Status.UUID, r.Namespace, r.Client, machineObj); err != nil {
-		if apierrors.IsNotFound(err) {
-			if err := r.enableOOBMachineForInventory(ctx, oobObj); err != nil {
-				return ctrl.Result{}, err
-			}
-		} else {
-			return ctrl.Result{}, err
-		}
+		// if apierrors.IsNotFound(err) {
+		// 	if err := r.enableOOBMachineForInventory(ctx, oobObj); err != nil {
+		// 		return ctrl.Result{}, err
+		// 	}
+		// } else {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+		// }
 	}
 
 	if _, ok := oobObj.Labels[machinev1alpha2.UUIDLabel]; !ok {
@@ -170,7 +169,8 @@ func getPowerState(state string) string {
 	case "On":
 		// In case when machine already running Reset is required.
 		// Machine should be started from scratch.
-		return "Reset"
+		// return "Reset"
+		return state
 	default:
 		return "On"
 	}

@@ -66,11 +66,13 @@ func (m *Machine) DeleteReservation() error {
 }
 
 func (m *Machine) CheckIn() error {
-	return m.changeServerPowerState(m.Name, m.Namespace, machinev1alpha2.MachinePowerStateON)
+	return nil
+	// return m.changeServerPowerState(m.Name, m.Namespace, machinev1alpha2.MachinePowerStateON)
 }
 
 func (m *Machine) CheckOut() error {
-	return m.changeServerPowerState(m.Name, m.Namespace, machinev1alpha2.MachinePowerStateOFF)
+	return nil
+	// return m.changeServerPowerState(m.Name, m.Namespace, machinev1alpha2.MachinePowerStateOFF)
 }
 
 func (m *Machine) changeServerPowerState(name, namespace, powerState string) error {
