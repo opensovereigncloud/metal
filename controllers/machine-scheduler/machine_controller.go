@@ -49,6 +49,9 @@ func (r *MachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments/finalizers,verbs=update
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 
