@@ -41,11 +41,10 @@ const (
 	resourceNotExist StatusReason = "resource not exist"
 	uuidNotExist     StatusReason = "uuid not exist"
 	notFound         StatusReason = "not found"
-	underDeletion    StatusReason = "under deletion"
 	notLabeled       StatusReason = "not labeled"
 	notAMachine      StatusReason = "not a machine"
 	castType         StatusReason = "casting failed"
-	reserveration    StatusReason = "machine reservation impossible"
+	reservation      StatusReason = "machine reservation impossible"
 	unknown          StatusReason = "unknown"
 )
 
@@ -69,13 +68,11 @@ func IsAlreadyExists(err error) bool { return ReasonForError(err) == alreadyExis
 
 func IsUUIDNotExist(err error) bool { return ReasonForError(err) == uuidNotExist }
 
-func IsUnderDeletion(err error) bool {
-	return ReasonForError(err) == underDeletion
-}
-
 func IsNotAMachine(err error) bool { return ReasonForError(err) == notAMachine }
 
-func IsNotBookable(err error) bool { return ReasonForError(err) == reserveration }
+func IsNotBookable(err error) bool { return ReasonForError(err) == reservation }
+
+func IsNotSizeLabeled(err error) bool { return ReasonForError(err) == notLabeled }
 
 func ReasonForError(err error) StatusReason {
 	if reason := MachineStatus(nil); errors.As(err, &reason) {
@@ -119,7 +116,7 @@ func AlreadyExist(s string) *MachineError {
 func UUIDNotExist(s string) *MachineError {
 	return &MachineError{
 		ErrStatus: Reason{
-			Message: fmt.Sprintf("oob: %s, exist but doesn't contain uuid", s), StatusReason: uuidNotExist,
+			Message: fmt.Sprintf("object: %s, exist but doesn't contain uuid", s), StatusReason: uuidNotExist,
 		},
 	}
 }
@@ -142,13 +139,7 @@ func ObjectNotFound(obj, kind string) *MachineError {
 	}
 }
 
-func UnderDeletion() *MachineError {
-	return &MachineError{
-		ErrStatus: Reason{Message: "component is under deletion", StatusReason: underDeletion},
-	}
-}
-
-func NotLabeled() *MachineError {
+func NotSizeLabeled() *MachineError {
 	return &MachineError{
 		ErrStatus: Reason{Message: "size labels are not present yet", StatusReason: notLabeled},
 	}
@@ -168,7 +159,7 @@ func CastType() *MachineError {
 
 func NotBookable() *MachineError {
 	return &MachineError{
-		ErrStatus: Reason{Message: "impossible to reserve", StatusReason: reserveration},
+		ErrStatus: Reason{Message: "impossible to reserve", StatusReason: reservation},
 	}
 }
 

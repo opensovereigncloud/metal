@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"github.com/onmetal/metal-api/internal/entity"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -81,8 +82,9 @@ const (
 )
 
 const (
-	LeasedLabel       = "machine.onmetal.de/leased"
-	MetalRequestLabel = "machine.onmetal.de/metal-request"
+	LeasedLabel                   = "machine.onmetal.de/leased"
+	MetalAssignmentLabel          = "machine.onmetal.de/metal-assignment"
+	MetalAssignmentNamespaceLabel = "machine.onmetal.de/metal-assignment-namespace"
 )
 
 // MachineSpec - defines the desired spec of Machine.
@@ -274,9 +276,9 @@ type ObjectReference struct {
 }
 
 type Reservation struct {
-	// RequestState - defines Machine Request state provided by OOB Machine Resources
+	// Status - defines Machine Request state provided by OOB Machine Resources
 	// +optional
-	RequestState RequestState `json:"request_state,omitempty"`
+	Status entity.ReservationStatus `json:"status,omitempty"`
 	// Reference - defines underlaying referenced object.
 	// +optional
 	Reference *ResourceReference `json:"reference,omitempty"`

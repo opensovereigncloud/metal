@@ -32,7 +32,11 @@ import (
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
 	schedulercontrollers "github.com/onmetal/metal-api/controllers/machine-scheduler"
+	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
+
+	"github.com/onmetal/metal-api/internal/repository"
+	"github.com/onmetal/metal-api/internal/usecase"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -54,6 +58,7 @@ func main() {
 	addToScheme()
 	webhookPort, err := strconv.Atoi(os.Getenv("WEBHOOK_PORT"))
 	if err != nil {
+		setupLog.Info("unable to read `WEBHOOK_PORT` env", "error", err)
 		webhookPort = 9443
 	}
 
@@ -87,6 +92,12 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	envNS := os.Getenv("NAMESPACE")
+	if namespace == "default" && envNS != "" {
+		namespace = os.Getenv("NAMESPACE")
+	}
+
 	startReconcilers(mgr, namespace)
 	addHandlers(mgr, profiling)
 	setupLog.Info("starting manager")
@@ -109,6 +120,21 @@ func addToScheme() {
 
 func startReconcilers(mgr ctrl.Manager, namespace string) {
 	var err error
+
+	deviceOnboardingRepo := repository.NewOnboardingRepo(mgr.GetClient())
+	deviceOnboardingUseCase := usecase.NewDeviceOnboarding(deviceOnboardingRepo)
+
+	serverOnboardingRepo := repository.NewServerOnboardingRepo(mgr.GetClient())
+	serverOnboardingUseCase := usecase.NewServerOnboarding(serverOnboardingRepo)
+
+	schedulerRepo := repository.NewMachineSchedulerRepo(mgr.GetClient())
+	reserverRepo := repository.NewMachineReserverRepo(mgr.GetClient())
+	schedulerUseCase := usecase.NewSchedulerUseCase(schedulerRepo, reserverRepo)
+
+	machineReserverUseCase := usecase.NewReserverUseCase(reserverRepo)
+
+	assignmentSyncRepo := repository.NewAssignmentSynchronizationRepo(mgr.GetClient())
+	syncUseCase := usecase.NewSyncUseCase(assignmentSyncRepo)
 
 	if err = (&benchmarkcontroller.Reconciler{
 		Client: mgr.GetClient(),
@@ -195,21 +221,44 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		os.Exit(1)
 	}
 	if err = (&schedulercontrollers.SchedulerReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Request"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Request"),
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("Scheduler"),
+		Scheme:    mgr.GetScheme(),
+		Recorder:  mgr.GetEventRecorderFor("Request"),
+		Scheduler: schedulerUseCase,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
 		os.Exit(1)
 	}
 	if err = (&schedulercontrollers.MachineReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Machine-request"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Machine-request-controller"),
+		Client:          mgr.GetClient(),
+		Log:             ctrl.Log.WithName("controllers").WithName("Machine-scheduler"),
+		Scheme:          mgr.GetScheme(),
+		Recorder:        mgr.GetEventRecorderFor("Machine-request-controller"),
+		Reserver:        machineReserverUseCase,
+		Synchronization: syncUseCase,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine-request")
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-scheduler")
+		os.Exit(1)
+	}
+	if err = (&onboardingcontroller.OnboardingReconciler{
+		Client:               mgr.GetClient(),
+		Log:                  ctrl.Log.WithName("controllers").WithName("Device-onboarding"),
+		Scheme:               mgr.GetScheme(),
+		OnboardingRepo:       deviceOnboardingUseCase,
+		DestinationNamespace: namespace,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Device-onboarding")
+		os.Exit(1)
+	}
+	if err = (&onboardingcontroller.InventoryOnboardingReconciler{
+		Client:               mgr.GetClient(),
+		Log:                  ctrl.Log.WithName("controllers").WithName("Server-onboarding"),
+		Scheme:               mgr.GetScheme(),
+		OnboardingRepo:       serverOnboardingUseCase,
+		DestinationNamespace: namespace,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Server-onboarding")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

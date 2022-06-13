@@ -22,7 +22,9 @@ import (
 	"testing"
 	"time"
 
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	"github.com/onmetal/metal-api/internal/repository"
 	"github.com/onmetal/metal-api/internal/usecase"
 	. "github.com/onsi/ginkgo"
@@ -35,9 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
 )
-
-// These tests use Ginkgo (BDD-style Go testing framework). Refer to
-// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
 	k8sClient client.Client
@@ -56,7 +55,7 @@ var scheme = runtime.NewScheme()
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Scheduler Controller Suite")
+	RunSpecs(t, "Onboarding Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -71,8 +70,11 @@ var _ = BeforeSuite(func() {
 
 	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
 	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.MachineAssignment{}, &machinev1alpha2.MachineAssignmentList{})
-
+	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
+	switchv1alpha1.SchemeBuilder.Register(&switchv1alpha1.Switch{}, &switchv1alpha1.SwitchList{})
 	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(switchv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
@@ -87,29 +89,16 @@ var _ = BeforeSuite(func() {
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
-	schedulerRepo := repository.NewMachineSchedulerRepo(k8sManager.GetClient())
-	reserverRepo := repository.NewMachineReserverRepo(k8sManager.GetClient())
-	schedulerUseCase := usecase.NewSchedulerUseCase(schedulerRepo, reserverRepo)
+	deviceOnboardingRepo := repository.NewOnboardingRepo(k8sManager.GetClient())
+	deviceOnboardingUseCase := usecase.NewDeviceOnboarding(deviceOnboardingRepo)
 
-	//assignmentSyncRepo := repository.NewAssignmentSynchronizationRepo(k8sManager.GetClient())
-	//syncUseCase := usecase.NewSyncUseCase(assignmentSyncRepo)
-
-	err = (&SchedulerReconciler{
-		Client:    k8sManager.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("request"),
-		Recorder:  k8sManager.GetEventRecorderFor("request"),
-		Scheduler: schedulerUseCase,
+	err = (&OnboardingReconciler{
+		Client:               k8sManager.GetClient(),
+		Log:                  ctrl.Log.WithName("controllers").WithName("device-onboarding"),
+		OnboardingRepo:       deviceOnboardingUseCase,
+		DestinationNamespace: "default",
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
-
-	//err = (&MachineReconciler{
-	//	Client:          k8sManager.GetClient(),
-	//	Log:             ctrl.Log.WithName("controllers").WithName("machine-request"),
-	//	Recorder:        k8sManager.GetEventRecorderFor("Machine-request"),
-	//	Reserver:        reserverRepo,
-	//	Synchronization: syncUseCase,
-	//}).SetupWithManager(k8sManager)
-	//Expect(err).ToNot(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()

@@ -22,6 +22,7 @@ COPY main.go main.go
 COPY apis/ apis/
 COPY controllers/ controllers/
 COPY pkg/ pkg/
+COPY internal/ internal/
 
 # Build
 RUN GOMAXPROCS=1 CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o manager main.go

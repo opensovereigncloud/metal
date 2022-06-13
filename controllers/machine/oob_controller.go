@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	"github.com/onmetal/metal-api/internal/entity"
 	"github.com/onmetal/metal-api/pkg/provider"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -64,7 +65,7 @@ func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 //+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
 
 func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("machine-oob", req.NamespacedName)
+	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)
 
 	oobObj := &oobv1.Machine{}
 	if err := provider.GetObject(ctx, req.Name, req.Namespace, r.Client, oobObj); err != nil {
@@ -73,26 +74,15 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	machineObj := &machinev1alpha2.Machine{}
 	if err := provider.GetObject(ctx, oobObj.Status.UUID, r.Namespace, r.Client, machineObj); err != nil {
-		// if apierrors.IsNotFound(err) {
-		// 	if err := r.enableOOBMachineForInventory(ctx, oobObj); err != nil {
-		// 		return ctrl.Result{}, err
-		// 	}
-		// } else {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-		// }
-	}
-
-	if _, ok := oobObj.Labels[machinev1alpha2.UUIDLabel]; !ok {
-		oobObj.Labels = setUpLabels(oobObj)
-		if err := r.Client.Update(ctx, oobObj); err != nil {
-			return ctrl.Result{}, err
-		}
+		reqLogger.Info("no machine for oob", "error", err)
+		return ctrl.Result{}, nil
 	}
 
 	updateTaints(oobObj, machineObj)
 
 	if specUpdErr := r.Client.Update(ctx, machineObj); specUpdErr != nil {
-		return ctrl.Result{}, specUpdErr
+		reqLogger.Info("machine taints update failed", "error", specUpdErr)
+		return ctrl.Result{}, nil
 	}
 
 	if !machineObj.Status.OOB.Exist {
@@ -108,12 +98,6 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	reqLogger.Info("reconciliation finished")
 	return ctrl.Result{}, nil
 }
-
-// func (r *OOBReconciler) enableOOBMachineForInventory(ctx context.Context, oobObj *oobv1.Machine) error {
-// 	oobObj.Spec.PowerState = getPowerState(oobObj.Spec.PowerState)
-// 	oobObj.Labels = setUpLabels(oobObj)
-// 	return r.Client.Update(ctx, oobObj)
-// }
 
 func prepareReferenceSpec(oob *oobv1.Machine) machinev1alpha2.ObjectReference {
 	return machinev1alpha2.ObjectReference{
@@ -164,28 +148,6 @@ func onUpdate(e event.UpdateEvent) bool {
 	return obj.Status.UUID != ""
 }
 
-// func getPowerState(state string) string {
-// 	switch state {
-// 	case "On":
-// 		// In case when machine already running Reset is required.
-// 		// Machine should be started from scratch.
-// 		// return "Reset"
-// 		return state
-// 	default:
-// 		return "On"
-// 	}
-// }
-
-func setUpLabels(oobObj *oobv1.Machine) map[string]string {
-	if oobObj.Labels == nil {
-		return map[string]string{machinev1alpha2.UUIDLabel: oobObj.Status.UUID}
-	}
-	if _, ok := oobObj.Labels[machinev1alpha2.UUIDLabel]; !ok {
-		oobObj.Labels[machinev1alpha2.UUIDLabel] = oobObj.Status.UUID
-	}
-	return oobObj.Labels
-}
-
 func updateTaints(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
 	if v, ok := oobObj.Labels[maintainedMachineLabel]; ok && v == "true" {
 		if getNoScheduleTaintIdx(machineObj.Spec.Taints) == -1 {
@@ -214,8 +176,8 @@ func getNoScheduleTaintIdx(taints []machinev1alpha2.Taint) int {
 func syncStatusState(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
 	switch {
 	case oobObj.Status.SystemStateReadTimeout:
-		machineObj.Status.Reservation.RequestState = machinev1alpha2.RequestStateError
+		machineObj.Status.Reservation.Status = entity.ReservationStatusError
 	case oobObj.Status.SystemState == "Ok" || oobObj.Status.SystemState == "Unknown":
-		machineObj.Status.Reservation.RequestState = machinev1alpha2.RequestStateRunning
+		machineObj.Status.Reservation.Status = entity.ReservationStatusRunning
 	}
 }

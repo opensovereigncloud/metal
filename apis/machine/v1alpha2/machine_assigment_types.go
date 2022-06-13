@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"github.com/onmetal/metal-api/internal/entity"
 	"inet.af/netaddr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,8 +104,8 @@ type IPAddress struct {
 
 // MachineAssignmentStatus defines the observed state of Request
 type MachineAssignmentStatus struct {
-	State     RequestState       `json:"state,omitempty"`
-	Reference *ResourceReference `json:"reference,omitempty"`
+	State     entity.ReservationStatus `json:"state,omitempty"`
+	Reference *ResourceReference       `json:"reference,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	"github.com/onmetal/metal-api/internal/entity"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -37,53 +38,33 @@ func testScheduler(name, namespace string) {
 	preparedMachine.Status = prepareMachineStatus()
 	Expect(k8sClient.Status().Update(ctx, preparedMachine)).To(Succeed())
 
-	By("Expect successful metal request creation")
+	By("Expect successful metal assignment creation")
 	Expect(k8sClient.Create(ctx, preparedRequest)).Should(BeNil())
 
 	By("Check machine is reserved")
 
-	var key string
-	var ok bool
 	machine := &machinev1alpha2.Machine{}
 	Eventually(func(g Gomega) bool {
 		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
 			return false
 		}
-
-		key, ok = machine.Labels[machinev1alpha2.LeasedLabel]
-		if key != "true" || !ok {
-			return false
-		}
-		key, ok = machine.Labels[machinev1alpha2.MetalRequestLabel]
-		if key != requestName || !ok {
-			return false
-		}
-		return true
+		return machine.Status.Reservation.Reference != nil
 	}, timeout, interval).Should(BeTrue())
 
-	By("Check request state is pending")
+	By("Check request state is reserved")
 
 	request := &machinev1alpha2.MachineAssignment{}
 	Eventually(func(g Gomega) bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
-
-		return request.Status.State == machinev1alpha2.RequestStatePending
+		return request.Status.State == entity.ReservationStatusReserved
 	}, timeout, interval).Should(BeTrue())
 
 	By("Expect successful machine status update to running")
 
-	machine.Status.Reservation.RequestState = machinev1alpha2.RequestStateRunning
+	machine.Status.Reservation.Status = entity.ReservationStatusRunning
 	Eventually(func(g Gomega) error {
 		return k8sClient.Status().Update(ctx, machine)
 	}, timeout, interval).Should(BeNil())
-
-	By("Check request state is running")
-
-	Eventually(func(g Gomega) bool {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
-
-		return request.Status.State == machinev1alpha2.RequestStateRunning
-	}, timeout, interval).Should(BeTrue())
 }
 
 func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
@@ -103,9 +84,21 @@ func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
 
 func prepareMachineStatus() machinev1alpha2.MachineStatus {
 	return machinev1alpha2.MachineStatus{
-		Health:    machinev1alpha2.MachineStateHealthy,
-		OOB:       machinev1alpha2.ObjectReference{Exist: true},
+		Health: machinev1alpha2.MachineStateHealthy,
+		OOB: machinev1alpha2.ObjectReference{
+			Exist: true,
+			Reference: &machinev1alpha2.ResourceReference{
+				APIVersion: "",
+				Kind:       "",
+				Name:       "",
+				Namespace:  "",
+			},
+		},
 		Inventory: machinev1alpha2.ObjectReference{Exist: true},
+		Reservation: machinev1alpha2.Reservation{
+			Status:    entity.ReservationStatusAvailable,
+			Reference: nil,
+		},
 		Interfaces: []machinev1alpha2.Interface{
 			{Name: "test"},
 			{Name: "test2"},

@@ -21,9 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	machinerr "github.com/onmetal/metal-api/pkg/errors"
-	"github.com/onmetal/metal-api/pkg/provider"
-	"github.com/onmetal/metal-api/pkg/scheduler"
+	"github.com/onmetal/metal-api/internal/entity"
+	"github.com/onmetal/metal-api/internal/usecase"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,9 +35,10 @@ import (
 type SchedulerReconciler struct {
 	ctrlclient.Client
 
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Log       logr.Logger
+	Scheme    *runtime.Scheme
+	Recorder  record.EventRecorder
+	Scheduler usecase.Scheduler
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -61,25 +61,20 @@ func (r *SchedulerReconciler) constructPredicates() predicate.Predicate {
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=requests/finalizers,verbs=update
 
 func (r *SchedulerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("metal-request", req.NamespacedName)
+	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)
 
-	request := &machinev1alpha2.MachineAssignment{}
-	if err := provider.GetObject(ctx, req.Name, req.Namespace, r.Client, request); err != nil {
-		return machinerr.GetResultForError(reqLogger, err)
+	e := entity.Order{
+		Name: req.Name, Namespace: req.Namespace,
 	}
-
-	if !scheduler.IsAldreadyScheduled(request) {
-		if err := r.newScheduler(ctx, reqLogger).Schedule(request); err != nil {
-			return machinerr.GetResultForError(reqLogger, err)
+	if !r.Scheduler.IsScheduled(ctx, e) {
+		if err := r.Scheduler.Schedule(ctx, e); err != nil {
+			reqLogger.Info("machine assignment failed", "error", err)
+			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, nil
 	}
 
+	reqLogger.Info("reconciliation finished")
 	return ctrl.Result{}, nil
-}
-
-func (r *SchedulerReconciler) newScheduler(ctx context.Context, reqLogger logr.Logger) scheduler.Scheduler {
-	return scheduler.NewMachine(ctx, r.Client, reqLogger, r.Recorder)
 }
 
 func (r *SchedulerReconciler) onUpdate(e event.UpdateEvent) bool {
@@ -100,11 +95,21 @@ func (r *SchedulerReconciler) onDelete(e event.DeleteEvent) bool {
 		r.Log.Info("request delete event cast failed")
 		return false
 	}
+
+	if obj.Status.Reference == nil {
+		return false
+	}
+
 	ctx := context.Background()
 
-	s := r.newScheduler(ctx, r.Log)
+	reservation := entity.Reservation{
+		OrderName:        obj.Name,
+		OrderNamespace:   obj.Namespace,
+		RequestName:      obj.Status.Reference.Name,
+		RequestNamespace: obj.Status.Reference.Namespace,
+	}
 
-	if err := s.DeleteScheduling(obj); err != nil {
+	if err := r.Scheduler.DeleteScheduling(ctx, reservation); err != nil {
 		r.Log.Info("scheduling deletion unsuccessful", "error", err)
 		return false
 	}
