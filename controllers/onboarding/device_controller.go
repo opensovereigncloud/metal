@@ -34,7 +34,7 @@ func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *OnboardingReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
-		CreateFunc: r.initialization,
+		UpdateFunc: r.initialization,
 	}
 }
 
@@ -57,8 +57,8 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	return ctrl.Result{}, nil
 }
 
-func (r *OnboardingReconciler) initialization(e event.CreateEvent) bool {
-	req, ok := e.Object.(*inventoriesv1alpha1.Inventory)
+func (r *OnboardingReconciler) initialization(e event.UpdateEvent) bool {
+	req, ok := e.ObjectNew.(*inventoriesv1alpha1.Inventory)
 	if !ok {
 		return false
 	}
