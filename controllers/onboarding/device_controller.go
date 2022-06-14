@@ -11,8 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type OnboardingReconciler struct {
@@ -28,14 +26,7 @@ type OnboardingReconciler struct {
 func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&inventoriesv1alpha1.Inventory{}).
-		WithEventFilter(r.constructPredicates()).
 		Complete(r)
-}
-
-func (r *OnboardingReconciler) constructPredicates() predicate.Predicate {
-	return predicate.Funcs{
-		UpdateFunc: r.initialization,
-	}
 }
 
 func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -46,6 +37,18 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		RequestNamespace:              req.Namespace,
 		InitializationObjectNamespace: r.DestinationNamespace}
 
+	is := r.OnboardingRepo.InitializationStatus(ctx, e)
+	if is.Error != nil {
+		reqLogger.Info("device initialization status", "error", is.Error)
+		return ctrl.Result{}, nil
+	}
+	if is.Require {
+		if err := r.OnboardingRepo.Initiate(ctx, e); err != nil {
+			reqLogger.Info("device initialization failed", "error", err)
+			return ctrl.Result{}, nil
+		}
+	}
+
 	if err := r.OnboardingRepo.GatherData(ctx, e); err != nil {
 		if apierrors.IsConflict(err) {
 			return ctrl.Result{Requeue: true}, nil
@@ -55,24 +58,4 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	reqLogger.Info("reconciliation finished")
 	return ctrl.Result{}, nil
-}
-
-func (r *OnboardingReconciler) initialization(e event.UpdateEvent) bool {
-	req, ok := e.ObjectNew.(*inventoriesv1alpha1.Inventory)
-	if !ok {
-		return false
-	}
-	onboarding := entity.Onboarding{
-		RequestName:                   req.Name,
-		RequestNamespace:              req.Namespace,
-		InitializationObjectNamespace: r.DestinationNamespace}
-
-	ctx := context.Background()
-	if !r.OnboardingRepo.IsInitialized(ctx, onboarding) {
-		if err := r.OnboardingRepo.Initiate(ctx, onboarding); err != nil {
-			r.Log.Info("initialization failed", "error", err)
-			return false
-		}
-	}
-	return true
 }

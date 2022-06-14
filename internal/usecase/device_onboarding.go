@@ -24,8 +24,9 @@ func (o *DeviceOnboardingUseCase) Initiate(ctx context.Context, e entity.Onboard
 }
 
 // IsInitialized - checks if device is already initialized.
-func (o *DeviceOnboardingUseCase) IsInitialized(ctx context.Context, e entity.Onboarding) bool {
-	return o.repo.IsInitialized(ctx, e)
+func (o *DeviceOnboardingUseCase) InitializationStatus(ctx context.Context,
+	e entity.Onboarding) entity.Initialization {
+	return o.repo.InitializationStatus(ctx, e)
 }
 
 // GatherData - retrieves data from raw object into abstract one.

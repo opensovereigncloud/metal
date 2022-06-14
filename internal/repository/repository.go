@@ -9,7 +9,7 @@ import (
 type (
 	OnboardingRepo interface {
 		Create(context.Context) error
-		IsInitialized(context.Context, entity.Onboarding) bool
+		InitializationStatus(context.Context, entity.Onboarding) entity.Initialization
 		Prepare(context.Context, entity.Onboarding) error
 		GatherData(context.Context, entity.Onboarding) error
 	}

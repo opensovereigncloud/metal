@@ -102,8 +102,7 @@ func (m *MachineSchedulerRepo) FindVacantDevice(ctx context.Context, e entity.Or
 			if !isTolerated(metalAssignment.Spec.Tolerations, metalList.Items[m].Spec.Taints) {
 				continue
 			}
-			if metalList.Items[m].Status.Reservation.Status != entity.ReservationStatusAvailable ||
-				metalList.Items[m].Status.Reservation.Reference != nil {
+			if metalList.Items[m].Status.Reservation.Reference != nil {
 				continue
 			}
 			if metalList.Items[m].Status.Health != machinev1alpha2.MachineStateHealthy {

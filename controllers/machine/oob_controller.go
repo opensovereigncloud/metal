@@ -177,7 +177,8 @@ func syncStatusState(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine)
 	switch {
 	case oobObj.Status.SystemStateReadTimeout:
 		machineObj.Status.Reservation.Status = entity.ReservationStatusError
-	case oobObj.Status.SystemState == "Ok" || oobObj.Status.SystemState == "Unknown":
+	case (oobObj.Status.SystemState == "Ok" || oobObj.Status.SystemState == "Unknown") &&
+		oobObj.Status.PowerState != "Off":
 		machineObj.Status.Reservation.Status = entity.ReservationStatusRunning
 	}
 }

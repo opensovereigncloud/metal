@@ -36,22 +36,19 @@ func (o *ServerOnboardingRepo) Create(ctx context.Context) error {
 	return nil
 }
 
-func (o *ServerOnboardingRepo) IsInitialized(ctx context.Context, e entity.Onboarding) bool {
+func (o *ServerOnboardingRepo) InitializationStatus(ctx context.Context, e entity.Onboarding) entity.Initialization {
 	oobObj := &oobv1.Machine{}
 	if err := o.client.Get(ctx, types.NamespacedName{
 		Name: e.RequestName, Namespace: e.RequestNamespace}, oobObj); err != nil {
-		return true
+		return entity.Initialization{Require: false, Error: err}
 	}
 
 	inventory := &inventoriesv1alpha1.Inventory{}
 	if err := o.client.Get(ctx, types.NamespacedName{
 		Name: oobObj.Status.UUID, Namespace: e.InitializationObjectNamespace}, inventory); err != nil {
-		if apierrors.IsNotFound(err) {
-			return false
-		}
-		return false
+		return entity.Initialization{Require: true, Error: nil}
 	}
-	return true
+	return entity.Initialization{Require: false, Error: nil}
 }
 
 func (o *ServerOnboardingRepo) Prepare(ctx context.Context, e entity.Onboarding) error {

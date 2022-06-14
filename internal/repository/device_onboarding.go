@@ -51,14 +51,14 @@ func (o *DeviceOnboardingRepo) Create(ctx context.Context) error {
 	return nil
 }
 
-func (o *DeviceOnboardingRepo) IsInitialized(ctx context.Context, e entity.Onboarding) bool {
+func (o *DeviceOnboardingRepo) InitializationStatus(ctx context.Context, e entity.Onboarding) entity.Initialization {
 	i := &inventoriesv1alpha1.Inventory{}
 	if err := o.client.Get(ctx, types.NamespacedName{
 		Name: e.RequestName, Namespace: e.RequestNamespace}, i); err != nil {
-		if apierrors.IsNotFound(err) {
-			return false
+		return entity.Initialization{
+			Require: false,
+			Error:   err,
 		}
-		return false
 	}
 	machine := i.Labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]
 	switches := i.Labels[inventoriesv1alpha1.GetSizeMatchLabel(switchSizeName)]
@@ -67,24 +67,18 @@ func (o *DeviceOnboardingRepo) IsInitialized(ctx context.Context, e entity.Onboa
 		m := &machinev1alpha2.Machine{}
 		if err := o.client.Get(ctx, types.NamespacedName{
 			Name: e.RequestName, Namespace: e.InitializationObjectNamespace}, m); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false
-			}
-			return false
+			return entity.Initialization{Require: true, Error: nil}
 		}
-		return true
+		return entity.Initialization{Require: false, Error: nil}
 	case switches != "":
 		s := &switchv1alpha1.Switch{}
 		if err := o.client.Get(ctx, types.NamespacedName{
 			Name: e.RequestName, Namespace: e.InitializationObjectNamespace}, s); err != nil {
-			if apierrors.IsNotFound(err) {
-				return false
-			}
-			return false
+			return entity.Initialization{Require: true, Error: nil}
 		}
-		return true
+		return entity.Initialization{Require: false, Error: nil}
 	default:
-		return false
+		return entity.Initialization{Require: false, Error: nil}
 	}
 }
 
@@ -103,7 +97,6 @@ func (o *DeviceOnboardingRepo) Prepare(ctx context.Context, e entity.Onboarding)
 	}
 	if _, ok := inventory.Labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]; ok {
 		o.device = o.prepareMachine(inventory.Spec.System.ID, e)
-		return nil
 	}
 	return nil
 }

@@ -7,6 +7,7 @@ type Onboarding struct {
 	InitializationObjectNamespace string
 }
 
-func (o *Onboarding) IsOnboarded() bool {
-	return true
+type Initialization struct {
+	Require bool
+	Error   error
 }

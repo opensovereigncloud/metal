@@ -36,7 +36,12 @@ func (r *InventoryOnboardingReconciler) Reconcile(ctx context.Context, req ctrl.
 		RequestNamespace:              req.Namespace,
 		InitializationObjectNamespace: r.DestinationNamespace,
 	}
-	if !r.OnboardingRepo.IsInitialized(ctx, e) {
+	is := r.OnboardingRepo.InitializationStatus(ctx, e)
+	if is.Error != nil {
+		reqLogger.Info("inventory initialization status", "error", is.Error)
+		return ctrl.Result{}, nil
+	}
+	if is.Require {
 		if err := r.OnboardingRepo.Initiate(ctx, e); err != nil {
 			reqLogger.Info("inventory initialization failed", "error", err)
 			return ctrl.Result{}, nil

@@ -42,8 +42,8 @@ func testDeviceOnboarding(name, namespace string) {
 	By("Expect successful inventory creation")
 	Expect(k8sClient.Create(ctx, inventory)).Should(BeNil())
 
-	machine := &machinev1alpha2.Machine{}
 	By("Expect successful machine creation")
+	machine := &machinev1alpha2.Machine{}
 	Eventually(func() bool {
 		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
 			return false

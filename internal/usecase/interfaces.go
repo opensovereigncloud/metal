@@ -9,7 +9,7 @@ import (
 type (
 	Onboarding interface {
 		Initiate(context.Context, entity.Onboarding) error
-		IsInitialized(context.Context, entity.Onboarding) bool
+		InitializationStatus(context.Context, entity.Onboarding) entity.Initialization
 		GatherData(context.Context, entity.Onboarding) error
 	}
 	Reserver interface {
