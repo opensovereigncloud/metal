@@ -1,0 +1,15 @@
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: Subnet
+metadata:
+  name: loopbacks-v6
+  namespace: onmetal
+  labels:
+    ipam.onmetal.de/object-purpose: "switch-loopbacks"
+spec:
+  cidr: "2a10:afc0:e014:ffff::/52"
+  network:
+    name: underlay
+  regions:
+    - availabilityZones:
+        - B
+      name: eu-central

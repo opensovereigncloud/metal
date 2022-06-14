@@ -12,16 +12,17 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-switch-onmetal-de-v1alpha1-switch
+      path: /mutate-switch-onmetal-de-v1beta1-switch
   failurePolicy: Fail
-  name: mswitch.kb.io
+  name: mswitch.v1beta1.kb.io
   rules:
   - apiGroups:
     - switch.onmetal.de
     apiVersions:
-    - v1alpha1
+    - v1beta1
     operations:
     - CREATE
+    - UPDATE
     resources:
     - switches
   sideEffects: None
@@ -32,18 +33,19 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-switch-onmetal-de-v1alpha1-switchassignment
+      path: /mutate-switch-onmetal-de-v1beta1-switchconfig
   failurePolicy: Fail
-  name: mswitchassignment.kb.io
+  name: mswitchconfig.v1beta1.kb.io
   rules:
   - apiGroups:
     - switch.onmetal.de
     apiVersions:
-    - v1alpha1
+    - v1beta1
     operations:
     - CREATE
+    - UPDATE
     resources:
-    - switchassignments
+    - switchconfigs
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -101,14 +103,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-switch-onmetal-de-v1alpha1-switch
+      path: /validate-switch-onmetal-de-v1beta1-switch
   failurePolicy: Fail
-  name: vswitch.kb.io
+  name: vswitch.v1beta1.kb.io
   rules:
   - apiGroups:
     - switch.onmetal.de
     apiVersions:
-    - v1alpha1
+    - v1beta1
     operations:
     - CREATE
     - UPDATE
@@ -122,17 +124,17 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-switch-onmetal-de-v1alpha1-switchassignment
+      path: /validate-switch-onmetal-de-v1beta1-switchconfig
   failurePolicy: Fail
-  name: vswitchassignment.kb.io
+  name: vswitchconfig.v1beta1.kb.io
   rules:
   - apiGroups:
     - switch.onmetal.de
     apiVersions:
-    - v1alpha1
+    - v1beta1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - switchassignments
+    - switchconfigs
   sideEffects: None

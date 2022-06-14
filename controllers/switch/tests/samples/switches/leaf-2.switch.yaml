@@ -1,0 +1,13 @@
+apiVersion: switch.onmetal.de/v1beta1
+kind: Switch
+metadata:
+  name: leaf-2
+  namespace: onmetal
+  annotations:
+    hardware/chassis-id: 68215f47156e
+spec:
+  uuid: "044ca7d1-c6f8-37d8-83ce-bf6a18318f2d"
+  topSpine: false
+  managed: true
+  cordon: false
+status: {}

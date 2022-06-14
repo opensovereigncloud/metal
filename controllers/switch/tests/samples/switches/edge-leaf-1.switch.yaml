@@ -1,0 +1,13 @@
+apiVersion: switch.onmetal.de/v1beta1
+kind: Switch
+metadata:
+  name: edge-leaf-1
+  namespace: onmetal
+  annotations:
+    hardware/chassis-id: 903cb33381fb
+spec:
+  uuid: "40d13165-d984-331c-bca2-5a52f3072e2b"
+  topSpine: false
+  managed: true
+  cordon: false
+status: {}

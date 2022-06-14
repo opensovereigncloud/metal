@@ -21,9 +21,10 @@ import (
 	"net"
 	"strings"
 
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/entity"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
@@ -87,7 +88,7 @@ func (o *DeviceOnboardingRepo) InitializationStatus(ctx context.Context, e entit
 		}
 		return entity.Initialization{Require: false, Error: nil}
 	case switches != "":
-		s := &switchv1alpha1.Switch{}
+		s := &switchv1beta1.Switch{}
 		if err := o.client.Get(ctx, types.NamespacedName{
 			Name: e.RequestName, Namespace: e.InitializationObjectNamespace}, s); err != nil {
 			return entity.Initialization{Require: true, Error: nil}
@@ -270,7 +271,7 @@ func (o *DeviceOnboardingRepo) updateMachineInterfaces(ctx context.Context,
 		}
 
 		label := map[string]string{
-			switchv1alpha1.LabelChassisId: strings.ReplaceAll(nicsSpec[nic].LLDPs[0].ChassisID, ":", "-"),
+			switchv1beta1.LabelChassisId: strings.ReplaceAll(nicsSpec[nic].LLDPs[0].ChassisID, ":", "-"),
 		}
 		s, err := o.getSwitchByLabel(ctx, label)
 		if apierrors.IsNotFound(err) || machinerr.IsNotFound(err) {
@@ -298,8 +299,8 @@ func (o *DeviceOnboardingRepo) updateNetworkStatus(
 }
 
 func (o *DeviceOnboardingRepo) getSwitchByLabel(ctx context.Context,
-	label map[string]string) (*switchv1alpha1.Switch, error) {
-	obj := &switchv1alpha1.SwitchList{}
+	label map[string]string) (*switchv1beta1.Switch, error) {
+	obj := &switchv1beta1.SwitchList{}
 	filter := &ctrlclient.ListOptions{
 		LabelSelector: ctrlclient.MatchingLabelsSelector{Selector: labels.SelectorFromSet(label)},
 	}
@@ -314,13 +315,13 @@ func (o *DeviceOnboardingRepo) getSwitchByLabel(ctx context.Context,
 
 func connectionInfoEnrichment(sw metav1.ObjectMeta, nicsSpec *inventoriesv1alpha1.NICSpec,
 	interfaces []machinev1alpha2.Interface,
-	switchUUID string, switchInterface *switchv1alpha1.InterfaceSpec,
+	switchUUID string, switchInterface *switchv1beta1.InterfaceSpec,
 	machineInterfaces []machinev1alpha2.Interface) []machinev1alpha2.Interface {
 	return append(interfaces, machinev1alpha2.Interface{
 		Name:            nicsSpec.Name,
 		Lanes:           switchInterface.Lanes,
-		IPv4:            &machinev1alpha2.IPAddressSpec{Address: getAddress(switchInterface.IPv4.Address)},
-		IPv6:            &machinev1alpha2.IPAddressSpec{Address: getAddress(switchInterface.IPv6.Address)},
+		IPv4:            &machinev1alpha2.IPAddressSpec{Address: getAddress(switchInterface, ipamv1alpha1.CIPv4SubnetType)},
+		IPv6:            &machinev1alpha2.IPAddressSpec{Address: getAddress(switchInterface, ipamv1alpha1.CIPv6SubnetType)},
 		Moved:           getMovedInterface(nicsSpec, machineInterfaces),
 		Unknown:         false,
 		SwitchReference: &machinev1alpha2.ResourceReference{Kind: "Switch", Namespace: sw.Namespace, Name: sw.Name},
@@ -333,35 +334,26 @@ func connectionInfoEnrichment(sw metav1.ObjectMeta, nicsSpec *inventoriesv1alpha
 	})
 }
 
-func getAddress(switchIP string) string {
-	for s := 0; s < len(switchIP); s++ {
-		switch switchIP[s] {
-		case '.':
-			ip, ipNet, err := net.ParseCIDR(switchIP)
-			if err != nil {
-				// i.log.Info("can't parse ip address", "error", err)
-				return ""
-			}
-			if size, _ := ipNet.Mask.Size(); size < subnetSize {
-				// i.log.Info("subnet mask less than minimal subnet size", "minimal size", subnetSize,
-				// 	"current size", size)
-				return ""
-			}
-			ip = ip.To4()
-			ip[3]++
+func getAddress(switchNIC *switchv1beta1.InterfaceSpec, af ipamv1alpha1.SubnetAddressType) string {
+	var ipAddress string
+	for _, addr := range switchNIC.IP {
+		ip, ipNet, err := net.ParseCIDR(addr.Address)
+		if err != nil {
+			return ipAddress
+		}
+		if size, _ := ipNet.Mask.Size(); size < subnetSize {
+			return ipAddress
+		}
+		if ipByteRepr := ip.To4(); ipByteRepr != nil && af == ipamv1alpha1.CIPv4SubnetType {
+			ipByteRepr[3]++
 			machineAddr := net.IPNet{
 				IP:   ip,
 				Mask: ipNet.Mask,
 			}
 			return machineAddr.String()
-		case ':':
-			ip, ipNet, err := net.ParseCIDR(switchIP)
-			if err != nil {
-				// i.log.Info("can't parse ip address", "error", err)
-				return ""
-			}
-			ip = ip.To16()
-			ip[15]++
+		}
+		if ipByteRepr := ip.To16(); ipByteRepr != nil && af == ipamv1alpha1.CIPv6SubnetType {
+			ipByteRepr[15]++
 			machineAddr := net.IPNet{
 				IP:   ip,
 				Mask: ipNet.Mask,
@@ -369,7 +361,7 @@ func getAddress(switchIP string) string {
 			return machineAddr.String()
 		}
 	}
-	return ""
+	return ipAddress
 }
 
 func baseConnectionInfo(nicsSpec *inventoriesv1alpha1.NICSpec,

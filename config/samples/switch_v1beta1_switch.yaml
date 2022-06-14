@@ -1,0 +1,142 @@
+apiVersion: switch.onmetal.de/v1beta1
+kind: Switch
+metadata:
+  name: switch-sample
+  labels:
+    size.onmetal.de/spine: ""
+  annotations:
+    location/room: "1"
+    location/row: "15"
+    location/rack: "3"
+    location/hu: "1"
+    hardware/sku: "1"
+    hardware/serial: "772632X1990101"
+    hardware/chassis-id: "68215f47176e"
+    hardware/manufacturer: "Accton"
+    software/onie: "true"
+    software/os: "sonic"
+    software/version: "1"
+    software/asic: "broadcom"
+spec:
+  uuid: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+  topSpine: true
+  managed: true
+  cordon: false
+  ipam:
+    southSubnets:
+      addressFamilies:
+        ipv4: true
+        ipv6: false
+      selector:
+        matchLabels:
+          ipam.onmetal.de/object-purpose: "south-subnet"
+          ipam.onmetal.de/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+    loopbackAddresses:
+      addressFamilies:
+        ipv4: true
+        ipv6: false
+      selector:
+        matchLabels:
+          ipam.onmetal.de/object-purpose: "loopback"
+          ipam.onmetal.de/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+  interfaces:
+    defaults:
+      lanes: 4
+      mtu: 9216
+      fec: "rs"
+      ipv4MaskLength: 30
+      ipv6Prefix: 127
+      state: "up"
+    overrides:
+      - name: "Ethernet0"
+        lanes: 1
+        mtu: 1500
+        fec: "none"
+        ip:
+          - address: 192.168.100.1/24
+            parentSubnet:
+              matchLabels:
+                type: "interface"
+                interface: "ethernet0"
+                owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+      - name: "Ethernet1"
+        lanes: 1
+        state: "down"
+      - name: "Ethernet2"
+        lanes: 1
+        state: "down"
+      - name: "Ethernet3"
+        lanes: 1
+        state: "down"
+status:
+  connectionLevel: 0
+  role: "spine"
+  totalPorts: 5
+  switchPorts: 4
+  switch:
+    state: "ready"
+  agent:
+    state: "active"
+  subnets:
+    - name: "some-subnet"
+      namespace: "onmetal"
+      cidr: "100.64.2.0/23"
+      region:
+        availabilityZone: "A"
+        name: "eu-west"
+  loopbackAddresses:
+    - name: "loopback-ip"
+      namespace: "onmetal"
+      address: "100.64.11.1/32"
+  interfaces:
+    Ethernet0:
+      macAddress: "68215f47176e"
+      fec: "none"
+      mtu: 1500
+      speed: 10000
+      lanes: 1
+      state: "up"
+      direction: "south"
+      ip:
+        - address: "192.168.100.1/24"
+          namespace: "onmetal"
+          name: "some-additional-ip"
+        - address: "100.64.2.1/30"
+          name: "ethernet0-computed-ip"
+          namespace: "onmetal"
+    Ethernet1:
+      macAddress: "68215f47176e"
+      fec: "rs"
+      mtu: 9216
+      speed: 10000
+      lanes: 1
+      state: "down"
+      direction: "south"
+      ip:
+        - address: "100.64.2.5/30"
+          name: "ethernet1-computed-ip"
+          namespace: "onmetal"
+    Ethernet2:
+      macAddress: "68215f47176e"
+      fec: "rs"
+      mtu: 9216
+      speed: 10000
+      lanes: 1
+      state: "down"
+      direction: "south"
+      ip:
+        - address: "100.64.2.9/30"
+          name: "ethernet2-computed-ip"
+          namespace: "onmetal"
+    Ethernet3:
+      macAddress: "68215f47176e"
+      fec: "rs"
+      mtu: 9216
+      speed: 10000
+      lanes: 1
+      state: "down"
+      direction: "south"
+      ip:
+        - address: "100.64.2.13/30"
+          name: "ethernet3-computed-ip"
+          namespace: "onmetal"

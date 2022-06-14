@@ -21,7 +21,7 @@ import (
 
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/entity"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -251,46 +251,43 @@ func prepareSpecForInventory(name string) inventoriesv1alpha1.InventorySpec {
 	}
 }
 
-func prepareSwitch(namespace string) *switchv1alpha1.Switch {
-	return &switchv1alpha1.Switch{
+func prepareSwitch(namespace string) *switchv1beta1.Switch {
+	return &switchv1beta1.Switch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "switch",
 			Namespace: namespace,
 			Labels: map[string]string{
-				switchv1alpha1.LabelChassisId: "3c-2c-99-9d-cd-48",
+				switchv1beta1.LabelChassisId: "3c-2c-99-9d-cd-48",
 			},
 		},
-		Spec: switchv1alpha1.SwitchSpec{
-			Hostname: "switch1",
-			Location: &switchv1alpha1.LocationSpec{
-				Room: "room1",
-				Row:  1,
-				Rack: 2,
-				HU:   3,
-			},
-			Chassis: &switchv1alpha1.ChassisSpec{
-				ChassisID: "3c:2c:99:9d:cd:48",
-			},
-			SoftwarePlatform: &switchv1alpha1.SoftwarePlatformSpec{},
+		Spec: switchv1beta1.SwitchSpec{
+			UUID:     "40d13165-d984-331c-bca2-5a52f3072e2b",
+			TopSpine: false,
+			Managed:  true,
+			Cordon:   false,
 		},
 	}
 }
 
-func getSwitchesStatus() switchv1alpha1.SwitchStatus {
-	return switchv1alpha1.SwitchStatus{
+func getSwitchesStatus() switchv1beta1.SwitchStatus {
+	return switchv1beta1.SwitchStatus{
 		TotalPorts:      100,
 		SwitchPorts:     90,
-		Role:            "leaf",
+		Role:            switchv1beta1.MetalAPIString("leaf"),
 		ConnectionLevel: 2,
-		Interfaces: map[string]*switchv1alpha1.InterfaceSpec{
+		Interfaces: map[string]*switchv1beta1.InterfaceSpec{
 			"Ethernet100": {
 				MACAddress: "3c:2c:99:9d:cd:48",
 				FEC:        "none",
-				IPv4: &switchv1alpha1.IPAddressSpec{
-					Address: "100.64.4.70/30",
-				},
-				IPv6: &switchv1alpha1.IPAddressSpec{
-					Address: "64:ff9b:1::220/127",
+				IP: []*switchv1beta1.IPAddressSpec{
+					{
+						Address:      "100.64.4.70/30",
+						ExtraAddress: false,
+					},
+					{
+						Address:      "64:ff9b:1::220/127",
+						ExtraAddress: false,
+					},
 				},
 				MTU:       1500,
 				Speed:     10000,
@@ -301,11 +298,15 @@ func getSwitchesStatus() switchv1alpha1.SwitchStatus {
 			"Ethernet102": {
 				MACAddress: "3c:2c:99:9d:cd:48",
 				FEC:        "none",
-				IPv4: &switchv1alpha1.IPAddressSpec{
-					Address: "100.64.6.70/30",
-				},
-				IPv6: &switchv1alpha1.IPAddressSpec{
-					Address: "64:ff9b:1::220/127",
+				IP: []*switchv1beta1.IPAddressSpec{
+					{
+						Address:      "100.64.6.70/30",
+						ExtraAddress: false,
+					},
+					{
+						Address:      "64:ff9b:1::220/127",
+						ExtraAddress: false,
+					},
 				},
 				MTU:       1500,
 				Speed:     10000,
@@ -314,10 +315,8 @@ func getSwitchesStatus() switchv1alpha1.SwitchStatus {
 				Direction: "north",
 			},
 		},
-		Configuration: &switchv1alpha1.ConfigurationSpec{
-			Managed: true,
-			State:   "applied",
+		SwitchState: &switchv1beta1.SwitchStateSpec{
+			State: switchv1beta1.MetalAPIString("ready"),
 		},
-		State: "ready",
 	}
 }

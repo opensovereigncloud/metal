@@ -1,0 +1,12 @@
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: IP
+metadata:
+  name: edge-leaf-2-loopback-v6
+  namespace: onmetal
+  labels:
+    ipam.onmetal.de/object-purpose: "loopback"
+    ipam.onmetal.de/object-owner: "fff5c0db-b0cb-3059-a60f-4015d5963588"
+spec:
+  subnet:
+    name: loopbacks-v6
+  ip: "2a10:afc0:e014:ffff::2"

@@ -24,7 +24,7 @@ import (
 
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/repository"
 	"github.com/onmetal/metal-api/internal/usecase"
 	. "github.com/onsi/ginkgo"
@@ -71,10 +71,10 @@ var _ = BeforeSuite(func() {
 	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
 	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.MachineAssignment{}, &machinev1alpha2.MachineAssignmentList{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
-	switchv1alpha1.SchemeBuilder.Register(&switchv1alpha1.Switch{}, &switchv1alpha1.SwitchList{})
+	switchv1beta1.SchemeBuilder.Register(&switchv1beta1.Switch{}, &switchv1beta1.SwitchList{})
 	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(switchv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(switchv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
