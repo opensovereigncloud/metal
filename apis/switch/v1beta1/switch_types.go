@@ -1118,3 +1118,7 @@ func (in *InterfaceSpec) RequestAddress() (ips []net.IPNet) {
 	}
 	return
 }
+
+func init() {
+	SchemeBuilder.Register(&Switch{}, &SwitchList{})
+}
