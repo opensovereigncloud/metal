@@ -18,7 +18,6 @@ package v1beta1
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -115,8 +114,8 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 updateMetadata:
-	updateSwitchLabels(switchObject, obj)
-	updateSwitchAnnotations(switchObject, obj)
+	switchObject.UpdateSwitchLabels(obj)
+	switchObject.UpdateSwitchAnnotations(obj)
 	if err = r.Update(ctx, switchObject); err != nil {
 		log.Error(err, "failed to onboard switch", "name", switchObject.Name, "gvk", switchObject.GroupVersionKind().String())
 		result.RequeueAfter = RequeuingInterval
@@ -240,48 +239,4 @@ func getCorrespondingSwitch(inv *inventoryv1alpha1.Inventory, list *switchv1beta
 		}
 	}
 	return
-}
-
-func updateSwitchLabels(switchObject *switchv1beta1.Switch, inv *inventoryv1alpha1.Inventory) {
-	appliedLabels := map[string]string{
-		switchv1beta1.InventoriedLabel:  "true",
-		switchv1beta1.InventoryRefLabel: inv.Name,
-		switchv1beta1.LabelChassisId: strings.ReplaceAll(
-			func() string {
-				var chassisID string
-				for _, nic := range inv.Spec.NICs {
-					if nic.Name == "eth0" {
-						chassisID = nic.MACAddress
-					}
-				}
-				return chassisID
-			}(), ":", "-",
-		),
-	}
-	switchObject.Labels = appliedLabels
-}
-
-func updateSwitchAnnotations(switchObject *switchv1beta1.Switch, inv *inventoryv1alpha1.Inventory) {
-	appliedAnnotations := map[string]string{
-		switchv1beta1.CHardwareChassisIdAnnotation: strings.ReplaceAll(
-			func() string {
-				var chassisID string
-				for _, nic := range inv.Spec.NICs {
-					if nic.Name == "eth0" {
-						chassisID = nic.MACAddress
-					}
-				}
-				return chassisID
-			}(), ":", "",
-		),
-		switchv1beta1.CHardwareSerialAnnotation:       inv.Spec.System.SerialNumber,
-		switchv1beta1.CHardwareManufacturerAnnotation: inv.Spec.System.Manufacturer,
-		switchv1beta1.CHardwareSkuAnnotation:          inv.Spec.System.ProductSKU,
-		switchv1beta1.CSoftwareOnieAnnotation:         "false",
-		switchv1beta1.CSoftwareAsicAnnotation:         inv.Spec.Distro.AsicType,
-		switchv1beta1.CSoftwareVersionAnnotation:      inv.Spec.Distro.CommitId,
-		switchv1beta1.CSoftwareOSAnnotation:           "sonic",
-		switchv1beta1.CSoftwareHostnameAnnotation:     inv.Spec.Host.Name,
-	}
-	switchObject.Annotations = appliedAnnotations
 }

@@ -55,6 +55,14 @@ rules:
 - apiGroups:
   - ipam.onmetal.de
   resources:
+  - ips/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.onmetal.de
+  resources:
   - subnets
   verbs:
   - get
@@ -66,6 +74,8 @@ rules:
   - subnets/status
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - machine.onmetal.de
   resources:
@@ -116,8 +126,10 @@ rules:
   - inventories/status
   verbs:
   - get
+  - list
   - patch
   - update
+  - watch
 - apiGroups:
   - machine.onmetal.de
   resources:

@@ -72,9 +72,11 @@ type SwitchReconciler struct {
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/finalizers,verbs=update
 //+kubebuilder:rbac:groups=switch.onmetal.de,resources=switchconfigs,verbs=get;list;watch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch
+//+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets,verbs=get;list;watch
-//+kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets/status,verbs=get
+//+kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets/status,verbs=get;list;watch
 //+kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;watch
+//+kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips/status,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -107,13 +109,28 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	relatedInventory := &inventoryv1alpha1.Inventory{}
 	if err = r.Get(ctx, types.NamespacedName{Namespace: obj.Namespace, Name: obj.Spec.UUID}, relatedInventory); err != nil {
-		r.Log.Error(err, "failed to get resource", "name", obj.Spec.UUID, "kind", "Inventory")
+		if !apierrors.IsNotFound(err) {
+			log.Error(err, "failed to get resource", "name", obj.Spec.UUID, "kind", "Inventory")
+			return
+		}
+		log.Info("related inventory object not found")
 		return
 	}
+
+	if !obj.LabelsOK() {
+		obj.UpdateSwitchLabels(relatedInventory)
+		obj.UpdateSwitchAnnotations(relatedInventory)
+		if err = r.Update(ctx, obj); err != nil {
+			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+			return
+		}
+		return
+	}
+
 	if obj.Status.SwitchState == nil {
 		obj.SetInitialStatus(relatedInventory)
 		if err = r.Status().Update(ctx, obj); err != nil {
-			r.Log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		return
@@ -122,7 +139,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		if !obj.InterfacesMatchInventory(relatedInventory) {
 			obj.Status.SwitchState = nil
 			if err = r.Status().Update(ctx, obj); err != nil {
-				r.Log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+				log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 				return
 			}
 			return
@@ -142,7 +159,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		Limit:         100,
 	}
 	if err = r.List(ctx, switchConfigs, opts); err != nil {
-		r.Log.Error(err, "failed to list resources", "kind", "SwitchConfigList")
+		log.Error(err, "failed to list resources", "kind", "SwitchConfigList")
 		return
 	}
 	if len(switchConfigs.Items) > 0 {
@@ -152,30 +169,31 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	relatedSwitches := &switchv1beta1.SwitchList{}
 	if err = r.List(ctx, relatedSwitches); err != nil {
-		r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+		log.Error(err, "failed to list resources", "kind", "SwitchList")
 		return
 	}
 	if !obj.ConnectionsOK(relatedSwitches) {
 		obj.SetState(switchv1beta1.CSwitchStateProcessing)
 		obj.SetConnections(relatedSwitches)
 		if err = r.Status().Update(ctx, obj); err != nil {
-			r.Log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		return
 	}
 
 	if !obj.StateEqualsTo(switchv1beta1.CSwitchStateReady) {
+		obj.SetRole()
 		obj.SetState(switchv1beta1.CSwitchStateReady)
 		if err = r.Status().Update(ctx, obj); err != nil {
-			r.Log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		return
 	}
 
 	if err = obj.ResultingIPAMConfig(relatedConfig); err != nil {
-		r.Log.Error(err, "failed to compute resulting IPAM configuration", "name", obj.Name, "kind", obj.Kind)
+		log.Error(err, "failed to compute resulting IPAM configuration", "name", obj.Name, "kind", obj.Kind)
 		return
 	}
 
@@ -185,7 +203,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	loopbackIPs, err := r.getRelatedLoopbackIPs(ctx, obj)
 	if err != nil {
-		r.Log.Error(err, "failed to get list of related loopback IPs")
+		log.Error(err, "failed to get list of related loopback IPs")
 		return
 	}
 	//todo: implement IP objects creation in case there are no pre-created IPs
@@ -196,11 +214,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	loopbacksMatchStored := obj.LoopbackIPsMatchStoredIPs(loopbackIPs)
 	if !loopbacksMatchStored {
 		if err = r.computeLoopbacks(ctx, obj, loopbackIPs); err != nil {
-			r.Log.Error(err, "failed to configure loopback addresses", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to configure loopback addresses", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		if err = r.Status().Update(ctx, obj); err != nil {
-			r.Log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		return
@@ -212,7 +230,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 
 	southSubnets, err := r.getRelatedSubnets(ctx, obj)
 	if err != nil {
-		r.Log.Error(err, "failed to get list of related subnets")
+		log.Error(err, "failed to get list of related subnets")
 	}
 	//todo: implement subnet objects creation in case there are no pre-created subnets
 	// if existingSubnetsDontMatchSwitchRangesSubnets() {
@@ -222,11 +240,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	subnetsMatchStored := obj.SubnetsMatchStored(southSubnets)
 	if !subnetsMatchStored {
 		if err = r.computeSubnets(ctx, obj, southSubnets); err != nil {
-			r.Log.Error(err, "failed to configure south subnets", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to configure south subnets", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		if err = r.Status().Update(ctx, obj); err != nil {
-			r.Log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		return
@@ -235,11 +253,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	ipAddressesOK := obj.IPaddressesOK(relatedSwitches)
 	if !ipAddressesOK {
 		if err = r.computeIPAddresses(ctx, obj, relatedSwitches); err != nil {
-			r.Log.Error(err, "failed to configure ip addresses", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to configure ip addresses", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 		if err = r.Status().Update(ctx, obj); err != nil {
-			r.Log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
+			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
 	}
@@ -341,6 +359,7 @@ func (r *SwitchReconciler) handleSwitchUpdate(e event.UpdateEvent, q workqueue.R
 }
 
 func (r *SwitchReconciler) handleInventoryUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+	log := r.Log.WithValues("switch-controller-watch", "inventory update")
 	prevObj := e.ObjectOld.(*inventoryv1alpha1.Inventory)
 	currObj := e.ObjectNew.(*inventoryv1alpha1.Inventory)
 	existingLabels := currObj.GetLabels()
@@ -362,7 +381,7 @@ func (r *SwitchReconciler) handleInventoryUpdate(e event.UpdateEvent, q workqueu
 		Limit:         100,
 	}
 	if err := r.List(context.Background(), switches, opts); err != nil {
-		r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+		log.Error(err, "failed to list resources", "kind", "SwitchList")
 		return
 	}
 	if len(switches.Items) == 0 {
@@ -377,6 +396,7 @@ func (r *SwitchReconciler) handleSwitchConfigCreate(e event.CreateEvent, q workq
 }
 
 func (r *SwitchReconciler) handleSwitchConfigUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+	log := r.Log.WithValues("switch-controller-watch", "switchconfig update")
 	prevObj := e.ObjectOld.(*switchv1beta1.SwitchConfig)
 	currObj := e.ObjectNew.(*switchv1beta1.SwitchConfig)
 	if reflect.DeepEqual(prevObj.Labels, currObj.Labels) {
@@ -391,7 +411,7 @@ func (r *SwitchReconciler) handleSwitchConfigUpdate(e event.UpdateEvent, q workq
 	switch allInPrev || allInCurr {
 	case true:
 		if err := r.List(context.Background(), switches); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
 	case false:
@@ -419,7 +439,7 @@ func (r *SwitchReconciler) handleSwitchConfigUpdate(e event.UpdateEvent, q workq
 			Limit:         100,
 		}
 		if err := r.List(context.Background(), switches, opts); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
 	}
@@ -430,6 +450,8 @@ func (r *SwitchReconciler) handleSwitchConfigUpdate(e event.UpdateEvent, q workq
 }
 
 func (r *SwitchReconciler) enqueueDependenciesOnSwitchConfigEvent(obj *switchv1beta1.SwitchConfig, q workqueue.RateLimitingInterface) {
+	//todo: rewrite using switchConfig.Spec.Switches label selector
+	log := r.Log.WithValues("switch-controller-watch", "switchconfig create or update")
 	relatedTypes := make([]string, 0)
 	swcTypeLabelPrefix := switchv1beta1.SwitchConfigTypeLabel
 	configForAll := false
@@ -448,7 +470,7 @@ func (r *SwitchReconciler) enqueueDependenciesOnSwitchConfigEvent(obj *switchv1b
 	switch configForAll {
 	case true:
 		if err := r.List(context.Background(), switches); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
 	case false:
@@ -460,7 +482,7 @@ func (r *SwitchReconciler) enqueueDependenciesOnSwitchConfigEvent(obj *switchv1b
 			Limit:         100,
 		}
 		if err := r.List(context.Background(), switches, opts); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
 	}
@@ -470,30 +492,28 @@ func (r *SwitchReconciler) enqueueDependenciesOnSwitchConfigEvent(obj *switchv1b
 }
 
 func (r *SwitchReconciler) handleSubnetCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
-	obj := e.Object.(*ipamv1alpha1.Subnet)
-	if v, ok := obj.Labels[switchv1beta1.IPAMObjectPurposeLabel]; ok {
-		switches := &switchv1beta1.SwitchList{}
-		if v == switchv1beta1.CIPAMPurposeSwitchCarrier || v == switchv1beta1.CIPAMPurposeSwitchLoopbacks {
-			if err := r.List(context.Background(), switches); err != nil {
-				r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
-				return
-			}
-			goto enqueue
+	log := r.Log.WithValues("switch-controller-watch", "subnet create")
+	var opts *client.ListOptions
+	var switches *switchv1beta1.SwitchList
+	var subnetOwnerLabel string
+	var subnetOwnerLabelExists bool
+	subnet := e.Object.(*ipamv1alpha1.Subnet)
+	switches = &switchv1beta1.SwitchList{}
+	subnetPurposeLabel, subnetPurposeLabelExists := subnet.Labels[switchv1beta1.IPAMObjectPurposeLabel]
+	if subnetPurposeLabelExists {
+		if subnetPurposeLabel == switchv1beta1.CIPAMPurposeSouthSubnet {
+			subnetOwnerLabel, subnetOwnerLabelExists = subnet.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
-		if !(v == switchv1beta1.CIPAMPurposeSouthSubnet || v == switchv1beta1.CIPAMPurposeLoopback) {
+	}
+	if subnetOwnerLabelExists {
+		opts = &client.ListOptions{
+			FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: subnetOwnerLabel}),
+			Limit:         100,
+		}
+		if err := r.List(context.Background(), switches, opts); err != nil {
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
-		if v, ok := obj.Labels[switchv1beta1.IPAMObjectOwnerLabel]; ok {
-			opts := &client.ListOptions{
-				FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: v}),
-				Limit:         10,
-			}
-			if err := r.List(context.Background(), switches, opts); err != nil {
-				r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
-				return
-			}
-		}
-	enqueue:
 		for _, item := range switches.Items {
 			q.Add(reconcile.Request{NamespacedName: item.GetNamespacedName()})
 		}
@@ -501,81 +521,60 @@ func (r *SwitchReconciler) handleSubnetCreate(e event.CreateEvent, q workqueue.R
 }
 
 func (r *SwitchReconciler) handleSubnetUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+	log := r.Log.WithValues("switch-controller-watch", "subnet update")
+	var opts *client.ListOptions
+	var switches *switchv1beta1.SwitchList
+	var prevOwnerLabel, currOwnerLabel string
+	var prevOwnerLabelExists, currOwnerLabelExists bool
 	prevObj := e.ObjectOld.(*ipamv1alpha1.Subnet)
 	currObj := e.ObjectNew.(*ipamv1alpha1.Subnet)
 	if reflect.DeepEqual(prevObj.Labels, currObj.Labels) {
 		return
 	}
-	switches := &switchv1beta1.SwitchList{}
-	prevPurpose, prevLabelExists := prevObj.Labels[switchv1beta1.IPAMObjectPurposeLabel]
-	currPurpose, currLabelExists := currObj.Labels[switchv1beta1.IPAMObjectPurposeLabel]
-	switch {
-	case !prevLabelExists && !currLabelExists:
-		return
-	case prevLabelExists && !currLabelExists:
-		r.getSwitchesRelatedToSubnets(switches, prevObj, prevPurpose)
-	case !prevLabelExists && currLabelExists:
-		r.getSwitchesRelatedToSubnets(switches, currObj, currPurpose)
-	case prevLabelExists && currLabelExists:
-		if (prevPurpose == switchv1beta1.CIPAMPurposeSouthSubnet && prevPurpose == currPurpose) ||
-			(prevPurpose == switchv1beta1.CIPAMPurposeLoopback && prevPurpose == currPurpose) {
-			prevRef, prevLabelExists := prevObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
-			currRef, currLabelExists := currObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
-			if prevRef != currRef {
-				if prevLabelExists {
-					switchesRelatedToPrevState := &switchv1beta1.SwitchList{}
-					opts := &client.ListOptions{
-						FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: prevRef}),
-						Limit:         10,
-					}
-					if err := r.List(context.Background(), switchesRelatedToPrevState, opts); err != nil {
-						r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
-						return
-					}
-					switches.Items = append(switches.Items, switchesRelatedToPrevState.Items...)
-				}
-				if currLabelExists {
-					switchesRelatedToCurrState := &switchv1beta1.SwitchList{}
-					opts := &client.ListOptions{
-						FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: currRef}),
-						Limit:         10,
-					}
-					if err := r.List(context.Background(), switchesRelatedToCurrState, opts); err != nil {
-						r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
-						return
-					}
-					switches.Items = append(switches.Items, switchesRelatedToCurrState.Items...)
-				}
-			}
+	switches = &switchv1beta1.SwitchList{}
+	prevPurposeLabel, prevPurposeLabelExists := prevObj.Labels[switchv1beta1.IPAMObjectPurposeLabel]
+	if prevPurposeLabelExists {
+		if prevPurposeLabel == switchv1beta1.CIPAMPurposeSouthSubnet {
+			prevOwnerLabel, prevOwnerLabelExists = prevObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
 	}
-	for _, item := range switches.Items {
-		q.Add(reconcile.Request{NamespacedName: item.GetNamespacedName()})
-	}
-}
-
-func (r *SwitchReconciler) getSwitchesRelatedToSubnets(switches *switchv1beta1.SwitchList, obj *ipamv1alpha1.Subnet, purpose string) {
-	if purpose == switchv1beta1.CIPAMPurposeSwitchCarrier || purpose == switchv1beta1.CIPAMPurposeSwitchLoopbacks {
-		if err := r.List(context.Background(), switches); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", switches.Kind)
+	if prevOwnerLabelExists {
+		opts = &client.ListOptions{
+			FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: prevOwnerLabel}),
+			Limit:         100,
+		}
+		if err := r.List(context.Background(), switches, opts); err != nil {
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
+		for _, item := range switches.Items {
+			q.Add(reconcile.Request{NamespacedName: item.GetNamespacedName()})
+		}
 	}
-	if purpose == switchv1beta1.CIPAMPurposeSouthSubnet || purpose == switchv1beta1.CIPAMPurposeLoopback {
-		if v, ok := obj.Labels[switchv1beta1.IPAMObjectOwnerLabel]; ok {
-			opts := &client.ListOptions{
-				FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: v}),
-				Limit:         10,
-			}
-			if err := r.List(context.Background(), switches, opts); err != nil {
-				r.Log.Error(err, "failed to list resources", "kind", switches.Kind)
-				return
-			}
+
+	currPurposeLabel, currPurposeLabelExists := currObj.Labels[switchv1beta1.IPAMObjectPurposeLabel]
+	if currPurposeLabelExists {
+		if currPurposeLabel == switchv1beta1.CIPAMPurposeSouthSubnet {
+			currOwnerLabel, currOwnerLabelExists = currObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
+		}
+	}
+	if currOwnerLabelExists {
+		opts = &client.ListOptions{
+			FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: currOwnerLabel}),
+			Limit:         100,
+		}
+		if err := r.List(context.Background(), switches, opts); err != nil {
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
+			return
+		}
+		for _, item := range switches.Items {
+			q.Add(reconcile.Request{NamespacedName: item.GetNamespacedName()})
 		}
 	}
 }
 
 func (r *SwitchReconciler) handleIPCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
+	log := r.Log.WithValues("switch-controller-watch", "ip create")
 	var opts *client.ListOptions
 	var switches *switchv1beta1.SwitchList
 	var ipOwnerLabel string
@@ -584,10 +583,9 @@ func (r *SwitchReconciler) handleIPCreate(e event.CreateEvent, q workqueue.RateL
 	switches = &switchv1beta1.SwitchList{}
 	ipPurposeLabel, ipPurposeLabelExists := ip.Labels[switchv1beta1.IPAMObjectPurposeLabel]
 	if ipPurposeLabelExists {
-		switch ipPurposeLabel {
-		case switchv1beta1.CIPAMPurposeLoopback:
-			fallthrough
-		case switchv1beta1.CIPAMPurposeInterfaceIP:
+		if ipPurposeLabel == switchv1beta1.CIPAMPurposeLoopback ||
+			ipPurposeLabel == switchv1beta1.CIPAMPurposeInterfaceIP {
+
 			ipOwnerLabel, ipOwnerLabelExists = ip.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
 	}
@@ -597,7 +595,7 @@ func (r *SwitchReconciler) handleIPCreate(e event.CreateEvent, q workqueue.RateL
 			Limit:         100,
 		}
 		if err := r.List(context.Background(), switches, opts); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
 		for _, item := range switches.Items {
@@ -607,6 +605,7 @@ func (r *SwitchReconciler) handleIPCreate(e event.CreateEvent, q workqueue.RateL
 }
 
 func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+	log := r.Log.WithValues("switch-controller-watch", "ip update")
 	var opts *client.ListOptions
 	var switches *switchv1beta1.SwitchList
 	var prevOwnerLabel, currOwnerLabel string
@@ -619,10 +618,9 @@ func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateL
 	switches = &switchv1beta1.SwitchList{}
 	prevPurposeLabel, prevPurposeLabelExists := prevObj.Labels[switchv1beta1.IPAMObjectPurposeLabel]
 	if prevPurposeLabelExists {
-		switch prevPurposeLabel {
-		case switchv1beta1.CIPAMPurposeLoopback:
-			fallthrough
-		case switchv1beta1.CIPAMPurposeInterfaceIP:
+		if prevPurposeLabel == switchv1beta1.CIPAMPurposeLoopback ||
+			prevPurposeLabel == switchv1beta1.CIPAMPurposeInterfaceIP {
+
 			prevOwnerLabel, prevOwnerLabelExists = prevObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
 	}
@@ -632,7 +630,7 @@ func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateL
 			Limit:         100,
 		}
 		if err := r.List(context.Background(), switches, opts); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
 		for _, item := range switches.Items {
@@ -642,10 +640,9 @@ func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateL
 
 	currPurposeLabel, currPurposeLabelExists := currObj.Labels[switchv1beta1.IPAMObjectPurposeLabel]
 	if currPurposeLabelExists {
-		switch currPurposeLabel {
-		case switchv1beta1.CIPAMPurposeLoopback:
-			fallthrough
-		case switchv1beta1.CIPAMPurposeInterfaceIP:
+		if currPurposeLabel == switchv1beta1.CIPAMPurposeLoopback ||
+			currPurposeLabel == switchv1beta1.CIPAMPurposeInterfaceIP {
+
 			currOwnerLabel, currOwnerLabelExists = currObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
 	}
@@ -655,7 +652,7 @@ func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateL
 			Limit:         100,
 		}
 		if err := r.List(context.Background(), switches, opts); err != nil {
-			r.Log.Error(err, "failed to list resources", "kind", "SwitchList")
+			log.Error(err, "failed to list resources", "kind", "SwitchList")
 			return
 		}
 		for _, item := range switches.Items {

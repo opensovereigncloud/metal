@@ -17,7 +17,29 @@ spec:
     singular: switch
   scope: Namespaced
   versions:
-  - name: v1beta1
+  - additionalPrinterColumns:
+    - description: Total amount of non-management network interfaces
+      jsonPath: .status.switchPorts
+      name: Ports
+      type: integer
+    - description: switch's role
+      jsonPath: .status.role
+      name: Role
+      type: string
+    - description: Vertical level of switch connection
+      jsonPath: .status.connectionLevel
+      name: Connection Level
+      type: integer
+    - description: Switch state
+      jsonPath: .status.switch.state
+      name: Switch State
+      type: string
+    - description: Switch state message. Reports about any issues duiring reconciliation
+        process
+      jsonPath: .status.switch.message
+      name: Message
+      type: string
+    name: v1beta1
     schema:
       openAPIV3Schema:
         description: Switch is the Schema for switches API

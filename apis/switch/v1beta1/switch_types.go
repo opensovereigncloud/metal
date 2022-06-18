@@ -119,7 +119,7 @@ type SwitchStatus struct {
 	Role *string `json:"role,omitempty"`
 	// ConnectionLevel refers to switch's current position in connection hierarchy
 	//+kubebuilder:validation:Optional
-	ConnectionLevel uint8 `json:"connectionLevel,omitempty"`
+	ConnectionLevel uint8 `json:"connectionLevel"`
 	// Interfaces refers to switch's interfaces configuration
 	//+kubebuilder:validation:Optional
 	Interfaces map[string]*InterfaceSpec `json:"interfaces,omitempty"`
@@ -279,6 +279,11 @@ type ConfigAgentStateSpec struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=sw
 //+kubebuilder:storageversion
+//+kubebuilder:printcolumn:name="Ports",type=integer,JSONPath=`.status.switchPorts`,description="Total amount of non-management network interfaces"
+//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.status.role`,description="switch's role"
+//+kubebuilder:printcolumn:name="Connection Level",type=integer,JSONPath=`.status.connectionLevel`,description="Vertical level of switch connection"
+//+kubebuilder:printcolumn:name="Switch State",type=string,JSONPath=`.status.switch.state`,description="Switch state"
+//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.switch.message`,description="Switch state message. Reports about any issues duiring reconciliation process"
 
 // Switch is the Schema for switches API
 type Switch struct {
@@ -298,6 +303,10 @@ type SwitchList struct {
 	Items           []Switch `json:"items"`
 }
 
+func init() {
+	SchemeBuilder.Register(&Switch{}, &SwitchList{})
+}
+
 // GetNamespacedName returns object's name and namespace as types.NamespacedName
 func (in *Switch) GetNamespacedName() types.NamespacedName {
 	return types.NamespacedName{
@@ -308,6 +317,19 @@ func (in *Switch) GetNamespacedName() types.NamespacedName {
 
 func (in *Switch) SetState(state string) {
 	in.Status.SwitchState.State = MetalAPIString(state)
+}
+
+func (in *Switch) SetRole() {
+	in.Status.Role = MetalAPIString(CSwitchRoleSpine)
+	for _, data := range in.Status.Interfaces {
+		if data.Peer == nil {
+			continue
+		}
+		if data.Peer.Type == CPeerTypeMachine {
+			in.Status.Role = MetalAPIString(CSwitchRoleLeaf)
+			break
+		}
+	}
 }
 
 func (in *Switch) StateEqualsTo(state string) bool {
@@ -1119,6 +1141,69 @@ func (in *InterfaceSpec) RequestAddress() (ips []net.IPNet) {
 	return
 }
 
-func init() {
-	SchemeBuilder.Register(&Switch{}, &SwitchList{})
+func (in *Switch) LabelsOK() bool {
+	if in.Labels == nil {
+		return false
+	}
+	if _, ok := in.Labels[InventoriedLabel]; !ok {
+		return false
+	}
+	if _, ok := in.Labels[InventoryRefLabel]; !ok {
+		return false
+	}
+	return true
+}
+
+func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
+	appliedLabels := map[string]string{
+		InventoriedLabel:  "true",
+		InventoryRefLabel: inv.Name,
+		LabelChassisId: strings.ReplaceAll(
+			func() string {
+				var chassisID string
+				for _, nic := range inv.Spec.NICs {
+					if nic.Name == "eth0" {
+						chassisID = nic.MACAddress
+					}
+				}
+				return chassisID
+			}(), ":", "-",
+		),
+	}
+	if in.Labels == nil {
+		in.Labels = make(map[string]string)
+	}
+	for k, v := range appliedLabels {
+		in.Labels[k] = v
+	}
+}
+
+func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
+	appliedAnnotations := map[string]string{
+		CHardwareChassisIdAnnotation: strings.ReplaceAll(
+			func() string {
+				var chassisID string
+				for _, nic := range inv.Spec.NICs {
+					if nic.Name == "eth0" {
+						chassisID = nic.MACAddress
+					}
+				}
+				return chassisID
+			}(), ":", "",
+		),
+		CHardwareSerialAnnotation:       inv.Spec.System.SerialNumber,
+		CHardwareManufacturerAnnotation: inv.Spec.System.Manufacturer,
+		CHardwareSkuAnnotation:          inv.Spec.System.ProductSKU,
+		CSoftwareOnieAnnotation:         "false",
+		CSoftwareAsicAnnotation:         inv.Spec.Distro.AsicType,
+		CSoftwareVersionAnnotation:      inv.Spec.Distro.CommitId,
+		CSoftwareOSAnnotation:           "sonic",
+		CSoftwareHostnameAnnotation:     inv.Spec.Host.Name,
+	}
+	if in.Annotations == nil {
+		in.Annotations = make(map[string]string)
+	}
+	for k, v := range appliedAnnotations {
+		in.Annotations[k] = v
+	}
 }
