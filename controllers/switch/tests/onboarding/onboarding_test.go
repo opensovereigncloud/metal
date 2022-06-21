@@ -75,8 +75,8 @@ var _ = Describe("Onboarding test", func() {
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: onmetal, Name: sampleInventory.Name}, onboardedSwitch)).NotTo(HaveOccurred())
 				g.Expect(onboardedSwitch.Labels).NotTo(BeNil())
+				g.Expect(reflect.DeepEqual(onboardingLabels, onboardedSwitch.Labels)).Should(BeTrue())
 			}, timeout, interval).Should(Succeed())
-			Expect(reflect.DeepEqual(onboardingLabels, onboardedSwitch.Labels)).Should(BeTrue())
 		})
 	})
 
@@ -137,9 +137,9 @@ var _ = Describe("Onboarding test", func() {
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: onmetal, Name: sampleSwitch.Name}, sampleSwitch)).NotTo(HaveOccurred())
 				g.Expect(sampleSwitch.Labels).NotTo(BeNil())
 				g.Expect(sampleSwitch.Annotations).NotTo(BeNil())
+				g.Expect(reflect.DeepEqual(onboardingLabels, sampleSwitch.Labels)).Should(BeTrue())
+				g.Expect(reflect.DeepEqual(onboardingAnnotations, sampleSwitch.Annotations)).Should(BeTrue())
 			}, timeout, interval).Should(Succeed())
-			Expect(reflect.DeepEqual(onboardingLabels, sampleSwitch.Labels)).Should(BeTrue())
-			Expect(reflect.DeepEqual(onboardingAnnotations, sampleSwitch.Annotations)).Should(BeTrue())
 		})
 	})
 
@@ -198,9 +198,9 @@ var _ = Describe("Onboarding test", func() {
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: onmetal, Name: sampleSwitch.Name}, sampleSwitch)).NotTo(HaveOccurred())
 				g.Expect(sampleSwitch.Labels).NotTo(BeNil())
 				g.Expect(sampleSwitch.Annotations).NotTo(BeNil())
+				g.Expect(reflect.DeepEqual(onboardingLabels, sampleSwitch.Labels)).Should(BeTrue())
+				g.Expect(reflect.DeepEqual(onboardingAnnotations, sampleSwitch.Annotations)).Should(BeTrue())
 			}, timeout, interval).Should(Succeed())
-			Expect(reflect.DeepEqual(onboardingLabels, sampleSwitch.Labels)).Should(BeTrue())
-			Expect(reflect.DeepEqual(onboardingAnnotations, sampleSwitch.Annotations)).Should(BeTrue())
 		})
 	})
 
@@ -251,8 +251,8 @@ var _ = Describe("Onboarding test", func() {
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: onmetal, Name: sampleInventory.Name}, onboardedSwitch)).NotTo(HaveOccurred())
 				g.Expect(onboardedSwitch.Labels).NotTo(BeNil())
+				g.Expect(reflect.DeepEqual(onboardingLabels, onboardedSwitch.Labels)).Should(BeTrue())
 			}, timeout, interval).Should(Succeed())
-			Expect(reflect.DeepEqual(onboardingLabels, onboardedSwitch.Labels)).Should(BeTrue())
 			Expect(k8sClient.Delete(ctx, onboardedSwitch)).NotTo(HaveOccurred())
 
 			samplePath := filepath.Join("..", "samples", "switches", "spine-1.switch.yaml")
@@ -267,9 +267,9 @@ var _ = Describe("Onboarding test", func() {
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: onmetal, Name: sampleSwitch.Name}, sampleSwitch)).NotTo(HaveOccurred())
 				g.Expect(sampleSwitch.Labels).NotTo(BeNil())
 				g.Expect(sampleSwitch.Annotations).NotTo(BeNil())
+				g.Expect(reflect.DeepEqual(onboardingLabels, sampleSwitch.Labels)).Should(BeTrue())
+				g.Expect(reflect.DeepEqual(onboardingAnnotations, sampleSwitch.Annotations)).Should(BeTrue())
 			}, timeout, interval).Should(Succeed())
-			Expect(reflect.DeepEqual(onboardingLabels, sampleSwitch.Labels)).Should(BeTrue())
-			Expect(reflect.DeepEqual(onboardingAnnotations, sampleSwitch.Annotations)).Should(BeTrue())
 		})
 	})
 })
