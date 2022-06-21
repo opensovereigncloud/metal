@@ -143,6 +143,67 @@ var _ = Describe("Onboarding test", func() {
 		})
 	})
 
+	Context("Onboard existing switch with empty system data in inventory", func() {
+		var (
+			sampleSwitch    *switchv1beta1.Switch
+			sampleInventory *inventoryv1alpha1.Inventory
+		)
+		JustBeforeEach(func() {
+			samplePath := filepath.Join("..", "samples", "switches", "spine-1.switch.yaml")
+			sampleBytes, err := ioutil.ReadFile(samplePath)
+			Expect(err).NotTo(HaveOccurred())
+			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+			sampleSwitch = &switchv1beta1.Switch{}
+			Expect(sampleYAML.Decode(sampleSwitch)).NotTo(HaveOccurred())
+			Expect(k8sClient.Create(ctx, sampleSwitch)).NotTo(HaveOccurred())
+		})
+
+		It("Should update existing switch with proper labels and annotations", func() {
+			Expect(sampleSwitch.Labels["metalapi.onmetal.de/inventoried"]).Should(BeEmpty())
+
+			samplePath := filepath.Join("..", "samples", "inventories", "spine-1.inventory.yaml")
+			sampleBytes, err := ioutil.ReadFile(samplePath)
+			Expect(err).NotTo(HaveOccurred())
+			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+			sampleInventory = &inventoryv1alpha1.Inventory{}
+			Expect(sampleYAML.Decode(sampleInventory)).NotTo(HaveOccurred())
+			sampleInventory.Spec.System = nil
+			Expect(k8sClient.Create(ctx, sampleInventory)).NotTo(HaveOccurred())
+
+			onboardingLabels := map[string]string{
+				"metalapi.onmetal.de/inventoried":   "true",
+				"metalapi.onmetal.de/inventory-ref": sampleInventory.Name,
+				"metalapi.onmetal.de/chassis-id":    "68-21-5f-47-17-6e",
+			}
+			onboardingAnnotations := map[string]string{
+				switchv1beta1.CHardwareChassisIdAnnotation: strings.ReplaceAll(
+					func() string {
+						var chassisID string
+						for _, nic := range sampleInventory.Spec.NICs {
+							if nic.Name == "eth0" {
+								chassisID = nic.MACAddress
+							}
+						}
+						return chassisID
+					}(), ":", "",
+				),
+				switchv1beta1.CSoftwareOnieAnnotation:     "false",
+				switchv1beta1.CSoftwareAsicAnnotation:     sampleInventory.Spec.Distro.AsicType,
+				switchv1beta1.CSoftwareVersionAnnotation:  sampleInventory.Spec.Distro.CommitId,
+				switchv1beta1.CSoftwareOSAnnotation:       "sonic",
+				switchv1beta1.CSoftwareHostnameAnnotation: sampleInventory.Spec.Host.Name,
+			}
+
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: onmetal, Name: sampleSwitch.Name}, sampleSwitch)).NotTo(HaveOccurred())
+				g.Expect(sampleSwitch.Labels).NotTo(BeNil())
+				g.Expect(sampleSwitch.Annotations).NotTo(BeNil())
+			}, timeout, interval).Should(Succeed())
+			Expect(reflect.DeepEqual(onboardingLabels, sampleSwitch.Labels)).Should(BeTrue())
+			Expect(reflect.DeepEqual(onboardingAnnotations, sampleSwitch.Annotations)).Should(BeTrue())
+		})
+	})
+
 	Context("Onboard switch created after inventory reconciliation finished", func() {
 		var (
 			sampleSwitch    *switchv1beta1.Switch

@@ -1179,31 +1179,38 @@ func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
 }
 
 func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
-	appliedAnnotations := map[string]string{
-		CHardwareChassisIdAnnotation: strings.ReplaceAll(
-			func() string {
-				var chassisID string
-				for _, nic := range inv.Spec.NICs {
-					if nic.Name == "eth0" {
-						chassisID = nic.MACAddress
-					}
-				}
-				return chassisID
-			}(), ":", "",
-		),
-		CHardwareSerialAnnotation:       inv.Spec.System.SerialNumber,
-		CHardwareManufacturerAnnotation: inv.Spec.System.Manufacturer,
-		CHardwareSkuAnnotation:          inv.Spec.System.ProductSKU,
-		CSoftwareOnieAnnotation:         "false",
-		CSoftwareAsicAnnotation:         inv.Spec.Distro.AsicType,
-		CSoftwareVersionAnnotation:      inv.Spec.Distro.CommitId,
-		CSoftwareOSAnnotation:           "sonic",
-		CSoftwareHostnameAnnotation:     inv.Spec.Host.Name,
+	hardwareAnnotations := make(map[string]string)
+	softwareAnnotations := make(map[string]string)
+	if inv.Spec.System != nil {
+		hardwareAnnotations[CHardwareSerialAnnotation] = inv.Spec.System.SerialNumber
+		hardwareAnnotations[CHardwareManufacturerAnnotation] = inv.Spec.System.Manufacturer
+		hardwareAnnotations[CHardwareSkuAnnotation] = inv.Spec.System.ProductSKU
+	}
+	if inv.Spec.Distro != nil {
+		softwareAnnotations[CSoftwareOnieAnnotation] = "false"
+		softwareAnnotations[CSoftwareAsicAnnotation] = inv.Spec.Distro.AsicType
+		softwareAnnotations[CSoftwareVersionAnnotation] = inv.Spec.Distro.CommitId
+		softwareAnnotations[CSoftwareOSAnnotation] = "sonic"
+		softwareAnnotations[CSoftwareHostnameAnnotation] = inv.Spec.Host.Name
 	}
 	if in.Annotations == nil {
 		in.Annotations = make(map[string]string)
 	}
-	for k, v := range appliedAnnotations {
+	in.Annotations[CHardwareChassisIdAnnotation] = strings.ReplaceAll(
+		func() string {
+			var chassisID string
+			for _, nic := range inv.Spec.NICs {
+				if nic.Name == "eth0" {
+					chassisID = nic.MACAddress
+				}
+			}
+			return chassisID
+		}(), ":", "",
+	)
+	for k, v := range hardwareAnnotations {
+		in.Annotations[k] = v
+	}
+	for k, v := range softwareAnnotations {
 		in.Annotations[k] = v
 	}
 }
