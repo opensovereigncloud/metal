@@ -49,9 +49,6 @@ rules:
   resources:
   - ips
   verbs:
-  - create
-  - delete
-  - deletecollection
   - get
   - list
   - watch
@@ -61,15 +58,13 @@ rules:
   - ips/status
   verbs:
   - get
-  - update
+  - list
+  - watch
 - apiGroups:
   - ipam.onmetal.de
   resources:
   - subnets
   verbs:
-  - create
-  - delete
-  - deletecollection
   - get
   - list
   - watch
@@ -79,7 +74,8 @@ rules:
   - subnets/status
   verbs:
   - get
-  - update
+  - list
+  - watch
 - apiGroups:
   - machine.onmetal.de
   resources:
@@ -130,8 +126,10 @@ rules:
   - inventories/status
   verbs:
   - get
+  - list
   - patch
   - update
+  - watch
 - apiGroups:
   - machine.onmetal.de
   resources:
@@ -265,32 +263,11 @@ rules:
 - apiGroups:
   - switch.onmetal.de
   resources:
-  - events
-  verbs:
-  - create
-  - patch
-- apiGroups:
-  - switch.onmetal.de
-  resources:
-  - switchassignments
+  - switchconfigs
   verbs:
   - get
   - list
-  - patch
-  - update
   - watch
-- apiGroups:
-  - switch.onmetal.de
-  resources:
-  - switchassignments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - switch.onmetal.de
-  resources:
-  - switchassignments/status
-  verbs:
-  - update
 - apiGroups:
   - switch.onmetal.de
   resources:

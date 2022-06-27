@@ -184,6 +184,11 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			if err != nil {
 				log.Error(err, "unable to check match to provided size; will remove match if present", "size", sizeNamespacedName)
 			}
+			// for some reason tests paniced due to assignment to nil map
+			// despite of the check above (L101-103)
+			if inv.Labels == nil {
+				inv.Labels = map[string]string{}
+			}
 			if matches {
 				log.Info("match between inventory and size found", "inventory", req.NamespacedName, "size", sizeNamespacedName)
 				inv.Labels[labelName] = "true"

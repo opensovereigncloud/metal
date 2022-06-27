@@ -34,6 +34,8 @@ spec:
       jsonPath: .status.state
       name: State
       type: string
+    deprecated: true
+    deprecationWarning: switch.onmetal.de/v1alpha1 Switch is deprecated
     name: v1alpha1
     schema:
       openAPIV3Schema:

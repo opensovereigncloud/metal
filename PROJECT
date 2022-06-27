@@ -1,41 +1,68 @@
-domain: machine.onmetal.de
-layout: go.kubebuilder.io/v3
+domain: onmetal.de
+layout:
+  - go.kubebuilder.io/v3
 multigroup: true
 projectName: metal-api
 repo: github.com/onmetal/metal-api
 resources:
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: machine.onmetal.de
-  kind: Machine
-  path: github.com/onmetal/metal-api/apis/machine/v1alpha2
-  version: v1alpha2
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  group: machine
-  kind: Inventory
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  group: machine
-  kind: Aggregate
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  group: machine
-  kind: Size
-  version: v1alpha1
-- controller: true
-  domain: machine.onmetal.de
-  group: machine
-  kind: Ignition
-  version: v1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    group: machine
+    kind: Machine
+    path: github.com/onmetal/metal-api/apis/machine/v1alpha2
+    version: v1alpha2
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    group: machine
+    kind: Inventory
+    version: v1alpha1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    group: machine
+    kind: Aggregate
+    version: v1alpha1
+    webhooks:
+      validation: true
+      webhookVersion: v1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    group: machine
+    kind: Size
+    version: v1alpha1
+    webhooks:
+      validation: true
+      webhookVersion: v1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    group: switch
+    kind: Switch
+    path: github.com/onmetal/metal-api/apis/switch/v1beta1
+    version: v1beta1
+    webhooks:
+      defaulting: true
+      validation: true
+      webhookVersion: v1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    domain: onmetal.de
+    group: switch
+    kind: SwitchConfig
+    path: github.com/onmetal/metal-api/apis/switch/v1beta1
+    version: v1beta1
+  - controller: true
+    domain: machine.onmetal.de
+    group: machine
+    kind: Ignition
+    version: v1
 version: "3"

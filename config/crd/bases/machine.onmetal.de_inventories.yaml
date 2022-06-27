@@ -616,6 +616,15 @@ spec:
               computed:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              inventoryStatuses:
+                properties:
+                  ready:
+                    type: boolean
+                  requestsCount:
+                    type: integer
+                required:
+                - ready
+                type: object
             required:
             - computed
             type: object

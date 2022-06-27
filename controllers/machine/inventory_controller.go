@@ -23,21 +23,13 @@ import (
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	machinerr "github.com/onmetal/metal-api/pkg/errors"
-	"github.com/onmetal/metal-api/pkg/inventory"
 	"github.com/onmetal/metal-api/pkg/provider"
-	apierr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-)
-
-const (
-	machineSizeName = "machine"
 )
 
 type InventoryReconciler struct {
@@ -59,7 +51,6 @@ func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
-		CreateFunc: r.createMachineObject,
 		UpdateFunc: isUpdatedOrDeleted,
 		DeleteFunc: r.updateMachineStatusOnDelete,
 	}
@@ -70,44 +61,7 @@ func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/finalizers,verbs=update
 
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("inventory", req.NamespacedName)
-
-	i, err := inventory.New(ctx, r.Client, reqLogger, r.Recorder, req)
-	if err != nil {
-		return machinerr.GetResultForError(reqLogger, err)
-	}
-
-	machineObj := &machinev1alpha2.Machine{}
-	if getErr := provider.GetObject(ctx, i.Spec.System.ID, r.Namespace, r.Client, machineObj); getErr != nil {
-		return machinerr.GetResultForError(reqLogger, getErr)
-	}
-
-	if err := i.UpdateMachine(machineObj); err != nil {
-		return machinerr.GetResultForError(reqLogger, err)
-	}
-
-	return machinerr.GetResultForError(reqLogger, nil)
-}
-
-func (r *InventoryReconciler) createMachineObject(e event.CreateEvent) bool {
-	obj, ok := e.Object.(*inventoriesv1alpha1.Inventory)
-	if !ok {
-		r.Log.Info("inventory cast failed")
-		return false
-	}
-
-	if _, ok := obj.Labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]; !ok {
-		return false
-	}
-
-	ctx := context.Background()
-
-	machineObj := prepareMachine(obj.Spec.System.ID, r.Namespace)
-	if err := r.Client.Create(ctx, machineObj); err != nil && !apierr.IsAlreadyExists(err) {
-		r.Log.Info("machine creation failed", "uuid", obj.Spec.System.ID, "error", err)
-		return false
-	}
-	return true
+	return ctrl.Result{}, nil
 }
 
 func isUpdatedOrDeleted(e event.UpdateEvent) bool {
@@ -143,15 +97,4 @@ func (r *InventoryReconciler) updateMachineStatusOnDelete(e event.DeleteEvent) b
 		return false
 	}
 	return false
-}
-
-func prepareMachine(name, namespace string) *machinev1alpha2.Machine {
-	return &machinev1alpha2.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    map[string]string{machinev1alpha2.UUIDLabel: name},
-		},
-		Spec: machinev1alpha2.MachineSpec{InventoryRequested: true},
-	}
 }

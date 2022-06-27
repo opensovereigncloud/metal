@@ -19,9 +19,7 @@ package controllers
 import (
 	"context"
 
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,76 +28,12 @@ import (
 )
 
 var _ = Describe("machine-controller", func() {
-	var (
-		name      = "a969952c-3475-2b82-a85c-84d8b4f8cd2d"
-		namespace = "default"
-	)
-
 	Context("Controller Test", func() {
-		It("Test machine creation and update", func() {
-			testMachine(name, namespace)
-		})
 		It("Test machine onboarding ", func() {
 			testMachineOOB()
 		})
 	})
 })
-
-func testMachine(name, namespace string) {
-	ctx := context.Background()
-	inventory := prepareInventory(name, namespace)
-	switches := prepareSwitch(namespace)
-
-	By("Expect successful switch creation")
-	Expect(k8sClient.Create(ctx, switches)).Should(BeNil())
-
-	By("Expect successful switch status update")
-	switches.Status = getSwitchesStatus()
-	Expect(k8sClient.Status().Update(ctx, switches)).To(Succeed())
-
-	By("Expect successful inventory creation")
-	Expect(k8sClient.Create(ctx, inventory)).Should(BeNil())
-
-	machine := &machinev1alpha2.Machine{}
-	By("Expect successful machine creation")
-	Eventually(func() bool {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
-			return false
-		}
-		return true
-	}, timeout, interval).Should(BeTrue())
-
-	By("Inspecting machine properties")
-	Eventually(func(g Gomega) {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
-
-		interfaces := 0
-		for i := range machine.Status.Interfaces {
-			for nic := range inventory.Spec.NICs {
-				if inventory.Spec.NICs[nic].Name != machine.Status.Interfaces[i].Name {
-					continue
-				}
-				interfaces++
-			}
-		}
-		Expect(interfaces).To(Equal(len(machine.Status.Interfaces)))
-		Expect(machine.Status.OOB.Exist).To(BeFalse())
-	}, timeout, interval).Should(Succeed())
-
-	By("Expecting successful inventory deletion")
-	Expect(k8sClient.Delete(ctx, inventory)).To(Succeed())
-
-	Eventually(func() bool {
-		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine)).Should(Succeed())
-		return machine.Status.Inventory.Exist
-	}, timeout, interval).Should(BeFalse())
-
-	By("Expecting successful switch deletion")
-	Expect(k8sClient.Delete(ctx, switches)).Should(Succeed())
-
-	By("Trying machine object deletion")
-	Expect(k8sClient.Delete(ctx, machine)).Should(Succeed())
-}
 
 func testMachineOOB() {
 	var (
@@ -144,130 +78,6 @@ func testMachineOOB() {
 		}
 		return m.Status.OOB.Exist
 	}, timeout, interval).Should(BeFalse())
-}
-
-func prepareInventory(name, namespace string) *inventoriesv1alpha1.Inventory {
-	return &inventoriesv1alpha1.Inventory{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"machine.onmetal.de/size-machine": "true",
-			},
-		},
-		Spec: prepareSpecForInventory(name),
-	}
-}
-
-func prepareSpecForInventory(name string) inventoriesv1alpha1.InventorySpec {
-	return inventoriesv1alpha1.InventorySpec{
-		System: &inventoriesv1alpha1.SystemSpec{
-			ID: name,
-		},
-		Host: &inventoriesv1alpha1.HostSpec{
-			Name: "node1",
-		},
-		Blocks: []inventoriesv1alpha1.BlockSpec{},
-		Memory: &inventoriesv1alpha1.MemorySpec{},
-		CPUs:   []inventoriesv1alpha1.CPUSpec{},
-		NICs: []inventoriesv1alpha1.NICSpec{
-			{
-				Name: "enp0s31f6",
-				LLDPs: []inventoriesv1alpha1.LLDPSpec{
-					{
-						ChassisID:         "3c:2c:99:9d:cd:48",
-						SystemName:        "EC1817001226",
-						SystemDescription: "ECS4100-52T",
-						PortID:            "3c:2c:99:9d:cd:77",
-						PortDescription:   "Ethernet100",
-					},
-				},
-			},
-			{
-				Name: "enp1s32f6",
-				LLDPs: []inventoriesv1alpha1.LLDPSpec{
-					{
-						ChassisID:         "3c:2c:99:9d:cd:48",
-						SystemName:        "EC1817001226",
-						SystemDescription: "ECS4100-52T",
-						PortID:            "3c:2c:99:9d:cd:77",
-						PortDescription:   "Ethernet102",
-					},
-				},
-			},
-		},
-	}
-}
-
-func prepareSwitch(namespace string) *switchv1alpha1.Switch {
-	return &switchv1alpha1.Switch{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "switch",
-			Namespace: namespace,
-			Labels: map[string]string{
-				switchv1alpha1.LabelChassisId: "3c-2c-99-9d-cd-48",
-			},
-		},
-		Spec: switchv1alpha1.SwitchSpec{
-			Hostname: "switch1",
-			Location: &switchv1alpha1.LocationSpec{
-				Room: "room1",
-				Row:  1,
-				Rack: 2,
-				HU:   3,
-			},
-			Chassis: &switchv1alpha1.ChassisSpec{
-				ChassisID: "3c:2c:99:9d:cd:48",
-			},
-			SoftwarePlatform: &switchv1alpha1.SoftwarePlatformSpec{},
-		},
-	}
-}
-
-func getSwitchesStatus() switchv1alpha1.SwitchStatus {
-	return switchv1alpha1.SwitchStatus{
-		TotalPorts:      100,
-		SwitchPorts:     90,
-		Role:            "leaf",
-		ConnectionLevel: 2,
-		Interfaces: map[string]*switchv1alpha1.InterfaceSpec{
-			"Ethernet100": {
-				MACAddress: "3c:2c:99:9d:cd:48",
-				FEC:        "none",
-				IPv4: &switchv1alpha1.IPAddressSpec{
-					Address: "100.64.4.70/30",
-				},
-				IPv6: &switchv1alpha1.IPAddressSpec{
-					Address: "64:ff9b:1::220/127",
-				},
-				MTU:       1500,
-				Speed:     10000,
-				Lanes:     1,
-				State:     "up",
-				Direction: "north",
-			},
-			"Ethernet102": {
-				MACAddress: "3c:2c:99:9d:cd:48",
-				FEC:        "none",
-				IPv4: &switchv1alpha1.IPAddressSpec{
-					Address: "100.64.6.70/30",
-				},
-				IPv6: &switchv1alpha1.IPAddressSpec{
-					Address: "64:ff9b:1::220/127",
-				},
-				MTU:       1500,
-				Speed:     10000,
-				Lanes:     1,
-				State:     "up",
-				Direction: "north",
-			},
-		},
-		Configuration: &switchv1alpha1.ConfigurationSpec{
-			Managed: true,
-			State:   "applied",
-		},
-		State: "ready",
-	}
 }
 
 func prepareOOB(name, namespace string) *oobv1.Machine {

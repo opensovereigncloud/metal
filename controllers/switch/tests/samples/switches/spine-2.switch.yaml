@@ -1,0 +1,13 @@
+apiVersion: switch.onmetal.de/v1beta1
+kind: Switch
+metadata:
+  name: spine-2
+  namespace: onmetal
+  annotations:
+    hardware/chassis-id: 68215f470d6e
+spec:
+  uuid: "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b"
+  topSpine: true
+  managed: true
+  cordon: false
+status: {}

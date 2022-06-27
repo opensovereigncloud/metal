@@ -422,7 +422,13 @@ type DistroSpec struct {
 // +kubebuilder:object:generate=true
 type InventoryStatus struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
-	Computed AggregationResults `json:"computed"`
+	Computed          AggregationResults `json:"computed"`
+	InventoryStatuses InventoryStatuses  `json:"inventoryStatuses,omitempty"`
+}
+
+type InventoryStatuses struct {
+	Ready         bool `json:"ready"`
+	RequestsCount int  `json:"requestsCount,omitempty"`
 }
 
 // Inventory is the Schema for the inventories API

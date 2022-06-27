@@ -20,23 +20,15 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	metalerr "github.com/onmetal/metal-api/pkg/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Machiner interface {
-	FindVacantMachine(*machinev1alpha2.MachineAssignment) (*machinev1alpha2.Machine, error)
 	PatchSpec(*machinev1alpha2.Machine) error
 	PatchStatus(*machinev1alpha2.Machine) error
 }
-
-const pageListLimit = 1000
 
 type Machine struct {
 	ctrlclient.Client
@@ -54,45 +46,6 @@ func New(ctx context.Context, c ctrlclient.Client, l logr.Logger,
 		log:      l,
 		recorder: r,
 	}
-}
-
-func (m *Machine) FindVacantMachine(metalRequest *machinev1alpha2.MachineAssignment) (*machinev1alpha2.Machine, error) {
-	size := metalRequest.Spec.MachineClass.Name
-	metalSelector, err := getLabelSelectorForAvailableMachine(size)
-	if err != nil {
-		return &machinev1alpha2.Machine{}, err
-	}
-
-	continueToken := ""
-	metalList := &machinev1alpha2.MachineList{}
-	for {
-		opts := &client.ListOptions{
-			LabelSelector: metalSelector,
-			Limit:         pageListLimit,
-			Continue:      continueToken,
-		}
-
-		if err := m.Client.List(m.ctx, metalList, opts); err != nil {
-			return &machinev1alpha2.Machine{}, err
-		}
-
-		for m := range metalList.Items {
-			if !isTolerated(metalRequest.Spec.Tolerations, metalList.Items[m].Spec.Taints) {
-				continue
-			}
-			if metalList.Items[m].Status.Health != machinev1alpha2.MachineStateHealthy {
-				continue
-			}
-			return &metalList.Items[m], nil
-		}
-
-		if metalList.Continue == "" || metalList.RemainingItemCount == nil ||
-			*metalList.RemainingItemCount == 0 {
-			break
-		}
-	}
-
-	return &machinev1alpha2.Machine{}, metalerr.NotFound("machines for request")
 }
 
 func (m *Machine) PatchSpec(machine *machinev1alpha2.Machine) error {
@@ -139,60 +92,5 @@ func (m *Machine) updateHealthStatus(machine *machinev1alpha2.Machine) {
 	} else {
 		machine.Status.Health = machinev1alpha2.MachineStateHealthy
 		machine.Status.Orphaned = false
-	}
-}
-
-func getLabelSelectorForAvailableMachine(size string) (labels.Selector, error) {
-	sizeLabel := inventoriesv1alpha1.CLabelPrefix + size
-	labelSizeRequirement, err := labels.NewRequirement(sizeLabel, selection.Exists, []string{})
-	if err != nil {
-		return nil, err
-	}
-
-	labelNotReserved, err := labels.NewRequirement(machinev1alpha2.LeasedLabel, selection.DoesNotExist, []string{})
-	if err != nil {
-		return nil, err
-	}
-	return labels.NewSelector().
-			Add(*labelSizeRequirement).
-			Add(*labelNotReserved),
-		nil
-}
-
-func isTolerated(tolerations []machinev1alpha2.Toleration, taints []machinev1alpha2.Taint) bool {
-	if len(taints) == 0 {
-		return true
-	}
-	if len(tolerations) != len(taints) {
-		return false
-	}
-	tolerated := 0
-	for t := range tolerations {
-		for taint := range taints {
-			if !toleratesTaint(tolerations[t], taints[taint]) {
-				continue
-			}
-			tolerated++
-		}
-	}
-	return tolerated == len(taints)
-}
-
-func toleratesTaint(toleration machinev1alpha2.Toleration, taint machinev1alpha2.Taint) bool {
-	if toleration.Effect != taint.Effect {
-		return false
-	}
-
-	if toleration.Key != taint.Key {
-		return false
-	}
-
-	switch toleration.Operator {
-	case "", machinev1alpha2.TolerationOpEqual: // empty operator means Equal
-		return toleration.Value == taint.Value
-	case machinev1alpha2.TolerationOpExists:
-		return true
-	default:
-		return false
 	}
 }

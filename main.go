@@ -24,16 +24,21 @@ import (
 	"strconv"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	oobv1 "github.com/onmetal/oob-controller/api/v1"
+
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1lpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	switchv1alpha1 "github.com/onmetal/metal-api/apis/switches/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
 	schedulercontrollers "github.com/onmetal/metal-api/controllers/machine-scheduler"
-	switchcontroller "github.com/onmetal/metal-api/controllers/switches"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
+	switchcontroller "github.com/onmetal/metal-api/controllers/switch/v1beta1"
+
+	"github.com/onmetal/metal-api/internal/repository"
+	"github.com/onmetal/metal-api/internal/usecase"
 
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,6 +59,7 @@ func main() {
 	addToScheme()
 	webhookPort, err := strconv.Atoi(os.Getenv("WEBHOOK_PORT"))
 	if err != nil {
+		setupLog.Info("unable to read `WEBHOOK_PORT` env", "error", err)
 		webhookPort = 9443
 	}
 
@@ -87,6 +93,12 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	envNS := os.Getenv("NAMESPACE")
+	if namespace == "default" && envNS != "" {
+		namespace = os.Getenv("NAMESPACE")
+	}
+
 	startReconcilers(mgr, namespace)
 	addHandlers(mgr, profiling)
 	setupLog.Info("starting manager")
@@ -101,14 +113,29 @@ func addToScheme() {
 	utilruntime.Must(benchv1alpha3.AddToScheme(scheme))
 	utilruntime.Must(machinev1lpha2.AddToScheme(scheme))
 	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(switchv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(oobv1.AddToScheme(scheme))
 	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(switchv1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
 func startReconcilers(mgr ctrl.Manager, namespace string) {
 	var err error
+
+	deviceOnboardingRepo := repository.NewOnboardingRepo(mgr.GetClient())
+	deviceOnboardingUseCase := usecase.NewDeviceOnboarding(deviceOnboardingRepo)
+
+	serverOnboardingRepo := repository.NewServerOnboardingRepo(mgr.GetClient())
+	serverOnboardingUseCase := usecase.NewServerOnboarding(serverOnboardingRepo)
+
+	schedulerRepo := repository.NewMachineSchedulerRepo(mgr.GetClient())
+	reserverRepo := repository.NewMachineReserverRepo(mgr.GetClient())
+	schedulerUseCase := usecase.NewSchedulerUseCase(schedulerRepo, reserverRepo)
+
+	machineReserverUseCase := usecase.NewReserverUseCase(reserverRepo)
+
+	assignmentSyncRepo := repository.NewAssignmentSynchronizationRepo(mgr.GetClient())
+	syncUseCase := usecase.NewSyncUseCase(assignmentSyncRepo)
 
 	if err = (&benchmarkcontroller.Reconciler{
 		Client: mgr.GetClient(),
@@ -146,7 +173,7 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-OOB")
 		os.Exit(1)
 	}
-	if err = (&switchcontroller.InventoryReconciler{
+	if err = (&switchcontroller.OnboardingReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch-onboarding"),
 		Scheme: mgr.GetScheme(),
@@ -160,14 +187,6 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch")
-		os.Exit(1)
-	}
-	if err = (&switchcontroller.SwitchAssignmentReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SwitchAssignment"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SwitchAssignment")
 		os.Exit(1)
 	}
 	if err = (&inventorycontrollers.InventoryReconciler{
@@ -195,21 +214,44 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		os.Exit(1)
 	}
 	if err = (&schedulercontrollers.SchedulerReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Request"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Request"),
+		Client:    mgr.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("Scheduler"),
+		Scheme:    mgr.GetScheme(),
+		Recorder:  mgr.GetEventRecorderFor("Request"),
+		Scheduler: schedulerUseCase,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
 		os.Exit(1)
 	}
 	if err = (&schedulercontrollers.MachineReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Machine-request"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Machine-request-controller"),
+		Client:          mgr.GetClient(),
+		Log:             ctrl.Log.WithName("controllers").WithName("Machine-scheduler"),
+		Scheme:          mgr.GetScheme(),
+		Recorder:        mgr.GetEventRecorderFor("Machine-request-controller"),
+		Reserver:        machineReserverUseCase,
+		Synchronization: syncUseCase,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine-request")
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-scheduler")
+		os.Exit(1)
+	}
+	if err = (&onboardingcontroller.OnboardingReconciler{
+		Client:               mgr.GetClient(),
+		Log:                  ctrl.Log.WithName("controllers").WithName("Device-onboarding"),
+		Scheme:               mgr.GetScheme(),
+		OnboardingRepo:       deviceOnboardingUseCase,
+		DestinationNamespace: namespace,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Device-onboarding")
+		os.Exit(1)
+	}
+	if err = (&onboardingcontroller.InventoryOnboardingReconciler{
+		Client:               mgr.GetClient(),
+		Log:                  ctrl.Log.WithName("controllers").WithName("Server-onboarding"),
+		Scheme:               mgr.GetScheme(),
+		OnboardingRepo:       serverOnboardingUseCase,
+		DestinationNamespace: namespace,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Server-onboarding")
 		os.Exit(1)
 	}
 	if err = (&schedulercontrollers.IgnitionReconciler{
@@ -232,12 +274,12 @@ func addHandlers(mgr ctrl.Manager, profiling bool) {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Aggregate")
 			os.Exit(1)
 		}
-		if err := (&switchv1alpha1.SwitchAssignment{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "SwitchAssignment")
+		if err := (&switchv1beta1.Switch{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Switch")
 			os.Exit(1)
 		}
-		if err := (&switchv1alpha1.Switch{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Switch")
+		if err := (&switchv1beta1.SwitchConfig{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "SwitchConfig")
 			os.Exit(1)
 		}
 	}

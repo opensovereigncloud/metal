@@ -1,0 +1,18 @@
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: Subnet
+metadata:
+  name: spine-2-subnet-v4
+  namespace: onmetal
+  labels:
+    ipam.onmetal.de/object-purpose: "south-subnet"
+    ipam.onmetal.de/object-owner: "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b"
+spec:
+  capacity: "512"
+  network:
+    name: underlay
+  parentSubnet:
+    name: switch-ranges-v4
+  regions:
+    - availabilityZones:
+        - B
+      name: eu-central

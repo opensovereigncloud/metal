@@ -23,6 +23,8 @@ import (
 	"time"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	"github.com/onmetal/metal-api/internal/repository"
+	"github.com/onmetal/metal-api/internal/usecase"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,7 +56,7 @@ var scheme = runtime.NewScheme()
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Request Controller Suite")
+	RunSpecs(t, "Scheduler Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -85,19 +87,29 @@ var _ = BeforeSuite(func() {
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
+	schedulerRepo := repository.NewMachineSchedulerRepo(k8sManager.GetClient())
+	reserverRepo := repository.NewMachineReserverRepo(k8sManager.GetClient())
+	schedulerUseCase := usecase.NewSchedulerUseCase(schedulerRepo, reserverRepo)
+
+	//assignmentSyncRepo := repository.NewAssignmentSynchronizationRepo(k8sManager.GetClient())
+	//syncUseCase := usecase.NewSyncUseCase(assignmentSyncRepo)
+
 	err = (&SchedulerReconciler{
-		Client:   k8sManager.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("request"),
-		Recorder: k8sManager.GetEventRecorderFor("request"),
+		Client:    k8sManager.GetClient(),
+		Log:       ctrl.Log.WithName("controllers").WithName("request"),
+		Recorder:  k8sManager.GetEventRecorderFor("request"),
+		Scheduler: schedulerUseCase,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&MachineReconciler{
-		Client:   k8sManager.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("machine-request"),
-		Recorder: k8sManager.GetEventRecorderFor("Machine-request"),
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
+	//err = (&MachineReconciler{
+	//	Client:          k8sManager.GetClient(),
+	//	Log:             ctrl.Log.WithName("controllers").WithName("machine-request"),
+	//	Recorder:        k8sManager.GetEventRecorderFor("Machine-request"),
+	//	Reserver:        reserverRepo,
+	//	Synchronization: syncUseCase,
+	//}).SetupWithManager(k8sManager)
+	//Expect(err).ToNot(HaveOccurred())
 
 	err = (&IgnitionReconciler{
 		Client: k8sManager.GetClient(),
