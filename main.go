@@ -212,6 +212,13 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-request")
 		os.Exit(1)
 	}
+	if err = (&schedulercontrollers.IgnitionReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Ignition")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 }
 
