@@ -24,7 +24,6 @@ import (
 	"text/template"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,6 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	"github.com/onmetal/metal-api/internal/entity"
 )
 
 // IgnitionReconciler reconciles a Ignition object
@@ -85,7 +87,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	if machineAssignment.Status.State != v1alpha2.RequestStateReserved {
+	if machineAssignment.Status.State != entity.ReservationStatusReserved {
 		log.V(1).Info("machine is not yet reserved")
 		return ctrl.Result{}, nil
 	}
