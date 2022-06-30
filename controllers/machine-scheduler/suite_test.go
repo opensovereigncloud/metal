@@ -27,6 +27,7 @@ import (
 	"github.com/onmetal/metal-api/internal/usecase"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,6 +74,8 @@ var _ = BeforeSuite(func() {
 	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.MachineAssignment{}, &machinev1alpha2.MachineAssignmentList{})
 
 	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
+
+	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())

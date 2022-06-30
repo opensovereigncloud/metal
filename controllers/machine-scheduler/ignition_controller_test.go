@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +23,10 @@ var _ = Describe("IgnitionReconciler", func() {
 	It("should create ipxe configmap", func() {
 		By("adding template config")
 		templateConfigMap := &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ConfigMap",
+				APIVersion: "v1",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      templateName,
 				Namespace: namespace,
@@ -63,7 +67,7 @@ var _ = Describe("IgnitionReconciler", func() {
 		By("creating machine assignment")
 		machineAssignment := &v1alpha2.MachineAssignment{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "sample-request",
+				GenerateName: "sr-",
 				Namespace:    namespace,
 			},
 			Spec: v1alpha2.MachineAssignmentSpec{
