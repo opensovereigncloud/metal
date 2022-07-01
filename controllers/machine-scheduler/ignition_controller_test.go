@@ -14,8 +14,6 @@ import (
 
 var _ = Describe("IgnitionReconciler", func() {
 	var (
-		name1     = "a969952c-3475-2b82-a85c-84d8b4f8cd2d"
-		name2     = "a969952c-3475-2b82-a85c-84d8b4f8cd2e"
 		namespace = "default"
 	)
 
@@ -43,8 +41,8 @@ var _ = Describe("IgnitionReconciler", func() {
 		By("creating a machine")
 		machine := &v1alpha2.Machine{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      name1,
-				Namespace: namespace,
+				GenerateName: "a",
+				Namespace:    namespace,
 				Labels: map[string]string{
 					"machine.onmetal.de/size-m5.metal": "true",
 				},
@@ -110,8 +108,8 @@ var _ = Describe("IgnitionReconciler", func() {
 		By("creating a machine")
 		machine := &v1alpha2.Machine{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      name2,
-				Namespace: namespace,
+				GenerateName: "a",
+				Namespace:    namespace,
 				Labels: map[string]string{
 					"machine.onmetal.de/size-m5.metal": "true",
 				},
