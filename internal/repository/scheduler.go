@@ -61,7 +61,7 @@ func (m *MachineSchedulerRepo) Schedule(ctx context.Context, e entity.Reservatio
 		return err
 	}
 
-	metalAssignment.Status.Reference = getObjectReference(machine)
+	metalAssignment.Status.MachineRef = getObjectReference(machine)
 	metalAssignment.Status.State = entity.ReservationStatusReserved
 
 	return m.Client.Status().Update(ctx, metalAssignment)
@@ -85,7 +85,7 @@ func (m *MachineSchedulerRepo) IsScheduled(ctx context.Context, e entity.Order) 
 		Name: e.Name, Namespace: e.Namespace}, metalAssignment); err != nil {
 		return true
 	}
-	return metalAssignment.Status.Reference != nil
+	return metalAssignment.Status.MachineRef != nil
 }
 
 func (m *MachineSchedulerRepo) FindVacantDevice(ctx context.Context, e entity.Order) (entity.Reservation, error) {
