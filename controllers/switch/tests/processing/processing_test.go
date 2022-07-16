@@ -26,6 +26,7 @@ import (
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -103,6 +104,28 @@ var _ = Describe("Processing test", func() {
 					g.Expect(switchv1beta1.GoString(item.Status.SwitchState.State)).To(Equal(switchv1beta1.CSwitchStateReady))
 					g.Expect(item.ConnectionsOK(switchesList)).Should(BeTrue())
 				}
+			}, timeout, interval).Should(Succeed())
+
+			var target = &switchv1beta1.Switch{}
+
+			By("Change topSpine flage to false should cause connection level to change from 0")
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
+			Expect(target.Status.ConnectionLevel).To(Equal(uint8(0)))
+			target.Spec.TopSpine = false
+			Expect(k8sClient.Update(ctx, target)).Should(Succeed())
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
+				g.Expect(target.Status.ConnectionLevel).To(Equal(uint8(2)))
+			}, timeout, interval).Should(Succeed())
+
+			By("Change topSpine flage to true should cause connection level to change to 0")
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
+			Expect(target.Status.ConnectionLevel).To(Equal(uint8(2)))
+			target.Spec.TopSpine = true
+			Expect(k8sClient.Update(ctx, target)).Should(Succeed())
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
+				g.Expect(target.Status.ConnectionLevel).To(Equal(uint8(0)))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
