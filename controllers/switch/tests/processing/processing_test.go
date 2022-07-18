@@ -18,6 +18,7 @@ package processing
 
 import (
 	"bytes"
+	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"path/filepath"
@@ -108,7 +109,7 @@ var _ = Describe("Processing test", func() {
 
 			var target = &switchv1beta1.Switch{}
 
-			By("Change topSpine flage to false should cause connection level to change from 0")
+			By("Change topSpine flag to false should cause connection level to change from 0")
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
 			Expect(target.Status.ConnectionLevel).To(Equal(uint8(0)))
 			target.Spec.TopSpine = false
@@ -118,7 +119,7 @@ var _ = Describe("Processing test", func() {
 				g.Expect(target.Status.ConnectionLevel).To(Equal(uint8(2)))
 			}, timeout, interval).Should(Succeed())
 
-			By("Change topSpine flage to true should cause connection level to change to 0")
+			By("Change topSpine flag to true should cause connection level to change to 0")
 			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
 			Expect(target.Status.ConnectionLevel).To(Equal(uint8(2)))
 			target.Spec.TopSpine = true
@@ -126,6 +127,56 @@ var _ = Describe("Processing test", func() {
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
 				g.Expect(target.Status.ConnectionLevel).To(Equal(uint8(0)))
+			}, timeout, interval).Should(Succeed())
+
+			By("Recreation of inventory with changed NICs data should cause switch's interfaces update")
+			inventory := &inventoryv1alpha1.Inventory{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"}, inventory)).Should(Succeed())
+			Expect(k8sClient.Delete(ctx, inventory)).Should(Succeed())
+
+			updatedInventory := func() *inventoryv1alpha1.Inventory {
+				samplePath := filepath.Join("..", "samples", "inventories", "spine-1.inventory.yaml")
+				sampleBytes, err := ioutil.ReadFile(samplePath)
+				Expect(err).NotTo(HaveOccurred())
+				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
+				sampleInventory := &inventoryv1alpha1.Inventory{}
+				Expect(sampleYAML.Decode(sampleInventory)).NotTo(HaveOccurred())
+				updatedNICs := make([]inventoryv1alpha1.NICSpec, 0)
+
+				for idx, nic := range sampleInventory.Spec.NICs {
+					if nic.Name != "Ethernet24" {
+						continue
+					}
+					updatedNICs = append(updatedNICs, sampleInventory.Spec.NICs[:idx]...)
+					updatedNICs = append(updatedNICs, sampleInventory.Spec.NICs[idx+1:]...)
+					break
+				}
+				for i := 0; i < 4; i++ {
+					nicName := fmt.Sprintf("Ethernet2%d", i)
+					updatedNICs = append(updatedNICs, inventoryv1alpha1.NICSpec{
+						Name:       nicName,
+						Lanes:      1,
+						Speed:      25000,
+						MTU:        9216,
+						ActiveFEC:  "none",
+						MACAddress: "68:21:5f:47:17:6e",
+					})
+				}
+				sampleInventory.Spec.NICs = updatedNICs
+				return sampleInventory
+			}()
+
+			Expect(k8sClient.Create(ctx, updatedInventory)).Should(Succeed())
+			spine := &switchv1beta1.Switch{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, spine)).Should(Succeed())
+				for i := 0; i < 4; i++ {
+					nicName := fmt.Sprintf("Ethernet2%d", i)
+					data, ok := spine.Status.Interfaces[nicName]
+					g.Expect(ok).ShouldNot(BeFalse())
+					g.Expect(data).ShouldNot(BeNil())
+					g.Expect(data.Lanes).Should(Equal(uint8(1)))
+				}
 			}, timeout, interval).Should(Succeed())
 		})
 	})

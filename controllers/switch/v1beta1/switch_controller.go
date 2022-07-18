@@ -20,6 +20,7 @@ import (
 	"context"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
@@ -42,6 +43,7 @@ import (
 )
 
 const CIndexedUUID = "spec.uuid"
+const RequeuingTimeout = time.Second
 
 const (
 	CEventTypeNormal = "Normal"
@@ -121,6 +123,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		obj.UpdateSwitchLabels(relatedInventory)
 		obj.UpdateSwitchAnnotations(relatedInventory)
 		if err = r.Update(ctx, obj); err != nil {
+			if apierrors.IsConflict(err) {
+				result.RequeueAfter = RequeuingTimeout
+				err = nil
+				return
+			}
 			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
@@ -130,6 +137,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	if obj.Status.SwitchState == nil {
 		obj.SetInitialStatus(relatedInventory)
 		if err = r.Status().Update(ctx, obj); err != nil {
+			if apierrors.IsConflict(err) {
+				result.RequeueAfter = RequeuingTimeout
+				err = nil
+				return
+			}
 			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
@@ -139,6 +151,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		if !obj.InterfacesMatchInventory(relatedInventory) {
 			obj.Status.SwitchState = nil
 			if err = r.Status().Update(ctx, obj); err != nil {
+				if apierrors.IsConflict(err) {
+					result.RequeueAfter = RequeuingTimeout
+					err = nil
+					return
+				}
 				log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 				return
 			}
@@ -176,6 +193,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		obj.SetState(switchv1beta1.CSwitchStateProcessing)
 		obj.SetConnections(relatedSwitches)
 		if err = r.Status().Update(ctx, obj); err != nil {
+			if apierrors.IsConflict(err) {
+				result.RequeueAfter = RequeuingTimeout
+				err = nil
+				return
+			}
 			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
@@ -186,6 +208,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		obj.SetRole()
 		obj.SetState(switchv1beta1.CSwitchStateReady)
 		if err = r.Status().Update(ctx, obj); err != nil {
+			if apierrors.IsConflict(err) {
+				result.RequeueAfter = RequeuingTimeout
+				err = nil
+				return
+			}
 			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
@@ -218,6 +245,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			return
 		}
 		if err = r.Status().Update(ctx, obj); err != nil {
+			if apierrors.IsConflict(err) {
+				result.RequeueAfter = RequeuingTimeout
+				err = nil
+				return
+			}
 			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
@@ -244,6 +276,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			return
 		}
 		if err = r.Status().Update(ctx, obj); err != nil {
+			if apierrors.IsConflict(err) {
+				result.RequeueAfter = RequeuingTimeout
+				err = nil
+				return
+			}
 			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
@@ -257,6 +294,11 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			return
 		}
 		if err = r.Status().Update(ctx, obj); err != nil {
+			if apierrors.IsConflict(err) {
+				result.RequeueAfter = RequeuingTimeout
+				err = nil
+				return
+			}
 			log.Error(err, "failed to update resource status", "name", obj.Name, "kind", obj.Kind)
 			return
 		}
@@ -289,6 +331,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// watches for inventories to handle UPDATE events of corresponding objects
 		// on UPDATE event: if interfaces changed enqueue corresponding switch otherwise do nothing
 		Watches(&source.Kind{Type: &inventoryv1alpha1.Inventory{}}, &handler.Funcs{
+			CreateFunc: r.handleInventoryCreate,
 			UpdateFunc: r.handleInventoryUpdate,
 		}).
 		// watches for switchconfigs to handle CREATE and UPDATE events of objects that referencing labels
@@ -355,6 +398,26 @@ func (r *SwitchReconciler) handleSwitchUpdate(e event.UpdateEvent, q workqueue.R
 			Namespace: currObj.Namespace,
 			Name:      name,
 		}})
+	}
+}
+
+func (r *SwitchReconciler) handleInventoryCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
+	log := r.Log.WithValues("switch-controller-watch", "inventory create")
+	obj := e.Object.(*inventoryv1alpha1.Inventory)
+	switches := &switchv1beta1.SwitchList{}
+	opts := &client.ListOptions{
+		FieldSelector: fields.SelectorFromSet(map[string]string{CIndexedUUID: obj.Name}),
+		Limit:         100,
+	}
+	if err := r.List(context.Background(), switches, opts); err != nil {
+		log.Error(err, "failed to list resources", "kind", "SwitchList")
+		return
+	}
+	for _, item := range switches.Items {
+		if item.InterfacesMatchInventory(obj) {
+			continue
+		}
+		q.Add(reconcile.Request{NamespacedName: item.GetNamespacedName()})
 	}
 }
 
