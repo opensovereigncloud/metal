@@ -76,7 +76,7 @@ var _ = Describe("Switch Webhook", func() {
 			Expect(k8sClient.Create(ctx, switchObject)).To(Succeed())
 
 			By("On empty Status")
-			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
+			Expect(k8sClient.Update(ctx, switchObject)).To(Succeed())
 
 			switchObject.Status = switchStatus
 			interfaceStatus := switchObject.Status.Interfaces["Ethernet0"]
