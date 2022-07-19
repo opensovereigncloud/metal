@@ -75,8 +75,12 @@ func validateOverrides(currentState *Switch, newState *Switch) (err error) {
 	}
 	newInterfaces := newState.Spec.Interfaces.Overrides
 	currentInterfaces := currentState.Status.Interfaces
+
 	if len(currentInterfaces) == 0 {
-		err = errors.New("Current switch object does not contain interfaces information")
+		switchlog.Info(
+			"interface override webhook",
+			"Current switch object does not contain interfaces information in its Status, looks like it was just created, skipping validation",
+			currentState.Name)
 		return
 	}
 
