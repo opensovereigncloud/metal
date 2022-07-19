@@ -391,6 +391,9 @@ func getMovedInterface(newInterfaceState *inventoriesv1alpha1.NICSpec,
 		if machineInterfaces[mi].Name != newInterfaceState.Name {
 			continue
 		}
+		if machineInterfaces[mi].Peer == nil || len(newInterfaceState.LLDPs) == 0 {
+			continue
+		}
 		if machineInterfaces[mi].Peer.LLDPChassisID != newInterfaceState.LLDPs[0].ChassisID {
 			return true
 		}
