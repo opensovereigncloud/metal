@@ -567,6 +567,9 @@ func (in *Switch) connectionLevelOK(list *SwitchList) bool {
 	if in.Spec.TopSpine && in.Status.ConnectionLevel != 0 {
 		return false
 	}
+	if !in.Spec.TopSpine && in.Status.ConnectionLevel == 0 {
+		return false
+	}
 	for _, item := range list.Items {
 		for _, nicData := range in.Status.Interfaces {
 			if in.Status.ConnectionLevel == 0 && nicData.Direction == CDirectionNorth {
@@ -625,12 +628,22 @@ func (in *Switch) computeConnectionLevel(list *SwitchList) {
 	if _, ok := connectionsMap[0]; !ok {
 		return
 	}
-	if in.Status.ConnectionLevel == 0 {
+
+	switch in.Spec.TopSpine {
+	case true:
+		in.Status.ConnectionLevel = 0
 		for _, nicData := range in.Status.Interfaces {
 			nicData.Direction = CDirectionSouth
 		}
 		return
+	case false:
+		if in.Status.ConnectionLevel != 0 {
+			break
+		}
+		in.Status.ConnectionLevel = 255
+		return
 	}
+
 	for _, connectionLevel := range keys {
 		if connectionLevel == 255 {
 			continue

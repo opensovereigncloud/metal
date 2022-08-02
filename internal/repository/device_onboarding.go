@@ -391,6 +391,9 @@ func getMovedInterface(newInterfaceState *inventoriesv1alpha1.NICSpec,
 		if machineInterfaces[mi].Name != newInterfaceState.Name {
 			continue
 		}
+		if machineInterfaces[mi].Peer == nil || len(newInterfaceState.LLDPs) == 0 {
+			continue
+		}
 		if machineInterfaces[mi].Peer.LLDPChassisID != newInterfaceState.LLDPs[0].ChassisID {
 			return true
 		}
@@ -403,10 +406,7 @@ func getNetworkRedundancy(machineInterfaces []machinev1alpha2.Interface) string 
 	case len(machineInterfaces) == onePort:
 		return machinev1alpha2.InterfaceRedundancySingle
 	case len(machineInterfaces) >= twoPorts:
-		if machineInterfaces[0].Peer.LLDPChassisID != machineInterfaces[1].Peer.LLDPChassisID {
-			return machinev1alpha2.InterfaceRedundancyHighAvailability
-		}
-		return machinev1alpha2.InterfaceRedundancySingle
+		return machinev1alpha2.InterfaceRedundancyHighAvailability
 	default:
 		return machinev1alpha2.InterfaceRedundancyNone
 	}

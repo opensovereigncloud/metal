@@ -83,7 +83,7 @@ func (r *SchedulerReconciler) onUpdate(e event.UpdateEvent) bool {
 		r.Log.Info("request delete event cast failed")
 		return false
 	}
-	if newObj.Status.Reference != nil {
+	if newObj.Status.MachineRef != nil {
 		return false
 	}
 	return true
@@ -96,7 +96,7 @@ func (r *SchedulerReconciler) onDelete(e event.DeleteEvent) bool {
 		return false
 	}
 
-	if obj.Status.Reference == nil {
+	if obj.Status.MachineRef == nil {
 		return false
 	}
 
@@ -105,8 +105,8 @@ func (r *SchedulerReconciler) onDelete(e event.DeleteEvent) bool {
 	reservation := entity.Reservation{
 		OrderName:        obj.Name,
 		OrderNamespace:   obj.Namespace,
-		RequestName:      obj.Status.Reference.Name,
-		RequestNamespace: obj.Status.Reference.Namespace,
+		RequestName:      obj.Status.MachineRef.Name,
+		RequestNamespace: obj.Status.MachineRef.Namespace,
 	}
 
 	if err := r.Scheduler.DeleteScheduling(ctx, reservation); err != nil {

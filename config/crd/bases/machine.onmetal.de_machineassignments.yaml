@@ -179,7 +179,23 @@ spec:
           status:
             description: MachineAssignmentStatus defines the observed state of Request
             properties:
-              reference:
+              computeMachineRef:
+                description: ResourceReference defines related resource info
+                properties:
+                  apiVersion:
+                    description: APIVersion refers to the resource API version
+                    type: string
+                  kind:
+                    description: Kind refers to the resource kind
+                    type: string
+                  name:
+                    description: Name refers to the resource name
+                    type: string
+                  namespace:
+                    description: Namespace refers to the resource namespace
+                    type: string
+                type: object
+              machineRef:
                 description: ResourceReference defines related resource info
                 properties:
                   apiVersion:

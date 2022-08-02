@@ -104,8 +104,9 @@ type IPAddress struct {
 
 // MachineAssignmentStatus defines the observed state of Request
 type MachineAssignmentStatus struct {
-	State     entity.ReservationStatus `json:"state,omitempty"`
-	Reference *ResourceReference       `json:"reference,omitempty"`
+	State             entity.ReservationStatus `json:"state,omitempty"`
+	MachineRef        *ResourceReference       `json:"machineRef,omitempty"`
+	ComputeMachineRef *ResourceReference       `json:"computeMachineRef,omitempty"`
 }
 
 //+kubebuilder:object:root=true
