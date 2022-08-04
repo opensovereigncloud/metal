@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/internal/entity"
 )
 
 // IgnitionReconciler reconciles a Ignition object
@@ -90,7 +89,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	if machineAssignment.Status.State != entity.ReservationStatusReserved && machineAssignment.Status.State != entity.ReservationStatusRunning {
+	if machineAssignment.Status.MachineRef == nil || machineAssignment.Status.MachineRef.Name == "" {
 		log.V(1).Info("machine is not yet reserved")
 		return ctrl.Result{}, nil
 	}
@@ -144,7 +143,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	log.V(1).Info("resources", "machine assignment", fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
+	log.V(2).Info("resources", "machine assignment", fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
 
 	if templateCM != nil {
 		data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
