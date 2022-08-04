@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -68,6 +69,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	var err error
 	var err2 error
 
+	log.V(1).Info("fetching template configmaps")
 	templateCM := &corev1.ConfigMap{}
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: templateName}, templateCM); err != nil {
 		log.Error(err, "template config map is not available in the current namespace", "template name", templateName, "namespace", req.Namespace)
@@ -81,33 +83,83 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
+	log.V(1).Info("fetching machine assignment resource", "machine assignment", req)
 	machineAssignment := &v1alpha2.MachineAssignment{}
 	if err = r.Get(ctx, req.NamespacedName, machineAssignment); err != nil {
 		log.Error(err, "couldn't get machine assignment in namespace", "machine assignment", req.Name, "namespace", req.Namespace)
 		return ctrl.Result{}, err
 	}
 
-	if machineAssignment.Status.State != entity.ReservationStatusReserved {
+	if machineAssignment.Status.State != entity.ReservationStatusReserved && machineAssignment.Status.State != entity.ReservationStatusRunning {
 		log.V(1).Info("machine is not yet reserved")
 		return ctrl.Result{}, nil
 	}
 
 	machine := &v1alpha2.Machine{}
 	if err = r.Get(ctx, types.NamespacedName{
-		Namespace: machineAssignment.Status.Reference.Namespace,
-		Name:      machineAssignment.Status.Reference.Name,
+		Namespace: machineAssignment.Status.MachineRef.Namespace,
+		Name:      machineAssignment.Status.MachineRef.Name,
 	}, machine); err != nil {
 		log.Error(err, "couldn't get assigned machine in namespace", "machine", req.Name, "namespace", req.Namespace)
 		return ctrl.Result{}, err
 	}
 
+	if !machineAssignment.DeletionTimestamp.IsZero() {
+		if templateCM != nil {
+			data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
+			if err != nil {
+				log.Error(err, "couldn't parse template")
+				return ctrl.Result{}, err
+			}
+
+			log.V(1).Info("deleting configmap", "name", "ipxe-"+data["name"])
+			configMap, err := r.createConfigMap(ctx, log, data, &req)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			if err := r.Delete(ctx, configMap); err != nil {
+				log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
+			}
+		}
+
+		if secretTemplateCM != nil {
+			data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
+			if err != nil {
+				log.Error(err, "couldn't parse template")
+				return ctrl.Result{}, err
+			}
+
+			log.V(1).Info("deleting secret", "name", "ipxe-"+data["name"])
+			secret, err := r.createSecret(ctx, log, data, &req)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			if err := r.Delete(ctx, secret); err != nil {
+				log.Error(err, "couldn't delete secret", "resource", req.Name, "namespace", req.Namespace)
+			}
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	log.V(1).Info("resources", "machine assignment", fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
+
 	if templateCM != nil {
 		data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
 		if err != nil {
 			log.Error(err, "couldn't parse template")
+			return ctrl.Result{}, err
 		}
 
-		if err = r.createConfigMap(ctx, log, data, &req, machine); err != nil {
+		configMap, err := r.createConfigMap(ctx, log, data, &req)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.V(1).Info("applying ignition configuration", "ignition", client.ObjectKeyFromObject(configMap))
+		if err := r.Patch(ctx, configMap, client.Apply, ignitionFieldOwner, client.ForceOwnership); err != nil {
 			log.Error(err, "couldn't create config map", "resource", req.Name, "namespace", req.Namespace)
 			return ctrl.Result{}, err
 		}
@@ -117,14 +169,22 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		data, err := parseTemplate(secretTemplateCM.Data, machine, machineAssignment)
 		if err != nil {
 			log.Error(err, "couldn't parse template")
+			return ctrl.Result{}, err
 		}
 
-		if err = r.createSecret(ctx, log, data, &req, machine); err != nil {
+		secret, err := r.createSecret(ctx, log, data, &req)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.V(1).Info("applying ignition secret configuration", "ignition secret", client.ObjectKeyFromObject(secret))
+		if err := r.Patch(ctx, secret, client.Apply, ignitionFieldOwner, client.ForceOwnership); err != nil {
 			log.Error(err, "couldn't create secret", "resource", req.Name, "namespace", req.Namespace)
 			return ctrl.Result{}, err
 		}
 	}
 
+	log.V(1).Info("reconciliation finished")
 	return ctrl.Result{}, nil
 }
 
@@ -165,9 +225,9 @@ func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAss
 	return mt, nil
 }
 
-func (r *IgnitionReconciler) createConfigMap(ctx context.Context, log logr.Logger, temp map[string]string, req *ctrl.Request, machine *v1alpha2.Machine) error {
+func (r *IgnitionReconciler) createConfigMap(ctx context.Context, log logr.Logger, temp map[string]string, req *ctrl.Request) (*corev1.ConfigMap, error) {
 	if _, ok := temp["name"]; !ok {
-		return errors.New("template is missing required 'name' field")
+		return nil, errors.New("template is missing required 'name' field")
 	}
 	temp["name"] = strings.TrimSuffix(temp["name"], "\n")
 	configMap := &corev1.ConfigMap{
@@ -181,25 +241,13 @@ func (r *IgnitionReconciler) createConfigMap(ctx context.Context, log logr.Logge
 		},
 		Data: temp,
 	}
-	configMap.SetOwnerReferences([]metav1.OwnerReference{
-		{
-			APIVersion: machine.APIVersion,
-			Kind:       machine.Kind,
-			Name:       machine.Name,
-			UID:        machine.UID,
-		},
-	})
-	log.Info("applying ignition configuration", "ignition", client.ObjectKeyFromObject(configMap))
-	if err := r.Patch(ctx, configMap, client.Apply, ignitionFieldOwner, client.ForceOwnership); err != nil {
-		return err
-	}
 
-	return nil
+	return configMap, nil
 }
 
-func (r *IgnitionReconciler) createSecret(ctx context.Context, log logr.Logger, temp map[string]string, req *ctrl.Request, machine *v1alpha2.Machine) error {
+func (r *IgnitionReconciler) createSecret(ctx context.Context, log logr.Logger, temp map[string]string, req *ctrl.Request) (*corev1.Secret, error) {
 	if _, ok := temp["name"]; !ok {
-		return errors.New("template is missing required 'name' field")
+		return nil, errors.New("template is missing required 'name' field")
 	}
 	temp["name"] = strings.TrimSuffix(temp["name"], "\n")
 	secret := &corev1.Secret{
@@ -213,17 +261,6 @@ func (r *IgnitionReconciler) createSecret(ctx context.Context, log logr.Logger, 
 		},
 		StringData: temp,
 	}
-	secret.SetOwnerReferences([]metav1.OwnerReference{
-		{
-			APIVersion: machine.APIVersion,
-			Kind:       machine.Kind,
-			Name:       machine.Name,
-			UID:        machine.UID,
-		},
-	})
-	if err := r.Patch(ctx, secret, client.Apply, ignitionFieldOwner, client.ForceOwnership); err != nil {
-		return err
-	}
 
-	return nil
+	return secret, nil
 }
