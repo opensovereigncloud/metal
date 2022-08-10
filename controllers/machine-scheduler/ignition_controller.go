@@ -69,11 +69,11 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	var err2 error
 
 	log.V(1).Info("fetching template configmaps")
-	templateCM := &corev1.ConfigMap{}
+	var templateCM *corev1.ConfigMap
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: templateName}, templateCM); err != nil {
 		log.Error(err, "template config map is not available in the current namespace", "template name", templateName, "namespace", req.Namespace)
 	}
-	secretTemplateCM := &corev1.ConfigMap{}
+	var secretTemplateCM *corev1.ConfigMap
 	if err2 = r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: secretTemplateName}, secretTemplateCM); err != nil {
 		log.Error(err, "template config map is not available in the current namespace", "secret template name", secretTemplateName, "namespace", req.Namespace)
 	}
