@@ -200,7 +200,7 @@ func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAss
 		tempStr += tempKey + ": |\n  " + tempVal + "\n"
 	}
 
-	t, err := template.New("ph").Parse(tempStr)
+	t, err := template.New("temporaryTemplate").Parse(tempStr)
 	if err != nil {
 		return nil, err
 	}
@@ -216,12 +216,12 @@ func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAss
 		return nil, err
 	}
 
-	var mt = make(map[string]string)
-	if err = yaml.Unmarshal(b.Bytes(), &mt); err != nil {
+	var tempMap = make(map[string]string)
+	if err = yaml.Unmarshal(b.Bytes(), &tempMap); err != nil {
 		return nil, err
 	}
 
-	return mt, nil
+	return tempMap, nil
 }
 
 func (r *IgnitionReconciler) createConfigMap(ctx context.Context, log logr.Logger, temp map[string]string, req *ctrl.Request) (*corev1.ConfigMap, error) {
