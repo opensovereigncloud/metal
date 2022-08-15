@@ -230,10 +230,6 @@ func (r *IgnitionReconciler) createConfigMap(ctx context.Context, log logr.Logge
 	}
 	temp["name"] = strings.TrimSuffix(temp["name"], "\n")
 	configMap := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ipxe-" + temp["name"],
 			Namespace: req.Namespace,
@@ -250,10 +246,6 @@ func (r *IgnitionReconciler) createSecret(ctx context.Context, log logr.Logger, 
 	}
 	temp["name"] = strings.TrimSuffix(temp["name"], "\n")
 	secret := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ipxe-" + temp["name"],
 			Namespace: req.Namespace,
