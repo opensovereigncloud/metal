@@ -27,6 +27,7 @@ import (
 	"github.com/onmetal/metal-api/internal/usecase"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,6 +75,8 @@ var _ = BeforeSuite(func() {
 
 	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
 
+	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
+
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
@@ -110,6 +113,12 @@ var _ = BeforeSuite(func() {
 	//	Synchronization: syncUseCase,
 	//}).SetupWithManager(k8sManager)
 	//Expect(err).ToNot(HaveOccurred())
+
+	err = (&IgnitionReconciler{
+		Client: k8sManager.GetClient(),
+		Scheme: k8sManager.GetScheme(),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()

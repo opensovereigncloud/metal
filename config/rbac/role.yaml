@@ -8,10 +8,34 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - events
   verbs:
   - create
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -76,6 +100,22 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - machine.machine.onmetal.de
+  resources:
+  - ignitions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - machine.machine.onmetal.de
+  resources:
+  - ignitions/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - machine.onmetal.de
   resources:
