@@ -32,6 +32,7 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
+// nolint:forcetypeassert
 var _ = Describe("Size controller", func() {
 	const (
 		SizeName      = "test-size"

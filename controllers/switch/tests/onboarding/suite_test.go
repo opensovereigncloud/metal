@@ -58,6 +58,7 @@ const (
 	onmetal = "onmetal"
 )
 
+// nolint
 func TestOnboarding(t *testing.T) {
 	RegisterFailHandler(Fail)
 

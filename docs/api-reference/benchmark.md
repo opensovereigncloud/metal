@@ -27,6 +27,7 @@ string
 </em>
 </td>
 <td>
+<p>Name is the specific benchmark name. e.g. <code>fio-1k</code>.</p>
 </td>
 </tr>
 <tr>
@@ -37,6 +38,7 @@ uint64
 </em>
 </td>
 <td>
+<p>Value is the exact result of specific benchmark.</p>
 </td>
 </tr>
 </tbody>
@@ -44,6 +46,7 @@ uint64
 <h3 id="benchmark.onmetal.de/v1alpha3.BenchmarkDeviation">BenchmarkDeviation
 </h3>
 <div>
+<p>BenchmarkDeviation is a deviation between old value and the new one.</p>
 </div>
 <table>
 <thead>
@@ -61,6 +64,7 @@ string
 </em>
 </td>
 <td>
+<p>Name is the specific benchmark name. e.g. <code>fio-1k</code>.</p>
 </td>
 </tr>
 <tr>
@@ -71,14 +75,29 @@ string
 </em>
 </td>
 <td>
+<p>Value is the exact result of specific benchmark.</p>
 </td>
 </tr>
 </tbody>
 </table>
+<h3 id="benchmark.onmetal.de/v1alpha3.BenchmarkDeviations">BenchmarkDeviations
+(<code>[]..BenchmarkDeviation</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.MachineStatus">MachineStatus</a>)
+</p>
+<div>
+</div>
+<h3 id="benchmark.onmetal.de/v1alpha3.Benchmarks">Benchmarks
+(<code>[]..Benchmark</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.MachineSpec">MachineSpec</a>)
+</p>
+<div>
+</div>
 <h3 id="benchmark.onmetal.de/v1alpha3.Machine">Machine
 </h3>
 <div>
-<p>Machine is the Schema for the machines API</p>
+<p>Machine is the Schema for the machines API.</p>
 </div>
 <table>
 <thead>
@@ -119,12 +138,13 @@ MachineSpec
 <td>
 <code>benchmarks</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.[]..Benchmark">
-map[string][]..Benchmark
+<a href="#benchmark.onmetal.de/v1alpha3.Benchmarks">
+map[string]..Benchmarks
 </a>
 </em>
 </td>
 <td>
+<p>Benchmarks is the collection of benchmarks.</p>
 </td>
 </tr>
 </table>
@@ -164,12 +184,13 @@ MachineStatus
 <td>
 <code>benchmarks</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.[]..Benchmark">
-map[string][]..Benchmark
+<a href="#benchmark.onmetal.de/v1alpha3.Benchmarks">
+map[string]..Benchmarks
 </a>
 </em>
 </td>
 <td>
+<p>Benchmarks is the collection of benchmarks.</p>
 </td>
 </tr>
 </tbody>
@@ -194,8 +215,8 @@ map[string][]..Benchmark
 <td>
 <code>machine_deviation</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.[]..BenchmarkDeviation">
-map[string][]..BenchmarkDeviation
+<a href="#benchmark.onmetal.de/v1alpha3.BenchmarkDeviations">
+map[string]..BenchmarkDeviations
 </a>
 </em>
 </td>
@@ -208,5 +229,5 @@ map[string][]..BenchmarkDeviation
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>172f4e7</code>.
+on git commit <code>99a336f</code>.
 </em></p>

@@ -15,10 +15,14 @@ spec:
     singular: machineassignment
   scope: Namespaced
   versions:
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .status.state
+      name: Order Status
+      type: string
+    name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: MachineAssignment is the Schema for the requests API
+        description: MachineAssignment is the Schema for the requests API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: MachineAssignmentSpec defines the desired state of Request
+            description: MachineAssignmentSpec defines the desired state of Request.
             properties:
               efiVars:
                 description: EFIVars are variables to pass to EFI while booting up.
@@ -82,7 +86,7 @@ spec:
                 description: Interfaces define a list of network interfaces present
                   on the machine
                 items:
-                  description: Interface is the definition of a single interface
+                  description: Interface is the definition of a single interface.
                   properties:
                     ip:
                       description: IP specifies a concrete IP address which should
@@ -131,7 +135,7 @@ spec:
                     operator:
                       description: Operator represents a key's relationship to the
                         value. Valid operators are Exists and Equal. Defaults to Equal.
-                        Exists is equivalent to wildcard for value, so that a resource
+                        Exist is equivalent to wildcard for value, so that a resource
                         can tolerate all taints of a particular category.
                       type: string
                     value:
@@ -144,7 +148,7 @@ spec:
               volumes:
                 description: Volumes are volumes attached to this machine.
                 items:
-                  description: Volume defines a volume attachment of a machine
+                  description: Volume defines a volume attachment of a machine.
                   properties:
                     name:
                       description: Name is the name of the VolumeAttachment
@@ -177,10 +181,10 @@ spec:
             - machineClass
             type: object
           status:
-            description: MachineAssignmentStatus defines the observed state of Request
+            description: MachineAssignmentStatus defines the observed state of Request.
             properties:
               computeMachineRef:
-                description: ResourceReference defines related resource info
+                description: ResourceReference defines related resource info.
                 properties:
                   apiVersion:
                     description: APIVersion refers to the resource API version
@@ -196,7 +200,7 @@ spec:
                     type: string
                 type: object
               machineRef:
-                description: ResourceReference defines related resource info
+                description: ResourceReference defines related resource info.
                 properties:
                   apiVersion:
                     description: APIVersion refers to the resource API version

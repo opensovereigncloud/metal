@@ -35,7 +35,7 @@ import (
 //todo: clientset for v1beta1
 
 // SwitchSpec contains desired state of resulting Switch configuration
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type SwitchSpec struct {
 	// UUID is a unique system identifier
 	//+kubebuilder:validation:Required
@@ -61,7 +61,7 @@ type SwitchSpec struct {
 }
 
 // InterfacesSpec contains definitions for general switch ports' configuration
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type InterfacesSpec struct {
 	// Scan is a flag defining whether to run periodical scanning on switch ports
 	//+kubebuilder:validation:Optional
@@ -76,7 +76,7 @@ type InterfacesSpec struct {
 }
 
 // InterfaceOverridesSpec contains overridden parameters for certain switch port
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type InterfaceOverridesSpec struct {
 	// Lanes refers to a number of lanes used by switch port
 	//+kubebuilder:validation:Optional
@@ -105,7 +105,7 @@ type InterfaceOverridesSpec struct {
 }
 
 // SwitchStatus contains observed state of Switch
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type SwitchStatus struct {
 	// TotalPorts refers to total number of ports
 	//+kubebuilder:validation:Optional
@@ -139,7 +139,7 @@ type SwitchStatus struct {
 }
 
 // InterfaceSpec defines the state of switch's interface
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type InterfaceSpec struct {
 	// MACAddress refers to the interface's hardware address
 	//+kubebuilder:validation:Required
@@ -175,7 +175,7 @@ type InterfaceSpec struct {
 }
 
 // PeerSpec defines peer info
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type PeerSpec struct {
 	// Contains information to locate the referenced object
 	//+kubebuilder:validation:Optional
@@ -186,7 +186,7 @@ type PeerSpec struct {
 }
 
 // PeerInfoSpec contains LLDP info about peer
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type PeerInfoSpec struct {
 	// ChassisID refers to the chassis identificator - either MAC-address or system uuid
 	//+kubebuilder:validation:Optional
@@ -208,7 +208,7 @@ type PeerInfoSpec struct {
 }
 
 // SubnetSpec defines switch's subnet info
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type SubnetSpec struct {
 	// Contains information to locate the referenced object
 	//+kubebuilder:validation:Optional
@@ -223,7 +223,7 @@ type SubnetSpec struct {
 }
 
 // RegionSpec defines region info
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type RegionSpec struct {
 	// Name refers to the switch's region
 	//+kubebuilder:validation:Pattern=^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
@@ -235,7 +235,7 @@ type RegionSpec struct {
 }
 
 // IPAddressSpec defines interface's ip address info
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type IPAddressSpec struct {
 	// Contains information to locate the referenced object
 	//+kubebuilder:validation:Optional
@@ -249,7 +249,7 @@ type IPAddressSpec struct {
 	ExtraAddress bool `json:"extraAddress,omitempty"`
 }
 
-// SwitchStateSpec contains current Switch oject state
+// SwitchStateSpec contains current Switch object state.
 type SwitchStateSpec struct {
 	// State is the current state of corresponding object or process
 	//+kubebuilder:validation:Optional
@@ -261,7 +261,7 @@ type SwitchStateSpec struct {
 }
 
 // ConfigAgentStateSpec contains current configuration agent's state
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type ConfigAgentStateSpec struct {
 	// State is the current state of corresponding object or process
 	//+kubebuilder:validation:Optional
@@ -285,7 +285,7 @@ type ConfigAgentStateSpec struct {
 //+kubebuilder:printcolumn:name="Switch State",type=string,JSONPath=`.status.switch.state`,description="Switch state"
 //+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.switch.message`,description="Switch state message. Reports about any issues duiring reconciliation process"
 
-// Switch is the Schema for switches API
+// Switch is the Schema for switches API.
 type Switch struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -296,7 +296,7 @@ type Switch struct {
 
 //+kubebuilder:object:root=true
 
-// SwitchList contains a list of Switch
+// SwitchList contains a list of Switch.
 type SwitchList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -307,7 +307,7 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
-// GetNamespacedName returns object's name and namespace as types.NamespacedName
+// GetNamespacedName returns object's name and namespace as types.NamespacedName.
 func (in *Switch) GetNamespacedName() types.NamespacedName {
 	return types.NamespacedName{
 		Namespace: in.Namespace,
@@ -530,7 +530,7 @@ func (in *Switch) peersOK(list *SwitchList) bool {
 			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
 				continue
 			}
-			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") != in.Annotations[CHardwareChassisIdAnnotation] {
+			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") != in.Annotations[CHardwareChassisIDAnnotation] {
 				continue
 			}
 			if nicData.Peer.PeerInfoSpec.PortDescription == "" {
@@ -546,7 +546,7 @@ func (in *Switch) peersOK(list *SwitchList) bool {
 			if reflect.DeepEqual(nic.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
 				return false
 			}
-			if strings.ReplaceAll(nic.Peer.PeerInfoSpec.ChassisID, ":", "") != item.Annotations[CHardwareChassisIdAnnotation] {
+			if strings.ReplaceAll(nic.Peer.PeerInfoSpec.ChassisID, ":", "") != item.Annotations[CHardwareChassisIDAnnotation] {
 				return false
 			}
 			if nic.Peer.ObjectReference == nil {
@@ -612,7 +612,7 @@ func (in *Switch) fillPeersInfo(list *SwitchList) {
 			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
 				continue
 			}
-			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") != item.Annotations[CHardwareChassisIdAnnotation] {
+			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") != item.Annotations[CHardwareChassisIDAnnotation] {
 				continue
 			}
 			nicData.Peer.ObjectReference = &ObjectReference{
@@ -697,7 +697,7 @@ func (in *Switch) getPeers(list *SwitchList) *SwitchList {
 			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
 				continue
 			}
-			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") == item.Annotations[CHardwareChassisIdAnnotation] {
+			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") == item.Annotations[CHardwareChassisIDAnnotation] {
 				result.Items = append(result.Items, item)
 			}
 		}
@@ -726,7 +726,7 @@ func (in *Switch) setNICsDirections(list *SwitchList) {
 				nicData.Direction = CDirectionSouth
 				continue
 			}
-			peerFound := strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") == item.Annotations[CHardwareChassisIdAnnotation]
+			peerFound := strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") == item.Annotations[CHardwareChassisIDAnnotation]
 			peerIsNorth := in.Status.ConnectionLevel > item.Status.ConnectionLevel
 			peerIsSouth := in.Status.ConnectionLevel < item.Status.ConnectionLevel
 			if peerFound && peerIsNorth {
@@ -1171,7 +1171,7 @@ func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
 	appliedLabels := map[string]string{
 		InventoriedLabel:  "true",
 		InventoryRefLabel: inv.Name,
-		LabelChassisId: strings.ReplaceAll(
+		LabelChassisID: strings.ReplaceAll(
 			func() string {
 				var chassisID string
 				for _, nic := range inv.Spec.NICs {
@@ -1202,14 +1202,14 @@ func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
 	if inv.Spec.Distro != nil {
 		softwareAnnotations[CSoftwareOnieAnnotation] = "false"
 		softwareAnnotations[CSoftwareAsicAnnotation] = inv.Spec.Distro.AsicType
-		softwareAnnotations[CSoftwareVersionAnnotation] = inv.Spec.Distro.CommitId
+		softwareAnnotations[CSoftwareVersionAnnotation] = inv.Spec.Distro.CommitID
 		softwareAnnotations[CSoftwareOSAnnotation] = "sonic"
 		softwareAnnotations[CSoftwareHostnameAnnotation] = inv.Spec.Host.Name
 	}
 	if in.Annotations == nil {
 		in.Annotations = make(map[string]string)
 	}
-	in.Annotations[CHardwareChassisIdAnnotation] = strings.ReplaceAll(
+	in.Annotations[CHardwareChassisIDAnnotation] = strings.ReplaceAll(
 		func() string {
 			var chassisID string
 			for _, nic := range inv.Spec.NICs {

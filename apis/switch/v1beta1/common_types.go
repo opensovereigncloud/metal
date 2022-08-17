@@ -96,7 +96,7 @@ const (
 	CHardwareSkuAnnotation          = "hardware/sku"
 	CHardwareManufacturerAnnotation = "hardware/manufacturer"
 	CHardwareSerialAnnotation       = "hardware/serial"
-	CHardwareChassisIdAnnotation    = "hardware/chassis-id"
+	CHardwareChassisIDAnnotation    = "hardware/chassis-id"
 
 	CLocationRoomAnnotation = "location/room"
 	CLocationRowAnnotation  = "location/row"
@@ -126,7 +126,7 @@ const (
 
 const CSwitchPortPrefix = "Ethernet"
 const CEmptyString = ""
-const CLabelChassisId = "chassis-id"
+const CLabelChassisID = "chassis-id"
 
 var (
 	InventoriedLabel  = GetLabelKey(CMetalAPILabelPrefix, CInventoriedLabel)
@@ -138,13 +138,13 @@ var (
 	IPAMObjectPurposeLabel = GetLabelKey(CIPAMLabelPrefix, CIPAMObjectPurposeLabel)
 	IPAMObjectOwnerLabel   = GetLabelKey(CIPAMLabelPrefix, CIPAMObjectOwnerLabel)
 
-	LabelChassisId = GetLabelKey(CMetalAPILabelPrefix, CLabelChassisId)
+	LabelChassisID = GetLabelKey(CMetalAPILabelPrefix, CLabelChassisID)
 )
 
 type ConnectionsMap map[uint8]*SwitchList
 
 // PortParametersSpec contains a set of parameters of switch port
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type PortParametersSpec struct {
 	// Lanes refers to a number of lanes used by switch port
 	//+kubebuilder:validation:Optional
@@ -199,7 +199,7 @@ type PortConfigurablesSpec struct {
 
 // IPAMSpec contains selectors for subnets and loopback IPs and
 // definition of address families which should be claimed
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type IPAMSpec struct {
 	// SouthSubnets defines selector for subnet object which will be assigned to switch
 	//+kubebuilder:validation:Optional
@@ -210,7 +210,7 @@ type IPAMSpec struct {
 }
 
 // IPAMSelectionSpec contains label selector and address family
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type IPAMSelectionSpec struct {
 	// AddressFamilies defines what ip address families should be claimed
 	//+kubebuilder:validation:Optional
@@ -227,7 +227,7 @@ type IPAMSelectionSpec struct {
 }
 
 // FieldSelectorSpec contains label key and field path where to get label value for search
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type FieldSelectorSpec struct {
 	// LabelKey contains label key
 	//+kubebuilder:validation:Optional
@@ -238,7 +238,7 @@ type FieldSelectorSpec struct {
 }
 
 // AddressFamiliesMap contains flags regarding what IP address families should be used
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type AddressFamiliesMap struct {
 	// IPv4 is a flag defining whether IPv4 is used or not
 	//+kubebuilder:validation:Optional
@@ -251,7 +251,7 @@ type AddressFamiliesMap struct {
 }
 
 // AdditionalIPSpec defines IP address and selector for subnet where address should be reserved
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type AdditionalIPSpec struct {
 	// Address contains additional IP address that should be assigned to the interface
 	//+kubebuilder:validation:Required
@@ -263,7 +263,7 @@ type AdditionalIPSpec struct {
 
 // ObjectReference contains enough information to let you locate the
 // referenced object across namespaces.
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type ObjectReference struct {
 	// Name contains name of the referenced object
 	//+kubebuilder:validation:Optional
@@ -273,22 +273,22 @@ type ObjectReference struct {
 	Namespace string `json:"namespace,omitempty"`
 }
 
-// MetalAPIUint8 converts native Golang uint8 to pointer
+// MetalAPIUint8 converts native Golang uint8 to pointer.
 func MetalAPIUint8(in uint8) *uint8 {
 	return &in
 }
 
-// GoUint8 converts pointer to native Golang uint8
+// GoUint8 converts pointer to native Golang uint8.
 func GoUint8(in *uint8) uint8 {
 	return *in
 }
 
-// MetalAPIUint16 converts native Golang uint16 to pointer
+// MetalAPIUint16 converts native Golang uint16 to pointer.
 func MetalAPIUint16(in uint16) *uint16 {
 	return &in
 }
 
-// GoUint16 converts pointer to native Golang uint16
+// GoUint16 converts pointer to native Golang uint16.
 func GoUint16(in *uint16) uint16 {
 	return *in
 }
@@ -301,17 +301,17 @@ func GoString(in *string) string {
 	return *in
 }
 
-// GetLabelSelector builds labels selector
+// GetLabelSelector builds labels selector.
 func GetLabelSelector(key string, op selection.Operator, values []string) (*labels.Requirement, error) {
 	return labels.NewRequirement(key, op, values)
 }
 
-// GetLabelKey builds label key from prefix and suffix
+// GetLabelKey builds label key from prefix and suffix.
 func GetLabelKey(prefix, suffix string) string {
 	return fmt.Sprintf("%s/%s", prefix, suffix)
 }
 
-// LabelFromFieldRef converts field reference to valid label to use in label selector
+// LabelFromFieldRef converts field reference to valid label to use in label selector.
 func LabelFromFieldRef(obj interface{}, src *FieldSelectorSpec) (label map[string]string, err error) {
 	label = make(map[string]string)
 	if src == nil {

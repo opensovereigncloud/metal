@@ -192,7 +192,6 @@ type metadata struct {
 func (o *DeviceOnboardingRepo) gatherMachineStatusData(ctx context.Context,
 	inventory *inventoriesv1alpha1.Inventory,
 	machineStatus machinev1alpha2.MachineStatus) machinev1alpha2.MachineStatus {
-
 	inventoryRef := metadata{
 		typeMeta:   inventory.TypeMeta,
 		objectMeta: inventory.ObjectMeta,
@@ -206,7 +205,7 @@ func (o *DeviceOnboardingRepo) gatherMachineStatusData(ctx context.Context,
 	}
 
 	if machineStatus.Reservation.Status == "" {
-		machineStatus.Reservation.Status = entity.ReservationStatusAvailable
+		machineStatus.Reservation.Status = "Available"
 	}
 	machineStatus.Interfaces = o.updateMachineInterfaces(ctx, inventory, machineStatus.Interfaces)
 
@@ -271,7 +270,7 @@ func (o *DeviceOnboardingRepo) updateMachineInterfaces(ctx context.Context,
 		}
 
 		label := map[string]string{
-			switchv1beta1.LabelChassisId: strings.ReplaceAll(nicsSpec[nic].LLDPs[0].ChassisID, ":", "-"),
+			switchv1beta1.LabelChassisID: strings.ReplaceAll(nicsSpec[nic].LLDPs[0].ChassisID, ":", "-"),
 		}
 		s, err := o.getSwitchByLabel(ctx, label)
 		if apierrors.IsNotFound(err) || machinerr.IsNotFound(err) {

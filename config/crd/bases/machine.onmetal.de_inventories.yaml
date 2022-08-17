@@ -257,7 +257,7 @@ spec:
                     type: integer
                   buildVersion:
                     type: string
-                  commitId:
+                  commitID:
                     type: string
                   debianVersion:
                     type: string

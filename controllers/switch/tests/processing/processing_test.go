@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
@@ -64,7 +64,7 @@ var _ = Describe("Processing test", func() {
 				return nil
 			})).NotTo(HaveOccurred())
 			for _, samplePath := range inventoriesSamples {
-				sampleBytes, err := ioutil.ReadFile(samplePath)
+				sampleBytes, err := os.ReadFile(samplePath)
 				Expect(err).NotTo(HaveOccurred())
 				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 				sampleInventory := &inventoryv1alpha1.Inventory{}
@@ -83,7 +83,7 @@ var _ = Describe("Processing test", func() {
 				return nil
 			})).NotTo(HaveOccurred())
 			for _, samplePath := range switchesSamples {
-				sampleBytes, err := ioutil.ReadFile(samplePath)
+				sampleBytes, err := os.ReadFile(samplePath)
 				Expect(err).NotTo(HaveOccurred())
 				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 				sampleSwitch := &switchv1beta1.Switch{}
@@ -136,7 +136,7 @@ var _ = Describe("Processing test", func() {
 
 			updatedInventory := func() *inventoryv1alpha1.Inventory {
 				samplePath := filepath.Join("..", "samples", "inventories", "spine-1.inventory.yaml")
-				sampleBytes, err := ioutil.ReadFile(samplePath)
+				sampleBytes, err := os.ReadFile(samplePath)
 				Expect(err).NotTo(HaveOccurred())
 				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 				sampleInventory := &inventoryv1alpha1.Inventory{}

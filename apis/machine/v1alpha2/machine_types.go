@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"github.com/onmetal/metal-api/internal/entity"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,24 +34,14 @@ const (
 	MachinePowerStateReset = "Reset"
 )
 
-type RequestState string
-
-const (
-	RequestStateAvailable RequestState = "Available"
-	RequestStateReserved  RequestState = "Reserved"
-	RequestStatePending   RequestState = "Pending"
-	RequestStateError     RequestState = "Error"
-	RequestStateRunning   RequestState = "Running"
-)
-
 type TaintEffect string
 
 const (
 	// When Machine taint effect is NotAvailable that's mean that Inventory or OOB not exist.
 	TaintEffectNotAvailable TaintEffect = "NotAvailable"
-	// When Machine taint effect is Suspended
+	// When Machine taint effect is Suspended.
 	TaintEffectSuspended TaintEffect = "Suspended"
-	// When Machine taint effect is NoSchedule
+	// When Machine taint effect is NoSchedule.
 	TaintEffectNoSchedule TaintEffect = "NoSchedule"
 	// When Machine taint effect is Error it's impossible to order machine. And it requires to run stresstest.
 	TaintEffectError TaintEffect = "Error"
@@ -133,7 +122,7 @@ type Toleration struct {
 	Key string `json:"key,omitempty"`
 	// Operator represents a key's relationship to the value.
 	// Valid operators are Exists and Equal. Defaults to Equal.
-	// Exists is equivalent to wildcard for value, so that a resource can
+	// Exist is equivalent to wildcard for value, so that a resource can
 	// tolerate all taints of a particular category.
 	Operator TolerationOperator `json:"operator,omitempty"`
 	// Value is the taint value the toleration matches to.
@@ -222,7 +211,7 @@ type Interface struct {
 	Unknown bool `json:"unknown,omitempty"`
 }
 
-// IPAddressSpec defines interface's ip address info
+// IPAddressSpec defines interface's ip address info.
 type IPAddressSpec struct {
 	// Address refers to the ip address value
 	Address string `json:"address,omitempty"`
@@ -230,7 +219,7 @@ type IPAddressSpec struct {
 	ResourceReference *ResourceReference `json:"resource_reference,omitempty"`
 }
 
-//Peer - contains machine neighbor information collected from LLDP.
+// Peer - contains machine neighbor information collected from LLDP.
 type Peer struct {
 	// LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol
 	// layer 2 neighbor discovery protocol
@@ -265,7 +254,7 @@ type Network struct {
 	UnknownPorts int `json:"unknown_ports,omitempty"`
 }
 
-// ObjectReference - defines object reference status and additional information
+// ObjectReference - defines object reference status and additional information.
 type ObjectReference struct {
 	// Exist - defines where referenced object exist or not
 	// +optional
@@ -276,15 +265,15 @@ type ObjectReference struct {
 }
 
 type Reservation struct {
-	// Status - defines Machine Request state provided by OOB Machine Resources
+	// Status - defines Machine Order state provided by OOB Machine Resources
 	// +optional
-	Status entity.ReservationStatus `json:"status,omitempty"`
-	// Reference - defines underlaying referenced object.
+	Status string `json:"status,omitempty"`
+	// Reference - defines underlying referenced object.
 	// +optional
 	Reference *ResourceReference `json:"reference,omitempty"`
 }
 
-// ResourceReference defines related resource info
+// ResourceReference defines related resource info.
 type ResourceReference struct {
 	// APIVersion refers to the resource API version
 	// +optional
@@ -307,7 +296,7 @@ type ResourceReference struct {
 // +kubebuilder:printcolumn:name="OOB",type=boolean,JSONPath=`.status.oob.exist`
 // +kubebuilder:printcolumn:name="Orphaned",type=boolean,JSONPath=`.status.orphaned`
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
-// +kubebuilder:printcolumn:name="Request State",type=string,JSONPath=`.status.request_state`
+// +kubebuilder:printcolumn:name="Order Status",type=string,JSONPath=`.status.reservation.status`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Machine - is the data structure for a Machine resource.

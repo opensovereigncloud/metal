@@ -30,21 +30,21 @@ const (
 	CAggregatePathPrefixReplacement = "{."
 )
 
-// SizeSpec defines the desired state of Size
+// SizeSpec defines the desired state of Size.
 type SizeSpec struct {
-	// Constraints is a list of selectors based on machine properties
+	// Constraints is a list of selectors based on machine properties.
 	// +kubebuilder:validation:Optional
 	Constraints []ConstraintSpec `json:"constraints,omitempty"`
 }
 
-// SizeStatus defines the observed state of Size
+// SizeStatus defines the observed state of Size.
 type SizeStatus struct {
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Size is the Schema for the sizes API
+// Size is the Schema for the sizes API.
 type Size struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -55,7 +55,7 @@ type Size struct {
 
 // +kubebuilder:object:root=true
 
-// SizeList contains a list of Size
+// SizeList contains a list of Size.
 type SizeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

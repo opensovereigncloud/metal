@@ -31,8 +31,8 @@ spec:
     - jsonPath: .status.network.redundancy
       name: Redundancy
       type: string
-    - jsonPath: .status.request_state
-      name: Request State
+    - jsonPath: .status.reservation.status
+      name: Order Status
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -326,7 +326,7 @@ spec:
                   object.
                 properties:
                   reference:
-                    description: Reference - defines underlaying referenced object.
+                    description: Reference - defines underlying referenced object.
                     properties:
                       apiVersion:
                         description: APIVersion refers to the resource API version
@@ -342,7 +342,7 @@ spec:
                         type: string
                     type: object
                   status:
-                    description: Status - defines Machine Request state provided by
+                    description: Status - defines Machine Order state provided by
                       OOB Machine Resources
                     type: string
                 type: object

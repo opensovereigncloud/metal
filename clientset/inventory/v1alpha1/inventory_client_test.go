@@ -15,6 +15,7 @@ import (
 	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
+// nolint:forcetypeassert
 var _ = Describe("Inventory client", func() {
 	const (
 		InventoryName         = "test-inventory"

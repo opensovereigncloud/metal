@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// ConstraintSpec contains conditions of contraint that should be applied on resource
+// ConstraintSpec contains conditions of contraint that should be applied on resource.
 type ConstraintSpec struct {
 	// Path is a path to the struct field constraint will be applied to
 	// +kubebuilder:validation:Optional

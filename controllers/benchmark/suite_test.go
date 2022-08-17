@@ -55,6 +55,7 @@ const (
 
 var scheme = runtime.NewScheme()
 
+// nolint
 func TestMachineController(t *testing.T) {
 	RegisterFailHandler(Fail)
 

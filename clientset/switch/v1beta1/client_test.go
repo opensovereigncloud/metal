@@ -30,6 +30,7 @@ import (
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 )
 
+// nolint:forcetypeassert
 var _ = Describe("Switch client", func() {
 	const (
 		SwitchName         = "test-switch"

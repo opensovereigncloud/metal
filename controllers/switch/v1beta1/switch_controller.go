@@ -60,7 +60,7 @@ const (
 )
 
 // SwitchReconciler reconciles Switch object corresponding
-// to given Inventory object
+// to given Inventory object.
 type SwitchReconciler struct {
 	client.Client
 
@@ -307,6 +307,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 	return
 }
 
+// nolint:forcetypeassert
 // SetupWithManager sets up the controller with the Manager.
 func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// indexing switch's .spec.uuid field
@@ -359,6 +360,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleSwitchUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	prevObj := e.ObjectOld.(*switchv1beta1.Switch)
 	currObj := e.ObjectNew.(*switchv1beta1.Switch)
@@ -401,6 +403,7 @@ func (r *SwitchReconciler) handleSwitchUpdate(e event.UpdateEvent, q workqueue.R
 	}
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleInventoryCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
 	log := r.Log.WithValues("switch-controller-watch", "inventory create")
 	obj := e.Object.(*inventoryv1alpha1.Inventory)
@@ -421,6 +424,7 @@ func (r *SwitchReconciler) handleInventoryCreate(e event.CreateEvent, q workqueu
 	}
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleInventoryUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	log := r.Log.WithValues("switch-controller-watch", "inventory update")
 	prevObj := e.ObjectOld.(*inventoryv1alpha1.Inventory)
@@ -453,11 +457,13 @@ func (r *SwitchReconciler) handleInventoryUpdate(e event.UpdateEvent, q workqueu
 	q.Add(reconcile.Request{NamespacedName: switches.Items[0].GetNamespacedName()})
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleSwitchConfigCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
 	obj := e.Object.(*switchv1beta1.SwitchConfig)
 	r.enqueueDependenciesOnSwitchConfigEvent(obj, q)
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleSwitchConfigUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	log := r.Log.WithValues("switch-controller-watch", "switchconfig update")
 	prevObj := e.ObjectOld.(*switchv1beta1.SwitchConfig)
@@ -554,6 +560,7 @@ func (r *SwitchReconciler) enqueueDependenciesOnSwitchConfigEvent(obj *switchv1b
 	}
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleSubnetCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
 	log := r.Log.WithValues("switch-controller-watch", "subnet create")
 	var opts *client.ListOptions
@@ -583,6 +590,7 @@ func (r *SwitchReconciler) handleSubnetCreate(e event.CreateEvent, q workqueue.R
 	}
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleSubnetUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	log := r.Log.WithValues("switch-controller-watch", "subnet update")
 	var opts *client.ListOptions
@@ -636,6 +644,7 @@ func (r *SwitchReconciler) handleSubnetUpdate(e event.UpdateEvent, q workqueue.R
 	}
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleIPCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
 	log := r.Log.WithValues("switch-controller-watch", "ip create")
 	var opts *client.ListOptions
@@ -648,7 +657,6 @@ func (r *SwitchReconciler) handleIPCreate(e event.CreateEvent, q workqueue.RateL
 	if ipPurposeLabelExists {
 		if ipPurposeLabel == switchv1beta1.CIPAMPurposeLoopback ||
 			ipPurposeLabel == switchv1beta1.CIPAMPurposeInterfaceIP {
-
 			ipOwnerLabel, ipOwnerLabelExists = ip.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
 	}
@@ -667,6 +675,7 @@ func (r *SwitchReconciler) handleIPCreate(e event.CreateEvent, q workqueue.RateL
 	}
 }
 
+// nolint:forcetypeassert
 func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	log := r.Log.WithValues("switch-controller-watch", "ip update")
 	var opts *client.ListOptions
@@ -683,7 +692,6 @@ func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateL
 	if prevPurposeLabelExists {
 		if prevPurposeLabel == switchv1beta1.CIPAMPurposeLoopback ||
 			prevPurposeLabel == switchv1beta1.CIPAMPurposeInterfaceIP {
-
 			prevOwnerLabel, prevOwnerLabelExists = prevObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
 	}
@@ -705,7 +713,6 @@ func (r *SwitchReconciler) handleIPUpdate(e event.UpdateEvent, q workqueue.RateL
 	if currPurposeLabelExists {
 		if currPurposeLabel == switchv1beta1.CIPAMPurposeLoopback ||
 			currPurposeLabel == switchv1beta1.CIPAMPurposeInterfaceIP {
-
 			currOwnerLabel, currOwnerLabelExists = currObj.Labels[switchv1beta1.IPAMObjectOwnerLabel]
 		}
 	}
@@ -749,7 +756,8 @@ func (r *SwitchReconciler) getRelatedLoopbackIPs(ctx context.Context, obj *switc
 	return
 }
 
-func (r *SwitchReconciler) computeLoopbacks(ctx context.Context, obj *switchv1beta1.Switch, list *ipamv1alpha1.IPList) (err error) {
+// nolint:unparam
+func (r *SwitchReconciler) computeLoopbacks(_ context.Context, obj *switchv1beta1.Switch, list *ipamv1alpha1.IPList) (err error) {
 	loopbacks := make([]*switchv1beta1.IPAddressSpec, 0)
 	for _, item := range list.Items {
 		loopbacks = append(loopbacks, &switchv1beta1.IPAddressSpec{
@@ -790,7 +798,8 @@ func (r *SwitchReconciler) getRelatedSubnets(ctx context.Context, obj *switchv1b
 	return
 }
 
-func (r *SwitchReconciler) computeSubnets(ctx context.Context, obj *switchv1beta1.Switch, list *ipamv1alpha1.SubnetList) (err error) {
+// nolint:unparam
+func (r *SwitchReconciler) computeSubnets(_ context.Context, obj *switchv1beta1.Switch, list *ipamv1alpha1.SubnetList) (err error) {
 	subnets := make([]*switchv1beta1.SubnetSpec, 0)
 	for _, item := range list.Items {
 		subnets = append(subnets, &switchv1beta1.SubnetSpec{
@@ -805,7 +814,7 @@ func (r *SwitchReconciler) computeSubnets(ctx context.Context, obj *switchv1beta
 	return
 }
 
-func (r *SwitchReconciler) computeIPAddresses(ctx context.Context, obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) error {
+func (r *SwitchReconciler) computeIPAddresses(_ context.Context, obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) error {
 	//todo: creation of related nics' subnets and ips
 	extraIPs := obj.GetExtraNICsIPs()
 	southIPs, err := obj.GetSouthNICsIP()

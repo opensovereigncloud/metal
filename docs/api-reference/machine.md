@@ -7,13 +7,89 @@
 <h2 id="machine.onmetal.de/v1alpha2">machine.onmetal.de/v1alpha2</h2>
 Resource Types:
 <ul></ul>
+<h3 id="machine.onmetal.de/v1alpha2.EFIVar">EFIVar
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignmentSpec">MachineAssignmentSpec</a>)
+</p>
+<div>
+<p>EFIVar is a variable to pass to EFI while booting up.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>uuid</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.IPAddress">IPAddress
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.NetworkInterfaces">NetworkInterfaces</a>)
+</p>
+<div>
+<p>IP is an IP address.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>-</code><br/>
+<em>
+inet.af/netaddr.IP
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="machine.onmetal.de/v1alpha2.IPAddressSpec">IPAddressSpec
 </h3>
 <p>
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Interface">Interface</a>)
 </p>
 <div>
-<p>IPAddressSpec defines interface&rsquo;s ip address info</p>
+<p>IPAddressSpec defines interface&rsquo;s ip address info.</p>
 </div>
 <table>
 <thead>
@@ -394,6 +470,315 @@ MachineStatus
 </tr>
 </tbody>
 </table>
+<h3 id="machine.onmetal.de/v1alpha2.MachineAssignment">MachineAssignment
+</h3>
+<div>
+<p>MachineAssignment is the Schema for the requests API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.MachineAssignmentSpec">
+MachineAssignmentSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>tolerations</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.Toleration">
+[]Toleration
+</a>
+</em>
+</td>
+<td>
+<p>Tolerations define tolerations the Machine has. Only MachinePools whose taints
+covered by Tolerations will be considered to run the Machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>machineClass</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>MachineClass is a reference to the machine class/flavor of the machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>image</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image is the URL providing the operating system image of the machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkInterfaces</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.NetworkInterfaces">
+[]NetworkInterfaces
+</a>
+</em>
+</td>
+<td>
+<p>Interfaces define a list of network interfaces present on the machine</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.Volume">
+[]Volume
+</a>
+</em>
+</td>
+<td>
+<p>Volumes are volumes attached to this machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ignition</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ObjectSelector">
+ObjectSelector
+</a>
+</em>
+</td>
+<td>
+<p>Ignition is a reference to a config map containing the ignition YAML for the machine to boot up.
+If key is empty, DefaultIgnitionKey will be used as fallback.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>efiVars</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.EFIVar">
+[]EFIVar
+</a>
+</em>
+</td>
+<td>
+<p>EFIVars are variables to pass to EFI while booting up.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.MachineAssignmentStatus">
+MachineAssignmentStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.MachineAssignmentSpec">MachineAssignmentSpec
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignment">MachineAssignment</a>)
+</p>
+<div>
+<p>MachineAssignmentSpec defines the desired state of Request.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>tolerations</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.Toleration">
+[]Toleration
+</a>
+</em>
+</td>
+<td>
+<p>Tolerations define tolerations the Machine has. Only MachinePools whose taints
+covered by Tolerations will be considered to run the Machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>machineClass</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>MachineClass is a reference to the machine class/flavor of the machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>image</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Image is the URL providing the operating system image of the machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>networkInterfaces</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.NetworkInterfaces">
+[]NetworkInterfaces
+</a>
+</em>
+</td>
+<td>
+<p>Interfaces define a list of network interfaces present on the machine</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>volumes</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.Volume">
+[]Volume
+</a>
+</em>
+</td>
+<td>
+<p>Volumes are volumes attached to this machine.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ignition</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ObjectSelector">
+ObjectSelector
+</a>
+</em>
+</td>
+<td>
+<p>Ignition is a reference to a config map containing the ignition YAML for the machine to boot up.
+If key is empty, DefaultIgnitionKey will be used as fallback.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>efiVars</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.EFIVar">
+[]EFIVar
+</a>
+</em>
+</td>
+<td>
+<p>EFIVars are variables to pass to EFI while booting up.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.MachineAssignmentStatus">MachineAssignmentStatus
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignment">MachineAssignment</a>)
+</p>
+<div>
+<p>MachineAssignmentStatus defines the observed state of Request.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>state</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>machineRef</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ResourceReference">
+ResourceReference
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>computeMachineRef</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ResourceReference">
+ResourceReference
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="machine.onmetal.de/v1alpha2.MachineSpec">MachineSpec
 </h3>
 <p>
@@ -598,6 +983,20 @@ ObjectReference
 </tr>
 <tr>
 <td>
+<code>reservation</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.Reservation">
+Reservation
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Reservation - defines machine reservation state and reference object.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>orphaned</code><br/>
 <em>
 bool
@@ -665,13 +1064,79 @@ int
 </tr>
 </tbody>
 </table>
+<h3 id="machine.onmetal.de/v1alpha2.NetworkInterfaces">NetworkInterfaces
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignmentSpec">MachineAssignmentSpec</a>)
+</p>
+<div>
+<p>Interface is the definition of a single interface.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the interface</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>target</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>Target is the referenced resource of this interface.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>priority</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Priority is the priority level of this interface</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ip</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.IPAddress">
+IPAddress
+</a>
+</em>
+</td>
+<td>
+<p>IP specifies a concrete IP address which should be allocated from a Subnet</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="machine.onmetal.de/v1alpha2.ObjectReference">ObjectReference
 </h3>
 <p>
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineStatus">MachineStatus</a>)
 </p>
 <div>
-<p>ObjectReference - defines object reference status and additional information</p>
+<p>ObjectReference - defines object reference status and additional information.</p>
 </div>
 <table>
 <thead>
@@ -705,6 +1170,55 @@ ResourceReference
 <td>
 <em>(Optional)</em>
 <p>Reference - defines underlaying referenced object e.g. Inventory or OOB kind.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.ObjectSelector">ObjectSelector
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignmentSpec">MachineAssignmentSpec</a>)
+</p>
+<div>
+<p>ObjectSelector is a reference to a specific &lsquo;key&rsquo; within a ConfigMap resource.
+In some instances, <code>key</code> is a required field.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>LocalObjectReference</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>LocalObjectReference</code> are embedded into this type.)
+</p>
+<p>The name of the ConfigMap resource being referred to.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>key</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The key of the entry in the ConfigMap resource&rsquo;s <code>data</code> field to be used.
+Some instances of this field may be defaulted, in others it may be
+required.</p>
 </td>
 </tr>
 </tbody>
@@ -790,13 +1304,56 @@ ResourceReference
 </tr>
 </tbody>
 </table>
+<h3 id="machine.onmetal.de/v1alpha2.Reservation">Reservation
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineStatus">MachineStatus</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Status - defines Machine Order state provided by OOB Machine Resources</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reference</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.ResourceReference">
+ResourceReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Reference - defines underlying referenced object.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="machine.onmetal.de/v1alpha2.ResourceReference">ResourceReference
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.IPAddressSpec">IPAddressSpec</a>, <a href="#machine.onmetal.de/v1alpha2.Interface">Interface</a>, <a href="#machine.onmetal.de/v1alpha2.ObjectReference">ObjectReference</a>, <a href="#machine.onmetal.de/v1alpha2.Peer">Peer</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.IPAddressSpec">IPAddressSpec</a>, <a href="#machine.onmetal.de/v1alpha2.Interface">Interface</a>, <a href="#machine.onmetal.de/v1alpha2.MachineAssignmentStatus">MachineAssignmentStatus</a>, <a href="#machine.onmetal.de/v1alpha2.ObjectReference">ObjectReference</a>, <a href="#machine.onmetal.de/v1alpha2.Peer">Peer</a>, <a href="#machine.onmetal.de/v1alpha2.Reservation">Reservation</a>)
 </p>
 <div>
-<p>ResourceReference defines related resource info</p>
+<p>ResourceReference defines related resource info.</p>
 </div>
 <table>
 <thead>
@@ -893,6 +1450,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Value - corresponding to the taint key.</p>
 </td>
 </tr>
@@ -900,8 +1458,8 @@ string
 <td>
 <code>status</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha2.TaintStatus">
-TaintStatus
+<a href="#machine.onmetal.de/v1alpha2.TaintEffect">
+TaintEffect
 </a>
 </em>
 </td>
@@ -927,10 +1485,10 @@ It is only written for NoExecute taints.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha2.TaintStatus">TaintStatus
+<h3 id="machine.onmetal.de/v1alpha2.TaintEffect">TaintEffect
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Taint">Taint</a>)
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Taint">Taint</a>, <a href="#machine.onmetal.de/v1alpha2.Toleration">Toleration</a>)
 </p>
 <div>
 </div>
@@ -942,19 +1500,233 @@ It is only written for NoExecute taints.</p>
 </tr>
 </thead>
 <tbody><tr><td><p>&#34;Error&#34;</p></td>
-<td><p>When Machine status is Error it&rsquo;s impossible to order machine</p>
+<td><p>When Machine taint effect is Error it&rsquo;s impossible to order machine. And it requires to run stresstest.</p>
+</td>
+</tr><tr><td><p>&#34;NoSchedule&#34;</p></td>
+<td><p>When Machine taint effect is NoSchedule.</p>
 </td>
 </tr><tr><td><p>&#34;NotAvailable&#34;</p></td>
-<td><p>When Machine status is NotAvailable it&rsquo;s not possible to order it.</p>
+<td><p>When Machine taint effect is NotAvailable that&rsquo;s mean that Inventory or OOB not exist.</p>
 </td>
 </tr><tr><td><p>&#34;Suspended&#34;</p></td>
-<td><p>When Machine status is Suspended that&rsquo;s meant that there is some issues
-and need to run stress test.</p>
+<td><p>When Machine taint effect is Suspended.</p>
 </td>
 </tr></tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.Toleration">Toleration
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignmentSpec">MachineAssignmentSpec</a>)
+</p>
+<div>
+<p>The resource this Toleration is attached to tolerates any taint that matches
+the triple <key,value,effect> using the matching operator <operator>.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>key</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Key is the taint key that the toleration applies to. Empty means match all taint keys.
+If the key is empty, operator must be Exists; this combination means to match all values and all keys.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>operator</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.TolerationOperator">
+TolerationOperator
+</a>
+</em>
+</td>
+<td>
+<p>Operator represents a key&rsquo;s relationship to the value.
+Valid operators are Exists and Equal. Defaults to Equal.
+Exist is equivalent to wildcard for value, so that a resource can
+tolerate all taints of a particular category.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value is the taint value the toleration matches to.
+If the operator is Exists, the value should be empty, otherwise just a regular string.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>effect</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.TaintEffect">
+TaintEffect
+</a>
+</em>
+</td>
+<td>
+<p>Effect indicates the taint effect to match. Empty means match all taint effects.
+When specified, allowed values are NoSchedule.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.TolerationOperator">TolerationOperator
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Toleration">Toleration</a>)
+</p>
+<div>
+<p>A toleration operator is the set of operators that can be used in a toleration.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr><td><p>&#34;Equal&#34;</p></td>
+<td></td>
+</tr><tr><td><p>&#34;Exists&#34;</p></td>
+<td></td>
+</tr></tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.Volume">Volume
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignmentSpec">MachineAssignmentSpec</a>)
+</p>
+<div>
+<p>Volume defines a volume attachment of a machine.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the VolumeAttachment</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>priority</code><br/>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Priority is the OS priority of the volume.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>VolumeSource</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.VolumeSource">
+VolumeSource
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>VolumeSource</code> are embedded into this type.)
+</p>
+<p>VolumeAttachmentSource is the source where the storage for the VolumeAttachment resides at.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.VolumeClaimSource">VolumeClaimSource
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.VolumeSource">VolumeSource</a>)
+</p>
+<div>
+<p>VolumeClaimSource references a VolumeClaim as VolumeAttachment source.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ref</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>Ref is a reference to the VolumeClaim.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha2.VolumeSource">VolumeSource
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.Volume">Volume</a>)
+</p>
+<div>
+<p>VolumeSource specifies the source to use for a VolumeAttachment.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>volumeClaim</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha2.VolumeClaimSource">
+VolumeClaimSource
+</a>
+</em>
+</td>
+<td>
+<p>VolumeClaim instructs the VolumeAttachment to use a VolumeClaim as source for the attachment.</p>
+</td>
+</tr>
+</tbody>
 </table>
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>effbf2c</code>.
+on git commit <code>99a336f</code>.
 </em></p>

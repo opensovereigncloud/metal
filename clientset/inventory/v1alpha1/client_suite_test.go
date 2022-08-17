@@ -19,6 +19,7 @@ import (
 var cfg *rest.Config
 var testEnv *envtest.Environment
 
+// nolint
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 

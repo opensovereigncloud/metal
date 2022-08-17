@@ -21,8 +21,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"go/build"
-	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -64,6 +64,7 @@ const (
 	onmetal = "onmetal"
 )
 
+// nolint
 func TestOnboarding(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -168,7 +169,7 @@ var _ = AfterSuite(func() {
 
 func getCrdPath(crdPackageScheme interface{}) string {
 	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
-	goModData, err := ioutil.ReadFile(filepath.Join("..", "..", "..", "..", "go.mod"))
+	goModData, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "go.mod"))
 	Expect(err).NotTo(HaveOccurred())
 	goModFile, err := modfile.Parse("", goModData, nil)
 	Expect(err).NotTo(HaveOccurred())

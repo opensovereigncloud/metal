@@ -28,16 +28,6 @@ type (
 		InitializationStatus(context.Context, entity.Onboarding) entity.Initialization
 		GatherData(context.Context, entity.Onboarding) error
 	}
-	Reserver interface {
-		GetReservation(context.Context, entity.Order) (entity.Reservation, error)
-		CheckIn(context.Context, entity.Reservation) error
-		CheckOut(context.Context, entity.Reservation) error
-	}
-	Scheduler interface {
-		Schedule(context.Context, entity.Order) error
-		IsScheduled(context.Context, entity.Order) bool
-		DeleteScheduling(context.Context, entity.Reservation) error
-	}
 	Synchronization interface {
 		Do(context.Context, entity.Reservation) error
 	}

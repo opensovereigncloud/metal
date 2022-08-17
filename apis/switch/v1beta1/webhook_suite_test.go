@@ -51,6 +51,7 @@ var (
 	cancel    context.CancelFunc
 )
 
+// nolint
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 

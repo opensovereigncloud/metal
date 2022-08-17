@@ -14,6 +14,7 @@ import (
 	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
+// nolint:forcetypeassert
 var _ = Describe("Aggregate client", func() {
 	const (
 		AggregateName         = "test-aggregate"

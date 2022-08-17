@@ -20,7 +20,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: SwitchConfig is the Schema for switch config API
+        description: SwitchConfig is the Schema for switch config API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

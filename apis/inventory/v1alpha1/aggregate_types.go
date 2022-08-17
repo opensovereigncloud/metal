@@ -45,7 +45,7 @@ type AggregateItem struct {
 	Aggregate AggregateType `json:"aggregate,omitempty"`
 }
 
-// AggregateSpec defines the desired state of Aggregate
+// AggregateSpec defines the desired state of Aggregate.
 type AggregateSpec struct {
 	// Aggregates is a list of aggregates required to be computed
 	// +kubebuilder:validation:Required
@@ -53,13 +53,13 @@ type AggregateSpec struct {
 	Aggregates []AggregateItem `json:"aggregates"`
 }
 
-// AggregateStatus defines the observed state of Aggregate
+// AggregateStatus defines the observed state of Aggregate.
 type AggregateStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Aggregate is the Schema for the aggregates API
+// Aggregate is the Schema for the aggregates API.
 type Aggregate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -70,7 +70,7 @@ type Aggregate struct {
 
 // +kubebuilder:object:root=true
 
-// AggregateList contains a list of Aggregate
+// AggregateList contains a list of Aggregate.
 type AggregateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

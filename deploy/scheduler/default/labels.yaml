@@ -1,0 +1,9 @@
+apiVersion: builtin
+kind: LabelTransformer
+metadata:
+  name: labels
+labels:
+  app.kubernetes.io/name: metal-api-scheduler
+fieldSpecs:
+- path: metadata/labels
+  create: true

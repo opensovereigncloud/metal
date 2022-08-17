@@ -19,6 +19,7 @@ RUN --mount=type=ssh --mount=type=secret,id=github_pat GITHUB_PAT_PATH=/run/secr
 
 # Copy the go source
 COPY main.go main.go
+COPY common common
 COPY apis/ apis/
 COPY controllers/ controllers/
 COPY pkg/ pkg/

@@ -12,7 +12,7 @@
 
 ## Usage
 
-* [Installation process](usage/installation.md)
+* [Installation process](development/installation.md)
 * [Inventory](usage/inventory.md)
 * [Machine](usage/machine.md)
 
@@ -31,7 +31,7 @@
 
 ## Development
 * [Contribution Guide](development/contribution.md)
-* [Generation Guide](development/generation.md)
+* [Generation Guide](usage/generation.md)
 
 ## Deployment
 

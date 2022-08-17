@@ -41,7 +41,7 @@ import (
 var RequeuingInterval = time.Second * 15
 
 // OnboardingReconciler reconciles Switch object corresponding
-// to given Inventory object
+// to given Inventory object.
 type OnboardingReconciler struct {
 	client.Client
 
@@ -137,6 +137,7 @@ func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// nolint:forcetypeassert
 func (r *OnboardingReconciler) handleSwitchCreate(e event.CreateEvent, q workqueue.RateLimitingInterface) {
 	eventSource := e.Object.(*switchv1beta1.Switch)
 	if _, ok := eventSource.Labels[switchv1beta1.InventoriedLabel]; ok {

@@ -33,6 +33,7 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
+// nolint:forcetypeassert
 var _ = Describe("Inventory controller", func() {
 	const (
 		InventoryName      = "test-inventory"
@@ -394,8 +395,8 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				maxLogicalId := iface.(string)
-				return maxLogicalId == "3"
+				maxLogicalID := iface.(string)
+				return maxLogicalID == "3"
 			}, timeout, interval).Should(BeTrue())
 
 			By("Inventory is updated")
@@ -471,8 +472,8 @@ var _ = Describe("Inventory controller", func() {
 				if err != nil {
 					return false
 				}
-				maxLogicalId := iface.(string)
-				return maxLogicalId == "5"
+				maxLogicalID := iface.(string)
+				return maxLogicalID == "5"
 			}, timeout, interval).Should(BeTrue())
 
 			By("Inventory is deleted")

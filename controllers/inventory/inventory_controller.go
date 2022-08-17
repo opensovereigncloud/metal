@@ -38,7 +38,7 @@ const (
 	CDefaultAggregateName  = "default"
 )
 
-// InventoryReconciler reconciles a Inventory object
+// InventoryReconciler reconciles an Inventory object.
 type InventoryReconciler struct {
 	client.Client
 
@@ -232,9 +232,12 @@ func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 }
 
 func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
-	old := event.ObjectOld.(*machinev1alpha1.Inventory)
-	upd := event.ObjectNew.(*machinev1alpha1.Inventory)
-
+	old, oldOK := event.ObjectOld.(*machinev1alpha1.Inventory)
+	upd, updOK := event.ObjectNew.(*machinev1alpha1.Inventory)
+	if !oldOK || !updOK {
+		r.Log.Info("printDiffOnUpdate: type assertions failed")
+		return false
+	}
 	nsName := types.NamespacedName{
 		Namespace: old.Namespace,
 		Name:      old.Name,

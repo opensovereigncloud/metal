@@ -22,13 +22,16 @@ import (
 
 // MachineSpec contains machine benchmark results.
 type MachineSpec struct {
+	// Benchmarks is the collection of benchmarks.
 	Benchmarks map[string]Benchmarks `json:"benchmarks,omitempty"`
 }
 
 type Benchmarks []Benchmark
 
 type Benchmark struct {
-	Name  string `json:"name"`
+	// Name is the specific benchmark name. e.g. `fio-1k`.
+	Name string `json:"name"`
+	// Value is the exact result of specific benchmark.
 	Value uint64 `json:"value,omitempty"`
 }
 
@@ -40,8 +43,11 @@ type MachineStatus struct {
 
 type BenchmarkDeviations []BenchmarkDeviation
 
+// BenchmarkDeviation is a deviation between old value and the new one.
 type BenchmarkDeviation struct {
-	Name  string `json:"name"`
+	// Name is the specific benchmark name. e.g. `fio-1k`.
+	Name string `json:"name"`
+	// Value is the exact result of specific benchmark.
 	Value string `json:"value,omitempty"`
 }
 

@@ -18,7 +18,7 @@ package v1beta1
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -30,7 +30,7 @@ import (
 
 func createSwitchFromSampleFile() (switchObject *Switch, err error) {
 	samplePath := filepath.Join("..", "..", "..", "config", "samples", "switch_v1beta1_switch.yaml")
-	sampleBytes, err := ioutil.ReadFile(samplePath)
+	sampleBytes, err := os.ReadFile(samplePath)
 	if err != nil {
 		return
 	}

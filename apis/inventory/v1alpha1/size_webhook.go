@@ -45,13 +45,13 @@ func (in *Size) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Validator = &Size{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Size) ValidateCreate() error {
 	sizelog.Info("validate create", "name", in.Name)
 	return in.validate()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Size) ValidateUpdate(old runtime.Object) error {
 	sizelog.Info("validate update", "name", in.Name)
 	return in.validate()
@@ -193,7 +193,7 @@ func (in *ConstraintSpec) wrongInterval() bool {
 	return true
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Size) ValidateDelete() error {
 	sizelog.Info("validate delete", "name", in.Name)
 	return nil

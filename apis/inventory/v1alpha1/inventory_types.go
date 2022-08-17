@@ -409,7 +409,7 @@ type DistroSpec struct {
 	// +kubebuilder:validation:Optional
 	AsicType string `json:"asicType,omitempty"`
 	// +kubebuilder:validation:Optional
-	CommitId string `json:"commitId,omitempty"`
+	CommitID string `json:"commitID,omitempty"`
 	// +kubebuilder:validation:Optional
 	BuildDate string `json:"buildDate,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -450,7 +450,7 @@ type Inventory struct {
 
 // +kubebuilder:object:root=true
 
-// InventoryList contains a list of Inventory
+// InventoryList contains a list of Inventory.
 type InventoryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

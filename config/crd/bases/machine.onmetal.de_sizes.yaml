@@ -18,7 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Size is the Schema for the sizes API
+        description: Size is the Schema for the sizes API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,13 +33,13 @@ spec:
           metadata:
             type: object
           spec:
-            description: SizeSpec defines the desired state of Size
+            description: SizeSpec defines the desired state of Size.
             properties:
               constraints:
-                description: Constraints is a list of selectors based on machine properties
+                description: Constraints is a list of selectors based on machine properties.
                 items:
                   description: ConstraintSpec contains conditions of contraint that
-                    should be applied on resource
+                    should be applied on resource.
                   properties:
                     agg:
                       description: Aggregate defines whether collection values should
@@ -95,7 +95,7 @@ spec:
                 type: array
             type: object
           status:
-            description: SizeStatus defines the observed state of Size
+            description: SizeStatus defines the observed state of Size.
             type: object
         type: object
     served: true

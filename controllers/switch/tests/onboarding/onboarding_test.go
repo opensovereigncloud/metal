@@ -18,7 +18,7 @@ package onboarding
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -56,7 +56,7 @@ var _ = Describe("Onboarding test", func() {
 
 		JustBeforeEach(func() {
 			samplePath := filepath.Join("..", "samples", "inventories", "spine-1.inventory.yaml")
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleInventory = &inventoryv1alpha1.Inventory{}
@@ -87,7 +87,7 @@ var _ = Describe("Onboarding test", func() {
 		)
 		JustBeforeEach(func() {
 			samplePath := filepath.Join("..", "samples", "switches", "spine-1.switch.yaml")
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleSwitch = &switchv1beta1.Switch{}
@@ -99,7 +99,7 @@ var _ = Describe("Onboarding test", func() {
 			Expect(sampleSwitch.Labels["metalapi.onmetal.de/inventoried"]).Should(BeEmpty())
 
 			samplePath := filepath.Join("..", "samples", "inventories", "spine-1.inventory.yaml")
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleInventory = &inventoryv1alpha1.Inventory{}
@@ -112,7 +112,7 @@ var _ = Describe("Onboarding test", func() {
 				"metalapi.onmetal.de/chassis-id":    "68-21-5f-47-17-6e",
 			}
 			onboardingAnnotations := map[string]string{
-				switchv1beta1.CHardwareChassisIdAnnotation: strings.ReplaceAll(
+				switchv1beta1.CHardwareChassisIDAnnotation: strings.ReplaceAll(
 					func() string {
 						var chassisID string
 						for _, nic := range sampleInventory.Spec.NICs {
@@ -128,7 +128,7 @@ var _ = Describe("Onboarding test", func() {
 				switchv1beta1.CHardwareSkuAnnotation:          sampleInventory.Spec.System.ProductSKU,
 				switchv1beta1.CSoftwareOnieAnnotation:         "false",
 				switchv1beta1.CSoftwareAsicAnnotation:         sampleInventory.Spec.Distro.AsicType,
-				switchv1beta1.CSoftwareVersionAnnotation:      sampleInventory.Spec.Distro.CommitId,
+				switchv1beta1.CSoftwareVersionAnnotation:      sampleInventory.Spec.Distro.CommitID,
 				switchv1beta1.CSoftwareOSAnnotation:           "sonic",
 				switchv1beta1.CSoftwareHostnameAnnotation:     sampleInventory.Spec.Host.Name,
 			}
@@ -150,7 +150,7 @@ var _ = Describe("Onboarding test", func() {
 		)
 		JustBeforeEach(func() {
 			samplePath := filepath.Join("..", "samples", "switches", "spine-1.switch.yaml")
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleSwitch = &switchv1beta1.Switch{}
@@ -162,7 +162,7 @@ var _ = Describe("Onboarding test", func() {
 			Expect(sampleSwitch.Labels["metalapi.onmetal.de/inventoried"]).Should(BeEmpty())
 
 			samplePath := filepath.Join("..", "samples", "inventories", "spine-1.inventory.yaml")
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleInventory = &inventoryv1alpha1.Inventory{}
@@ -176,7 +176,7 @@ var _ = Describe("Onboarding test", func() {
 				"metalapi.onmetal.de/chassis-id":    "68-21-5f-47-17-6e",
 			}
 			onboardingAnnotations := map[string]string{
-				switchv1beta1.CHardwareChassisIdAnnotation: strings.ReplaceAll(
+				switchv1beta1.CHardwareChassisIDAnnotation: strings.ReplaceAll(
 					func() string {
 						var chassisID string
 						for _, nic := range sampleInventory.Spec.NICs {
@@ -189,7 +189,7 @@ var _ = Describe("Onboarding test", func() {
 				),
 				switchv1beta1.CSoftwareOnieAnnotation:     "false",
 				switchv1beta1.CSoftwareAsicAnnotation:     sampleInventory.Spec.Distro.AsicType,
-				switchv1beta1.CSoftwareVersionAnnotation:  sampleInventory.Spec.Distro.CommitId,
+				switchv1beta1.CSoftwareVersionAnnotation:  sampleInventory.Spec.Distro.CommitID,
 				switchv1beta1.CSoftwareOSAnnotation:       "sonic",
 				switchv1beta1.CSoftwareHostnameAnnotation: sampleInventory.Spec.Host.Name,
 			}
@@ -211,7 +211,7 @@ var _ = Describe("Onboarding test", func() {
 		)
 		JustBeforeEach(func() {
 			samplePath := filepath.Join("..", "samples", "inventories", "spine-1.inventory.yaml")
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleInventory = &inventoryv1alpha1.Inventory{}
@@ -226,7 +226,7 @@ var _ = Describe("Onboarding test", func() {
 				"metalapi.onmetal.de/chassis-id":    "68-21-5f-47-17-6e",
 			}
 			onboardingAnnotations := map[string]string{
-				switchv1beta1.CHardwareChassisIdAnnotation: strings.ReplaceAll(
+				switchv1beta1.CHardwareChassisIDAnnotation: strings.ReplaceAll(
 					func() string {
 						var chassisID string
 						for _, nic := range sampleInventory.Spec.NICs {
@@ -242,7 +242,7 @@ var _ = Describe("Onboarding test", func() {
 				switchv1beta1.CHardwareSkuAnnotation:          sampleInventory.Spec.System.ProductSKU,
 				switchv1beta1.CSoftwareOnieAnnotation:         "false",
 				switchv1beta1.CSoftwareAsicAnnotation:         sampleInventory.Spec.Distro.AsicType,
-				switchv1beta1.CSoftwareVersionAnnotation:      sampleInventory.Spec.Distro.CommitId,
+				switchv1beta1.CSoftwareVersionAnnotation:      sampleInventory.Spec.Distro.CommitID,
 				switchv1beta1.CSoftwareOSAnnotation:           "sonic",
 				switchv1beta1.CSoftwareHostnameAnnotation:     sampleInventory.Spec.Host.Name,
 			}
@@ -256,7 +256,7 @@ var _ = Describe("Onboarding test", func() {
 			Expect(k8sClient.Delete(ctx, onboardedSwitch)).NotTo(HaveOccurred())
 
 			samplePath := filepath.Join("..", "samples", "switches", "spine-1.switch.yaml")
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleSwitch = &switchv1beta1.Switch{}

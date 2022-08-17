@@ -102,7 +102,6 @@ func averageAggregate(values []reflect.Value) (*resource.Quantity, error) {
 	}
 	agg := resource.MustParse(res.String())
 	return &agg, nil
-
 }
 
 func countAggregate(values []reflect.Value) *resource.Quantity {
@@ -179,11 +178,14 @@ func valueToString(value *reflect.Value) (string, error) {
 	if nonPointerValue.Kind() != reflect.String {
 		return "", errors.Errorf("unsupported kind %s for literal comparison", nonPointerValue.Kind().String())
 	}
-	s := nonPointerValue.Interface().(string)
-
+	s, ok := nonPointerValue.Interface().(string)
+	if !ok {
+		return "", errors.Errorf("valueToString: type assertions failed")
+	}
 	return s, nil
 }
 
+// nolint:forcetypeassert
 func valueToQuantity(value *reflect.Value) (*resource.Quantity, error) {
 	nonPointerValue := *value
 	for {
@@ -279,7 +281,8 @@ type ValidationInventory struct {
 	Spec InventorySpec `json:"spec"`
 }
 
-// getDummyInventoryForValidation fills structure with dummy data and used to validate whether path points to existing field
+// getDummyInventoryForValidation fills structure with dummy data and
+// used to validate whether path points to existing field.
 func getDummyInventoryForValidation() *ValidationInventory {
 	return &ValidationInventory{
 		Spec: InventorySpec{
@@ -434,7 +437,7 @@ func getDummyInventoryForValidation() *ValidationInventory {
 				DebianVersion: "",
 				KernelVersion: "",
 				AsicType:      "",
-				CommitId:      "",
+				CommitID:      "",
 				BuildDate:     "",
 				BuildNumber:   0,
 				BuildBy:       "",

@@ -3,10 +3,29 @@ run:
 
 linters:
   enable:
-    - revive
     - ineffassign
     - misspell
     - goimports
+    - govet
+    - gofmt
+    - goimports
+    - godot
+    - predeclared
+    - unconvert
+    - whitespace
+    - unused
+    - unconvert
+    - dogsled
+    - misspell
+    - paralleltest
+    - prealloc
+    - importas
+    - asciicheck
+    - stylecheck
+    - durationcheck
+    - unparam
+    - goprintffuncname
+    - forcetypeassert
 
 severity:
   default-severity: error
@@ -18,3 +37,9 @@ linters-settings:
       - name: exported
       - name: if-return
         disabled: true
+
+issues:
+  exclude-rules:
+    - path: _gen\.go
+      linters:
+        - typecheck

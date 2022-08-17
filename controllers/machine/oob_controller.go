@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/internal/entity"
 	"github.com/onmetal/metal-api/pkg/provider"
 	oobv1 "github.com/onmetal/oob-controller/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +33,7 @@ import (
 
 const maintainedMachineLabel = "onmetal.de/oob-ignore"
 
-// MachineReconciler reconciles a Machine object.
+// OOBReconciler reconciles a Machine object.
 type OOBReconciler struct {
 	client.Client
 
@@ -176,9 +175,9 @@ func getNoScheduleTaintIdx(taints []machinev1alpha2.Taint) int {
 func syncStatusState(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
 	switch {
 	case oobObj.Status.SystemStateReadTimeout:
-		machineObj.Status.Reservation.Status = entity.ReservationStatusError
+		machineObj.Status.Reservation.Status = "Error"
 	case (oobObj.Status.SystemState == "Ok" || oobObj.Status.SystemState == "Unknown") &&
 		oobObj.Status.PowerState != "Off":
-		machineObj.Status.Reservation.Status = entity.ReservationStatusRunning
+		machineObj.Status.Reservation.Status = "Running"
 	}
 }

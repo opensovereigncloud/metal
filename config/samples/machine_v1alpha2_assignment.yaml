@@ -1,10 +1,13 @@
 apiVersion: machine.onmetal.de/v1alpha2
 kind: MachineAssignment
 metadata:
-  name: sample-assignment
-  namespace: onmetal
+  name: test-machine
+  namespace: default
 spec:
-  image: "gardener"
-  machineClass: 
-    name: "m5.metal"
-    
+  efiVars:
+    - name: test6
+      uuid: test7
+      value: test8
+  image: myimage_repo_location
+  machineClass:
+    name: m5-metal

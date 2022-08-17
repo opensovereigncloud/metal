@@ -34,7 +34,7 @@ const (
 	CAggregateFinalizer = "aggregate.machine.onmetal.de/finalizer"
 )
 
-// AggregateReconciler reconciles a Aggregate object
+// AggregateReconciler reconciles a Aggregate object.
 type AggregateReconciler struct {
 	client.Client
 

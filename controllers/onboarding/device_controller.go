@@ -65,11 +65,9 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 	}
 
-	if err := r.OnboardingRepo.GatherData(ctx, e); err != nil {
-		if apierrors.IsConflict(err) {
-			return ctrl.Result{Requeue: true}, nil
-		}
+	if err := r.OnboardingRepo.GatherData(ctx, e); apierrors.IsConflict(err) {
 		reqLogger.Info("can't gather the information", "error", err)
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	reqLogger.Info("reconciliation finished")

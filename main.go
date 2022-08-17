@@ -128,15 +128,6 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 	serverOnboardingRepo := repository.NewServerOnboardingRepo(mgr.GetClient())
 	serverOnboardingUseCase := usecase.NewServerOnboarding(serverOnboardingRepo)
 
-	schedulerRepo := repository.NewMachineSchedulerRepo(mgr.GetClient())
-	reserverRepo := repository.NewMachineReserverRepo(mgr.GetClient())
-	schedulerUseCase := usecase.NewSchedulerUseCase(schedulerRepo, reserverRepo)
-
-	machineReserverUseCase := usecase.NewReserverUseCase(reserverRepo)
-
-	assignmentSyncRepo := repository.NewAssignmentSynchronizationRepo(mgr.GetClient())
-	syncUseCase := usecase.NewSyncUseCase(assignmentSyncRepo)
-
 	if err = (&benchmarkcontroller.Reconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Benchmark"),
@@ -213,27 +204,6 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Aggregate")
 		os.Exit(1)
 	}
-	if err = (&schedulercontrollers.SchedulerReconciler{
-		Client:    mgr.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("Scheduler"),
-		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("Request"),
-		Scheduler: schedulerUseCase,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
-		os.Exit(1)
-	}
-	if err = (&schedulercontrollers.MachineReconciler{
-		Client:          mgr.GetClient(),
-		Log:             ctrl.Log.WithName("controllers").WithName("Machine-scheduler"),
-		Scheme:          mgr.GetScheme(),
-		Recorder:        mgr.GetEventRecorderFor("Machine-request-controller"),
-		Reserver:        machineReserverUseCase,
-		Synchronization: syncUseCase,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine-scheduler")
-		os.Exit(1)
-	}
 	if err = (&onboardingcontroller.OnboardingReconciler{
 		Client:               mgr.GetClient(),
 		Log:                  ctrl.Log.WithName("controllers").WithName("Device-onboarding"),
@@ -257,6 +227,7 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 	if err = (&schedulercontrollers.IgnitionReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Ignition"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Ignition")
 		os.Exit(1)

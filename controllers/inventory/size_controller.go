@@ -34,7 +34,7 @@ const (
 	CPageLimit     = 1000
 )
 
-// SizeReconciler reconciles a Size object
+// SizeReconciler reconciles a Size object.
 type SizeReconciler struct {
 	client.Client
 

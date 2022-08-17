@@ -37,7 +37,7 @@ var switchlog = logf.Log.WithName("switch-resource")
 // - inventoried label is always used with inventory-ref label
 // - if no inventoried label then inventory-ref label is not allowed
 // - inventoried label can be only "false" or "true"
-// - inventory-ref label can be only valid UUID
+// - inventory-ref label can be only valid UUID.
 func validateInventoryLabels(switchObject *Switch) (err error) {
 	inventoried, inventoriedOk := switchObject.Labels["machine.onmetal.de/inventoried"]
 	inventoryRef, inventoryRefOk := switchObject.Labels["machine.onmetal.de/inventory-ref"]
@@ -64,7 +64,7 @@ func validateInventoryLabels(switchObject *Switch) (err error) {
 }
 
 // validateOverrides validates switch interface overrides with following conditions:
-// MTU, FEC, Lanes can be only set for non-north interfaces
+// MTU, FEC, Lanes can be only set for non-north interfaces.
 func validateOverrides(currentState *Switch, newState *Switch) (err error) {
 	var errList field.ErrorList
 	if newState.Spec.Interfaces == nil {
@@ -135,7 +135,7 @@ func (in *Switch) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &Switch{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Switch) Default() {
 	switchlog.Info("default", "name", in.Name)
 }
@@ -144,7 +144,7 @@ func (in *Switch) Default() {
 
 var _ webhook.Validator = &Switch{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Switch) ValidateCreate() (err error) {
 	switchlog.Info("validate create", "name", in.Name)
 
@@ -152,7 +152,7 @@ func (in *Switch) ValidateCreate() (err error) {
 	return
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Switch) ValidateUpdate(old runtime.Object) (err error) {
 	switchlog.Info("validate update", "name", in.Name)
 
@@ -177,7 +177,7 @@ func (in *Switch) ValidateUpdate(old runtime.Object) (err error) {
 	return
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *Switch) ValidateDelete() (err error) {
 	switchlog.Info("validate delete", "name", in.Name)
 	return

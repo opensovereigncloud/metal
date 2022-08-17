@@ -38,7 +38,7 @@ func (in *SwitchConfig) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Defaulter = &SwitchConfig{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *SwitchConfig) Default() {
 	switchconfiglog.Info("default", "name", in.Name)
 	in.setDefaultIPAMSelectors()
@@ -49,19 +49,19 @@ func (in *SwitchConfig) Default() {
 
 var _ webhook.Validator = &SwitchConfig{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *SwitchConfig) ValidateCreate() error {
 	//todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *SwitchConfig) ValidateUpdate(old runtime.Object) error {
 	//todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (in *SwitchConfig) ValidateDelete() error {
 	return nil
 }

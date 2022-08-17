@@ -52,6 +52,7 @@ const (
 
 var scheme = runtime.NewScheme()
 
+// nolint
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 

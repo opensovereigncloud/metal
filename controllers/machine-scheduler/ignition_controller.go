@@ -24,7 +24,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,12 +32,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
-// IgnitionReconciler reconciles a Ignition object
+// IgnitionReconciler reconciles a Ignition object.
 type IgnitionReconciler struct {
 	client.Client
+
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -62,35 +64,36 @@ const (
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("reconciling ignition", "ignition", req)
+	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)
+
+	reqLogger.V(1).Info("reconciling ignition", "ignition", req)
 
 	var err error
 	var err2 error
 
-	log.V(1).Info("fetching template configmaps")
+	reqLogger.V(1).Info("fetching template configmaps")
 	var templateCM *corev1.ConfigMap
 	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: templateName}, templateCM); err != nil {
-		log.Error(err, "template config map is not available in the current namespace", "template name", templateName, "namespace", req.Namespace)
+		reqLogger.Error(err, "template config map is not available in the current namespace", "template name", templateName, "namespace", req.Namespace)
 	}
 	var secretTemplateCM *corev1.ConfigMap
 	if err2 = r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: secretTemplateName}, secretTemplateCM); err != nil {
-		log.Error(err, "template config map is not available in the current namespace", "secret template name", secretTemplateName, "namespace", req.Namespace)
+		reqLogger.Error(err, "template config map is not available in the current namespace", "secret template name", secretTemplateName, "namespace", req.Namespace)
 	}
 
 	if err != nil && err2 != nil {
 		return ctrl.Result{}, err
 	}
 
-	log.V(1).Info("fetching machine assignment resource", "machine assignment", req)
+	reqLogger.V(1).Info("fetching machine assignment resource", "machine assignment", req)
 	machineAssignment := &v1alpha2.MachineAssignment{}
 	if err = r.Get(ctx, req.NamespacedName, machineAssignment); err != nil {
-		log.Error(err, "couldn't get machine assignment in namespace", "machine assignment", req.Name, "namespace", req.Namespace)
+		reqLogger.Error(err, "couldn't get machine assignment in namespace", "machine assignment", req.Name, "namespace", req.Namespace)
 		return ctrl.Result{}, err
 	}
 
 	if machineAssignment.Status.MachineRef == nil || machineAssignment.Status.MachineRef.Name == "" {
-		log.V(1).Info("machine is not yet reserved")
+		reqLogger.V(1).Info("machine is not yet reserved")
 		return ctrl.Result{}, nil
 	}
 
@@ -99,7 +102,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		Namespace: machineAssignment.Status.MachineRef.Namespace,
 		Name:      machineAssignment.Status.MachineRef.Name,
 	}, machine); err != nil {
-		log.Error(err, "couldn't get assigned machine in namespace", "machine", req.Name, "namespace", req.Namespace)
+		reqLogger.Error(err, "couldn't get assigned machine in namespace", "machine", req.Name, "namespace", req.Namespace)
 		return ctrl.Result{}, err
 	}
 
@@ -107,59 +110,57 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if templateCM != nil {
 			data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
 			if err != nil {
-				log.Error(err, "couldn't parse template")
+				reqLogger.Error(err, "couldn't parse template")
 				return ctrl.Result{}, err
 			}
 
-			log.V(1).Info("deleting configmap", "name", "ipxe-"+data["name"])
-			configMap, err := r.createConfigMap(ctx, log, data, &req)
+			reqLogger.V(1).Info("deleting configmap", "name", "ipxe-"+data["name"])
+			configMap, err := r.createConfigMap(data, &req)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
 
 			if err := r.Delete(ctx, configMap); err != nil {
-				log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
+				reqLogger.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
 			}
 		}
 
 		if secretTemplateCM != nil {
 			data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
 			if err != nil {
-				log.Error(err, "couldn't parse template")
+				reqLogger.Error(err, "couldn't parse template")
 				return ctrl.Result{}, err
 			}
 
-			log.V(1).Info("deleting secret", "name", "ipxe-"+data["name"])
-			secret, err := r.createSecret(ctx, log, data, &req)
+			reqLogger.V(1).Info("deleting secret", "name", "ipxe-"+data["name"])
+			secret, err := r.createSecret(data, &req)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-
 			if err := r.Delete(ctx, secret); err != nil {
-				log.Error(err, "couldn't delete secret", "resource", req.Name, "namespace", req.Namespace)
+				reqLogger.Error(err, "couldn't delete secret", "resource", req.Name, "namespace", req.Namespace)
 			}
 		}
-
 		return ctrl.Result{}, nil
 	}
 
-	log.V(2).Info("resources", "machine assignment", fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
+	reqLogger.V(2).Info("resources", "machine assignment", fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
 
 	if templateCM != nil {
 		data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
 		if err != nil {
-			log.Error(err, "couldn't parse template")
+			reqLogger.Error(err, "couldn't parse template")
 			return ctrl.Result{}, err
 		}
 
-		configMap, err := r.createConfigMap(ctx, log, data, &req)
+		configMap, err := r.createConfigMap(data, &req)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
-		log.V(1).Info("applying ignition configuration", "ignition", client.ObjectKeyFromObject(configMap))
+		reqLogger.V(1).Info("applying ignition configuration", "ignition", client.ObjectKeyFromObject(configMap))
 		if err := r.Patch(ctx, configMap, client.Apply, ignitionFieldOwner, client.ForceOwnership); err != nil {
-			log.Error(err, "couldn't create config map", "resource", req.Name, "namespace", req.Namespace)
+			reqLogger.Error(err, "couldn't create config map", "resource", req.Name, "namespace", req.Namespace)
 			return ctrl.Result{}, err
 		}
 	}
@@ -167,23 +168,23 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if secretTemplateCM != nil {
 		data, err := parseTemplate(secretTemplateCM.Data, machine, machineAssignment)
 		if err != nil {
-			log.Error(err, "couldn't parse template")
+			reqLogger.Error(err, "couldn't parse template")
 			return ctrl.Result{}, err
 		}
 
-		secret, err := r.createSecret(ctx, log, data, &req)
+		secret, err := r.createSecret(data, &req)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
-		log.V(1).Info("applying ignition secret configuration", "ignition secret", client.ObjectKeyFromObject(secret))
+		reqLogger.V(1).Info("applying ignition secret configuration", "ignition secret", client.ObjectKeyFromObject(secret))
 		if err := r.Patch(ctx, secret, client.Apply, ignitionFieldOwner, client.ForceOwnership); err != nil {
-			log.Error(err, "couldn't create secret", "resource", req.Name, "namespace", req.Namespace)
+			reqLogger.Error(err, "couldn't create secret", "resource", req.Name, "namespace", req.Namespace)
 			return ctrl.Result{}, err
 		}
 	}
 
-	log.V(1).Info("reconciliation finished")
+	reqLogger.V(1).Info("reconciliation finished")
 	return ctrl.Result{}, nil
 }
 
@@ -224,7 +225,7 @@ func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAss
 	return tempMap, nil
 }
 
-func (r *IgnitionReconciler) createConfigMap(ctx context.Context, log logr.Logger, temp map[string]string, req *ctrl.Request) (*corev1.ConfigMap, error) {
+func (r *IgnitionReconciler) createConfigMap(temp map[string]string, req *ctrl.Request) (*corev1.ConfigMap, error) {
 	if _, ok := temp["name"]; !ok {
 		return nil, errors.New("template is missing required 'name' field")
 	}
@@ -236,11 +237,10 @@ func (r *IgnitionReconciler) createConfigMap(ctx context.Context, log logr.Logge
 		},
 		Data: temp,
 	}
-
 	return configMap, nil
 }
 
-func (r *IgnitionReconciler) createSecret(ctx context.Context, log logr.Logger, temp map[string]string, req *ctrl.Request) (*corev1.Secret, error) {
+func (r *IgnitionReconciler) createSecret(temp map[string]string, req *ctrl.Request) (*corev1.Secret, error) {
 	if _, ok := temp["name"]; !ok {
 		return nil, errors.New("template is missing required 'name' field")
 	}
@@ -252,6 +252,5 @@ func (r *IgnitionReconciler) createSecret(ctx context.Context, log logr.Logger, 
 		},
 		StringData: temp,
 	}
-
 	return secret, nil
 }

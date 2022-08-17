@@ -10,7 +10,7 @@ Resource Types:
 <h3 id="machine.onmetal.de/v1alpha1.Aggregate">Aggregate
 </h3>
 <div>
-<p>Aggregate is the Schema for the aggregates API</p>
+<p>Aggregate is the Schema for the aggregates API.</p>
 </div>
 <table>
 <thead>
@@ -140,7 +140,7 @@ for constraint checks, in case if path defines selector for collection</p>
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Aggregate">Aggregate</a>)
 </p>
 <div>
-<p>AggregateSpec defines the desired state of Aggregate</p>
+<p>AggregateSpec defines the desired state of Aggregate.</p>
 </div>
 <table>
 <thead>
@@ -171,7 +171,7 @@ for constraint checks, in case if path defines selector for collection</p>
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Aggregate">Aggregate</a>)
 </p>
 <div>
-<p>AggregateStatus defines the observed state of Aggregate</p>
+<p>AggregateStatus defines the observed state of Aggregate.</p>
 </div>
 <h3 id="machine.onmetal.de/v1alpha1.AggregateType">AggregateType
 (<code>string</code> alias)</h3>
@@ -222,162 +222,6 @@ map[string]interface{}
 </em>
 </td>
 <td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="machine.onmetal.de/v1alpha1.BenchmarkSpec">BenchmarkSpec
-</h3>
-<p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
-</p>
-<div>
-<p>BenchmarkSpec contains benchmark results for inventory item</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>blocks</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.BlockBenchmarkCollection">
-[]BlockBenchmarkCollection
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>networks</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.NetworkBenchmarkResult">
-[]NetworkBenchmarkResult
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="machine.onmetal.de/v1alpha1.BlockBenchmarkCollection">BlockBenchmarkCollection
-</h3>
-<p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.BenchmarkSpec">BenchmarkSpec</a>)
-</p>
-<div>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>name</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Name contains full device name (like &ldquo;/dev/hda&rdquo; etc)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>results</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.BlockBenchmarkResult">
-[]BlockBenchmarkResult
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="machine.onmetal.de/v1alpha1.BlockBenchmarkResult">BlockBenchmarkResult
-</h3>
-<p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.BlockBenchmarkCollection">BlockBenchmarkCollection</a>)
-</p>
-<div>
-<p>BlockBenchmarkResult contains block (device) benchmark results</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>ioPattern</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>IOPattern defines type of I/O pattern (like &ldquo;read/write/readwrite&rdquo; etc)
-more types could be found here: <a href="https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite">https://fio.readthedocs.io/en/latest/fio_doc.html#cmdoption-arg-readwrite</a></p>
-</td>
-</tr>
-<tr>
-<td>
-<code>smallBlockReadIops</code><br/>
-<em>
-uint64
-</em>
-</td>
-<td>
-<p>SmallBlockReadIOPS contains benchmark result for read IOPS with small block size (device specified block size)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>smallBlockWriteIops</code><br/>
-<em>
-uint64
-</em>
-</td>
-<td>
-<p>SmallBlockWriteIOPS contains benchmark result for write IOPS with small block size (device specified block size)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>bandwidthReadIops</code><br/>
-<em>
-uint64
-</em>
-</td>
-<td>
-<p>BandwidthReadIOPS contains benchmark result for read IOPS with large block size (much larger then device specified block size)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>bandwidthWriteIops</code><br/>
-<em>
-uint64
-</em>
-</td>
-<td>
-<p>BandwidthWriteIOPS contains benchmark result for write IOPS with large block size (much larger then device specified block size)</p>
 </td>
 </tr>
 </tbody>
@@ -771,7 +615,7 @@ string
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.SizeSpec">SizeSpec</a>)
 </p>
 <div>
-<p>ConstraintSpec contains conditions of contraint that should be applied on resource</p>
+<p>ConstraintSpec contains conditions of contraint that should be applied on resource.</p>
 </div>
 <table>
 <thead>
@@ -989,7 +833,7 @@ string
 </tr>
 <tr>
 <td>
-<code>commitId</code><br/>
+<code>commitID</code><br/>
 <em>
 string
 </em>
@@ -1045,17 +889,6 @@ string
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>
-<code>type</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Type referring either to Machine or Switch inventorying object type</p>
-</td>
-</tr>
 <tr>
 <td>
 <code>name</code><br/>
@@ -1292,19 +1125,6 @@ DistroSpec
 <p>Distro contains info about OS distro</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>benchmark</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.BenchmarkSpec">
-BenchmarkSpec
-</a>
-</em>
-</td>
-<td>
-<p>Benchmark contains benchmarks results</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -1481,19 +1301,6 @@ DistroSpec
 <p>Distro contains info about OS distro</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>benchmark</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.BenchmarkSpec">
-BenchmarkSpec
-</a>
-</em>
-</td>
-<td>
-<p>Benchmark contains benchmarks results</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="machine.onmetal.de/v1alpha1.InventoryStatus">InventoryStatus
@@ -1519,6 +1326,55 @@ BenchmarkSpec
 <a href="#machine.onmetal.de/v1alpha1.AggregationResults">
 AggregationResults
 </a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>inventoryStatuses</code><br/>
+<em>
+<a href="#machine.onmetal.de/v1alpha1.InventoryStatuses">
+InventoryStatuses
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="machine.onmetal.de/v1alpha1.InventoryStatuses">InventoryStatuses
+</h3>
+<p>
+(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventoryStatus">InventoryStatus</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ready</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>requestsCount</code><br/>
+<em>
+int
 </em>
 </td>
 <td>
@@ -1844,46 +1700,6 @@ string
 </td>
 <td>
 <p>NDP is a collection of NDP messages received by the network interface</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="machine.onmetal.de/v1alpha1.NetworkBenchmarkResult">NetworkBenchmarkResult
-</h3>
-<p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.BenchmarkSpec">BenchmarkSpec</a>)
-</p>
-<div>
-<p>NetworkBenchmarkResult contains inventory machines network benchmark result</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>interfaceName</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<p>InterfaceName defines a name of network device</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>averageNetworkThroughputBps</code><br/>
-<em>
-uint64
-</em>
-</td>
-<td>
-<p>AverageNetworkThroughputBPS contains network benchmark result in bytes/s</p>
 </td>
 </tr>
 </tbody>
@@ -2219,7 +2035,7 @@ string
 <h3 id="machine.onmetal.de/v1alpha1.Size">Size
 </h3>
 <div>
-<p>Size is the Schema for the sizes API</p>
+<p>Size is the Schema for the sizes API.</p>
 </div>
 <table>
 <thead>
@@ -2266,7 +2082,7 @@ SizeSpec
 </em>
 </td>
 <td>
-<p>Constraints is a list of selectors based on machine properties</p>
+<p>Constraints is a list of selectors based on machine properties.</p>
 </td>
 </tr>
 </table>
@@ -2292,7 +2108,7 @@ SizeStatus
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Size">Size</a>)
 </p>
 <div>
-<p>SizeSpec defines the desired state of Size</p>
+<p>SizeSpec defines the desired state of Size.</p>
 </div>
 <table>
 <thead>
@@ -2312,7 +2128,7 @@ SizeStatus
 </em>
 </td>
 <td>
-<p>Constraints is a list of selectors based on machine properties</p>
+<p>Constraints is a list of selectors based on machine properties.</p>
 </td>
 </tr>
 </tbody>
@@ -2323,7 +2139,7 @@ SizeStatus
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Size">Size</a>)
 </p>
 <div>
-<p>SizeStatus defines the observed state of Size</p>
+<p>SizeStatus defines the observed state of Size.</p>
 </div>
 <h3 id="machine.onmetal.de/v1alpha1.SystemSpec">SystemSpec
 </h3>
@@ -2555,19 +2371,6 @@ DistroSpec
 <p>Distro contains info about OS distro</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>benchmark</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.BenchmarkSpec">
-BenchmarkSpec
-</a>
-</em>
-</td>
-<td>
-<p>Benchmark contains benchmarks results</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -2605,5 +2408,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>8151c73</code>.
+on git commit <code>99a336f</code>.
 </em></p>

@@ -17,13 +17,12 @@ limitations under the License.
 package v1alpha2
 
 import (
-	"github.com/onmetal/metal-api/internal/entity"
 	"inet.af/netaddr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// MachineAssignmentSpec defines the desired state of Request
+// MachineAssignmentSpec defines the desired state of Request.
 type MachineAssignmentSpec struct {
 	// Tolerations define tolerations the Machine has. Only MachinePools whose taints
 	// covered by Tolerations will be considered to run the Machine.
@@ -43,7 +42,7 @@ type MachineAssignmentSpec struct {
 	EFIVars []EFIVar `json:"efiVars,omitempty"`
 }
 
-// Volume defines a volume attachment of a machine
+// Volume defines a volume attachment of a machine.
 type Volume struct {
 	// Name is the name of the VolumeAttachment
 	Name string `json:"name"`
@@ -84,7 +83,7 @@ type EFIVar struct {
 	Value string `json:"value"`
 }
 
-// Interface is the definition of a single interface
+// Interface is the definition of a single interface.
 type NetworkInterfaces struct {
 	// Name is the name of the interface
 	Name string `json:"name"`
@@ -102,17 +101,18 @@ type IPAddress struct {
 	netaddr.IP `json:"-"`
 }
 
-// MachineAssignmentStatus defines the observed state of Request
+// MachineAssignmentStatus defines the observed state of Request.
 type MachineAssignmentStatus struct {
-	State             entity.ReservationStatus `json:"state,omitempty"`
-	MachineRef        *ResourceReference       `json:"machineRef,omitempty"`
-	ComputeMachineRef *ResourceReference       `json:"computeMachineRef,omitempty"`
+	State             string             `json:"state,omitempty"`
+	MachineRef        *ResourceReference `json:"machineRef,omitempty"`
+	ComputeMachineRef *ResourceReference `json:"computeMachineRef,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Order Status",type=string,JSONPath=`.status.state`
 
-// MachineAssignment is the Schema for the requests API
+// MachineAssignment is the Schema for the requests API.
 type MachineAssignment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -123,7 +123,7 @@ type MachineAssignment struct {
 
 //+kubebuilder:object:root=true
 
-// MachineAssignmentList contains a list of Request
+// MachineAssignmentList contains a list of Assignment.
 type MachineAssignmentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

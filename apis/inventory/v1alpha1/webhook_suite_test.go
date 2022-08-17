@@ -52,6 +52,7 @@ var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
 
+// nolint
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -83,12 +84,12 @@ var _ = BeforeSuite(func() {
 
 	crds := make([]*v1.CustomResourceDefinition, 0)
 
-	for _, resId := range resIds {
-		resJsonBytes, err := resId.MarshalJSON()
+	for _, resID := range resIds {
+		resJSONBytes, err := resID.MarshalJSON()
 		Expect(err).NotTo(HaveOccurred())
 
 		crd := &v1.CustomResourceDefinition{}
-		err = json.Unmarshal(resJsonBytes, crd)
+		err = json.Unmarshal(resJSONBytes, crd)
 		Expect(err).NotTo(HaveOccurred())
 
 		crds = append(crds, crd)

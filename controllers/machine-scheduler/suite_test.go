@@ -20,11 +20,8 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
-	"time"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/internal/repository"
-	"github.com/onmetal/metal-api/internal/usecase"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -47,13 +44,9 @@ var (
 	cancel    context.CancelFunc
 )
 
-const (
-	timeout  = time.Second * 75
-	interval = time.Millisecond * 250
-)
-
 var scheme = runtime.NewScheme()
 
+//nolint:paralleltest
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -90,33 +83,10 @@ var _ = BeforeSuite(func() {
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
-	schedulerRepo := repository.NewMachineSchedulerRepo(k8sManager.GetClient())
-	reserverRepo := repository.NewMachineReserverRepo(k8sManager.GetClient())
-	schedulerUseCase := usecase.NewSchedulerUseCase(schedulerRepo, reserverRepo)
-
-	//assignmentSyncRepo := repository.NewAssignmentSynchronizationRepo(k8sManager.GetClient())
-	//syncUseCase := usecase.NewSyncUseCase(assignmentSyncRepo)
-
-	err = (&SchedulerReconciler{
-		Client:    k8sManager.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("request"),
-		Recorder:  k8sManager.GetEventRecorderFor("request"),
-		Scheduler: schedulerUseCase,
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	//err = (&MachineReconciler{
-	//	Client:          k8sManager.GetClient(),
-	//	Log:             ctrl.Log.WithName("controllers").WithName("machine-request"),
-	//	Recorder:        k8sManager.GetEventRecorderFor("Machine-request"),
-	//	Reserver:        reserverRepo,
-	//	Synchronization: syncUseCase,
-	//}).SetupWithManager(k8sManager)
-	//Expect(err).ToNot(HaveOccurred())
-
 	err = (&IgnitionReconciler{
 		Client: k8sManager.GetClient(),
 		Scheme: k8sManager.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Ignition"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

@@ -22,7 +22,6 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/internal/entity"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -90,7 +89,7 @@ func testDeviceOnboarding(name, namespace string) {
 	Expect(k8sClient.Delete(ctx, machine)).Should(Succeed())
 }
 
-//nolint reason:temp
+// nolint reason:temp
 func testServerOnboarding(name, namespace string) {
 	ctx := context.Background()
 	requestName := "sample-request"
@@ -134,12 +133,12 @@ func testServerOnboarding(name, namespace string) {
 	Eventually(func(g Gomega) bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
 
-		return request.Status.State == entity.ReservationStatusPending
+		return request.Status.State == "Pending"
 	}, timeout, interval).Should(BeTrue())
 
 	By("Expect successful machine status update to running")
 
-	machine.Status.Reservation.Status = entity.ReservationStatusRunning
+	machine.Status.Reservation.Status = "Running"
 	Eventually(func(g Gomega) error {
 		return k8sClient.Status().Update(ctx, machine)
 	}, timeout, interval).Should(BeNil())
@@ -149,11 +148,11 @@ func testServerOnboarding(name, namespace string) {
 	Eventually(func(g Gomega) bool {
 		Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: requestName}, request)).Should(Succeed())
 
-		return request.Status.State == entity.ReservationStatusRunning
+		return request.Status.State == "Running"
 	}, timeout, interval).Should(BeTrue())
 }
 
-//nolint reason:temp
+// nolint reason:temp
 func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
 	return &machinev1alpha2.Machine{
 		ObjectMeta: metav1.ObjectMeta{
@@ -169,7 +168,7 @@ func prepareMachineForTest(name, namespace string) *machinev1alpha2.Machine {
 	}
 }
 
-//nolint reason:temp
+// nolint reason:temp
 func prepareMachineStatus() machinev1alpha2.MachineStatus {
 	return machinev1alpha2.MachineStatus{
 		Health:    machinev1alpha2.MachineStateHealthy,
@@ -182,7 +181,7 @@ func prepareMachineStatus() machinev1alpha2.MachineStatus {
 	}
 }
 
-//nolint reason:temp
+// nolint reason:temp
 func prepareMetalRequest(name, namespace string) *machinev1alpha2.MachineAssignment {
 	return &machinev1alpha2.MachineAssignment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -257,7 +256,7 @@ func prepareSwitch(namespace string) *switchv1beta1.Switch {
 			Name:      "switch",
 			Namespace: namespace,
 			Labels: map[string]string{
-				switchv1beta1.LabelChassisId: "3c-2c-99-9d-cd-48",
+				switchv1beta1.LabelChassisID: "3c-2c-99-9d-cd-48",
 			},
 		},
 		Spec: switchv1beta1.SwitchSpec{

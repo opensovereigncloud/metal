@@ -19,7 +19,7 @@ package networking
 import (
 	"bytes"
 	"io/fs"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -50,7 +50,7 @@ var _ = Describe("IPAM interaction test", func() {
 			return nil
 		})).NotTo(HaveOccurred())
 		for _, samplePath := range configsSamples {
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleConfig := &switchv1beta1.SwitchConfig{}
@@ -60,7 +60,7 @@ var _ = Describe("IPAM interaction test", func() {
 
 		By("Create ipam objects: networks")
 		networkSample := filepath.Join("..", "samples", "networks", "overlay-network.yaml")
-		sampleBytes, err := ioutil.ReadFile(networkSample)
+		sampleBytes, err := os.ReadFile(networkSample)
 		Expect(err).NotTo(HaveOccurred())
 		sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 		sampleNetwork := &ipamv1alpha1.Network{}
@@ -79,7 +79,7 @@ var _ = Describe("IPAM interaction test", func() {
 			return nil
 		})).NotTo(HaveOccurred())
 		for _, samplePath := range parentSubnets {
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleSubnet := &ipamv1alpha1.Subnet{}
@@ -106,7 +106,7 @@ var _ = Describe("IPAM interaction test", func() {
 			return nil
 		})).NotTo(HaveOccurred())
 		for _, samplePath := range childSubnets {
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleSubnet := &ipamv1alpha1.Subnet{}
@@ -134,7 +134,7 @@ var _ = Describe("IPAM interaction test", func() {
 			return nil
 		})).NotTo(HaveOccurred())
 		for _, samplePath := range loopbacks {
-			sampleBytes, err := ioutil.ReadFile(samplePath)
+			sampleBytes, err := os.ReadFile(samplePath)
 			Expect(err).NotTo(HaveOccurred())
 			sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 			sampleLoopback := &ipamv1alpha1.IP{}
@@ -235,7 +235,7 @@ var _ = Describe("IPAM interaction test", func() {
 				return nil
 			})).NotTo(HaveOccurred())
 			for _, samplePath := range inventoriesSamples {
-				sampleBytes, err := ioutil.ReadFile(samplePath)
+				sampleBytes, err := os.ReadFile(samplePath)
 				Expect(err).NotTo(HaveOccurred())
 				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 				sampleInventory := &inventoryv1alpha1.Inventory{}
@@ -255,7 +255,7 @@ var _ = Describe("IPAM interaction test", func() {
 			})).NotTo(HaveOccurred())
 			for _, samplePath := range switchesSamples {
 				stype := "leaf"
-				sampleBytes, err := ioutil.ReadFile(samplePath)
+				sampleBytes, err := os.ReadFile(samplePath)
 				Expect(err).NotTo(HaveOccurred())
 				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 				sampleSwitch := &switchv1beta1.Switch{}
@@ -315,7 +315,7 @@ var _ = Describe("IPAM interaction test", func() {
 				return nil
 			})).NotTo(HaveOccurred())
 			for _, samplePath := range inventoriesSamples {
-				sampleBytes, err := ioutil.ReadFile(samplePath)
+				sampleBytes, err := os.ReadFile(samplePath)
 				Expect(err).NotTo(HaveOccurred())
 				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 				sampleInventory := &inventoryv1alpha1.Inventory{}
@@ -335,7 +335,7 @@ var _ = Describe("IPAM interaction test", func() {
 			})).NotTo(HaveOccurred())
 			for _, samplePath := range switchesSamples {
 				stype := "leaf"
-				sampleBytes, err := ioutil.ReadFile(samplePath)
+				sampleBytes, err := os.ReadFile(samplePath)
 				Expect(err).NotTo(HaveOccurred())
 				sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(sampleBytes), len(sampleBytes))
 				sampleSwitch := &switchv1beta1.Switch{}

@@ -42,13 +42,13 @@ func (in *Aggregate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Validator = &Aggregate{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Aggregate) ValidateCreate() error {
 	aggregatelog.Info("validate create", "name", in.Name)
 	return in.validate()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *Aggregate) ValidateUpdate(old runtime.Object) error {
 	aggregatelog.Info("validate update", "name", in.Name)
 	return in.validate()

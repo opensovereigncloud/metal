@@ -32,6 +32,7 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
+// nolint:forcetypeassert
 var _ = Describe("Aggregate controller", func() {
 	const (
 		InventoryName      = "test-inventory"
@@ -247,9 +248,9 @@ var _ = Describe("Aggregate controller", func() {
 				if iface == nil {
 					return false
 				}
-				maxLogicalId := iface.(string)
+				maxLogicalID := iface.(string)
 
-				return maxLogicalId == "3"
+				return maxLogicalID == "3"
 			}, timeout, interval).Should(BeTrue())
 
 			By("Aggregate is updated")

@@ -21,7 +21,7 @@ import (
 )
 
 // SwitchConfigSpec contains desired configuration for selected switches
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type SwitchConfigSpec struct {
 	// Switches contains label selector to pick up Switch objects
 	//+kubebuilder:validation:Required
@@ -53,7 +53,7 @@ type GeneralIPAMSpec struct {
 }
 
 // SwitchConfigStatus contains observed state of SwitchConfig
-//+kubebuilder:object:generate=true
+// +kubebuilder:object:generate=true
 type SwitchConfigStatus struct {
 }
 
@@ -61,7 +61,7 @@ type SwitchConfigStatus struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=sc
 
-// SwitchConfig is the Schema for switch config API
+// SwitchConfig is the Schema for switch config API.
 type SwitchConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -72,7 +72,7 @@ type SwitchConfig struct {
 
 //+kubebuilder:object:root=true
 
-// SwitchConfigList contains a list of SwitchConfig
+// SwitchConfigList contains a list of SwitchConfig.
 type SwitchConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
