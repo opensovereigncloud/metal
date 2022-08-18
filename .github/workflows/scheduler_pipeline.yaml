@@ -41,8 +41,8 @@ jobs:
       - name: Lint golang sources
         uses: golangci/golangci-lint-action@v3
         with:
+          working-directory: scheduler
           version: v1.48.0
-          args: -e S1008
 
   go-test:
     runs-on: [ self-hosted, Linux, X64 ]
@@ -124,7 +124,7 @@ jobs:
           version: latest
           endpoint: builders
 
-      - name: Scheduler - Build and push
+      - name: Build and push
         uses: docker/build-push-action@v3
         timeout-minutes: 60
         with:

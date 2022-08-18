@@ -40,14 +40,15 @@ COPY apis apis/
 COPY pkg pkg/
 COPY internal internal/
 COPY scheduler scheduler/
+
 # Build
-RUN GOMAXPROCS=1 CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o scheduler main.go
+RUN GOMAXPROCS=1 CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o metal-api-scheduler main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY --from=builder /workspace/scheduler .
+COPY --from=builder /workspace/metal-api-scheduler .
 USER 65532:65532
 
-ENTRYPOINT ["/scheduler"]
+ENTRYPOINT ["/metal-api-scheduler"]
