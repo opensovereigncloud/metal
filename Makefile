@@ -13,6 +13,13 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+GITHUB_PAT_PATH ?=
+ifeq (,$(GITHUB_PAT_PATH))
+GITHUB_PAT_MOUNT ?=
+else
+GITHUB_PAT_MOUNT ?= --secret id=github_pat,src=$(GITHUB_PAT_PATH)
+endif
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -104,8 +111,8 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build --ssh default=${HOME}/.ssh/id_rsa -t ${IMG} .
+docker-build: ## Build docker image with the manager.
+	docker build -t ${IMG} $(GITHUB_PAT_MOUNT) .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

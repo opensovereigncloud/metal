@@ -538,7 +538,10 @@ func (in *Switch) peersOK(list *SwitchList) bool {
 			}
 			nic, ok := in.Status.Interfaces[nicData.Peer.PeerInfoSpec.PortDescription]
 			if !ok {
-				return false
+				nic, ok = in.Status.Interfaces[nicData.Peer.PeerInfoSpec.PortID]
+				if !ok {
+					return false
+				}
 			}
 			if nic.Peer == nil {
 				return false
@@ -1119,7 +1122,10 @@ func (in *Switch) GetNorthNICsIP(list *SwitchList) map[string][]*IPAddressSpec {
 			}
 			peerNICdata, ok := item.Status.Interfaces[nicData.Peer.PortDescription]
 			if !ok {
-				continue
+				peerNICdata, ok = item.Status.Interfaces[nicData.Peer.PortID]
+				if !ok {
+					continue
+				}
 			}
 			nicIPs = append(nicIPs, func() []*IPAddressSpec {
 				requestedAddresses := make([]*IPAddressSpec, 0)
