@@ -14,7 +14,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.0
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.7.4
+	github.com/stretchr/testify v1.8.0
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	gopkg.in/inf.v0 v0.9.1
 	inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6
