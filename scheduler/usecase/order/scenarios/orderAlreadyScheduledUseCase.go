@@ -17,8 +17,8 @@
 package scenarios
 
 import (
-	"github.com/onmetal/metal-api/common/types/base"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
+	"github.com/onmetal/metal-api/types/common"
 )
 
 type OrderAlreadyScheduledUseCase struct {
@@ -31,6 +31,6 @@ func NewOrderAlreadyScheduledUseCase(orderAlreadyScheduled domain.OrderAlreadySc
 	}
 }
 
-func (o *OrderAlreadyScheduledUseCase) Invoke(orderMetadata base.Metadata) bool {
+func (o *OrderAlreadyScheduledUseCase) Invoke(orderMetadata common.Metadata) bool {
 	return o.orderAlreadyScheduled.Invoke(orderMetadata)
 }

@@ -86,7 +86,7 @@ spec:
                 description: Interfaces define a list of network interfaces present
                   on the machine
                 items:
-                  description: Interface is the definition of a single interface.
+                  description: NetworkInterfaces is the definition of a single interface.
                   properties:
                     ip:
                       description: IP specifies a concrete IP address which should
@@ -117,9 +117,9 @@ spec:
                   MachinePools whose taints covered by Tolerations will be considered
                   to run the Machine.
                 items:
-                  description: The resource this Toleration is attached to tolerates
-                    any taint that matches the triple <key,value,effect> using the
-                    matching operator <operator>.
+                  description: Toleration - The resource this Toleration is attached
+                    to tolerates any taint that matches the triple <key,value,effect>
+                    using the matching operator <operator>.
                   properties:
                     effect:
                       description: Effect indicates the taint effect to match. Empty
@@ -186,12 +186,6 @@ spec:
               computeMachineRef:
                 description: ResourceReference defines related resource info.
                 properties:
-                  apiVersion:
-                    description: APIVersion refers to the resource API version
-                    type: string
-                  kind:
-                    description: Kind refers to the resource kind
-                    type: string
                   name:
                     description: Name refers to the resource name
                     type: string
@@ -202,12 +196,6 @@ spec:
               machineRef:
                 description: ResourceReference defines related resource info.
                 properties:
-                  apiVersion:
-                    description: APIVersion refers to the resource API version
-                    type: string
-                  kind:
-                    description: Kind refers to the resource kind
-                    type: string
                   name:
                     description: Name refers to the resource name
                     type: string

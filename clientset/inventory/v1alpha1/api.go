@@ -1,10 +1,9 @@
 package v1alpha1
 
 import (
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 const (

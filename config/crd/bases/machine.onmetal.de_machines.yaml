@@ -19,12 +19,12 @@ spec:
     - jsonPath: .status.health
       name: Healthy
       type: string
-    - jsonPath: .status.inventory.exist
+    - jsonPath: .status.inventory.name
       name: Inventory
-      type: boolean
-    - jsonPath: .status.oob.exist
+      type: string
+    - jsonPath: .status.oob.name
       name: OOB
-      type: boolean
+      type: string
     - jsonPath: .status.orphaned
       name: Orphaned
       type: boolean
@@ -140,12 +140,6 @@ spec:
                           description: ResourceReference refers to the related resource
                             definition
                           properties:
-                            apiVersion:
-                              description: APIVersion refers to the resource API version
-                              type: string
-                            kind:
-                              description: Kind refers to the resource kind
-                              type: string
                             name:
                               description: Name refers to the resource name
                               type: string
@@ -164,12 +158,6 @@ spec:
                           description: ResourceReference refers to the related resource
                             definition
                           properties:
-                            apiVersion:
-                              description: APIVersion refers to the resource API version
-                              type: string
-                            kind:
-                              description: Kind refers to the resource kind
-                              type: string
                             name:
                               description: Name refers to the resource name
                               type: string
@@ -193,31 +181,25 @@ spec:
                       properties:
                         lldp_chassi_id:
                           description: LLDPChassisID - defines switch ID for chassis
-                            obtained from Link Layer Discovery Protocol
+                            obtained from Link Layer Discovery Protocol.
                           type: string
                         lldp_port_description:
                           description: LLDPPortDescription - defines switch definition
-                            obtained from Link Layer Discovery Protocol
+                            obtained from Link Layer Discovery Protocol.
                           type: string
                         lldp_port_id:
                           description: LLDPPortID - defines switch port ID obtained
-                            from Link Layer Discovery Protocol
+                            from Link Layer Discovery Protocol.
                           type: string
                         lldp_system_name:
                           description: LLDPSystemName - defines switch name obtained
-                            from Link Layer Discovery Protocol layer 2 neighbor discovery
-                            protocol
+                            from Link Layer Discovery Protocol. layer 2 neighbor discovery
+                            protocol.
                           type: string
                         resource_reference:
                           description: ResourceReference refers to the related resource
-                            definition
+                            definition.
                           properties:
-                            apiVersion:
-                              description: APIVersion refers to the resource API version
-                              type: string
-                            kind:
-                              description: Kind refers to the resource kind
-                              type: string
                             name:
                               description: Name refers to the resource name
                               type: string
@@ -229,12 +211,6 @@ spec:
                     switch_reference:
                       description: SwitchReference - defines unique switch identification
                       properties:
-                        apiVersion:
-                          description: APIVersion refers to the resource API version
-                          type: string
-                        kind:
-                          description: Kind refers to the resource kind
-                          type: string
                         name:
                           description: Name refers to the resource name
                           type: string
@@ -251,33 +227,18 @@ spec:
               inventory:
                 description: Inventory - defines status of Inventory
                 properties:
-                  exist:
-                    description: Exist - defines where referenced object exist or
-                      not
-                    type: boolean
-                  reference:
-                    description: Reference - defines underlaying referenced object
-                      e.g. Inventory or OOB kind.
-                    properties:
-                      apiVersion:
-                        description: APIVersion refers to the resource API version
-                        type: string
-                      kind:
-                        description: Kind refers to the resource kind
-                        type: string
-                      name:
-                        description: Name refers to the resource name
-                        type: string
-                      namespace:
-                        description: Namespace refers to the resource namespace
-                        type: string
-                    type: object
+                  name:
+                    description: Name refers to the resource name
+                    type: string
+                  namespace:
+                    description: Namespace refers to the resource namespace
+                    type: string
                 type: object
               network:
                 description: Network - defines machine network status
                 properties:
                   ports:
-                    description: Ports - defines number of machine ports
+                    description: Ports - defines number of machine ports.
                     type: integer
                   redundancy:
                     description: 'Redundancy - defines machine redundancy status.
@@ -286,33 +247,18 @@ spec:
                     type: string
                   unknown_ports:
                     description: UnknownPorts - defines number of machine interface
-                      without info
+                      without info.
                     type: integer
                 type: object
               oob:
                 description: OOB - defines status of OOB
                 properties:
-                  exist:
-                    description: Exist - defines where referenced object exist or
-                      not
-                    type: boolean
-                  reference:
-                    description: Reference - defines underlaying referenced object
-                      e.g. Inventory or OOB kind.
-                    properties:
-                      apiVersion:
-                        description: APIVersion refers to the resource API version
-                        type: string
-                      kind:
-                        description: Kind refers to the resource kind
-                        type: string
-                      name:
-                        description: Name refers to the resource name
-                        type: string
-                      namespace:
-                        description: Namespace refers to the resource namespace
-                        type: string
-                    type: object
+                  name:
+                    description: Name refers to the resource name
+                    type: string
+                  namespace:
+                    description: Namespace refers to the resource namespace
+                    type: string
                 type: object
               orphaned:
                 description: Orphaned - defines machine condition whether OOB or Inventory
@@ -328,12 +274,6 @@ spec:
                   reference:
                     description: Reference - defines underlying referenced object.
                     properties:
-                      apiVersion:
-                        description: APIVersion refers to the resource API version
-                        type: string
-                      kind:
-                        description: Kind refers to the resource kind
-                        type: string
                       name:
                         description: Name refers to the resource name
                         type: string

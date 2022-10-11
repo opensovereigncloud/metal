@@ -22,6 +22,7 @@ import (
 
 	"github.com/d4l3k/messagediff"
 	"github.com/go-logr/logr"
+	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,13 +30,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 const (
-	CMACAddressLabelPrefix = "machine.onmetal.de/mac-address-"
-	CDefaultAggregateName  = "default"
+	CMaxNumberOfResultsInOneRequest = 1000
+	CMACAddressLabelPrefix          = "machine.onmetal.de/mac-address-"
+	CDefaultAggregateName           = "default"
 )
 
 // InventoryReconciler reconciles an Inventory object.
@@ -59,6 +59,8 @@ type InventoryReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
+//
+//nolint:funlen,gocognit,gocyclo,cyclop //TODO: linter disabled but we need to fix the problems.
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("inventory", req.NamespacedName)
 
@@ -103,7 +105,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	continueToken := ""
-	limit := int64(1000)
+	limit := int64(CMaxNumberOfResultsInOneRequest)
 
 	for {
 		aggregateList := &machinev1alpha1.AggregateList{}

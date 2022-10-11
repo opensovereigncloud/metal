@@ -16,8 +16,10 @@
 
 package domain
 
-import "github.com/onmetal/metal-api/common/types/base"
+import (
+	"github.com/onmetal/metal-api/types/common"
+)
 
 type OrderAlreadyScheduled interface {
-	Invoke(base.Metadata) bool
+	Invoke(common.Metadata) bool
 }

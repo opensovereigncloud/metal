@@ -24,6 +24,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/go-logr/logr"
+	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,9 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
-	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
+var (
+	errTemplateNameIsMissed = errors.New("template is missing required 'name' field")
 )
 
 // IgnitionReconciler reconciles a Ignition object.
@@ -63,6 +66,8 @@ const (
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
+//
+//nolint:funlen,gocognit,nestif,cyclop //TODO: linter disabled but we need to fix the problems.
 func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)
 
@@ -73,12 +78,20 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	reqLogger.V(1).Info("fetching template configmaps")
 	var templateCM *corev1.ConfigMap
-	if err = r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: templateName}, templateCM); err != nil {
-		reqLogger.Error(err, "template config map is not available in the current namespace", "template name", templateName, "namespace", req.Namespace)
+	if err = r.Client.Get(ctx, types.NamespacedName{
+		Namespace: req.Namespace,
+		Name:      templateName}, templateCM); err != nil {
+		reqLogger.Error(err, "template config map is not available in the current namespace",
+			"template name", templateName,
+			"namespace", req.Namespace)
 	}
 	var secretTemplateCM *corev1.ConfigMap
-	if err2 = r.Client.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: secretTemplateName}, secretTemplateCM); err != nil {
-		reqLogger.Error(err, "template config map is not available in the current namespace", "secret template name", secretTemplateName, "namespace", req.Namespace)
+	if err2 = r.Client.Get(ctx, types.NamespacedName{
+		Namespace: req.Namespace,
+		Name:      secretTemplateName}, secretTemplateCM); err != nil {
+		reqLogger.Error(err, "template config map is not available in the current namespace",
+			"secret template name", secretTemplateName,
+			"namespace", req.Namespace)
 	}
 
 	if err != nil && err2 != nil {
@@ -88,11 +101,12 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	reqLogger.V(1).Info("fetching machine assignment resource", "machine assignment", req)
 	machineAssignment := &v1alpha2.MachineAssignment{}
 	if err = r.Get(ctx, req.NamespacedName, machineAssignment); err != nil {
-		reqLogger.Error(err, "couldn't get machine assignment in namespace", "machine assignment", req.Name, "namespace", req.Namespace)
+		reqLogger.Error(err, "couldn't get machine assignment in namespace",
+			"machine assignment", req.Name, "namespace", req.Namespace)
 		return ctrl.Result{}, err
 	}
 
-	if machineAssignment.Status.MachineRef == nil || machineAssignment.Status.MachineRef.Name == "" {
+	if machineAssignment.Status.MachineRef.Name == "" {
 		reqLogger.V(1).Info("machine is not yet reserved")
 		return ctrl.Result{}, nil
 	}
@@ -144,7 +158,8 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	reqLogger.V(2).Info("resources", "machine assignment", fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
+	reqLogger.V(2).Info("resources", "machine assignment",
+		fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
 
 	if templateCM != nil {
 		data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
@@ -195,7 +210,9 @@ func (r *IgnitionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAssignment *v1alpha2.MachineAssignment) (map[string]string, error) {
+func parseTemplate(temp map[string]string,
+	machine *v1alpha2.Machine,
+	machineAssignment *v1alpha2.MachineAssignment) (map[string]string, error) {
 	var tempStr = ""
 	for tempKey, tempVal := range temp {
 		tempStr += tempKey + ": |\n  " + tempVal + "\n"
@@ -227,7 +244,7 @@ func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAss
 
 func (r *IgnitionReconciler) createConfigMap(temp map[string]string, req *ctrl.Request) (*corev1.ConfigMap, error) {
 	if _, ok := temp["name"]; !ok {
-		return nil, errors.New("template is missing required 'name' field")
+		return nil, errTemplateNameIsMissed
 	}
 	temp["name"] = strings.TrimSuffix(temp["name"], "\n")
 	configMap := &corev1.ConfigMap{
@@ -242,7 +259,7 @@ func (r *IgnitionReconciler) createConfigMap(temp map[string]string, req *ctrl.R
 
 func (r *IgnitionReconciler) createSecret(temp map[string]string, req *ctrl.Request) (*corev1.Secret, error) {
 	if _, ok := temp["name"]; !ok {
-		return nil, errors.New("template is missing required 'name' field")
+		return nil, errTemplateNameIsMissed
 	}
 	temp["name"] = strings.TrimSuffix(temp["name"], "\n")
 	secret := &corev1.Secret{

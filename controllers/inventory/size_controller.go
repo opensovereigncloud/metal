@@ -55,6 +55,8 @@ type SizeReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
+//
+//nolint:funlen,gocognit,nestif,cyclop //TODO: linter disabled but we need to fix the problems.
 func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("size", req.NamespacedName)
 
@@ -110,46 +112,52 @@ func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			return ctrl.Result{}, err
 		}
 
-		for _, inventory := range inventoryList.Items {
-			if inventory.GetDeletionTimestamp() != nil {
+		for inventory := range inventoryList.Items {
+			if inventoryList.Items[inventory].GetDeletionTimestamp() != nil {
 				continue
 			}
 
-			matches, err := size.Matches(&inventory)
+			matches, err := size.Matches(&inventoryList.Items[inventory])
 			inventoryNamespacedName := types.NamespacedName{
-				Namespace: inventory.Namespace,
-				Name:      inventory.Name,
+				Namespace: inventoryList.Items[inventory].Namespace,
+				Name:      inventoryList.Items[inventory].Name,
 			}
 			if err != nil {
-				log.Error(err, "unable to check match to provided size; will remove match if present", "size", req.NamespacedName, "inventory", inventoryNamespacedName)
+				log.Error(err, "unable to check match to provided size; will remove match if present",
+					"size", req.NamespacedName,
+					"inventory", inventoryNamespacedName)
 			}
 
 			labelName := size.GetMatchLabel()
 			labelPresent := false
-			if inventory.Labels != nil {
-				_, labelPresent = inventory.Labels[labelName]
+			if inventoryList.Items[inventory].Labels != nil {
+				_, labelPresent = inventoryList.Items[inventory].Labels[labelName]
 			}
 			if matches && labelPresent {
-				log.Info("match between inventory and size found, label present, will not update", "size", req.NamespacedName, "inventory", inventoryNamespacedName)
+				log.Info("match between inventory and size found, label present, will not update",
+					"size", req.NamespacedName, "inventory", inventoryNamespacedName)
 				continue
 			}
 			if !matches && !labelPresent {
-				log.Info("match between inventory and size is not found", "size", req.NamespacedName, "inventory", inventoryNamespacedName)
+				log.Info("match between inventory and size is not found", "size",
+					req.NamespacedName, "inventory", inventoryNamespacedName)
 				continue
 			}
 			if matches && !labelPresent {
-				log.Info("match between inventory and size found", "size", req.NamespacedName, "inventory", inventoryNamespacedName)
-				if inventory.Labels == nil {
-					inventory.Labels = make(map[string]string)
+				log.Info("match between inventory and size found", "size",
+					req.NamespacedName, "inventory", inventoryNamespacedName)
+				if inventoryList.Items[inventory].Labels == nil {
+					inventoryList.Items[inventory].Labels = make(map[string]string)
 				}
-				inventory.Labels[labelName] = "true"
+				inventoryList.Items[inventory].Labels[labelName] = "true"
 			}
 			if !matches && labelPresent {
-				log.Info("inventory no longer matches to size, will remove label", "size", req.NamespacedName, "inventory", inventoryNamespacedName)
-				delete(inventory.Labels, labelName)
+				log.Info("inventory no longer matches to size, will remove label",
+					"size", req.NamespacedName, "inventory", inventoryNamespacedName)
+				delete(inventoryList.Items[inventory].Labels, labelName)
 			}
 
-			if err := r.Update(ctx, &inventory); err != nil {
+			if err := r.Update(ctx, &inventoryList.Items[inventory]); err != nil {
 				log.Error(err, "unable to update inventory resource", "inventory", inventoryNamespacedName)
 				return ctrl.Result{}, err
 			}
@@ -167,7 +175,8 @@ func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *SizeReconciler) finalizeSize(ctx context.Context, req ctrl.Request, log logr.Logger, size *v1alpha1.Size) error {
+func (r *SizeReconciler) finalizeSize(ctx context.Context,
+	req ctrl.Request, log logr.Logger, size *v1alpha1.Size) error {
 	continueToken := ""
 	sizeLabel := size.GetMatchLabel()
 
@@ -184,21 +193,23 @@ func (r *SizeReconciler) finalizeSize(ctx context.Context, req ctrl.Request, log
 			return err
 		}
 
-		for _, inventory := range inventoryList.Items {
-			_, ok := inventory.Labels[sizeLabel]
+		for inventory := range inventoryList.Items {
+			_, ok := inventoryList.Items[inventory].Labels[sizeLabel]
 			if !ok {
 				continue
 			}
 
 			inventoryNamespacedName := types.NamespacedName{
-				Namespace: inventory.Namespace,
-				Name:      inventory.Name,
+				Namespace: inventoryList.Items[inventory].Namespace,
+				Name:      inventoryList.Items[inventory].Name,
 			}
-			log.Info("inventory contains size, removing on finalize", "size", req.NamespacedName, "inventory", inventoryNamespacedName)
+			log.Info("inventory contains size, removing on finalize",
+				"size", req.NamespacedName,
+				"inventory", inventoryNamespacedName)
 
-			delete(inventory.Labels, sizeLabel)
+			delete(inventoryList.Items[inventory].Labels, sizeLabel)
 
-			if err := r.Update(ctx, &inventory); err != nil {
+			if err := r.Update(ctx, &inventoryList.Items[inventory]); err != nil {
 				log.Error(err, "unable to update inventory resource", "inventory", inventoryNamespacedName)
 				return err
 			}

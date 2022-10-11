@@ -17,10 +17,10 @@
 package access
 
 import (
-	"github.com/onmetal/metal-api/common/types/base"
 	"github.com/onmetal/metal-api/scheduler/usecase/order/dto"
+	"github.com/onmetal/metal-api/types/common"
 )
 
 type InstanceExtractor interface {
-	GetInstance(base.Metadata) (dto.Instance, error)
+	GetInstance(common.Metadata) (dto.Instance, error)
 }

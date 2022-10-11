@@ -24,7 +24,6 @@ import (
 
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -97,7 +96,7 @@ var _ = BeforeSuite(func() {
 
 	err = (&OnboardingReconciler{
 		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("benchmark-onboarding"),
+		Log:    ctrl.Log.WithName("controllers").WithName("benchmark-server-exploitation"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

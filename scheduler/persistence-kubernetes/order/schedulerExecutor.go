@@ -17,18 +17,21 @@
 package order
 
 import (
+	"context"
+
 	machinev1alpaha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/pkg/provider"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
+	"github.com/onmetal/metal-api/types/common"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type SchedulerExecutor struct {
-	client      provider.Client
+	client      ctrlclient.Client
 	instance    *machinev1alpaha2.Machine
 	domainOrder *machinev1alpaha2.MachineAssignment
 }
 
-func newSchedulerExecutor(client provider.Client,
+func newSchedulerExecutor(client ctrlclient.Client,
 	instance *machinev1alpaha2.Machine,
 	domainOrder *machinev1alpaha2.MachineAssignment) *SchedulerExecutor {
 	return &SchedulerExecutor{
@@ -38,21 +41,27 @@ func newSchedulerExecutor(client provider.Client,
 	}
 }
 
-func (s *SchedulerExecutor) Execute() error {
-	s.domainOrder.Status.MachineRef = orderReference(s.instance.Name, s.instance.Namespace)
+func (s *SchedulerExecutor) Schedule() error {
+	s.domainOrder.Status.MachineRef = common.NewObjectMetadata(
+		s.instance.Name,
+		s.instance.Namespace).
+		Reference()
 	s.domainOrder.Status.State = domain.OrderStatusPending
-	if err := s.client.Update(s.domainOrder); err != nil {
+	if err := s.client.
+		Update(
+			context.Background(),
+			s.domainOrder); err != nil {
 		return err
 	}
 
 	s.instance.Status.Reservation.Status = domain.OrderStatusPending
-	s.instance.Status.Reservation.Reference = orderReference(s.domainOrder.Name, s.domainOrder.Namespace)
+	s.instance.Status.Reservation.Reference = common.NewObjectMetadata(
+		s.domainOrder.Name,
+		s.domainOrder.Namespace).
+		Reference()
 
-	return s.client.Update(s.instance)
-}
-
-func orderReference(requestName, namespace string) *machinev1alpaha2.ResourceReference {
-	return &machinev1alpaha2.ResourceReference{
-		Name: requestName, Namespace: namespace,
-	}
+	return s.client.
+		Update(
+			context.Background(),
+			s.instance)
 }

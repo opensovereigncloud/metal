@@ -17,9 +17,9 @@
 package usecase
 
 import (
-	"github.com/onmetal/metal-api/common/types/base"
+	"github.com/onmetal/metal-api/types/common"
 )
 
 type OrderCleanerUseCase interface {
-	Execute(base.Metadata) error
+	Execute(common.Metadata) error
 }

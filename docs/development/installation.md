@@ -16,7 +16,7 @@ you also need to have [Docker](https://www.docker.com/) or its alternative insta
 ## Required operators
 Current operator depends on the following operators:
 - [onmetal/ipam](https://github.com/onmetal/ipam)
-- [onmetal/oob-controller](https://github.com/onmetal/oob-controller)
+- [onmetal/oob-operator](https://github.com/onmetal/oob-operator)
 
 
 ## Prepare environment

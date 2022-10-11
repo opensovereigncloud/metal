@@ -53,7 +53,7 @@ func (r *OnboardingReconciler) constructPredicates() predicate.Predicate {
 }
 
 func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("benchmark onboarding", req.NamespacedName)
+	reqLogger := r.Log.WithValues("benchmark server-exploitation", req.NamespacedName)
 
 	b, exist := benchmark.New(ctx, r.Client, reqLogger, req)
 	if exist {

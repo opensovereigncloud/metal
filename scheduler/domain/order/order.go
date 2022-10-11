@@ -16,10 +16,12 @@
 
 package domain
 
-import "github.com/onmetal/metal-api/common/types/base"
+import (
+	"github.com/onmetal/metal-api/types/common"
+)
 
 type Order interface {
-	base.Metadata
+	common.Metadata
 	SetInstanceType(string)
 	InstanceType() string
 }
@@ -48,6 +50,10 @@ func (o *OrderEntity) Name() string {
 
 func (o *OrderEntity) Namespace() string {
 	return o.namespace
+}
+
+func (o *OrderEntity) Labels() map[string]string {
+	return map[string]string{}
 }
 
 func (o *OrderEntity) SetNamespace(namespace string) {

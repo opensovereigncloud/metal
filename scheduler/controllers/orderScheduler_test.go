@@ -26,6 +26,7 @@ import (
 	"github.com/onmetal/metal-api/scheduler/controllers"
 	"github.com/onmetal/metal-api/scheduler/persistence-kubernetes/order"
 	"github.com/onmetal/metal-api/scheduler/usecase/order/scenarios"
+	"github.com/onmetal/metal-api/types/common"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -134,7 +135,7 @@ func orderForController() *machinev1alpaha2.MachineAssignment {
 		},
 		Status: machinev1alpaha2.MachineAssignmentStatus{
 			State: "Running",
-			MachineRef: &machinev1alpaha2.ResourceReference{
+			MachineRef: common.ResourceReference{
 				Name:      fake.ExistingServerUUID,
 				Namespace: "default",
 			},

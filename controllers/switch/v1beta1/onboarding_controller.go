@@ -63,28 +63,30 @@ type wrappedError struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
+//
+//nolint:nakedret
 func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
-	log := r.Log.WithValues("switch-onboarding", req.NamespacedName)
+	log := r.Log.WithValues("switch-server-exploitation", req.NamespacedName)
 	result = ctrl.Result{}
 
-	obj := &inventoryv1alpha1.Inventory{}
-	if err = r.Get(ctx, req.NamespacedName, obj); err != nil {
+	inventoryObject := &inventoryv1alpha1.Inventory{}
+	if err = r.Get(ctx, req.NamespacedName, inventoryObject); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info(
 				"requested resource not found",
-				"name", req.NamespacedName, "gvk", obj.GroupVersionKind().String(),
+				"name", req.NamespacedName, "gvk", inventoryObject.GroupVersionKind().String(),
 			)
 		} else {
 			log.Error(
 				err,
 				"failed to get requested resource",
-				"name", req.NamespacedName, "gvk", obj.GroupVersionKind().String(),
+				"name", req.NamespacedName, "gvk", inventoryObject.GroupVersionKind().String(),
 			)
 		}
 		return result, client.IgnoreNotFound(err)
 	}
 
-	existingLabels := obj.GetLabels()
+	existingLabels := inventoryObject.GetLabels()
 	if len(existingLabels) == 0 {
 		return
 	}
@@ -94,35 +96,40 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return
 	}
 
-	switchObject, switchOnboarded, werr := r.switchOnboarded(ctx, obj)
+	switchObject, switchOnboarded, werr := r.switchOnboarded(ctx, inventoryObject)
 	if werr != nil {
 		err = werr.Err
 		log.Error(werr.Err, werr.Msg, werr.KeyValues...)
 		result.RequeueAfter = RequeuingInterval
 		return
 	}
+
 	if switchOnboarded {
-		goto updateMetadata
+		r.updateSwitchMetadataFromInventory(switchObject, inventoryObject)
+	} else {
+		switchObject, werr = r.onboardSwitch(ctx, inventoryObject)
+		if werr != nil {
+			err = werr.Err
+			log.Error(werr.Err, werr.Msg, werr.KeyValues...)
+			result.RequeueAfter = RequeuingInterval
+			return
+		}
 	}
-
-	switchObject, werr = r.onboardSwitch(ctx, obj)
-	if werr != nil {
-		err = werr.Err
-		log.Error(werr.Err, werr.Msg, werr.KeyValues...)
-		result.RequeueAfter = RequeuingInterval
-		return
-	}
-
-updateMetadata:
-	switchObject.UpdateSwitchLabels(obj)
-	switchObject.UpdateSwitchAnnotations(obj)
 	if err = r.Update(ctx, switchObject); err != nil {
-		log.Error(err, "failed to onboard switch", "name", switchObject.Name, "gvk", switchObject.GroupVersionKind().String())
+		log.Error(err, "failed to onboard switch",
+			"name", switchObject.Name,
+			"gvk", switchObject.GroupVersionKind().String())
 		result.RequeueAfter = RequeuingInterval
 		return
 	}
-
 	return
+}
+
+func (r *OnboardingReconciler) updateSwitchMetadataFromInventory(
+	switchObject *switchv1beta1.Switch,
+	inventoryObject *inventoryv1alpha1.Inventory) {
+	switchObject.UpdateSwitchLabels(inventoryObject)
+	switchObject.UpdateSwitchAnnotations(inventoryObject)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -167,16 +174,22 @@ func (r *OnboardingReconciler) handleSwitchCreate(e event.CreateEvent, q workque
 	q.Add(reconcile.Request{NamespacedName: key})
 }
 
-func (r *OnboardingReconciler) switchOnboarded(ctx context.Context, inv *inventoryv1alpha1.Inventory) (*switchv1beta1.Switch, bool, *wrappedError) {
+func (r *OnboardingReconciler) switchOnboarded(ctx context.Context,
+	inv *inventoryv1alpha1.Inventory) (*switchv1beta1.Switch, bool, *wrappedError) {
 	switches := &switchv1beta1.SwitchList{}
-	labelsReq, _ := switchv1beta1.GetLabelSelector(switchv1beta1.InventoryRefLabel, selection.Equals, []string{inv.Name})
+	labelsReq, _ := switchv1beta1.GetLabelSelector(
+		switchv1beta1.InventoryRefLabel,
+		selection.Equals,
+		[]string{inv.Name})
 	selector := labels.NewSelector().Add(*labelsReq)
 	opts := &client.ListOptions{
 		LabelSelector: selector,
 		Limit:         100,
 	}
 	if err := r.List(ctx, switches, opts); err != nil {
-		return nil, false, &wrappedError{Err: err, Msg: "failed to list resources", KeyValues: []interface{}{"gvk", switches.GroupVersionKind().String()}}
+		return nil, false, &wrappedError{Err: err,
+			Msg:       "failed to list resources",
+			KeyValues: []interface{}{"gvk", switches.GroupVersionKind().String()}}
 	}
 	if len(switches.Items) != 0 {
 		return &switches.Items[0], true, nil
@@ -184,7 +197,8 @@ func (r *OnboardingReconciler) switchOnboarded(ctx context.Context, inv *invento
 	return nil, false, nil
 }
 
-func (r *OnboardingReconciler) onboardSwitch(ctx context.Context, inv *inventoryv1alpha1.Inventory) (*switchv1beta1.Switch, *wrappedError) {
+func (r *OnboardingReconciler) onboardSwitch(
+	ctx context.Context, inv *inventoryv1alpha1.Inventory) (*switchv1beta1.Switch, *wrappedError) {
 	switchObject := &switchv1beta1.Switch{}
 	switches := &switchv1beta1.SwitchList{}
 	labelsReq, _ := switchv1beta1.GetLabelSelector(switchv1beta1.InventoriedLabel, selection.DoesNotExist, []string{})
@@ -194,7 +208,9 @@ func (r *OnboardingReconciler) onboardSwitch(ctx context.Context, inv *inventory
 		Limit:         100,
 	}
 	if err := r.List(ctx, switches, opts); err != nil {
-		return nil, &wrappedError{Err: err, Msg: "failed to list resources", KeyValues: []interface{}{"gvk", switches.GroupVersionKind().String()}}
+		return nil, &wrappedError{Err: err,
+			Msg:       "failed to list resources",
+			KeyValues: []interface{}{"gvk", switches.GroupVersionKind().String()}}
 	}
 
 	switch len(switches.Items) > 0 {
@@ -232,12 +248,14 @@ func (r *OnboardingReconciler) onboardSwitch(ctx context.Context, inv *inventory
 	return switchObject, nil
 }
 
-func getCorrespondingSwitch(inv *inventoryv1alpha1.Inventory, list *switchv1beta1.SwitchList) (s *switchv1beta1.Switch) {
-	for _, item := range list.Items {
-		if item.Spec.UUID == inv.Name {
-			s = &item
-			break
+func getCorrespondingSwitch(inv *inventoryv1alpha1.Inventory,
+	list *switchv1beta1.SwitchList) (s *switchv1beta1.Switch) {
+	for item := range list.Items {
+		if list.Items[item].Spec.UUID != inv.Name {
+			continue
 		}
+		s = &list.Items[item]
+		break
 	}
 	return
 }

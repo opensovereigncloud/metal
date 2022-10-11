@@ -15,27 +15,3 @@
 // */
 
 package provider
-
-import "github.com/onmetal/metal-api/common/types/base"
-
-type Client interface {
-	ClientWriter
-	ClientReader
-}
-
-type ClientWriter interface {
-	Create(any) error
-	Update(any) error
-	Patch(any, []byte) error
-}
-
-type ClientReader interface {
-	Get(any, base.Metadata) error
-	List(any, *ListOptions) error
-}
-
-type ListOptions struct {
-	Filter     map[string]string
-	Pagination string
-	Limit      int
-}

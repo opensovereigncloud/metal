@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+// nolint
 package v1beta1
 
 import (
@@ -153,7 +153,8 @@ func (c *switchClient) Delete(ctx context.Context, name string, opts metav1.Dele
 		Error()
 }
 
-func (c *switchClient) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
+func (c *switchClient) DeleteCollection(ctx context.Context,
+	opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
 	var timeout time.Duration
 	if listOpts.TimeoutSeconds != nil {
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second

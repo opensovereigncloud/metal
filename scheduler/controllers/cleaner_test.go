@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/onmetal/metal-api/pkg/logger"
 	"github.com/onmetal/metal-api/pkg/provider/kubernetes-provider/fake"
 	"github.com/onmetal/metal-api/scheduler/controllers"
 	"github.com/onmetal/metal-api/scheduler/persistence-kubernetes/order"
@@ -30,12 +31,14 @@ import (
 )
 
 func orderCleaner(a *assert.Assertions) *controllers.InstanceCleaner {
-	l := newLogger()
+	l := logger.New()
 	fakeClient, err := fake.NewFakeClient()
 	a.Nil(err, "must create client")
 	instanceExtractor := order.NewInstanceExtractor(fakeClient)
 	orderExistExtractor := order.NewOrderExistExtractor(fakeClient, l)
-	instanceCleanerUseCase := scenarios.NewOrderCleanerUseCase(instanceExtractor, orderExistExtractor)
+	instanceCleanerUseCase := scenarios.NewOrderCleanerUseCase(
+		instanceExtractor,
+		orderExistExtractor)
 
 	return controllers.NewInstanceCleaner(
 		l,

@@ -17,30 +17,39 @@
 package order
 
 import (
+	"context"
+
 	machinev1alpaha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/pkg/provider"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
+	"github.com/onmetal/metal-api/types/common"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type OrderCancelExecutor struct {
-	client provider.Client
+	client ctrlclient.Client
 }
 
-func NewOrderCancelExecutor(c provider.Client) *OrderCancelExecutor {
+func NewOrderCancelExecutor(c ctrlclient.Client) *OrderCancelExecutor {
 	return &OrderCancelExecutor{
 		client: c,
 	}
 }
 
-func (o *OrderCancelExecutor) Cancel(metadata base.Metadata) error {
+func (o *OrderCancelExecutor) Cancel(metadata common.Metadata) error {
 	instance := &machinev1alpaha2.Machine{}
-	if err := o.client.Get(instance, metadata); err != nil {
+	if err := o.client.
+		Get(
+			context.Background(),
+			types.NamespacedName{
+				Namespace: metadata.Namespace(),
+				Name:      metadata.Name(),
+			},
+			instance); err != nil {
 		return err
 	}
-
 	instance.Status.Reservation.Status = domain.OrderStatusAvailable
-	instance.Status.Reservation.Reference = nil
+	instance.Status.Reservation.Reference = common.ResourceReference{}
 
-	return o.client.Update(instance)
+	return o.client.Update(context.Background(), instance)
 }

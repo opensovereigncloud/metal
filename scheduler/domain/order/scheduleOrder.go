@@ -17,5 +17,5 @@
 package domain
 
 type OrderScheduler interface {
-	Execute() error
+	Schedule() error
 }

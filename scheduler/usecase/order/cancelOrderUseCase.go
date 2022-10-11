@@ -16,8 +16,10 @@
 
 package usecase
 
-import "github.com/onmetal/metal-api/common/types/base"
+import (
+	"github.com/onmetal/metal-api/types/common"
+)
 
 type CancelOrderUseCase interface {
-	Cancel(metadata base.Metadata) error
+	Cancel(metadata common.Metadata) error
 }

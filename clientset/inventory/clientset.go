@@ -1,12 +1,16 @@
 package clientset
 
 import (
-	"fmt"
-
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/flowcontrol"
+	"errors"
 
 	"github.com/onmetal/metal-api/clientset/inventory/v1alpha1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/flowcontrol"
+)
+
+var (
+	errBurstLessThanRequired = errors.New(
+		"burst is required to be greater than 0 when RateLimiter is not set and QPS is set to greater than 0")
 )
 
 type Clientset interface {
@@ -25,7 +29,7 @@ func NewForConfig(c *rest.Config) (Clientset, error) {
 	cc := *c
 	if cc.RateLimiter == nil && cc.QPS > 0 {
 		if cc.Burst <= 0 {
-			return nil, fmt.Errorf("burst is required to be greater than 0 when RateLimiter is not set and QPS is set to greater than 0")
+			return nil, errBurstLessThanRequired
 		}
 		cc.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(cc.QPS, cc.Burst)
 	}

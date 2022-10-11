@@ -22,8 +22,8 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/common/types/base"
 	usecase "github.com/onmetal/metal-api/scheduler/usecase/order"
+	"github.com/onmetal/metal-api/types/common"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -50,7 +50,7 @@ func (r *InstanceCleaner) SetupWithManager(mgr ctrl.Manager) error {
 func (r *InstanceCleaner) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.log.WithValues("namespace", req.NamespacedName)
 
-	instance := base.NewInstanceMetadata(req.Name, req.Namespace)
+	instance := common.NewObjectMetadata(req.Name, req.Namespace)
 	if err := r.instanceCleaner.Execute(instance); err != nil {
 		reqLogger.Info("InstanceSchedulerUseCase failed", "error", err)
 		return ctrl.Result{}, err

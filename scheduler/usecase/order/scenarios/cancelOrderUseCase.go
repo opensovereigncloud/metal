@@ -17,8 +17,8 @@
 package scenarios
 
 import (
-	"github.com/onmetal/metal-api/common/types/base"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
+	"github.com/onmetal/metal-api/types/common"
 )
 
 type CancelOrderUseCase struct {
@@ -31,6 +31,6 @@ func NewCancelOrderUseCase(orderCancel domain.CancelOrder) *CancelOrderUseCase {
 	}
 }
 
-func (s *CancelOrderUseCase) Cancel(instanceMetadata base.Metadata) error {
+func (s *CancelOrderUseCase) Cancel(instanceMetadata common.Metadata) error {
 	return s.orderCancel.Cancel(instanceMetadata)
 }

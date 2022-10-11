@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.19.0 as builder
+FROM golang:1.19.1 as builder
 
 ARG GOARCH
 ARG GOPRIVATE
@@ -19,11 +19,10 @@ RUN --mount=type=ssh --mount=type=secret,id=github_pat GITHUB_PAT_PATH=/run/secr
 
 # Copy the go source
 COPY main.go main.go
-COPY common common
+COPY types types/
 COPY apis/ apis/
 COPY controllers/ controllers/
 COPY pkg/ pkg/
-COPY internal/ internal/
 
 # Build
 RUN GOMAXPROCS=1 CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o manager main.go

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -11,11 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
-
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
-// nolint:forcetypeassert
+//nolint:forcetypeassert
 var _ = Describe("Inventory client", func() {
 	const (
 		InventoryName         = "test-inventory"

@@ -24,8 +24,7 @@ import (
 )
 
 const (
-	CLabelPrefix = "machine.onmetal.de/size-"
-
+	CLabelPrefix                    = "machine.onmetal.de/size-"
 	CAggregatePathPrefix            = "{.status.computed."
 	CAggregatePathPrefixReplacement = "{."
 )
@@ -74,6 +73,7 @@ func (in *Size) GetMatchLabel() string {
 	return CLabelPrefix + in.Name
 }
 
+//nolint:lll,funlen,cyclop
 func (in *Size) Matches(inventory *Inventory) (bool, error) {
 	for _, constraint := range in.Spec.Constraints {
 		// TODO think how or wait to improve on the hot fix
@@ -144,6 +144,5 @@ func (in *Size) Matches(inventory *Inventory) (bool, error) {
 			return false, nil
 		}
 	}
-
 	return true, nil
 }

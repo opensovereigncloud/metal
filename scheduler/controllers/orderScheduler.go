@@ -22,9 +22,9 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/common/types/base"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
 	usecase "github.com/onmetal/metal-api/scheduler/usecase/order"
+	"github.com/onmetal/metal-api/types/common"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -66,10 +66,6 @@ func (r *Scheduler) constructEventPredicates() predicate.Predicate {
 	}
 }
 
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=requests,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=requests/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=requests/finalizers,verbs=update
-
 func (r *Scheduler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.log.WithValues("namespace", req.NamespacedName)
 
@@ -89,7 +85,7 @@ func (r *Scheduler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result,
 		return ctrl.Result{}, err
 	}
 
-	if err := orderScheduler.Execute(); err != nil {
+	if err := orderScheduler.Schedule(); err != nil {
 		reqLogger.Info("OrderScheduler failed", "error", err)
 		return ctrl.Result{}, err
 	}
@@ -104,7 +100,7 @@ func (r *Scheduler) AlreadyOrdered(e event.UpdateEvent) bool {
 		r.log.Info("request delete event cast failed")
 		return false
 	}
-	if newObj.Status.MachineRef != nil {
+	if newObj.Status.MachineRef.Name != "" {
 		return false
 	}
 	return true
@@ -117,13 +113,13 @@ func (r *Scheduler) CancelOrder(e event.DeleteEvent) bool {
 		return false
 	}
 
-	if obj.Status.MachineRef == nil {
+	if obj.Status.MachineRef.Name == "" {
 		return false
 	}
 
 	instanceName := obj.Status.MachineRef.Name
 	instanceNamespace := obj.Status.MachineRef.Namespace
-	instanceMeta := base.NewInstanceMetadata(instanceName, instanceNamespace)
+	instanceMeta := common.NewObjectMetadata(instanceName, instanceNamespace)
 
 	if err := r.cancelOrder.Cancel(instanceMeta); err != nil {
 		r.log.Info("cancelOrder: failed", "error", err)

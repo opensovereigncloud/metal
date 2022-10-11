@@ -4,17 +4,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
-
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
-// nolint:forcetypeassert
+//nolint:forcetypeassert
 var _ = Describe("Aggregate client", func() {
 	const (
 		AggregateName         = "test-aggregate"
@@ -113,7 +112,8 @@ var _ = Describe("Aggregate client", func() {
 				defer GinkgoRecover()
 				patchedAggregate, err := client.Patch(ctx, AggregateName, types.JSONPatchType, patchData, v1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedAggregate.Spec.Aggregates[0].TargetPath).Should(BeEquivalentTo(*v1alpha1.JSONPathFromString(patch[0].Value)))
+				Expect(patchedAggregate.Spec.Aggregates[0].TargetPath).
+					Should(BeEquivalentTo(*v1alpha1.JSONPathFromString(patch[0].Value)))
 				finished <- true
 			}()
 
@@ -121,7 +121,8 @@ var _ = Describe("Aggregate client", func() {
 			Expect(event.Type).To(Equal(watch.Modified))
 			eventAggregate = event.Object.(*v1alpha1.Aggregate)
 			Expect(eventAggregate).NotTo(BeNil())
-			Expect(eventAggregate.Spec.Aggregates[0].TargetPath).Should(Equal(*v1alpha1.JSONPathFromString(patch[0].Value)))
+			Expect(eventAggregate.Spec.Aggregates[0].TargetPath).
+				Should(Equal(*v1alpha1.JSONPathFromString(patch[0].Value)))
 
 			<-finished
 

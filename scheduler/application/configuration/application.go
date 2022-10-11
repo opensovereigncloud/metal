@@ -17,18 +17,18 @@
 package configuration
 
 import (
+	"github.com/onmetal/metal-api/pkg/logger"
+	"github.com/onmetal/metal-api/pkg/manager"
+	kubernetesmanager "github.com/onmetal/metal-api/pkg/manager/kubernetes"
 	kubernetestprovider "github.com/onmetal/metal-api/pkg/provider/kubernetes-provider"
-	"github.com/onmetal/metal-api/pkg/server"
-	kubernetesmanager "github.com/onmetal/metal-api/pkg/server/kubernetes-manager"
 	"github.com/onmetal/metal-api/scheduler/controllers"
 	"github.com/onmetal/metal-api/scheduler/persistence-kubernetes/order"
 	"github.com/onmetal/metal-api/scheduler/usecase/order/scenarios"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
-func Initialize() (server.Server, error) {
-	logger := NewLogger()
+func Initialize() (manager.Manager, error) {
+	log := logger.New()
 	config := newConfiguration()
 	managerConfig := kubernetesmanager.ManagerConfig{
 		MetricsAddr:          config.metricsAddr,
@@ -44,28 +44,18 @@ func Initialize() (server.Server, error) {
 		return nil, err
 	}
 
-	orderAlreadyScheduledExecutor := order.NewOrderAlreadyScheduled(providerClient, logger)
+	orderAlreadyScheduledExecutor := order.NewOrderAlreadyScheduled(providerClient, log)
 	orderAlreadyScheduledUseCase := scenarios.NewOrderAlreadyScheduledUseCase(orderAlreadyScheduledExecutor)
-	instanceExtractor := order.NewInstanceFinderExtractor(providerClient)
-	instanceForOrderUseCase := scenarios.NewFindVacantInstanceUseCase(instanceExtractor)
+	instanceFinderExtractor := order.NewInstanceFinderExtractor(providerClient)
+	instanceForOrderUseCase := scenarios.NewFindVacantInstanceUseCase(instanceFinderExtractor)
 	cancelOrderExecutor := order.NewOrderCancelExecutor(providerClient)
 	cancelOrderUseCase := scenarios.NewCancelOrderUseCase(cancelOrderExecutor)
 
 	if err = controllers.NewSchedulerController(
-		logger.WithName("controllers").WithName("Scheduler"),
+		log.WithName("controllers").WithName("Scheduler"),
 		orderAlreadyScheduledUseCase,
 		cancelOrderUseCase,
 		instanceForOrderUseCase).SetupWithManager(k8sManager.Manager); err != nil {
-		return nil, err
-	}
-
-	serverExtractor := order.NewServerExtractor(providerClient)
-	instanceSchedulerUseCase := scenarios.NewInstanceSchedulerUseCase(serverExtractor)
-
-	if err = controllers.NewInstanceScheduler(
-		ctrl.Log.WithName("controllers").WithName("Machine-scheduler"),
-		instanceSchedulerUseCase,
-	).SetupWithManager(k8sManager.Manager); err != nil {
 		return nil, err
 	}
 

@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const waitForMachineMinute = 5 * time.Minute //nolint:revive //reason: false-positive
+const waitForMachineMinute = 5 * time.Minute //nolint:revive
 
 type Reason struct {
 	Message      string

@@ -22,6 +22,6 @@ import (
 
 type Instance interface {
 	GetOrder() (domain.Order, error)
-	GetServer() (Server, error)
 	CleanOrderReference() error
+	Reserved() bool
 }

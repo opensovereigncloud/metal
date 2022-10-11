@@ -38,6 +38,7 @@ func (in *Aggregate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
+//nolint:lll
 // +kubebuilder:webhook:path=/validate-machine-onmetal-de-v1alpha1-aggregate,mutating=false,failurePolicy=fail,sideEffects=None,groups=machine.onmetal.de,resources=aggregates,verbs=create;update,versions=v1alpha1,name=vaggregate.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &Aggregate{}

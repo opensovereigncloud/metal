@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//nolint
 package v1beta1
 
 import (
@@ -124,6 +124,7 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	}
 }
 
+// nolint
 func (in *SwitchConfig) setDefaultPortParams() {
 	if in.Spec.PortsDefaults.Lanes == nil {
 		in.Spec.PortsDefaults.Lanes = MetalAPIUint8(4)

@@ -102,7 +102,9 @@ var _ = Describe("Processing test", func() {
 				g.Expect(k8sClient.List(ctx, switchesList)).NotTo(HaveOccurred())
 				for _, item := range switchesList.Items {
 					g.Expect(item.Status.SwitchState).NotTo(BeNil())
-					g.Expect(switchv1beta1.GoString(item.Status.SwitchState.State)).To(Equal(switchv1beta1.CSwitchStateReady))
+					g.Expect(switchv1beta1.
+						GoString(item.Status.SwitchState.State)).
+						To(Equal(switchv1beta1.CSwitchStateReady))
 					g.Expect(item.ConnectionsOK(switchesList)).Should(BeTrue())
 				}
 			}, timeout, interval).Should(Succeed())
@@ -110,12 +112,16 @@ var _ = Describe("Processing test", func() {
 			var target = &switchv1beta1.Switch{}
 
 			By("Change topSpine flag to false should cause connection level to change from 0")
-			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: "onmetal",
+				Name:      "spine-1"}, target)).Should(Succeed())
 			Expect(target.Status.ConnectionLevel).To(Equal(uint8(0)))
 			target.Spec.TopSpine = false
 			Expect(k8sClient.Update(ctx, target)).Should(Succeed())
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: "onmetal",
+					Name:      "spine-1"}, target)).Should(Succeed())
 				g.Expect(target.Status.ConnectionLevel).To(Equal(uint8(2)))
 			}, timeout, interval).Should(Succeed())
 
@@ -125,13 +131,17 @@ var _ = Describe("Processing test", func() {
 			target.Spec.TopSpine = true
 			Expect(k8sClient.Update(ctx, target)).Should(Succeed())
 			Eventually(func(g Gomega) {
-				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "spine-1"}, target)).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, types.NamespacedName{
+					Namespace: "onmetal",
+					Name:      "spine-1"}, target)).Should(Succeed())
 				g.Expect(target.Status.ConnectionLevel).To(Equal(uint8(0)))
 			}, timeout, interval).Should(Succeed())
 
 			By("Recreation of inventory with changed NICs data should cause switch's interfaces update")
 			inventory := &inventoryv1alpha1.Inventory{}
-			Expect(k8sClient.Get(ctx, types.NamespacedName{Namespace: "onmetal", Name: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"}, inventory)).Should(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{
+				Namespace: "onmetal",
+				Name:      "a177382d-a3b4-3ecd-97a4-01cc15e749e4"}, inventory)).Should(Succeed())
 			Expect(k8sClient.Delete(ctx, inventory)).Should(Succeed())
 
 			updatedInventory := func() *inventoryv1alpha1.Inventory {

@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// nolint
 var _ = Describe("IPAM interaction test", func() {
 	BeforeEach(func() {
 		subnetsList := &ipamv1alpha1.SubnetList{}

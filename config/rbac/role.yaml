@@ -212,32 +212,6 @@ rules:
 - apiGroups:
   - machine.onmetal.de
   resources:
-  - requests
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - requests/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - requests/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - machine.onmetal.de
-  resources:
   - sizes
   verbs:
   - create
@@ -266,7 +240,6 @@ rules:
   resources:
   - machines
   verbs:
-  - create
   - delete
   - get
   - list

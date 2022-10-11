@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// nolint
 package v1beta1
 
 import (
@@ -756,7 +757,7 @@ func (r *SwitchReconciler) getRelatedLoopbackIPs(ctx context.Context, obj *switc
 	return
 }
 
-// nolint:unparam
+//nolint:unparam
 func (r *SwitchReconciler) computeLoopbacks(_ context.Context, obj *switchv1beta1.Switch, list *ipamv1alpha1.IPList) (err error) {
 	loopbacks := make([]*switchv1beta1.IPAddressSpec, 0)
 	for _, item := range list.Items {
@@ -798,7 +799,7 @@ func (r *SwitchReconciler) getRelatedSubnets(ctx context.Context, obj *switchv1b
 	return
 }
 
-// nolint:unparam
+//nolint:unparam
 func (r *SwitchReconciler) computeSubnets(_ context.Context, obj *switchv1beta1.Switch, list *ipamv1alpha1.SubnetList) (err error) {
 	subnets := make([]*switchv1beta1.SubnetSpec, 0)
 	for _, item := range list.Items {

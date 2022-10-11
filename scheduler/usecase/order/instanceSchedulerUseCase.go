@@ -19,17 +19,17 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/onmetal/metal-api/common/types/base"
+	"github.com/onmetal/metal-api/types/common"
 )
 
 type InstanceSchedulerUseCase interface {
-	Execute(base.Metadata) error
+	Execute(common.Metadata) error
 }
 
-func ServerForInstanceNotFound(instance base.Metadata) error {
+func ServerForInstanceNotFound(instance common.Metadata) error {
 	return &SchedulerOrderError{Message: fmt.Sprintf("instance exist. but not contains server info: %s", instance)}
 }
 
-func OrderForInstanceNotFound(instance base.Metadata) error {
+func OrderForInstanceNotFound(instance common.Metadata) error {
 	return &SchedulerOrderError{Message: fmt.Sprintf("instance exist. but not contains order info: %s", instance)}
 }

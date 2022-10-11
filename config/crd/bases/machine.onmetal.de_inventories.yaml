@@ -618,12 +618,8 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
               inventoryStatuses:
                 properties:
-                  ready:
-                    type: boolean
-                  requestsCount:
-                    type: integer
-                required:
-                - ready
+                  readyState:
+                    type: string
                 type: object
             required:
             - computed

@@ -17,29 +17,38 @@
 package order
 
 import (
+	"context"
+
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/pkg/provider"
+	"github.com/onmetal/metal-api/types/common"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type OrderAlreadyScheduled struct {
-	client provider.Client
+	client ctrlclient.Client
 	log    logr.Logger
 }
 
-func NewOrderAlreadyScheduled(c provider.Client, l logr.Logger) *OrderAlreadyScheduled {
+func NewOrderAlreadyScheduled(c ctrlclient.Client, l logr.Logger) *OrderAlreadyScheduled {
 	return &OrderAlreadyScheduled{
 		client: c,
 		log:    l,
 	}
 }
 
-func (e *OrderAlreadyScheduled) Invoke(orderMeta base.Metadata) bool {
+func (e *OrderAlreadyScheduled) Invoke(orderMeta common.Metadata) bool {
 	domainOrder := &machinev1alpha2.MachineAssignment{}
-	if err := e.client.Get(domainOrder, orderMeta); err != nil {
+	if err := e.client.
+		Get(
+			context.Background(),
+			types.NamespacedName{
+				Namespace: orderMeta.Namespace(),
+				Name:      orderMeta.Name(),
+			}, domainOrder); err != nil {
 		e.log.V(1).Info("orderAlreadyScheduled extractor failed", "error", err)
 		return true
 	}
-	return domainOrder.Status.MachineRef != nil && domainOrder.Status.State != ""
+	return domainOrder.Status.MachineRef.Name != "" && domainOrder.Status.State != ""
 }

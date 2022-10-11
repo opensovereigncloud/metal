@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+// nolint
 package v1beta1
 
 import (
@@ -336,6 +336,7 @@ func (in *Switch) StateEqualsTo(state string) bool {
 	return GoString(in.Status.SwitchState.State) == state
 }
 
+// nolint
 func (in *Switch) SetInitialStatus(inv *inventoryv1alpha1.Inventory) {
 	in.Status = SwitchStatus{
 		TotalPorts:  uint16(len(inv.Spec.NICs)),
@@ -560,6 +561,7 @@ func (in *Switch) peersOK(list *SwitchList) bool {
 	return true
 }
 
+// nolint
 func (in *Switch) connectionLevelOK(list *SwitchList) bool {
 	if in.Status.ConnectionLevel == 255 {
 		return false
@@ -623,6 +625,7 @@ func (in *Switch) fillPeersInfo(list *SwitchList) {
 	}
 }
 
+// nolint
 func (in *Switch) computeConnectionLevel(list *SwitchList) {
 	connectionsMap, keys := list.buildConnectionMap()
 	if _, ok := connectionsMap[0]; !ok {
@@ -765,6 +768,7 @@ func (in *Switch) LoopbackSelectorsExist() bool {
 	return true
 }
 
+// nolint
 func (in *Switch) GetAddressesCount(bits uint8, af ipamv1alpha1.SubnetAddressType) int64 {
 	var addressesCount int64
 	addressesPerPort := int64(math.Pow(float64(2), float64(CIPv4MaskLengthBits-bits)))
@@ -1192,8 +1196,8 @@ func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
 }
 
 func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
-	hardwareAnnotations := make(map[string]string)
-	softwareAnnotations := make(map[string]string)
+	hardwareAnnotations := make(map[string]string, 3)
+	softwareAnnotations := make(map[string]string, 5)
 	if inv.Spec.System != nil {
 		hardwareAnnotations[CHardwareSerialAnnotation] = inv.Spec.System.SerialNumber
 		hardwareAnnotations[CHardwareManufacturerAnnotation] = inv.Spec.System.Manufacturer

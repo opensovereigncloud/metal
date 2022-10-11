@@ -17,28 +17,37 @@
 package order
 
 import (
+	"context"
+
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/pkg/provider"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
 	usecase "github.com/onmetal/metal-api/scheduler/usecase/order"
-	dto2 "github.com/onmetal/metal-api/scheduler/usecase/order/dto"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	dto "github.com/onmetal/metal-api/scheduler/usecase/order/dto"
+	"github.com/onmetal/metal-api/types/common"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InstanceExtractor struct {
-	client provider.Client
+	client ctrlclient.Client
 }
 
-func NewInstanceExtractor(c provider.Client) *InstanceExtractor {
+func NewInstanceExtractor(c ctrlclient.Client) *InstanceExtractor {
 	return &InstanceExtractor{
 		client: c,
 	}
 }
 
-func (i *InstanceExtractor) GetInstance(instanceMetadata base.Metadata) (dto2.Instance, error) {
+func (i *InstanceExtractor) GetInstance(instanceMetadata common.Metadata) (dto.Instance, error) {
 	machineInstance := &machinev1alpha2.Machine{}
-	if err := i.client.Get(machineInstance, instanceMetadata); err != nil {
+	if err := i.client.
+		Get(
+			context.Background(),
+			types.NamespacedName{
+				Namespace: instanceMetadata.Namespace(),
+				Name:      instanceMetadata.Name(),
+			},
+			machineInstance); err != nil {
 		return nil, err
 	}
 	return &instance{
@@ -48,13 +57,13 @@ func (i *InstanceExtractor) GetInstance(instanceMetadata base.Metadata) (dto2.In
 }
 
 type instance struct {
-	client   provider.Client
+	client   ctrlclient.Client
 	instance *machinev1alpha2.Machine
 }
 
 func (i *instance) GetOrder() (domain.Order, error) {
-	instanceMetadata := base.NewInstanceMetadata(i.instance.Name, i.instance.Namespace)
-	if i.instance.Status.Reservation.Reference == nil {
+	instanceMetadata := common.NewObjectMetadata(i.instance.Name, i.instance.Namespace)
+	if i.instance.Status.Reservation.Reference.Name == "" {
 		return nil, usecase.OrderForInstanceNotFound(instanceMetadata)
 	}
 	orderName := i.instance.Status.Reservation.Reference.Name
@@ -64,34 +73,15 @@ func (i *instance) GetOrder() (domain.Order, error) {
 	return orderMetadata, nil
 }
 
-func (i *instance) GetServer() (dto2.Server, error) {
-	instanceMetadata := base.NewInstanceMetadata(i.instance.Name, i.instance.Namespace)
-	if !i.instance.Status.OOB.Exist {
-		return nil, usecase.ServerForInstanceNotFound(instanceMetadata)
-	}
-
-	server := &oobv1.Machine{}
-
-	serverName := i.instance.Status.OOB.Reference.Name
-	serverNamespace := i.instance.Status.OOB.Reference.Namespace
-	serverMetadata := base.NewInstanceMetadata(serverName, serverNamespace)
-
-	if err := i.client.Get(server, serverMetadata); err != nil {
-		return nil, err
-	}
-	return &bareMetalServer{
-		client:   i.client,
-		server:   server,
-		reserved: false,
-	}, nil
+func (i *instance) Reserved() bool {
+	return i.instance.Status.Reservation.Reference.Name != ""
 }
 
 func (i *instance) CleanOrderReference() error {
-	if i.instance.Status.Reservation.Reference == nil {
+	if i.instance.Status.Reservation.Reference.Name == "" {
 		return nil
 	}
 	i.instance.Status.Reservation.Status = domain.OrderStatusAvailable
-	i.instance.Status.Reservation.Reference = nil
-
-	return i.client.Update(i.instance)
+	i.instance.Status.Reservation.Reference = common.ResourceReference{}
+	return i.client.Update(context.Background(), i.instance)
 }

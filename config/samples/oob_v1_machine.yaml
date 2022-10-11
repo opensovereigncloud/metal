@@ -1,7 +1,7 @@
 apiVersion: oob.onmetal.de/v1
 kind: Machine
 metadata:
-  name: machine-sample
+  name: m-a967954c-3475-11b2-a85c-84d8b4f8cd2d
   namespace: onmetal
 spec:
   locatorLED: "Off"

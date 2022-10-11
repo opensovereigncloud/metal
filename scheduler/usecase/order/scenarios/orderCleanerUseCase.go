@@ -17,10 +17,10 @@
 package scenarios
 
 import (
-	"github.com/onmetal/metal-api/common/types/base"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
 	"github.com/onmetal/metal-api/scheduler/usecase/order/access"
 	"github.com/onmetal/metal-api/scheduler/usecase/order/dto"
+	"github.com/onmetal/metal-api/types/common"
 )
 
 type OrderCleanerUseCase struct {
@@ -36,7 +36,7 @@ func NewOrderCleanerUseCase(instanceExtractor access.InstanceExtractor,
 	}
 }
 
-func (i *OrderCleanerUseCase) Execute(instanceMeta base.Metadata) error {
+func (i *OrderCleanerUseCase) Execute(instanceMeta common.Metadata) error {
 	instance, err := i.instanceExtractor.GetInstance(instanceMeta)
 	if err != nil {
 		return err
@@ -46,18 +46,14 @@ func (i *OrderCleanerUseCase) Execute(instanceMeta base.Metadata) error {
 		return err
 	}
 	if !i.orderExist.Invoke(orderForInstance) {
-		return clean(instance)
+		return i.clean(instance)
 	}
 	return nil
 }
 
-func clean(instance dto.Instance) error {
+func (i *OrderCleanerUseCase) clean(instance dto.Instance) error {
 	if err := instance.CleanOrderReference(); err != nil {
 		return err
 	}
-	server, err := instance.GetServer()
-	if err != nil {
-		return err
-	}
-	return CheckOut(server)
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -11,11 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
-
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
-// nolint:forcetypeassert
+//nolint:forcetypeassert
 var _ = Describe("Size client", func() {
 	const (
 		SizeName         = "test-size"
@@ -114,7 +113,8 @@ var _ = Describe("Size client", func() {
 				defer GinkgoRecover()
 				patchedSize, err := client.Patch(ctx, SizeName, types.JSONPatchType, patchData, v1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedSize.Spec.Constraints[0].Path.String()).Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
+				Expect(patchedSize.Spec.Constraints[0].Path.String()).
+					Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
 				finished <- true
 			}()
 
@@ -122,7 +122,8 @@ var _ = Describe("Size client", func() {
 			Expect(event.Type).To(Equal(watch.Modified))
 			eventSize = event.Object.(*v1alpha1.Size)
 			Expect(eventSize).NotTo(BeNil())
-			Expect(eventSize.Spec.Constraints[0].Path.String()).Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
+			Expect(eventSize.Spec.Constraints[0].Path.String()).
+				Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
 
 			<-finished
 

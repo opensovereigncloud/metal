@@ -15,7 +15,7 @@
 # */
 
 # Build the manager binary
-FROM golang:1.19 as builder
+FROM golang:1.19.1 as builder
 
 ARG GOARCH
 ARG GOPRIVATE
@@ -35,10 +35,9 @@ RUN --mount=type=ssh --mount=type=secret,id=github_pat GITHUB_PAT_PATH=/run/secr
 
 # Copy the go source
 COPY scheduler/application/scheduler.go main.go
-COPY common common
+COPY types types/
 COPY apis apis/
 COPY pkg pkg/
-COPY internal internal/
 COPY scheduler scheduler/
 
 # Build

@@ -41,6 +41,7 @@ func (in *Size) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
+//nolint:lll
 // +kubebuilder:webhook:path=/validate-machine-onmetal-de-v1alpha1-size,mutating=false,failurePolicy=fail,sideEffects=None,groups=machine.onmetal.de,resources=sizes,verbs=create;update,versions=v1alpha1,name=vsize.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &Size{}
@@ -59,6 +60,7 @@ func (in *Size) ValidateUpdate(old runtime.Object) error {
 
 var CDummyInventorySpec = getDummyInventoryForValidation()
 
+// nolint
 func (in *Size) validate() error {
 	ops := make(map[string]int)
 	errs := make([]string, 0)

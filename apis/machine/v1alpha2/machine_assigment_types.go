@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"github.com/onmetal/metal-api/types/common"
 	"inet.af/netaddr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,7 +84,7 @@ type EFIVar struct {
 	Value string `json:"value"`
 }
 
-// Interface is the definition of a single interface.
+// NetworkInterfaces is the definition of a single interface.
 type NetworkInterfaces struct {
 	// Name is the name of the interface
 	Name string `json:"name"`
@@ -95,7 +96,7 @@ type NetworkInterfaces struct {
 	IP *IPAddress `json:"ip,omitempty"`
 }
 
-// IP is an IP address.
+// IPAddress is an IP address.
 // +kubebuilder:validation:Type=string
 type IPAddress struct {
 	netaddr.IP `json:"-"`
@@ -103,9 +104,9 @@ type IPAddress struct {
 
 // MachineAssignmentStatus defines the observed state of Request.
 type MachineAssignmentStatus struct {
-	State             string             `json:"state,omitempty"`
-	MachineRef        *ResourceReference `json:"machineRef,omitempty"`
-	ComputeMachineRef *ResourceReference `json:"computeMachineRef,omitempty"`
+	State             string                   `json:"state,omitempty"`
+	MachineRef        common.ResourceReference `json:"machineRef,omitempty"`
+	ComputeMachineRef common.ResourceReference `json:"computeMachineRef,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -130,7 +131,7 @@ type MachineAssignmentList struct {
 	Items           []MachineAssignment `json:"items"`
 }
 
-// DeepCopyInto is an deepcopy function, copying the receiver, writing into out. in must be non-nil.
+// DeepCopyInto is a deepcopy function, copying the receiver, writing into out. in must be non-nil.
 func (in *IPAddress) DeepCopyInto(out *IPAddress) {
 	*out = *in
 }

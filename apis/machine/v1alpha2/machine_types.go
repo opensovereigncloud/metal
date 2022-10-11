@@ -17,10 +17,11 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"github.com/onmetal/metal-api/types/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// A toleration operator is the set of operators that can be used in a toleration.
+// TolerationOperator is the set of operators that can be used in a toleration.
 type TolerationOperator string
 
 const (
@@ -28,52 +29,35 @@ const (
 	TolerationOpExists TolerationOperator = "Exists"
 )
 
-const (
-	MachinePowerStateON    = "On"
-	MachinePowerStateOFF   = "Off"
-	MachinePowerStateReset = "Reset"
-)
-
 type TaintEffect string
 
 const (
-	// When Machine taint effect is NotAvailable that's mean that Inventory or OOB not exist.
+	// TaintEffectNotAvailable - When Machine taint effect is NotAvailable that's mean that Inventory or OOB not exist.
 	TaintEffectNotAvailable TaintEffect = "NotAvailable"
-	// When Machine taint effect is Suspended.
+	// TaintEffectSuspended - When Machine taint effect is Suspended.
 	TaintEffectSuspended TaintEffect = "Suspended"
-	// When Machine taint effect is NoSchedule.
+	// TaintEffectNoSchedule - When Machine taint effect is NoSchedule.
 	TaintEffectNoSchedule TaintEffect = "NoSchedule"
-	// When Machine taint effect is Error it's impossible to order machine. And it requires to run stresstest.
+	// TaintEffectError - When Machine taint effect is Error
+	// it's impossible to order machine. And it requires to run stresstest.
 	TaintEffectError TaintEffect = "Error"
 )
 
 type MachineState string
 
 const (
-	// When State is `Healthy` Machine` is allowed to be booked.
+	// MachineStateHealthy - When State is `Healthy` Machine` is allowed to be booked.
 	MachineStateHealthy MachineState = "Healthy"
-	// When State is `Unhealthy`` Machine isn't allowed to be booked.
+	// MachineStateUnhealthy - When State is `Unhealthy`` Machine isn't allowed to be booked.
 	MachineStateUnhealthy MachineState = "Unhealthy"
-)
-
-const (
-	InterfaceRedundancySingle           = "Single"
-	InterfaceRedundancyHighAvailability = "HighAvailability"
-	InterfaceRedundancyNone             = "None"
 )
 
 const (
 	UUIDLabel          = "machine.onmetal.de/uuid"
 	UnschedulableLabel = "machine.onmetal.de/unschedulable"
 	SuspendedLabel     = "machine.onmetal.de/suspended"
-	NotAvailableLabel  = "machine.onmetal.de/notavailable"
+	NotAvailableLabel  = "machine.onmetal.de/available"
 	ErrorLabel         = "machine.onmetal.de/error"
-)
-
-const (
-	LeasedLabel                   = "machine.onmetal.de/leased"
-	MetalAssignmentLabel          = "machine.onmetal.de/metal-assignment"
-	MetalAssignmentNamespaceLabel = "machine.onmetal.de/metal-assignment-namespace"
 )
 
 // MachineSpec - defines the desired spec of Machine.
@@ -114,7 +98,7 @@ type Taint struct {
 	TimeAdded *metav1.Time `json:"time_added,omitempty"`
 }
 
-// The resource this Toleration is attached to tolerates any taint that matches
+// Toleration - The resource this Toleration is attached to tolerates any taint that matches
 // the triple <key,value,effect> using the matching operator <operator>.
 type Toleration struct {
 	// Key is the taint key that the toleration applies to. Empty means match all taint keys.
@@ -168,10 +152,10 @@ type MachineStatus struct {
 	Network Network `json:"network,omitempty"`
 	// OOB - defines status of OOB
 	// +optional
-	OOB ObjectReference `json:"oob,omitempty"`
+	OOB common.ResourceReference `json:"oob,omitempty"`
 	// Inventory - defines status of Inventory
 	// +optional
-	Inventory ObjectReference `json:"inventory,omitempty"`
+	Inventory common.ResourceReference `json:"inventory,omitempty"`
 	// Reservation - defines machine reservation state and reference object.
 	// +optional
 	Reservation Reservation `json:"reservation,omitempty"`
@@ -190,7 +174,7 @@ type Interface struct {
 	Name string `json:"name,omitempty"`
 	// SwitchReference - defines unique switch identification
 	// +optional
-	SwitchReference *ResourceReference `json:"switch_reference,omitempty"`
+	SwitchReference common.ResourceReference `json:"switch_reference,omitempty"`
 	// IPv4 - defines machine IPv4 address
 	// +optional
 	IPv4 *IPAddressSpec `json:"ipv4,omitempty"`
@@ -216,27 +200,27 @@ type IPAddressSpec struct {
 	// Address refers to the ip address value
 	Address string `json:"address,omitempty"`
 	// ResourceReference refers to the related resource definition
-	ResourceReference *ResourceReference `json:"resource_reference,omitempty"`
+	ResourceReference common.ResourceReference `json:"resource_reference,omitempty"`
 }
 
 // Peer - contains machine neighbor information collected from LLDP.
 type Peer struct {
-	// LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol
-	// layer 2 neighbor discovery protocol
+	// LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol.
+	// layer 2 neighbor discovery protocol.
 	//+optional
 	LLDPSystemName string `json:"lldp_system_name,omitempty"`
-	// LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol
+	// LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol.
 	//+optional
 	LLDPChassisID string `json:"lldp_chassi_id,omitempty"`
-	// LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol
+	// LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol.
 	// +optional
 	LLDPPortID string `json:"lldp_port_id,omitempty"`
-	// LLDPPortDescription - defines switch definition obtained from Link Layer Discovery Protocol
+	// LLDPPortDescription - defines switch definition obtained from Link Layer Discovery Protocol.
 	// +optional
 	LLDPPortDescription string `json:"lldp_port_description,omitempty"`
-	// ResourceReference refers to the related resource definition
+	// ResourceReference refers to the related resource definition.
 	// +optional
-	ResourceReference *ResourceReference `json:"resource_reference,omitempty"`
+	ResourceReference common.ResourceReference `json:"resource_reference,omitempty"`
 }
 
 // Network - defines machine network status.
@@ -246,22 +230,12 @@ type Network struct {
 	// +kubebuilder:validation:Pattern=`^(?:Single|HighAvailability|None)$`
 	// +optional
 	Redundancy string `json:"redundancy,omitempty"`
-	// Ports - defines number of machine ports
+	// Ports - defines number of machine ports.
 	// +optional
 	Ports int `json:"ports,omitempty"`
-	// UnknownPorts - defines number of machine interface without info
+	// UnknownPorts - defines number of machine interface without info.
 	// +optional
 	UnknownPorts int `json:"unknown_ports,omitempty"`
-}
-
-// ObjectReference - defines object reference status and additional information.
-type ObjectReference struct {
-	// Exist - defines where referenced object exist or not
-	// +optional
-	Exist bool `json:"exist,omitempty"`
-	// Reference - defines underlaying referenced object e.g. Inventory or OOB kind.
-	// +optional
-	Reference *ResourceReference `json:"reference,omitempty"`
 }
 
 type Reservation struct {
@@ -270,30 +244,14 @@ type Reservation struct {
 	Status string `json:"status,omitempty"`
 	// Reference - defines underlying referenced object.
 	// +optional
-	Reference *ResourceReference `json:"reference,omitempty"`
-}
-
-// ResourceReference defines related resource info.
-type ResourceReference struct {
-	// APIVersion refers to the resource API version
-	// +optional
-	APIVersion string `json:"apiVersion,omitempty"`
-	// Kind refers to the resource kind
-	// +optional
-	Kind string `json:"kind,omitempty"`
-	// Name refers to the resource name
-	// +optional
-	Name string `json:"name,omitempty"`
-	// Namespace refers to the resource namespace
-	// +optional
-	Namespace string `json:"namespace,omitempty"`
+	Reference common.ResourceReference `json:"reference,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Healthy",type=string,JSONPath=`.status.health`
-// +kubebuilder:printcolumn:name="Inventory",type=boolean,JSONPath=`.status.inventory.exist`
-// +kubebuilder:printcolumn:name="OOB",type=boolean,JSONPath=`.status.oob.exist`
+// +kubebuilder:printcolumn:name="Inventory",type=string,JSONPath=`.status.inventory.name`
+// +kubebuilder:printcolumn:name="OOB",type=string,JSONPath=`.status.oob.name`
 // +kubebuilder:printcolumn:name="Orphaned",type=boolean,JSONPath=`.status.orphaned`
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
 // +kubebuilder:printcolumn:name="Order Status",type=string,JSONPath=`.status.reservation.status`

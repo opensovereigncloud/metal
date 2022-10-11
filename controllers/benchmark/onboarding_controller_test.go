@@ -34,7 +34,7 @@ var _ = Describe("machine-controller", func() {
 	)
 
 	Context("Controller Test", func() {
-		It("Test benchmark onboarding ", func() {
+		It("Test benchmark server-exploitation ", func() {
 			testBenchmarkOnboarding(name, namespace)
 		})
 	})

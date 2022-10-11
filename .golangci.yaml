@@ -3,29 +3,53 @@ run:
 
 linters:
   enable:
-    - ineffassign
-    - misspell
-    - goimports
+    - megacheck
     - govet
+    - cyclop
+    - dupl
+    - errcheck
+    - errorlint
+    - exhaustive
+    - funlen
+    - gci
+    - gocognit
+    - nestif
+    - goconst
+    - gocritic
+    - gocyclo
     - gofmt
     - goimports
-    - godot
-    - predeclared
-    - unconvert
-    - whitespace
-    - unused
-    - unconvert
-    - dogsled
-    - misspell
-    - paralleltest
-    - prealloc
-    - importas
-    - asciicheck
-    - stylecheck
+    - gomoddirectives
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
     - durationcheck
+    - errname
+    - lll
+    - misspell
+    - staticcheck
+    - stylecheck
     - unparam
-    - goprintffuncname
+    - unused
+    - whitespace
+    - asciicheck
+    - bodyclose
+    - dogsled
+    - exportloopref
     - forcetypeassert
+    - godot
+    - goerr113
+    - goprintffuncname
+    - importas
+    - nakedret
+    - nilerr
+    - noctx
+    - prealloc
+    - predeclared
+    - rowserrcheck
+    - unconvert
+    - wastedassign
 
 severity:
   default-severity: error

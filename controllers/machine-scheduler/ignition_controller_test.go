@@ -1,9 +1,11 @@
+// nolint
 package controllers
 
 import (
 	"context"
 
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	"github.com/onmetal/metal-api/types/common"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -54,8 +56,8 @@ var _ = Describe("IgnitionReconciler", func() {
 		By("updating machine status")
 		machine.Status = v1alpha2.MachineStatus{
 			Health:    v1alpha2.MachineStateHealthy,
-			OOB:       v1alpha2.ObjectReference{Exist: true},
-			Inventory: v1alpha2.ObjectReference{Exist: true},
+			OOB:       common.ResourceReference{},
+			Inventory: common.ResourceReference{},
 			Interfaces: []v1alpha2.Interface{
 				{Name: "test"},
 				{Name: "test2"},
@@ -121,8 +123,8 @@ var _ = Describe("IgnitionReconciler", func() {
 		By("updating machine status")
 		machine.Status = v1alpha2.MachineStatus{
 			Health:    v1alpha2.MachineStateHealthy,
-			OOB:       v1alpha2.ObjectReference{Exist: true},
-			Inventory: v1alpha2.ObjectReference{Exist: true},
+			OOB:       common.ResourceReference{},
+			Inventory: common.ResourceReference{},
 			Interfaces: []v1alpha2.Interface{
 				{Name: "test"},
 				{Name: "test2"},

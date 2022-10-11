@@ -17,19 +17,22 @@
 package order
 
 import (
+	"context"
+
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/pkg/provider"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type OrderExistExtractor struct {
-	client provider.Client
+	client ctrlclient.Client
 	log    logr.Logger
 }
 
-func NewOrderExistExtractor(c provider.Client, l logr.Logger) *OrderExistExtractor {
+func NewOrderExistExtractor(c ctrlclient.Client, l logr.Logger) *OrderExistExtractor {
 	return &OrderExistExtractor{
 		client: c,
 		log:    l,
@@ -38,7 +41,14 @@ func NewOrderExistExtractor(c provider.Client, l logr.Logger) *OrderExistExtract
 
 func (e *OrderExistExtractor) Invoke(order domain.Order) bool {
 	domainOrder := &machinev1alpha2.MachineAssignment{}
-	if err := e.client.Get(domainOrder, order); err != nil {
+	if err := e.client.
+		Get(
+			context.Background(),
+			types.NamespacedName{
+				Namespace: order.Namespace(),
+				Name:      order.Name(),
+			},
+			domainOrder); err != nil {
 		if apierrors.IsNotFound(err) {
 			return false
 		}

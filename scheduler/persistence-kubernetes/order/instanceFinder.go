@@ -17,18 +17,22 @@
 package order
 
 import (
+	"context"
+
 	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/pkg/provider"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
 	usecase "github.com/onmetal/metal-api/scheduler/usecase/order"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InstanceFinderExtractor struct {
-	client provider.Client
+	client ctrlclient.Client
 }
 
-func NewInstanceFinderExtractor(c provider.Client) *InstanceFinderExtractor {
+func NewInstanceFinderExtractor(c ctrlclient.Client) *InstanceFinderExtractor {
 	return &InstanceFinderExtractor{
 		client: c,
 	}
@@ -36,7 +40,14 @@ func NewInstanceFinderExtractor(c provider.Client) *InstanceFinderExtractor {
 
 func (e *InstanceFinderExtractor) FindVacantInstanceForOrder(o domain.Order) (domain.OrderScheduler, error) {
 	domainOrder := &machinev1alpha2.MachineAssignment{}
-	if err := e.client.Get(domainOrder, o); err != nil {
+	if err := e.client.
+		Get(
+			context.Background(),
+			types.NamespacedName{
+				Namespace: o.Namespace(),
+				Name:      o.Name(),
+			},
+			domainOrder); err != nil {
 		return nil, err
 	}
 	o.SetInstanceType(domainOrder.Spec.MachineClass.Name)
@@ -50,27 +61,47 @@ func (e *InstanceFinderExtractor) FindVacantInstanceForOrder(o domain.Order) (do
 
 func (e *InstanceFinderExtractor) findInstanceForType(instanceType string,
 	orderTolerations []machinev1alpha2.Toleration) (*machinev1alpha2.Machine, error) {
-	metalList := &machinev1alpha2.MachineList{}
-	instanceSelector := getLabelSelectorForAvailableMachine(instanceType)
-	listOpts := &provider.ListOptions{
-		Filter: instanceSelector,
-	}
-	if err := e.client.List(metalList, listOpts); err != nil {
+	instances, err := e.findInstancesForType(instanceType)
+	if err != nil {
 		return nil, err
 	}
-	for m := range metalList.Items {
-		if !IsTolerated(orderTolerations, metalList.Items[m].Spec.Taints) {
-			continue
-		}
-		if metalList.Items[m].Status.Reservation.Reference != nil {
-			continue
-		}
-		if metalList.Items[m].Status.Health != machinev1alpha2.MachineStateHealthy {
-			continue
-		}
-		return &metalList.Items[m], nil
+	instance := findToleratedMachine(orderTolerations, instances)
+	if instance == nil {
+		return nil, usecase.VacantInstanceNotFound(instanceType)
 	}
-	return nil, usecase.VacantInstanceNotFound(instanceType)
+	return instance, nil
+}
+
+func (e *InstanceFinderExtractor) findInstancesForType(instanceType string) (*machinev1alpha2.MachineList, error) {
+	instanceList := &machinev1alpha2.MachineList{}
+	instanceSelector := getLabelSelectorForAvailableMachine(instanceType)
+	listOpts := &ctrlclient.ListOptions{
+		LabelSelector: ctrlclient.MatchingLabelsSelector{Selector: labels.SelectorFromSet(instanceSelector)},
+	}
+	if err := e.client.
+		List(
+			context.Background(), instanceList, listOpts); err != nil {
+		return nil, err
+	}
+	return instanceList, nil
+}
+
+func findToleratedMachine(
+	orderTolerations []machinev1alpha2.Toleration,
+	instanceList *machinev1alpha2.MachineList) *machinev1alpha2.Machine {
+	for m := range instanceList.Items {
+		if !IsTolerated(orderTolerations, instanceList.Items[m].Spec.Taints) {
+			continue
+		}
+		if instanceList.Items[m].Status.Reservation.Reference.Name != "" {
+			continue
+		}
+		if instanceList.Items[m].Status.Health != machinev1alpha2.MachineStateHealthy {
+			continue
+		}
+		return &instanceList.Items[m]
+	}
+	return nil
 }
 
 func getLabelSelectorForAvailableMachine(instanceType string) map[string]string {

@@ -18,6 +18,7 @@
 
 // Package v1alpha3 is a version of the API.
 // +groupName=benchmark.onmetal.de
+// nolint
 //go:generate go run github.com/ahmetb/gen-crd-api-reference-docs -api-dir . -config ../../../hack/api-reference/template.json -template-dir ../../../hack/api-reference/template -out-file ../../../docs/api-reference/benchmark.md
 
 package v1alpha3

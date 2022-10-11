@@ -5,7 +5,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,43 +14,35 @@
 // limitations under the License.
 // */
 
+// nolint
 package fake
 
 import (
-	"context"
-	"errors"
-	"fmt"
+	"time"
 
 	ipam "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpaha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/pkg/provider"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	"github.com/onmetal/metal-api/types/common"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	authv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
-	typesv1 "k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
-	ExistingMacAddress    = "903cb33381fb"
-	ExistingInventoryUUID = "b127954c-3475-22b2-b91c-62d8b4f8cd3f"
-	ExistingServerUUID    = "b127954c-3475-22b2-b91c-62d8b4f8cd3f"
-	AvailiableServerUUID  = "a132954c-3475-22b2-v20c-74d8b4f8cd4f"
-	ExistingOrderName     = "test-order"
-)
-
-var (
-	errMustNotBeNil                        = errors.New("should not be nil")
-	errWrongTypeDefined                    = errors.New("wrong type defined")
-	errInventorySpecMuseBeUpdated          = errors.New("inventory spec must be updated")
-	errOrderInstanceReferenceMustBeUpdated = errors.New("order instance ref is nil")
+	ExistingMacAddress                     = "903cb33381fb"
+	ExistingInventoryUUID                  = "b127954c-3475-22b2-b91c-62d8b4f8cd3f"
+	DeleteInventoryUUID                    = "c235954c-3475-22b2-b91c-23d8b4f8cd1a"
+	NotAccomplishedInventoryUUID           = "a137954c-3475-22b2-b91c-62d8b4f8cd4f"
+	ExistingServerUUID                     = "b127954c-3475-22b2-b91c-62d8b4f8cd3f"
+	AvailableInstanceUUID                  = "a132954c-3475-22b2-v20c-74d8b4f8cd4f"
+	AvailableInstanceUUIDWithoutServerInfo = "z142934c-3475-22b2-v20c-91d8b4f8cd4a"
+	ExistingOrderName                      = "test-order"
 )
 
 const (
@@ -65,19 +57,12 @@ const (
     - '--filename={{ inputSelector }}'`
 )
 
-type fakeClient struct {
-	client ctrlclient.Client
-	err    error
-}
-
-func NewFakeClient() (provider.Client, error) {
+func NewFakeClient() (ctrlclient.Client, error) {
 	fakeK8sClient, err := newFakeClient()
 	if err != nil {
 		return nil, err
 	}
-	return &fakeClient{
-		client: fakeK8sClient,
-	}, nil
+	return fakeK8sClient, nil
 }
 
 func newFakeClient() (ctrlclient.Client, error) {
@@ -90,75 +75,6 @@ func newFakeClient() (ctrlclient.Client, error) {
 
 	fakeWithObjects := fakeBuilder.WithScheme(scheme).WithObjects(objects...)
 	return fakeWithObjects.Build(), nil
-}
-
-func (f *fakeClient) Create(obj any) error {
-	switch k8sObject := obj.(type) {
-	case ctrlclient.Object:
-		return f.client.Create(context.Background(), k8sObject)
-	default:
-		return fmt.Errorf("%w, %T", errWrongTypeDefined, obj)
-	}
-}
-
-func (f *fakeClient) Update(obj any) error {
-	if f.err != nil {
-		return f.err
-	}
-	if obj == nil {
-		return fmt.Errorf("%w", errMustNotBeNil)
-	}
-	switch v := obj.(type) {
-	case *inventoryv1alpaha1.Inventory:
-		if v.Spec.System.ID != "newid" {
-			return fmt.Errorf("%w", errInventorySpecMuseBeUpdated)
-		}
-	case *machinev1alpaha2.MachineAssignment:
-		if v.Status.MachineRef == nil {
-			return fmt.Errorf("%w", errOrderInstanceReferenceMustBeUpdated)
-		}
-	default:
-		return nil
-	}
-	return nil
-}
-
-func (f *fakeClient) Patch(obj any, patch []byte) error {
-	switch k8sObject := obj.(type) {
-	case ctrlclient.Object:
-		return f.client.Patch(context.Background(), k8sObject, ctrlclient.RawPatch(typesv1.MergePatchType, patch))
-	default:
-		return fmt.Errorf("%w, %T", errWrongTypeDefined, obj)
-	}
-}
-
-func (f *fakeClient) Get(obj any, sa base.Metadata) error {
-	switch k8sObject := obj.(type) {
-	case ctrlclient.Object:
-		return f.client.Get(
-			context.Background(),
-			typesv1.NamespacedName{
-				Name:      sa.Name(),
-				Namespace: sa.Namespace(),
-			}, k8sObject)
-	default:
-		return fmt.Errorf("%w, %T", errWrongTypeDefined, obj)
-	}
-}
-
-func (f *fakeClient) List(objList any, listOptions *provider.ListOptions) error {
-	switch k8sObjectList := objList.(type) {
-	case ctrlclient.ObjectList:
-		listOptionFilter := &ctrlclient.ListOptions{
-			LabelSelector: ctrlclient.MatchingLabelsSelector{Selector: labels.SelectorFromSet(listOptions.Filter)},
-		}
-		return f.client.List(
-			context.Background(),
-			k8sObjectList,
-			listOptionFilter)
-	default:
-		return fmt.Errorf("%w, %T", errWrongTypeDefined, objList)
-	}
 }
 
 func getScheme() (*k8sRuntime.Scheme, error) {
@@ -207,10 +123,38 @@ func getInitObjectList(namespace string) []ctrlclient.Object {
 		},
 		&inventoryv1alpaha1.Inventory{
 			ObjectMeta: metav1.ObjectMeta{
+				Name:      NotAccomplishedInventoryUUID,
+				Namespace: namespace,
+				Labels: map[string]string{
+					inventoryv1alpaha1.GetSizeMatchLabel("dummy"): "true",
+				},
+				CreationTimestamp: metav1.Time{
+					Time: time.Now().Add(-30 * time.Minute)},
+			},
+			Spec: prepareSpecForInventory(NotAccomplishedInventoryUUID),
+		},
+		&inventoryv1alpaha1.Inventory{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      ExistingInventoryUUID,
 				Namespace: namespace,
+				Labels: map[string]string{
+					inventoryv1alpaha1.GetSizeMatchLabel("machine"): "true",
+				},
+				CreationTimestamp: metav1.Time{
+					Time: time.Now().Add(-30 * time.Minute)},
 			},
 			Spec: prepareSpecForInventory(ExistingInventoryUUID),
+		},
+		&inventoryv1alpaha1.Inventory{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      DeleteInventoryUUID,
+				Namespace: namespace,
+				Labels: map[string]string{
+					inventoryv1alpaha1.GetSizeMatchLabel("machine"): "true",
+				},
+				CreationTimestamp: metav1.Time{
+					Time: time.Now().Add(-30 * time.Minute)},
+			},
 		},
 		&ipam.IP{
 			ObjectMeta: metav1.ObjectMeta{
@@ -235,23 +179,20 @@ func getInitObjectList(namespace string) []ctrlclient.Object {
 				Health: machinev1alpaha2.MachineStateHealthy,
 				Reservation: machinev1alpaha2.Reservation{
 					Status: "Running",
-					Reference: &machinev1alpaha2.ResourceReference{
+					Reference: common.ResourceReference{
 						Name:      "non-exist-order",
 						Namespace: "default",
 					},
 				},
-				OOB: machinev1alpaha2.ObjectReference{
-					Exist: true,
-					Reference: &machinev1alpaha2.ResourceReference{
-						Name:      ExistingServerUUID,
-						Namespace: namespace,
-					},
+				OOB: common.ResourceReference{
+					Name:      ExistingServerUUID,
+					Namespace: namespace,
 				},
 			},
 		},
 		&machinev1alpaha2.Machine{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      AvailiableServerUUID,
+				Name:      AvailableInstanceUUID,
 				Namespace: namespace,
 				Labels: map[string]string{
 					"machine.onmetal.de/size-m5-metal": "true",
@@ -263,27 +204,30 @@ func getInitObjectList(namespace string) []ctrlclient.Object {
 				Reservation: machinev1alpaha2.Reservation{
 					Status: "Available",
 				},
-				OOB: machinev1alpaha2.ObjectReference{
-					Exist: true,
-					Reference: &machinev1alpaha2.ResourceReference{
-						Name:      ExistingServerUUID,
-						Namespace: namespace,
-					},
+				OOB: common.ResourceReference{
+					Name:      ExistingServerUUID,
+					Namespace: namespace,
 				},
 			},
 		},
-		&oobv1.Machine{
+		&oobv1.OOB{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      ExistingServerUUID,
 				Namespace: namespace,
+				Labels: map[string]string{
+					"onmetal.de/oob-ignore": "true",
+				},
 			},
-			Spec: oobv1.MachineSpec{
-				PowerState: "Off",
+			Spec: oobv1.OOBSpec{
+				Power: "Off",
+			},
+			Status: oobv1.OOBStatus{
+				OSMessage: "Ok",
 			},
 		},
 		&machinev1alpaha2.Machine{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "list-test-object",
+				Name:      AvailableInstanceUUIDWithoutServerInfo,
 				Namespace: namespace,
 				Labels: map[string]string{
 					"machine.onmetal.de/size-m5-metal": "true",

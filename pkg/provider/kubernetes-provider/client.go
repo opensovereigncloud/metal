@@ -21,9 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/pkg/provider"
-	"k8s.io/apimachinery/pkg/labels"
+	"github.com/onmetal/metal-api/types/common"
 	typesv1 "k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,11 +35,11 @@ type ClientImpl struct {
 	client ctrlclient.Client
 }
 
-func NewClient(c ctrlclient.Client) (*ClientImpl, error) {
+func NewClient(c ctrlclient.Client) (ctrlclient.Client, error) {
 	if c == nil {
-		return &ClientImpl{}, fmt.Errorf("%w", errClientNotDefined)
+		return nil, errClientNotDefined
 	}
-	return &ClientImpl{client: c}, nil
+	return c, nil
 }
 
 func (c *ClientImpl) Create(obj any) error {
@@ -56,12 +54,32 @@ func (c *ClientImpl) Create(obj any) error {
 func (c *ClientImpl) Update(obj any) error {
 	switch k8sObject := obj.(type) {
 	case ctrlclient.Object:
-		if err := c.client.
+		ctx := context.Background()
+		return c.
+			client.
+			Update(ctx, k8sObject)
+	default:
+		return fmt.Errorf("%w, %T", errObjectTypeNotDefined, obj)
+	}
+}
+
+func (c *ClientImpl) StatusUpdate(obj any) error {
+	switch k8sObject := obj.(type) {
+	case ctrlclient.Object:
+		ctx := context.Background()
+		return c.client.
 			Status().
-			Update(context.Background(), k8sObject); err != nil {
-			return err
-		}
-		return c.client.Update(context.Background(), k8sObject)
+			Update(ctx, k8sObject)
+
+	default:
+		return fmt.Errorf("%w, %T", errObjectTypeNotDefined, obj)
+	}
+}
+
+func (c *ClientImpl) Delete(obj any) error {
+	switch k8sObject := obj.(type) {
+	case ctrlclient.Object:
+		return c.client.Delete(context.Background(), k8sObject)
 	default:
 		return fmt.Errorf("%w, %T", errObjectTypeNotDefined, obj)
 	}
@@ -79,7 +97,7 @@ func (c *ClientImpl) Patch(obj any, patch []byte) error {
 	}
 }
 
-func (c *ClientImpl) Get(obj any, sa base.Metadata) error {
+func (c *ClientImpl) Get(obj any, sa common.Metadata) error {
 	switch k8sObject := obj.(type) {
 	case ctrlclient.Object:
 		return c.client.Get(
@@ -90,21 +108,5 @@ func (c *ClientImpl) Get(obj any, sa base.Metadata) error {
 			}, k8sObject)
 	default:
 		return fmt.Errorf("%w, %T", errObjectTypeNotDefined, obj)
-	}
-}
-
-func (c *ClientImpl) List(objList any, listOptions *provider.ListOptions) error {
-	switch k8sObjectList := objList.(type) {
-	case ctrlclient.ObjectList:
-		listOptionFilter := &ctrlclient.ListOptions{
-			LabelSelector: ctrlclient.MatchingLabelsSelector{Selector: labels.SelectorFromSet(listOptions.Filter)},
-			Continue:      listOptions.Pagination,
-		}
-		return c.client.List(
-			context.Background(),
-			k8sObjectList,
-			listOptionFilter)
-	default:
-		return fmt.Errorf("%w, %T", errObjectTypeNotDefined, objList)
 	}
 }

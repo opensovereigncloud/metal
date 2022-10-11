@@ -16,8 +16,10 @@
 
 package domain
 
-import "github.com/onmetal/metal-api/common/types/base"
+import (
+	"github.com/onmetal/metal-api/types/common"
+)
 
 type CancelOrder interface {
-	Cancel(base.Metadata) error
+	Cancel(common.Metadata) error
 }

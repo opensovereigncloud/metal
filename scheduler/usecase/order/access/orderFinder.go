@@ -17,10 +17,10 @@
 package access
 
 import (
-	"github.com/onmetal/metal-api/common/types/base"
 	domain "github.com/onmetal/metal-api/scheduler/domain/order"
+	"github.com/onmetal/metal-api/types/common"
 )
 
 type OrderFinder interface {
-	FindOrderForInstance(base.Metadata) (domain.Order, error)
+	FindOrderForInstance(common.Metadata) (domain.Order, error)
 }

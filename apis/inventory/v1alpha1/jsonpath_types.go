@@ -34,7 +34,7 @@ func (in JSONPath) MarshalJSON() ([]byte, error) {
 	return json.Marshal(str)
 }
 
-// nolint:forcetypeassert
+//nolint:forcetypeassert
 func (in *JSONPath) UnmarshalJSON(b []byte) error {
 	stringVal := string(b)
 	if stringVal == "null" {
