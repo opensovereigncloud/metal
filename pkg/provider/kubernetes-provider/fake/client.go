@@ -222,7 +222,8 @@ func getInitObjectList(namespace string) []ctrlclient.Object {
 				Power: "Off",
 			},
 			Status: oobv1.OOBStatus{
-				OSMessage: "Ok",
+				OSMessage:    "Ok",
+				Capabilities: []string{"power"},
 			},
 		},
 		&machinev1alpaha2.Machine{
