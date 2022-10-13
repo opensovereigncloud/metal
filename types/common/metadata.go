@@ -21,8 +21,19 @@ import "time"
 type Metadata interface {
 	Name() string
 	Namespace() string
+	UID() string
+	APIVersion() string
+	OwnerReferences() []OwnerReference
+	SetOwnerReference(reference OwnerReference)
 	Labels() map[string]string
-	SetNamespace(string)
+	SetNamespace(namespace string)
+}
+
+type OwnerReference struct {
+	Name       string
+	Kind       string
+	APIVersion string
+	UniqueID   string
 }
 
 type ObjectMetadata struct {
@@ -38,6 +49,20 @@ func NewObjectMetadata(name, namespace string) *ObjectMetadata {
 func (m *ObjectMetadata) Name() string {
 	return m.name
 }
+
+func (m *ObjectMetadata) UID() string {
+	return ""
+}
+
+func (m *ObjectMetadata) APIVersion() string {
+	return ""
+}
+
+func (m *ObjectMetadata) OwnerReferences() []OwnerReference {
+	return nil
+}
+
+func (m *ObjectMetadata) SetOwnerReference(_ OwnerReference) {}
 
 func (m *ObjectMetadata) Namespace() string {
 	return m.namespace

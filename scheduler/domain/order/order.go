@@ -52,6 +52,20 @@ func (o *OrderEntity) Namespace() string {
 	return o.namespace
 }
 
+func (o *OrderEntity) UID() string {
+	return ""
+}
+
+func (o *OrderEntity) APIVersion() string {
+	return ""
+}
+
+func (o *OrderEntity) OwnerReferences() []common.OwnerReference {
+	return nil
+}
+
+func (o *OrderEntity) SetOwnerReference(_ common.OwnerReference) {}
+
 func (o *OrderEntity) Labels() map[string]string {
 	return map[string]string{}
 }
