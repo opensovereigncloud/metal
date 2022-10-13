@@ -24,6 +24,7 @@ import (
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpaha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/types/common"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	authv1 "k8s.io/api/authentication/v1"
@@ -41,6 +42,7 @@ const (
 	NotAccomplishedInventoryUUID           = "a137954c-3475-22b2-b91c-62d8b4f8cd4f"
 	ExistingServerUUID                     = "b127954c-3475-22b2-b91c-62d8b4f8cd3f"
 	AvailableInstanceUUID                  = "a132954c-3475-22b2-v20c-74d8b4f8cd4f"
+	AvailableSwitchInstanceUUID            = "s245654f-3475-22b2-v20c-12s8b4f8cd4f"
 	AvailableInstanceUUIDWithoutServerInfo = "z142934c-3475-22b2-v20c-91d8b4f8cd4a"
 	ExistingOrderName                      = "test-order"
 )
@@ -100,6 +102,9 @@ func getScheme() (*k8sRuntime.Scheme, error) {
 	if err := oobv1.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
+	if err := switchv1beta1.AddToScheme(scheme); err != nil {
+		return nil, err
+	}
 	return scheme, nil
 }
 
@@ -144,6 +149,24 @@ func getInitObjectList(namespace string) []ctrlclient.Object {
 					Time: time.Now().Add(-30 * time.Minute)},
 			},
 			Spec: prepareSpecForInventory(ExistingInventoryUUID),
+		},
+		&switchv1beta1.Switch{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      AvailableSwitchInstanceUUID,
+				Namespace: namespace,
+			},
+		},
+		&inventoryv1alpaha1.Inventory{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      AvailableSwitchInstanceUUID,
+				Namespace: namespace,
+				Labels: map[string]string{
+					inventoryv1alpaha1.GetSizeMatchLabel("switch"): "true",
+				},
+				CreationTimestamp: metav1.Time{
+					Time: time.Now().Add(-30 * time.Minute)},
+			},
+			Spec: prepareSpecForInventory(AvailableSwitchInstanceUUID),
 		},
 		&inventoryv1alpaha1.Inventory{
 			ObjectMeta: metav1.ObjectMeta{
