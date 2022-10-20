@@ -27,7 +27,7 @@ var _ = Describe("IgnitionReconciler", func() {
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      templateName,
+				Name:      configMapTemplateName,
 				Namespace: namespace,
 			},
 			Data: map[string]string{
