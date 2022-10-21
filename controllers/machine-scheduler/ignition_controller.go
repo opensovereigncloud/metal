@@ -49,13 +49,14 @@ type IgnitionReconciler struct {
 type MachineWrapper struct {
 	Machine           *v1alpha2.Machine           `json:"machine"`
 	MachineAssignment *v1alpha2.MachineAssignment `json:"machineAssignment"`
+	ComputeName       string                      `json:"ComputeName"`
 }
 
 const (
 	ignitionFieldOwner    = client.FieldOwner("metal-api.onmetal.de/ignition")
 	finalizer             = "metal-api.onmetal.de/ignition"
 	configMapTemplateName = "ipxe-template"
-	secretTemplateName    = "ipxe-secret-template"
+	secretTemplateName    = "ignition-template"
 	ipxePrefix            = "ipxe-"
 )
 
@@ -71,29 +72,29 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	reqLogger.V(1).Info("reconciling ignition", "ignition", req)
 	configMapTemplateExists := true
-	templateCM := &corev1.ConfigMap{
+	configMaptemplate := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: req.Namespace,
 			Name:      configMapTemplateName,
 		},
 	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(templateCM), templateCM); err != nil {
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(configMaptemplate), configMaptemplate); err != nil {
 		reqLogger.Error(err, "ConfigMap template is not available in the current namespace", "name", configMapTemplateName, "namespace", req.Namespace)
 		configMapTemplateExists = false
 	}
-	secretMapTemplateExists := true
-	secretTemplateCM := &corev1.ConfigMap{
+	secretTemplateExists := true
+	secretTemplate := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: req.Namespace,
 			Name:      secretTemplateName,
 		},
 	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(secretTemplateCM), secretTemplateCM); err != nil {
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(secretTemplate), secretTemplate); err != nil {
 		reqLogger.Error(err, "Secret template is not available in the current namespace", "name", secretTemplateName, "namespace", req.Namespace)
-		secretMapTemplateExists = false
+		secretTemplateExists = false
 	}
 
-	if !configMapTemplateExists && !secretMapTemplateExists {
+	if !configMapTemplateExists && !secretTemplateExists {
 		return ctrl.Result{}, errors.New("no iPXE temples found")
 	}
 
@@ -135,7 +136,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(machineAssignment, finalizer) {
 			// our finalizer is present, so lets handle any external dependency
-			if templateCM != nil {
+			if configMaptemplate != nil {
 				configMap := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      ipxePrefix + machineAssignment.Status.MachineRef.Name,
@@ -151,7 +152,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 				}
 			}
 
-			if secretTemplateCM != nil {
+			if secretTemplate != nil {
 				secret := &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      ipxePrefix + machineAssignment.Status.MachineRef.Name,
@@ -178,10 +179,10 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	reqLogger.V(2).Info("resources", "machine assignment", fmt.Sprintf("%+v", machineAssignment), "machine", fmt.Sprintf("%+v", machine))
+	reqLogger.V(2).Info("resources", "machine assignment", fmt.Sprintf("%#v", machineAssignment), "machine", fmt.Sprintf("%#v", machine))
 
-	if templateCM != nil {
-		data, err := parseTemplate(templateCM.Data, machine, machineAssignment)
+	if configMapTemplateExists {
+		data, err := parseTemplate(configMaptemplate.Data, machine, machineAssignment)
 		if err != nil {
 			reqLogger.Error(err, "couldn't parse template")
 			return ctrl.Result{}, err
@@ -201,8 +202,36 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	if secretTemplateCM != nil {
-		data, err := parseTemplate(secretTemplateCM.Data, machine, machineAssignment)
+	if secretTemplateExists {
+		templateData := map[string]string{}
+		if machineAssignment.Spec.Ignition != nil {
+			machineIgnitionSecret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      machineAssignment.Spec.Ignition.Name,
+					Namespace: machineAssignment.Namespace,
+				},
+			}
+			if err := r.Get(ctx, client.ObjectKeyFromObject(machineIgnitionSecret), machineIgnitionSecret); err != nil {
+				reqLogger.Error(err, "couldn't get ignition for machine in namespace",
+					"machine", machineAssignment.Status.MachineRef.Name,
+					"namespace", req.Namespace,
+					"ignition", machineAssignment.Spec.Ignition.Name)
+				return ctrl.Result{}, err
+			}
+
+			if len(machineIgnitionSecret.Data) > 0 {
+				for k, v := range machineIgnitionSecret.Data {
+					templateData[k] = string(v)
+				}
+			}
+		}
+
+		if len(secretTemplate.Data) > 0 {
+			for k, v := range secretTemplate.Data {
+				templateData[k] = string(v)
+			}
+		}
+		data, err := parseTemplate(templateData, machine, machineAssignment)
 		if err != nil {
 			reqLogger.Error(err, "couldn't parse template")
 			return ctrl.Result{}, err
@@ -244,9 +273,17 @@ func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAss
 		return nil, err
 	}
 
+	computeName := ""
+	if value, ok := machineAssignment.Labels["machine.onmetal.de/compute-name"]; ok {
+		computeName = value
+	}
+	if computeName == "" {
+		computeName = machine.Name
+	}
 	wrapper := MachineWrapper{
 		Machine:           machine,
 		MachineAssignment: machineAssignment,
+		ComputeName:       computeName,
 	}
 
 	var b bytes.Buffer
