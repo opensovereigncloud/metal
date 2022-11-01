@@ -21,6 +21,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	"github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"math"
+	"net"
+	"strconv"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -38,6 +43,16 @@ import (
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
+const (
+	ignitionFieldOwner    = client.FieldOwner("metal-api.onmetal.de/ignition")
+	finalizer             = "metal-api.onmetal.de/ignition"
+	configMapTemplateName = "ipxe-template"
+	secretTemplateName    = "ignition-template"
+	ipxePrefix            = "ipxe-"
+	// TODO(flpeter) duplicate code from switch configurer
+	asnBase = 4200000000
+)
+
 // IgnitionReconciler reconciles a Ignition object.
 type IgnitionReconciler struct {
 	client.Client
@@ -49,16 +64,12 @@ type IgnitionReconciler struct {
 type MachineWrapper struct {
 	Machine           *v1alpha2.Machine           `json:"machine"`
 	MachineAssignment *v1alpha2.MachineAssignment `json:"machineAssignment"`
-	ComputeName       string                      `json:"ComputeName"`
+	Hostname          string                      `json:"hostname"`
+	IPv6WithoutPrefix string                      `json:"ipv6WithoutPrefix"`
+	IPv6              string                      `json:"ipv6"`
+	RouterID          string                      `json:"routerID"`
+	ASN               string                      `json:"asn"`
 }
-
-const (
-	ignitionFieldOwner    = client.FieldOwner("metal-api.onmetal.de/ignition")
-	finalizer             = "metal-api.onmetal.de/ignition"
-	configMapTemplateName = "ipxe-template"
-	secretTemplateName    = "ignition-template"
-	ipxePrefix            = "ipxe-"
-)
 
 //+kubebuilder:rbac:groups=machine.machine.onmetal.de,resources=ignitions,verbs=get;list;watch
 //+kubebuilder:rbac:groups=machine.machine.onmetal.de,resources=ignitions/status,verbs=get;update;patch
@@ -181,8 +192,35 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	reqLogger.V(2).Info("resources", "machine assignment", fmt.Sprintf("%#v", machineAssignment), "machine", fmt.Sprintf("%#v", machine))
 
+	machineSubnet, err := r.getMachineSubnet(ctx, machineAssignment)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	machineLoopbackIP, err := r.getMachineLoopbackIP(ctx, machineAssignment)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	hostname := ""
+	if value, ok := machineAssignment.Labels["machine.onmetal.de/compute-name"]; ok {
+		hostname = value
+	}
+	if hostname == "" {
+		hostname = machine.Name
+	}
+	wrapper := MachineWrapper{
+		Machine:           machine,
+		MachineAssignment: machineAssignment,
+		Hostname:          hostname,
+		IPv6WithoutPrefix: machineSubnet.Status.Reserved.AsIPAddr().Net.String(),
+		IPv6:              machineSubnet.Status.Reserved.String(),
+		RouterID:          machineLoopbackIP.String(),
+		ASN:               calculateAsn(machineLoopbackIP),
+	}
+
 	if configMapTemplateExists {
-		data, err := parseTemplate(configMaptemplate.Data, machine, machineAssignment)
+		data, err := parseTemplate(configMaptemplate.Data, wrapper)
 		if err != nil {
 			reqLogger.Error(err, "couldn't parse template")
 			return ctrl.Result{}, err
@@ -231,7 +269,7 @@ func (r *IgnitionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 				templateData[k] = string(v)
 			}
 		}
-		data, err := parseTemplate(templateData, machine, machineAssignment)
+		data, err := parseTemplate(templateData, wrapper)
 		if err != nil {
 			reqLogger.Error(err, "couldn't parse template")
 			return ctrl.Result{}, err
@@ -262,7 +300,7 @@ func (r *IgnitionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAssignment *v1alpha2.MachineAssignment) (map[string]string, error) {
+func parseTemplate(temp map[string]string, wrapper MachineWrapper) (map[string]string, error) {
 	tempStr, err := syaml.Marshal(temp)
 	if err != nil {
 		return nil, err
@@ -271,19 +309,6 @@ func parseTemplate(temp map[string]string, machine *v1alpha2.Machine, machineAss
 	t, err := template.New("temporaryTemplate").Funcs(sprig.HermeticTxtFuncMap()).Parse(string(tempStr))
 	if err != nil {
 		return nil, err
-	}
-
-	computeName := ""
-	if value, ok := machineAssignment.Labels["machine.onmetal.de/compute-name"]; ok {
-		computeName = value
-	}
-	if computeName == "" {
-		computeName = machine.Name
-	}
-	wrapper := MachineWrapper{
-		Machine:           machine,
-		MachineAssignment: machineAssignment,
-		ComputeName:       computeName,
 	}
 
 	var b bytes.Buffer
@@ -328,4 +353,102 @@ func (r *IgnitionReconciler) createSecret(temp map[string]string, name string, n
 		StringData: temp,
 	}
 	return secret, nil
+}
+
+func (r *IgnitionReconciler) getMachineSubnet(ctx context.Context, machineAssignment *v1alpha2.MachineAssignment) (*ipamv1alpha1.Subnet, error) {
+	reqLogger := r.Log.WithValues(
+		"namespace", machineAssignment.Status.MachineRef.Namespace,
+		"name", machineAssignment.Status.MachineRef.Name)
+
+	ownerFilter := client.MatchingLabels{
+		v1beta1.IPAMObjectOwnerLabel: machineAssignment.Status.MachineRef.Name,
+	}
+	machineSubnetList := &ipamv1alpha1.SubnetList{}
+	if err := r.List(ctx, machineSubnetList, ownerFilter); err != nil {
+		reqLogger.Error(err, "couldn't get subnet owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	if len(machineSubnetList.Items) == 0 {
+		err := errors.New("no subnet found")
+		reqLogger.Error(err, "couldn't get subnet owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	//TODO(flpeter) what if there are more subnets?
+	machineSubnet := machineSubnetList.Items[0]
+	if machineSubnet.Status.State != ipamv1alpha1.CFinishedSubnetState {
+		err := errors.New("subnet state is not Finished")
+		reqLogger.Error(err, "couldn't get subnet owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	if machineSubnet.Status.Reserved == nil {
+		err := errors.New("subnet is not reserved")
+		reqLogger.Error(err, "couldn't get subnet owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	return &machineSubnet, nil
+}
+
+func (r *IgnitionReconciler) getMachineLoopbackIP(ctx context.Context, machineAssignment *v1alpha2.MachineAssignment) (net.IP, error) {
+	reqLogger := r.Log.WithValues(
+		"namespace", machineAssignment.Status.MachineRef.Namespace,
+		"name", machineAssignment.Status.MachineRef.Name)
+
+	filter := client.MatchingLabels{
+		v1beta1.IPAMObjectOwnerLabel:   machineAssignment.Status.MachineRef.Name,
+		v1beta1.IPAMObjectPurposeLabel: v1beta1.CIPAMPurposeLoopback,
+	}
+	machineIPList := &ipamv1alpha1.IPList{}
+	if err := r.List(ctx, machineIPList, filter); err != nil {
+		reqLogger.Error(err, "couldn't get loopback ip owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	if len(machineIPList.Items) == 0 {
+		err := errors.New("no ip found")
+		reqLogger.Error(err, "couldn't get loopback ip owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	//TODO(flpeter) what if there are more subnets?
+	machineIP := machineIPList.Items[0]
+	if machineIP.Status.State != ipamv1alpha1.CFinishedIPState {
+		err := errors.New("ip state is not Finished")
+		reqLogger.Error(err, "couldn't get loopback ip owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	if machineIP.Status.Reserved == nil {
+		err := errors.New("ip is not reserved")
+		reqLogger.Error(err, "couldn't get loopback ip owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+
+	ip, _, err := net.ParseCIDR(machineIP.Status.Reserved.AsCidr().String())
+	if err != nil {
+		reqLogger.Error(err, "couldn't get loopback ip owned by machine",
+			"owner", machineAssignment.Status.MachineRef.Name)
+		return nil, err
+	}
+	return ip, nil
+}
+
+// TODO(flpeter) duplicate code from switch configurer
+func calculateAsn(addr net.IP) string {
+	var asn int
+	asn += int(addr[13]) * int(math.Pow(2, 16))
+	asn += (int(addr[14])) * int(math.Pow(2, 8))
+	asn += int(addr[15])
+	return strconv.Itoa(asnBase + asn)
 }
