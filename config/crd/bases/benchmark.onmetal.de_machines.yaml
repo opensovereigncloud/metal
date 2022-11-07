@@ -40,14 +40,17 @@ spec:
                   items:
                     properties:
                       name:
+                        description: Name is the specific benchmark name. e.g. `fio-1k`.
                         type: string
                       value:
+                        description: Value is the exact result of specific benchmark.
                         format: int64
                         type: integer
                     required:
                     - name
                     type: object
                   type: array
+                description: Benchmarks is the collection of benchmarks.
                 type: object
             type: object
           status:
@@ -56,10 +59,14 @@ spec:
               machine_deviation:
                 additionalProperties:
                   items:
+                    description: BenchmarkDeviation is a deviation between old value
+                      and the new one.
                     properties:
                       name:
+                        description: Name is the specific benchmark name. e.g. `fio-1k`.
                         type: string
                       value:
+                        description: Value is the exact result of specific benchmark.
                         type: string
                     required:
                     - name

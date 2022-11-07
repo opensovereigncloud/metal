@@ -19,6 +19,12 @@ spec:
     - jsonPath: .status.state
       name: Order Status
       type: string
+    - jsonPath: .status.onmetalComputeRef.name
+      name: Onmetal Compute
+      type: string
+    - jsonPath: .status.metalComputeRef.name
+      name: Metal Compute
+      type: string
     name: v1alpha2
     schema:
       openAPIV3Schema:
@@ -73,20 +79,14 @@ spec:
                 description: Image is the URL providing the operating system image
                   of the machine.
                 type: string
-              machineClass:
-                description: MachineClass is a reference to the machine class/flavor
-                  of the machine.
-                properties:
-                  name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?'
-                    type: string
-                type: object
+              machineSize:
+                description: MachineSize is a name for the machine class/flavor.
+                type: string
               networkInterfaces:
                 description: Interfaces define a list of network interfaces present
                   on the machine
                 items:
-                  description: Interface is the definition of a single interface.
+                  description: NetworkInterfaces is the definition of a single interface.
                   properties:
                     ip:
                       description: IP specifies a concrete IP address which should
@@ -178,12 +178,12 @@ spec:
                 type: array
             required:
             - image
-            - machineClass
+            - machineSize
             type: object
           status:
             description: MachineAssignmentStatus defines the observed state of Request.
             properties:
-              computeMachineRef:
+              metalComputeRef:
                 description: ResourceReference defines related resource info.
                 properties:
                   apiVersion:
@@ -199,7 +199,7 @@ spec:
                     description: Namespace refers to the resource namespace
                     type: string
                 type: object
-              machineRef:
+              onmetalComputeRef:
                 description: ResourceReference defines related resource info.
                 properties:
                   apiVersion:
