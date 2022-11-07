@@ -27,8 +27,8 @@ type MachineAssignmentSpec struct {
 	// Tolerations define tolerations the Machine has. Only MachinePools whose taints
 	// covered by Tolerations will be considered to run the Machine.
 	Tolerations []Toleration `json:"tolerations,omitempty"`
-	// MachineClass is a reference to the machine class/flavor of the machine.
-	MachineClass corev1.LocalObjectReference `json:"machineClass"`
+	// MachineSize is a name for the machine class/flavor.
+	MachineSize string `json:"machineSize"`
 	// Image is the URL providing the operating system image of the machine.
 	Image string `json:"image"`
 	// Interfaces define a list of network interfaces present on the machine
@@ -83,7 +83,7 @@ type EFIVar struct {
 	Value string `json:"value"`
 }
 
-// Interface is the definition of a single interface.
+// NetworkInterfaces is the definition of a single interface.
 type NetworkInterfaces struct {
 	// Name is the name of the interface
 	Name string `json:"name"`
@@ -95,7 +95,7 @@ type NetworkInterfaces struct {
 	IP *IPAddress `json:"ip,omitempty"`
 }
 
-// IP is an IP address.
+// IPAddress is an IP address.
 // +kubebuilder:validation:Type=string
 type IPAddress struct {
 	netaddr.IP `json:"-"`
@@ -104,13 +104,15 @@ type IPAddress struct {
 // MachineAssignmentStatus defines the observed state of Request.
 type MachineAssignmentStatus struct {
 	State             string             `json:"state,omitempty"`
-	MachineRef        *ResourceReference `json:"machineRef,omitempty"`
-	ComputeMachineRef *ResourceReference `json:"computeMachineRef,omitempty"`
+	MetalComputeRef   *ResourceReference `json:"metalComputeRef,omitempty"`
+	OnmetalComputeRef *ResourceReference `json:"onmetalComputeRef,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Order Status",type=string,JSONPath=`.status.state`
+//+kubebuilder:printcolumn:name="Order Status",type=string,JSONPath=`.status.state`
+//+kubebuilder:printcolumn:name="Onmetal Compute",type=string,JSONPath=`.status.onmetalComputeRef.name`
+//+kubebuilder:printcolumn:name="Metal Compute",type=string,JSONPath=`.status.metalComputeRef.name`
 
 // MachineAssignment is the Schema for the requests API.
 type MachineAssignment struct {
@@ -130,7 +132,7 @@ type MachineAssignmentList struct {
 	Items           []MachineAssignment `json:"items"`
 }
 
-// DeepCopyInto is an deepcopy function, copying the receiver, writing into out. in must be non-nil.
+// DeepCopyInto is a deepcopy function, copying the receiver, writing into out. in must be non-nil.
 func (in *IPAddress) DeepCopyInto(out *IPAddress) {
 	*out = *in
 }
