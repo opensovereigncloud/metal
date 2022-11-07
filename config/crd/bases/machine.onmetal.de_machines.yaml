@@ -32,7 +32,7 @@ spec:
       name: Redundancy
       type: string
     - jsonPath: .status.reservation.status
-      name: Order Status
+      name: Reservation Status
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age

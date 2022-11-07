@@ -296,7 +296,7 @@ type ResourceReference struct {
 // +kubebuilder:printcolumn:name="OOB",type=boolean,JSONPath=`.status.oob.exist`
 // +kubebuilder:printcolumn:name="Orphaned",type=boolean,JSONPath=`.status.orphaned`
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
-// +kubebuilder:printcolumn:name="Order Status",type=string,JSONPath=`.status.reservation.status`
+// +kubebuilder:printcolumn:name="Reservation Status",type=string,JSONPath=`.status.reservation.status`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Machine - is the data structure for a Machine resource.
