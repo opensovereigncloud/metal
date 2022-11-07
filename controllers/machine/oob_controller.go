@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/onmetal/metal-api/controllers/scheduler"
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
@@ -175,9 +176,14 @@ func getNoScheduleTaintIdx(taints []machinev1alpha2.Taint) int {
 func syncStatusState(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
 	switch {
 	case oobObj.Status.SystemStateReadTimeout:
-		machineObj.Status.Reservation.Status = "Error"
+		machineObj.Status.Reservation.Status = scheduler.ReservationStatusError
 	case (oobObj.Status.SystemState == "Ok" || oobObj.Status.SystemState == "Unknown") &&
 		oobObj.Status.PowerState != "Off":
-		machineObj.Status.Reservation.Status = "Running"
+		machineObj.Status.Reservation.Status = scheduler.ReservationStatusRunning
+	}
+
+	// if machine has no reservation reference and power state is off then the machine is Available
+	if machineObj.Status.Reservation.Reference == nil && oobObj.Status.PowerState == "Off" {
+		machineObj.Status.Reservation.Status = scheduler.ReservationStatusAvailable
 	}
 }

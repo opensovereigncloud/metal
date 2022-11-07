@@ -6,30 +6,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - benchmark.onmetal.de
   resources:
   - machines
@@ -87,22 +63,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - machine.machine.onmetal.de
-  resources:
-  - ignitions
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - machine.machine.onmetal.de
-  resources:
-  - ignitions/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - machine.onmetal.de
   resources:
@@ -205,32 +165,6 @@ rules:
   - machine.onmetal.de
   resources:
   - machines/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - requests
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - requests/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - requests/status
   verbs:
   - get
   - patch

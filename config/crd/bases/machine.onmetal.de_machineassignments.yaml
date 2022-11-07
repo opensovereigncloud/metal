@@ -17,7 +17,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.state
-      name: Order Status
+      name: Reservation Status
       type: string
     - jsonPath: .status.onmetalComputeRef.name
       name: Onmetal Compute

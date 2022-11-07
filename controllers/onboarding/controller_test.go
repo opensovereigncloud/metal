@@ -24,7 +24,6 @@ import (
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -189,10 +188,8 @@ func prepareMetalRequest(name, namespace string) *machinev1alpha2.MachineAssignm
 			Namespace: namespace,
 		},
 		Spec: machinev1alpha2.MachineAssignmentSpec{
-			MachineClass: v1.LocalObjectReference{
-				Name: "m5.metal",
-			},
-			Image: "myimage_repo_location",
+			MachineSize: "m5.metal",
+			Image:       "myimage_repo_location",
 		},
 	}
 }

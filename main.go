@@ -18,6 +18,8 @@ package main
 
 import (
 	"flag"
+	"github.com/onmetal/metal-api/internal/repository"
+	"github.com/onmetal/metal-api/internal/usecase"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -33,12 +35,9 @@ import (
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
-	schedulercontrollers "github.com/onmetal/metal-api/controllers/machine-scheduler"
 	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
+	schedulercontroller "github.com/onmetal/metal-api/controllers/scheduler"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switch/v1beta1"
-
-	"github.com/onmetal/metal-api/internal/repository"
-	"github.com/onmetal/metal-api/internal/usecase"
 
 	// to ensure that exec-entrypoint and run can make use of them.
 	"k8s.io/apimachinery/pkg/runtime"
@@ -156,9 +155,9 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 	}
 	if err = (&machinecontroller.OOBReconciler{
 		Client:    mgr.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("Machine-OOB"),
+		Log:       ctrl.Log.WithName("controllers").WithName("OOB"),
 		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("Machine-OOB"),
+		Recorder:  mgr.GetEventRecorderFor("OOB"),
 		Namespace: namespace,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-OOB")
@@ -224,12 +223,12 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Server-onboarding")
 		os.Exit(1)
 	}
-	if err = (&schedulercontrollers.IgnitionReconciler{
+	if err = (&schedulercontroller.Reconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Ignition"),
+		Log:    ctrl.Log.WithName("controllers").WithName("Scheduler"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Ignition")
+		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

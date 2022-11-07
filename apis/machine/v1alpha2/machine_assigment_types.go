@@ -110,7 +110,7 @@ type MachineAssignmentStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Order Status",type=string,JSONPath=`.status.state`
+//+kubebuilder:printcolumn:name="Reservation Status",type=string,JSONPath=`.status.state`
 //+kubebuilder:printcolumn:name="Onmetal Compute",type=string,JSONPath=`.status.onmetalComputeRef.name`
 //+kubebuilder:printcolumn:name="Metal Compute",type=string,JSONPath=`.status.metalComputeRef.name`
 
