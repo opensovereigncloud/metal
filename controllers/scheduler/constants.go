@@ -3,7 +3,8 @@ package scheduler
 import "sigs.k8s.io/controller-runtime/pkg/client"
 
 const (
-	SchedulerFinalizer = "metal-api.onmetal.de/scheduler"
+	SchedulerFinalizer      = "metal-api.onmetal.de/scheduler"
+	SchedulerReconcileLabel = "metal-api.onmetal.de/scheduler-reconcile"
 
 	ComputeNameLabel      = "machine.onmetal.de/compute-name"
 	ComputeNamespaceLabel = "machine.onmetal.de/compute-namespace"

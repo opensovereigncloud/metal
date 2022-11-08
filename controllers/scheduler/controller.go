@@ -119,6 +119,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// set the machine reservation to pending first
 		machine.Status.Reservation.Status = ReservationStatusPending
+
+		// set machine reservation reference
+		machine.Status.Reservation.Reference = &v1alpha2.ResourceReference{
+			Name:      machineAssignment.Name,
+			Namespace: machineAssignment.Namespace,
+		}
+
+		// update machine status
 		err = r.Client.Status().Update(ctx, machine)
 		if err != nil {
 			return ctrl.Result{}, errors.Wrapf(err, "failed to update available machine status of %s", machine.Name)
@@ -162,8 +170,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		// if machine is running update the machineAssignment status
 		if machine.Status.Reservation.Status == ReservationStatusRunning {
+			// set machine reservation reference
+			machine.Status.Reservation.Reference = &v1alpha2.ResourceReference{
+				Name:      machineAssignment.Name,
+				Namespace: machineAssignment.Namespace,
+			}
+
+			// update machine status
+			err = r.Client.Status().Update(ctx, machine)
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "failed to update available machine status of %s", machine.Name)
+			}
+
+			// set machine assignment status to running
 			machineAssignment.Status.State = ReservationStatusRunning
 
+			// update machine assignment status
 			err = r.Client.Status().Update(ctx, machineAssignment)
 			if err != nil {
 				return ctrl.Result{}, errors.Wrap(err, "failed to update")
@@ -184,6 +206,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			if oobMachine.Status.PowerState == "Off" && oobMachine.Spec.PowerState == "Off" {
 				//TODO(flpeter) set .Spec.PowerState
 				reqLogger.Info("power on", "machine", machineAssignment.Status.MetalComputeRef.Name)
+			}
+		}
+
+		// TODO remove after migration
+		// if we are already running update the reservation reference
+	} else if machineAssignment.Status.State == ReservationStatusRunning {
+		if machineAssignment.Status.MetalComputeRef == nil {
+			err := errors.New("MetalComputeRef is not set")
+			return ctrl.Result{}, err
+		}
+
+		// get the referenced machine
+		machine, err := r.getMachine(ctx, machineAssignment.Status.MetalComputeRef)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// if machine is running update the machineAssignment status
+		if machine.Status.Reservation.Status == ReservationStatusRunning {
+			// set machine reservation reference
+			machine.Status.Reservation.Reference = &v1alpha2.ResourceReference{
+				Name:      machineAssignment.Name,
+				Namespace: machineAssignment.Namespace,
+			}
+
+			// update machine status
+			err = r.Client.Status().Update(ctx, machine)
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "failed to update available machine status of %s", machine.Name)
 			}
 		}
 	}

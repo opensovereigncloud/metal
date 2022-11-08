@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
@@ -87,6 +88,9 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "064f77d7.machine.onmetal.de",
+		ClientDisableCacheFor: []client.Object{
+			&machinev1lpha2.Machine{},
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

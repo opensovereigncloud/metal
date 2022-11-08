@@ -177,32 +177,34 @@ func (r *Reconciler) reconcileIgnition(ctx context.Context, machineAssignment *v
 func (r *Reconciler) ignitionCleanup(ctx context.Context, machineAssignment *v1alpha2.MachineAssignment) error {
 	reqLogger := r.Log.WithName("Ignition")
 
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name,
-			Namespace: machineAssignment.Status.MetalComputeRef.Namespace,
-		},
-	}
+	if machineAssignment.Status.MetalComputeRef != nil && machineAssignment.Status.MetalComputeRef.Name != "" {
+		configMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name,
+				Namespace: machineAssignment.Status.MetalComputeRef.Namespace,
+			},
+		}
 
-	reqLogger.Info("deleting configmap", "name", configMap.Name)
-	err := r.Delete(ctx, configMap)
-	if err != nil && !apierrors.IsNotFound(err) {
-		reqLogger.Error(err, "couldn't delete config map", "resource", configMap.Name, "namespace", configMap.Namespace)
-		return err
-	}
+		reqLogger.Info("deleting configmap", "name", configMap.Name)
+		err := r.Delete(ctx, configMap)
+		if err != nil && !apierrors.IsNotFound(err) {
+			reqLogger.Error(err, "couldn't delete config map", "resource", configMap.Name, "namespace", configMap.Namespace)
+			return err
+		}
 
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name,
-			Namespace: machineAssignment.Status.MetalComputeRef.Namespace,
-		},
-	}
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name,
+				Namespace: machineAssignment.Status.MetalComputeRef.Namespace,
+			},
+		}
 
-	reqLogger.Info("deleting secret", "name", secret.Name)
-	err = r.Delete(ctx, secret)
-	if err != nil && !apierrors.IsNotFound(err) {
-		reqLogger.Error(err, "couldn't delete secret", "resource", secret.Name, "namespace", secret.Namespace)
-		return err
+		reqLogger.Info("deleting secret", "name", secret.Name)
+		err = r.Delete(ctx, secret)
+		if err != nil && !apierrors.IsNotFound(err) {
+			reqLogger.Error(err, "couldn't delete secret", "resource", secret.Name, "namespace", secret.Namespace)
+			return err
+		}
 	}
 
 	return nil

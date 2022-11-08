@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"github.com/onmetal/metal-api/controllers/scheduler"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
@@ -67,13 +69,23 @@ func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)
 
-	oobObj := &oobv1.Machine{}
-	if err := provider.GetObject(ctx, req.Name, req.Namespace, r.Client, oobObj); err != nil {
+	oobObj := &oobv1.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      req.Name,
+			Namespace: req.Namespace,
+		},
+	}
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(oobObj), oobObj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	machineObj := &machinev1alpha2.Machine{}
-	if err := provider.GetObject(ctx, oobObj.Status.UUID, r.Namespace, r.Client, machineObj); err != nil {
+	machineObj := &machinev1alpha2.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      oobObj.Status.UUID,
+			Namespace: r.Namespace,
+		},
+	}
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machineObj), machineObj); err != nil {
 		reqLogger.Info("no machine for oob", "error", err)
 		return ctrl.Result{}, nil
 	}
@@ -89,10 +101,46 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		machineObj.Status.OOB = prepareReferenceSpec(oobObj)
 	}
 
+	previousReservationStatus := machineObj.DeepCopy().Status.Reservation.Status
 	syncStatusState(oobObj, machineObj)
 
 	if statusUpdErr := r.Client.Status().Update(ctx, machineObj); statusUpdErr != nil {
 		return ctrl.Result{}, statusUpdErr
+	}
+
+	// if machine previous reservation status changed or reservation status is available
+	// trigger a reconcile loop on machine assignment
+	if previousReservationStatus != machineObj.Status.Reservation.Status ||
+		machineObj.Status.Reservation.Status == scheduler.ReservationStatusAvailable {
+
+		// only get assignment machine if reference is set
+		if machineObj.Status.Reservation.Reference != nil {
+			machineAssignment := &machinev1alpha2.MachineAssignment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      machineObj.Status.Reservation.Reference.Name,
+					Namespace: machineObj.Status.Reservation.Reference.Namespace,
+				},
+			}
+
+			// get the machine assignment
+			err := r.Client.Get(ctx, client.ObjectKeyFromObject(machineAssignment), machineAssignment)
+			if err != nil {
+				reqLogger.Info("failed to get MachineAssignment",
+					"name", machineAssignment.Name, "namespace", machineAssignment.Namespace)
+				return ctrl.Result{}, err
+			}
+
+			// update the label to force reconcile if machine assignment is pending
+			if machineAssignment.Status.State == scheduler.ReservationStatusPending {
+				machineAssignment.Labels[scheduler.SchedulerReconcileLabel] = time.Now().String()
+				err = r.Client.Update(ctx, machineAssignment)
+				if err != nil {
+					reqLogger.Info("failed to update MachineAssignment",
+						"name", machineAssignment.Name, "namespace", machineAssignment.Namespace)
+					return ctrl.Result{}, err
+				}
+			}
+		}
 	}
 
 	reqLogger.Info("reconciliation finished")
