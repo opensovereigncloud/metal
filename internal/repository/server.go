@@ -27,22 +27,21 @@ import (
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type ServerOnboardingRepo struct {
+type ServerOnboarding struct {
 	client    ctrlclient.Client
 	inventory *inventoriesv1alpha1.Inventory
 }
 
-func NewServerOnboardingRepo(c ctrlclient.Client) *ServerOnboardingRepo {
-	return &ServerOnboardingRepo{
+func NewServerOnboardingRepo(c ctrlclient.Client) *ServerOnboarding {
+	return &ServerOnboarding{
 		client: c,
 	}
 }
 
-func (o *ServerOnboardingRepo) Create(ctx context.Context) error {
+func (o *ServerOnboarding) Create(ctx context.Context) error {
 	if err := o.client.Create(ctx, o.inventory); err != nil {
 		if apierrors.IsAlreadyExists(err) {
 			return nil
@@ -52,48 +51,71 @@ func (o *ServerOnboardingRepo) Create(ctx context.Context) error {
 	return nil
 }
 
-func (o *ServerOnboardingRepo) InitializationStatus(ctx context.Context, e entity.Onboarding) entity.Initialization {
-	oobObj := &oobv1.OOB{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: e.RequestName, Namespace: e.RequestNamespace}, oobObj); err != nil {
+func (o *ServerOnboarding) InitializationStatus(ctx context.Context, e entity.Onboarding) entity.Initialization {
+	oob := &oobv1.OOB{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      e.RequestName,
+			Namespace: e.RequestNamespace,
+		},
+	}
+
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(oob), oob); err != nil {
 		return entity.Initialization{Require: false, Error: err}
 	}
 
-	inventory := &inventoriesv1alpha1.Inventory{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: oobObj.Status.UUID, Namespace: e.InitializationObjectNamespace}, inventory); err != nil {
+	inventory := &inventoriesv1alpha1.Inventory{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      oob.Status.UUID,
+			Namespace: e.InitializationObjectNamespace,
+		},
+	}
+
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(inventory), inventory); err != nil {
 		return entity.Initialization{Require: true, Error: nil}
 	}
+
 	return entity.Initialization{Require: false, Error: nil}
 }
 
-func (o *ServerOnboardingRepo) Prepare(ctx context.Context, e entity.Onboarding) error {
-	oobObj := &oobv1.OOB{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: e.RequestName, Namespace: e.RequestNamespace}, oobObj); err != nil {
+func (o *ServerOnboarding) Prepare(ctx context.Context, e entity.Onboarding) error {
+	oob := &oobv1.OOB{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      e.RequestName,
+			Namespace: e.RequestNamespace,
+		},
+	}
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(oob), oob); err != nil {
 		return err
 	}
 
-	if oobObj.Status.UUID == "" {
+	if oob.Status.UUID == "" {
 		return machinerr.UUIDNotExist(e.RequestName)
 	}
 
-	e.InitializationObjectName = oobObj.Status.UUID
+	e.InitializationObjectName = oob.Status.UUID
 	o.inventory = prepareInventory(e)
 
 	return nil
 }
 
-func (o *ServerOnboardingRepo) GatherData(ctx context.Context, e entity.Onboarding) error {
-	oob := &oobv1.OOB{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: e.RequestName, Namespace: e.RequestNamespace}, oob); err != nil {
+func (o *ServerOnboarding) GatherData(ctx context.Context, e entity.Onboarding) error {
+	oob := &oobv1.OOB{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      e.RequestName,
+			Namespace: e.RequestNamespace,
+		},
+	}
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(oob), oob); err != nil {
 		return err
 	}
 
-	inventory := &inventoriesv1alpha1.Inventory{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: oob.Status.UUID, Namespace: e.InitializationObjectNamespace}, inventory); err != nil {
+	inventory := &inventoriesv1alpha1.Inventory{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      oob.Status.UUID,
+			Namespace: e.InitializationObjectNamespace,
+		},
+	}
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(inventory), inventory); err != nil {
 		return err
 	}
 
@@ -114,16 +136,16 @@ func (o *ServerOnboardingRepo) GatherData(ctx context.Context, e entity.Onboardi
 	return o.client.Update(ctx, inventory)
 }
 
-func (o *ServerOnboardingRepo) IsSizeLabeled(labels map[string]string) bool {
+func (o *ServerOnboarding) IsSizeLabeled(labels map[string]string) bool {
 	machine := labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]
 	switches := labels[inventoriesv1alpha1.GetSizeMatchLabel(switchSizeName)]
 	return machine != "" || switches != ""
 }
 
-func (o *ServerOnboardingRepo) enableOOBMachineForInventory(ctx context.Context, oobObj *oobv1.OOB) error {
-	oobObj.Spec.Power = getPowerState(oobObj.Spec.Power)
-	oobObj.Labels = setUpLabels(oobObj)
-	return o.client.Update(ctx, oobObj)
+func (o *ServerOnboarding) enableOOBMachineForInventory(ctx context.Context, oob *oobv1.OOB) error {
+	oob.Spec.Power = getPowerState(oob.Spec.Power)
+	oob.Labels = setUpLabels(oob)
+	return o.client.Update(ctx, oob)
 }
 
 func prepareInventory(e entity.Onboarding) *inventoriesv1alpha1.Inventory {
@@ -155,12 +177,12 @@ func getPowerState(state string) string {
 	}
 }
 
-func setUpLabels(oobObj *oobv1.OOB) map[string]string {
-	if oobObj.Labels == nil {
-		return map[string]string{machinev1alpha2.UUIDLabel: oobObj.Status.UUID}
+func setUpLabels(oob *oobv1.OOB) map[string]string {
+	if oob.Labels == nil {
+		return map[string]string{machinev1alpha2.UUIDLabel: oob.Status.UUID}
 	}
-	if _, ok := oobObj.Labels[machinev1alpha2.UUIDLabel]; !ok {
-		oobObj.Labels[machinev1alpha2.UUIDLabel] = oobObj.Status.UUID
+	if _, ok := oob.Labels[machinev1alpha2.UUIDLabel]; !ok {
+		oob.Labels[machinev1alpha2.UUIDLabel] = oob.Status.UUID
 	}
-	return oobObj.Labels
+	return oob.Labels
 }

@@ -31,7 +31,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,16 +48,16 @@ const subnetSize = 30
 
 const defaultNumberOfInterfaces = 2
 
-type DeviceOnboardingRepo struct {
+type DeviceOnboarding struct {
 	client ctrlclient.Client
 	device ctrlclient.Object
 }
 
-func NewOnboardingRepo(c ctrlclient.Client) *DeviceOnboardingRepo {
-	return &DeviceOnboardingRepo{client: c}
+func NewOnboardingRepo(c ctrlclient.Client) *DeviceOnboarding {
+	return &DeviceOnboarding{client: c}
 }
 
-func (o *DeviceOnboardingRepo) Create(ctx context.Context) error {
+func (o *DeviceOnboarding) Create(ctx context.Context) error {
 	if err := o.client.Create(ctx, o.device); err != nil {
 		if apierrors.IsAlreadyExists(err) {
 			return nil
@@ -68,72 +67,105 @@ func (o *DeviceOnboardingRepo) Create(ctx context.Context) error {
 	return nil
 }
 
-func (o *DeviceOnboardingRepo) InitializationStatus(ctx context.Context, e entity.Onboarding) entity.Initialization {
-	i := &inventoriesv1alpha1.Inventory{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: e.RequestName, Namespace: e.RequestNamespace}, i); err != nil {
+func (o *DeviceOnboarding) InitializationStatus(ctx context.Context, e entity.Onboarding) entity.Initialization {
+	inventory := &inventoriesv1alpha1.Inventory{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      e.RequestName,
+			Namespace: e.RequestNamespace,
+		},
+	}
+
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(inventory), inventory); err != nil {
 		return entity.Initialization{
 			Require: false,
 			Error:   err,
 		}
 	}
-	machine := i.Labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]
-	switches := i.Labels[inventoriesv1alpha1.GetSizeMatchLabel(switchSizeName)]
+
+	machine := inventory.Labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]
+	switches := inventory.Labels[inventoriesv1alpha1.GetSizeMatchLabel(switchSizeName)]
+
 	switch {
 	case machine != "":
-		m := &machinev1alpha2.Machine{}
-		if err := o.client.Get(ctx, types.NamespacedName{
-			Name: e.RequestName, Namespace: e.InitializationObjectNamespace}, m); err != nil {
+		m := &machinev1alpha2.Machine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      e.RequestName,
+				Namespace: e.InitializationObjectNamespace,
+			},
+		}
+
+		if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(m), m); err != nil {
 			return entity.Initialization{Require: true, Error: nil}
 		}
+
 		return entity.Initialization{Require: false, Error: nil}
 	case switches != "":
-		s := &switchv1beta1.Switch{}
-		if err := o.client.Get(ctx, types.NamespacedName{
-			Name: e.RequestName, Namespace: e.InitializationObjectNamespace}, s); err != nil {
+		s := &switchv1beta1.Switch{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      e.RequestName,
+				Namespace: e.InitializationObjectNamespace,
+			},
+		}
+
+		if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(s), s); err != nil {
 			return entity.Initialization{Require: true, Error: nil}
 		}
+
 		return entity.Initialization{Require: false, Error: nil}
 	default:
 		return entity.Initialization{Require: false, Error: nil}
 	}
 }
 
-func (o *DeviceOnboardingRepo) Prepare(ctx context.Context, e entity.Onboarding) error {
-	inventory := &inventoriesv1alpha1.Inventory{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: e.RequestName, Namespace: e.RequestNamespace}, inventory); err != nil {
+func (o *DeviceOnboarding) Prepare(ctx context.Context, e entity.Onboarding) error {
+	inventory := &inventoriesv1alpha1.Inventory{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      e.RequestName,
+			Namespace: e.RequestNamespace,
+		},
+	}
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(inventory), inventory); err != nil {
 		return err
 	}
 
 	if !o.IsSizeLabeled(inventory.Labels) {
 		return machinerr.NotSizeLabeled()
 	}
+
 	if inventory.Spec.System.ID == "" {
 		return machinerr.UUIDNotExist(inventory.Name)
 	}
+
 	if _, ok := inventory.Labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]; ok {
 		o.device = o.prepareMachine(inventory.Spec.System.ID, e)
 	}
 	return nil
 }
 
-func (o *DeviceOnboardingRepo) IsSizeLabeled(labels map[string]string) bool {
+func (o *DeviceOnboarding) IsSizeLabeled(labels map[string]string) bool {
 	machine := labels[inventoriesv1alpha1.GetSizeMatchLabel(machineSizeName)]
 	switches := labels[inventoriesv1alpha1.GetSizeMatchLabel(switchSizeName)]
 	return machine != "" || switches != ""
 }
 
-func (o *DeviceOnboardingRepo) GatherData(ctx context.Context, e entity.Onboarding) error {
-	inventory := &inventoriesv1alpha1.Inventory{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: e.RequestName, Namespace: e.RequestNamespace}, inventory); err != nil {
+func (o *DeviceOnboarding) GatherData(ctx context.Context, e entity.Onboarding) error {
+	inventory := &inventoriesv1alpha1.Inventory{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      e.RequestName,
+			Namespace: e.RequestNamespace,
+		},
+	}
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(inventory), inventory); err != nil {
 		return err
 	}
 
-	machine := &machinev1alpha2.Machine{}
-	if err := o.client.Get(ctx, types.NamespacedName{
-		Name: inventory.Name, Namespace: e.InitializationObjectNamespace}, machine); err != nil {
+	machine := &machinev1alpha2.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      inventory.Name,
+			Namespace: e.InitializationObjectNamespace,
+		},
+	}
+	if err := o.client.Get(ctx, ctrlclient.ObjectKeyFromObject(machine), machine); err != nil {
 		return err
 	}
 
@@ -148,7 +180,7 @@ func (o *DeviceOnboardingRepo) GatherData(ctx context.Context, e entity.Onboardi
 	return o.client.Status().Update(ctx, machine)
 }
 
-func (o *DeviceOnboardingRepo) prepareMachine(uuid string, e entity.Onboarding) *machinev1alpha2.Machine {
+func (o *DeviceOnboarding) prepareMachine(uuid string, e entity.Onboarding) *machinev1alpha2.Machine {
 	return &machinev1alpha2.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      uuid,
@@ -189,7 +221,7 @@ type metadata struct {
 	objectMeta metav1.ObjectMeta
 }
 
-func (o *DeviceOnboardingRepo) gatherMachineStatusData(ctx context.Context,
+func (o *DeviceOnboarding) gatherMachineStatusData(ctx context.Context,
 	inventory *inventoriesv1alpha1.Inventory,
 	machineStatus machinev1alpha2.MachineStatus) machinev1alpha2.MachineStatus {
 	inventoryRef := metadata{
@@ -239,7 +271,7 @@ func updateOOBResourceReference(oob metadata) machinev1alpha2.ObjectReference {
 	}
 }
 
-func (o *DeviceOnboardingRepo) findMachineOOBByLabel(ctx context.Context,
+func (o *DeviceOnboarding) findMachineOOBByLabel(ctx context.Context,
 	uuid string) metadata {
 	obj := &oobv1.OOBList{}
 	filter := &ctrlclient.ListOptions{
@@ -257,12 +289,12 @@ func (o *DeviceOnboardingRepo) findMachineOOBByLabel(ctx context.Context,
 	}
 }
 
-func (o *DeviceOnboardingRepo) updateMachineInterfaces(ctx context.Context,
-	i *inventoriesv1alpha1.Inventory,
+func (o *DeviceOnboarding) updateMachineInterfaces(ctx context.Context,
+	inventory *inventoriesv1alpha1.Inventory,
 	machineInterfaces []machinev1alpha2.Interface,
 ) []machinev1alpha2.Interface {
 	interfaces := make([]machinev1alpha2.Interface, 0, defaultNumberOfInterfaces)
-	nicsSpec := i.Spec.NICs
+	nicsSpec := inventory.Spec.NICs
 	for nic := range nicsSpec {
 		if len(nicsSpec[nic].LLDPs) == 0 {
 			interfaces = baseConnectionInfo(&nicsSpec[nic], interfaces, machineInterfaces)
@@ -288,7 +320,7 @@ func (o *DeviceOnboardingRepo) updateMachineInterfaces(ctx context.Context,
 	return interfaces
 }
 
-func (o *DeviceOnboardingRepo) updateNetworkStatus(
+func (o *DeviceOnboarding) updateNetworkStatus(
 	machineInterfaces []machinev1alpha2.Interface) machinev1alpha2.Network {
 	return machinev1alpha2.Network{
 		Ports:        len(machineInterfaces),
@@ -297,7 +329,7 @@ func (o *DeviceOnboardingRepo) updateNetworkStatus(
 	}
 }
 
-func (o *DeviceOnboardingRepo) getSwitchByLabel(ctx context.Context,
+func (o *DeviceOnboarding) getSwitchByLabel(ctx context.Context,
 	label map[string]string) (*switchv1beta1.Switch, error) {
 	obj := &switchv1beta1.SwitchList{}
 	filter := &ctrlclient.ListOptions{

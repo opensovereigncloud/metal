@@ -58,6 +58,7 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		reqLogger.Info("device initialization status", "error", is.Error)
 		return ctrl.Result{}, nil
 	}
+
 	if is.Require {
 		if err := r.OnboardingRepo.Initiate(ctx, e); err != nil {
 			reqLogger.Info("device initialization failed", "error", err)

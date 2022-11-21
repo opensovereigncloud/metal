@@ -24,10 +24,10 @@ import (
 )
 
 type DeviceOnboardingUseCase struct {
-	repo repository.OnboardingRepo
+	repo repository.Onboarding
 }
 
-func NewDeviceOnboarding(p repository.OnboardingRepo) *DeviceOnboardingUseCase {
+func NewDeviceOnboarding(p repository.Onboarding) *DeviceOnboardingUseCase {
 	return &DeviceOnboardingUseCase{p}
 }
 

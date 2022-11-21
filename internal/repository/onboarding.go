@@ -23,7 +23,7 @@ import (
 )
 
 type (
-	OnboardingRepo interface {
+	Onboarding interface {
 		Create(context.Context) error
 		InitializationStatus(context.Context, entity.Onboarding) entity.Initialization
 		Prepare(context.Context, entity.Onboarding) error

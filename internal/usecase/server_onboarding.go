@@ -24,10 +24,10 @@ import (
 )
 
 type ServerOnboardingUseCase struct {
-	repo repository.OnboardingRepo
+	repo repository.Onboarding
 }
 
-func NewServerOnboarding(p repository.OnboardingRepo) *ServerOnboardingUseCase {
+func NewServerOnboarding(p repository.Onboarding) *ServerOnboardingUseCase {
 	return &ServerOnboardingUseCase{p}
 }
 

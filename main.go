@@ -62,11 +62,12 @@ func main() {
 		webhookPort = 9443
 	}
 
-	var metricsAddr, probeAddr, namespace string
+	var metricsAddr, probeAddr, namespace, bootstrapApiServer string
 	var enableLeaderElection, profiling bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&namespace, "namespace", "default", "Namespace name for object creation")
+	flag.StringVar(&bootstrapApiServer, "bootstrap-api-server", "", "Endpoint of the the k8s api server to join to like https://1.2.3.4:6443")
 	flag.IntVar(&webhookPort, "webhook-bind-address", webhookPort, "The address the webhook endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -101,7 +102,7 @@ func main() {
 		namespace = os.Getenv("NAMESPACE")
 	}
 
-	startReconcilers(mgr, namespace)
+	startReconcilers(mgr, namespace, bootstrapApiServer)
 	addHandlers(mgr, profiling)
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -121,7 +122,7 @@ func addToScheme() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func startReconcilers(mgr ctrl.Manager, namespace string) {
+func startReconcilers(mgr ctrl.Manager, namespace, bootstrapApiServer string) {
 	var err error
 
 	deviceOnboardingRepo := repository.NewOnboardingRepo(mgr.GetClient())
@@ -204,6 +205,15 @@ func startReconcilers(mgr ctrl.Manager, namespace string) {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Aggregate")
+		os.Exit(1)
+	}
+	if err = (&inventorycontrollers.AccessReconciler{
+		Client:             mgr.GetClient(),
+		Log:                ctrl.Log.WithName("controllers").WithName("Access"),
+		Scheme:             mgr.GetScheme(),
+		BootstrapApiServer: bootstrapApiServer,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Access")
 		os.Exit(1)
 	}
 	if err = (&onboardingcontroller.OnboardingReconciler{
