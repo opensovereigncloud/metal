@@ -61,9 +61,9 @@ func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
-// +kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=onmetal.de,resources=oobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=onmetal.de,resources=oobs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=onmetal.de,resources=oobs/finalizers,verbs=update
 
 func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)

@@ -220,9 +220,9 @@ rules:
   - patch
   - update
 - apiGroups:
-  - oob.onmetal.de
+  - onmetal.de
   resources:
-  - machines
+  - oobs
   verbs:
   - create
   - delete
@@ -232,15 +232,15 @@ rules:
   - update
   - watch
 - apiGroups:
-  - oob.onmetal.de
+  - onmetal.de
   resources:
-  - machines/finalizers
+  - oobs/finalizers
   verbs:
   - update
 - apiGroups:
-  - oob.onmetal.de
+  - onmetal.de
   resources:
-  - machines/status
+  - oobs/status
   verbs:
   - get
   - patch
