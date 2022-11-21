@@ -18,7 +18,6 @@ package benchmark
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -33,11 +32,6 @@ import (
 const percentageModifier = 100
 
 const UUIDLabel = "machine.onmetal.de/uuid"
-
-var (
-	ErrAlreadyExist     = errors.New("already exist")
-	ErrBenchTypeUnknown = errors.New("unknown benchmark type")
-)
 
 type Benchmark struct {
 	client.Client

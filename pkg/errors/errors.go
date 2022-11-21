@@ -37,14 +37,11 @@ type Reason struct {
 type StatusReason string
 
 const (
-	alreadyExist     StatusReason = "already exist"
 	resourceNotExist StatusReason = "resource not exist"
 	uuidNotExist     StatusReason = "uuid not exist"
 	notFound         StatusReason = "not found"
 	notLabeled       StatusReason = "not labeled"
 	notAMachine      StatusReason = "not a machine"
-	castType         StatusReason = "casting failed"
-	reservation      StatusReason = "machine reservation impossible"
 	unknown          StatusReason = "unknown"
 )
 
@@ -64,15 +61,9 @@ func IsNotExist(err error) bool { return ReasonForError(err) == resourceNotExist
 
 func IsNotFound(err error) bool { return ReasonForError(err) == notFound }
 
-func IsAlreadyExists(err error) bool { return ReasonForError(err) == alreadyExist }
-
 func IsUUIDNotExist(err error) bool { return ReasonForError(err) == uuidNotExist }
 
 func IsNotAMachine(err error) bool { return ReasonForError(err) == notAMachine }
-
-func IsNotBookable(err error) bool { return ReasonForError(err) == reservation }
-
-func IsNotSizeLabeled(err error) bool { return ReasonForError(err) == notLabeled }
 
 func ReasonForError(err error) StatusReason {
 	if reason := MachineStatus(nil); errors.As(err, &reason) {
@@ -105,25 +96,11 @@ func GetResultForError(reqLogger logr.Logger, err error) (ctrl.Result, error) {
 	}
 }
 
-func AlreadyExist(s string) *MachineError {
-	return &MachineError{
-		ErrStatus: Reason{
-			Message: fmt.Sprintf("resource with uuid: %s, already exist ", s), StatusReason: alreadyExist,
-		},
-	}
-}
-
 func UUIDNotExist(s string) *MachineError {
 	return &MachineError{
 		ErrStatus: Reason{
 			Message: fmt.Sprintf("object: %s, exist but doesn't contain uuid", s), StatusReason: uuidNotExist,
 		},
-	}
-}
-
-func NotExist(s string) *MachineError {
-	return &MachineError{
-		ErrStatus: Reason{Message: fmt.Sprintf("resource with uuid: %s, not exist", s), StatusReason: resourceNotExist},
 	}
 }
 
@@ -133,33 +110,9 @@ func NotFound(msg string) *MachineError {
 	}
 }
 
-func ObjectNotFound(obj, kind string) *MachineError {
-	return &MachineError{
-		ErrStatus: Reason{Message: fmt.Sprintf("object name: %s, kind: %s not found", obj, kind), StatusReason: notFound},
-	}
-}
-
 func NotSizeLabeled() *MachineError {
 	return &MachineError{
 		ErrStatus: Reason{Message: "size labels are not present yet", StatusReason: notLabeled},
-	}
-}
-
-func NotAMachine() *MachineError {
-	return &MachineError{
-		ErrStatus: Reason{Message: "not a machine", StatusReason: notAMachine},
-	}
-}
-
-func CastType() *MachineError {
-	return &MachineError{
-		ErrStatus: Reason{Message: "object casting failed", StatusReason: castType},
-	}
-}
-
-func NotBookable() *MachineError {
-	return &MachineError{
-		ErrStatus: Reason{Message: "impossible to reserve", StatusReason: reservation},
 	}
 }
 

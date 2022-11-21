@@ -53,8 +53,6 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("namespace", req.NamespacedName, "machineAssignment", req.Name)
 
@@ -203,7 +201,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return ctrl.Result{}, err
 			}
 
-			if oobMachine.Status.PowerState == "Off" && oobMachine.Spec.PowerState == "Off" {
+			if oobMachine.Status.Power == "Off" && oobMachine.Spec.Power == "Off" {
 				//TODO(flpeter) set .Spec.PowerState
 				reqLogger.Info("power on", "machine", machineAssignment.Status.MetalComputeRef.Name)
 			}

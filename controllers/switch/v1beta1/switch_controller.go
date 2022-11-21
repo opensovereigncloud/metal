@@ -80,11 +80,6 @@ type SwitchReconciler struct {
 //+kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;watch
 //+kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips/status,verbs=get;list;watch
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 	log := r.Log.WithValues("switch", req.NamespacedName)
 	result = ctrl.Result{}

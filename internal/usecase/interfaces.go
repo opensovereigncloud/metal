@@ -28,7 +28,4 @@ type (
 		InitializationStatus(context.Context, entity.Onboarding) entity.Initialization
 		GatherData(context.Context, entity.Onboarding) error
 	}
-	Synchronization interface {
-		Do(context.Context, entity.Reservation) error
-	}
 )

@@ -24,8 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/pkg/provider"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -49,7 +48,7 @@ type OOBReconciler struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *OOBReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&oobv1.Machine{}).
+		For(&oobv1.OOB{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
@@ -62,14 +61,14 @@ func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=oob.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=oob.onmetal.de,resources=machines/finalizers,verbs=update
 
 func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)
 
-	oobObj := &oobv1.Machine{
+	oobObj := &oobv1.OOB{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
@@ -109,7 +108,7 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 
 	// if machine previous reservation status changed or reservation status is available
-	// trigger a reconcile loop on machine assignment
+	// trigger reconcile loop on machine assignment
 	if previousReservationStatus != machineObj.Status.Reservation.Status ||
 		machineObj.Status.Reservation.Status == scheduler.ReservationStatusAvailable {
 
@@ -147,7 +146,7 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return ctrl.Result{}, nil
 }
 
-func prepareReferenceSpec(oob *oobv1.Machine) machinev1alpha2.ObjectReference {
+func prepareReferenceSpec(oob *oobv1.OOB) machinev1alpha2.ObjectReference {
 	return machinev1alpha2.ObjectReference{
 		Exist: true,
 		Reference: &machinev1alpha2.ResourceReference{
@@ -158,22 +157,25 @@ func prepareReferenceSpec(oob *oobv1.Machine) machinev1alpha2.ObjectReference {
 
 func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
 	ctx := context.Background()
-	obj, ok := e.Object.(*oobv1.Machine)
+	obj, ok := e.Object.(*oobv1.OOB)
 	if !ok {
 		r.Log.Info("machine oob type assertion failed")
 		return false
 	}
 
-	machineObj := &machinev1alpha2.Machine{}
-	if err := provider.GetObject(ctx, obj.Status.UUID, r.Namespace, r.Client, machineObj); err != nil {
+	machine := &machinev1alpha2.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      obj.Status.UUID,
+			Namespace: r.Namespace,
+		},
+	}
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine)
+	if err != nil {
 		r.Log.Info("failed to retrieve machine object from cluster", "error", err)
 		return false
 	}
 
-	machineObj.Status.OOB.Exist = false
-	machineObj.Status.OOB.Reference = nil
-
-	if updErr := r.Client.Status().Update(ctx, machineObj); updErr != nil {
+	if updErr := r.Client.Status().Update(ctx, machine); updErr != nil {
 		r.Log.Info("can't update machine status for oob", "error", updErr)
 		return false
 	}
@@ -181,7 +183,7 @@ func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
 }
 
 func isUUIDExist(e event.CreateEvent) bool {
-	obj, ok := e.Object.(*oobv1.Machine)
+	obj, ok := e.Object.(*oobv1.OOB)
 	if !ok {
 		return false
 	}
@@ -189,14 +191,14 @@ func isUUIDExist(e event.CreateEvent) bool {
 }
 
 func onUpdate(e event.UpdateEvent) bool {
-	obj, ok := e.ObjectNew.(*oobv1.Machine)
+	obj, ok := e.ObjectNew.(*oobv1.OOB)
 	if !ok {
 		return false
 	}
 	return obj.Status.UUID != ""
 }
 
-func updateTaints(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
+func updateTaints(oobObj *oobv1.OOB, machineObj *machinev1alpha2.Machine) {
 	if v, ok := oobObj.Labels[maintainedMachineLabel]; ok && v == "true" {
 		if getNoScheduleTaintIdx(machineObj.Spec.Taints) == -1 {
 			machineObj.Spec.Taints = append(machineObj.Spec.Taints, machinev1alpha2.Taint{
@@ -221,17 +223,16 @@ func getNoScheduleTaintIdx(taints []machinev1alpha2.Taint) int {
 	return -1
 }
 
-func syncStatusState(oobObj *oobv1.Machine, machineObj *machinev1alpha2.Machine) {
+func syncStatusState(oobObj *oobv1.OOB, machineObj *machinev1alpha2.Machine) {
 	switch {
-	case oobObj.Status.SystemStateReadTimeout:
+	case oobObj.Status.OS == "TimedOut":
 		machineObj.Status.Reservation.Status = scheduler.ReservationStatusError
-	case (oobObj.Status.SystemState == "Ok" || oobObj.Status.SystemState == "Unknown") &&
-		oobObj.Status.PowerState != "Off":
+	case oobObj.Status.OS == "Ok" && oobObj.Status.Power != "Off":
 		machineObj.Status.Reservation.Status = scheduler.ReservationStatusRunning
 	}
 
 	// if machine has no reservation reference and power state is off then the machine is Available
-	if machineObj.Status.Reservation.Reference == nil && oobObj.Status.PowerState == "Off" {
+	if machineObj.Status.Reservation.Reference == nil && oobObj.Status.Power == "Off" {
 		machineObj.Status.Reservation.Status = scheduler.ReservationStatusAvailable
 	}
 }

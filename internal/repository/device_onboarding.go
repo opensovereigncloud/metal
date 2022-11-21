@@ -27,7 +27,7 @@ import (
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/entity"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -241,7 +241,7 @@ func updateOOBResourceReference(oob metadata) machinev1alpha2.ObjectReference {
 
 func (o *DeviceOnboardingRepo) findMachineOOBByLabel(ctx context.Context,
 	uuid string) metadata {
-	obj := &oobv1.MachineList{}
+	obj := &oobv1.OOBList{}
 	filter := &ctrlclient.ListOptions{
 		LabelSelector: ctrlclient.MatchingLabelsSelector{
 			Selector: labels.SelectorFromSet(map[string]string{machinev1alpha2.UUIDLabel: uuid})}}

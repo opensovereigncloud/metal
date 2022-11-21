@@ -18,12 +18,12 @@ package controllers
 
 import (
 	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
 
 	"github.com/go-logr/logr"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/pkg/provider"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -83,16 +83,22 @@ func (r *InventoryReconciler) updateMachineStatusOnDelete(e event.DeleteEvent) b
 		return false
 	}
 
-	machineObj := &machinev1alpha2.Machine{}
-	if getErr := provider.GetObject(ctx, invObj.Spec.System.ID, invObj.Namespace, r.Client, machineObj); getErr != nil {
-		r.Log.Info("failed to retrieve machine object from cluster", "error", getErr)
+	machine := &machinev1alpha2.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      invObj.Spec.System.ID,
+			Namespace: invObj.Namespace,
+		},
+	}
+	err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine)
+	if err != nil {
+		r.Log.Info("failed to retrieve machine object from cluster", "error", err)
 		return false
 	}
 
-	machineObj.Status.Inventory.Exist = false
-	machineObj.Status.Inventory.Reference = nil
+	machine.Status.Inventory.Exist = false
+	machine.Status.Inventory.Reference = nil
 
-	if updErr := r.Client.Status().Update(ctx, machineObj); updErr != nil {
+	if updErr := r.Client.Status().Update(ctx, machine); updErr != nil {
 		r.Log.Info("can't update machine status for inventory", "error", updErr)
 		return false
 	}

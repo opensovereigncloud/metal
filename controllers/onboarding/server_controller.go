@@ -22,7 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/internal/entity"
 	"github.com/onmetal/metal-api/internal/usecase"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +40,7 @@ type InventoryOnboardingReconciler struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *InventoryOnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&oobv1.Machine{}).
+		For(&oobv1.OOB{}).
 		Complete(r)
 }
 

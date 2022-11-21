@@ -20,7 +20,7 @@ import (
 	"context"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,22 +80,20 @@ func testMachineOOB() {
 	}, timeout, interval).Should(BeFalse())
 }
 
-func prepareOOB(name, namespace string) *oobv1.Machine {
-	return &oobv1.Machine{
+func prepareOOB(name, namespace string) *oobv1.OOB {
+	return &oobv1.OOB{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: oobv1.MachineSpec{
-			PowerState:       "Off",
-			ShutdownDeadline: metav1.Now(),
-			OSreadDeadline:   metav1.Now(),
+		Spec: oobv1.OOBSpec{
+			Power: "Off",
 		},
 	}
 }
 
-func prepareOOBStatus(name string) oobv1.MachineStatus {
-	return oobv1.MachineStatus{
+func prepareOOBStatus(name string) oobv1.OOBStatus {
+	return oobv1.OOBStatus{
 		UUID: name,
 	}
 }

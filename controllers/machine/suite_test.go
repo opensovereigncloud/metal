@@ -26,7 +26,7 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	oobonmetal "github.com/onmetal/oob-controller/api/v1"
+	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -78,7 +78,7 @@ var _ = BeforeSuite(func() {
 	}
 	ctx, cancel = context.WithCancel(context.TODO())
 
-	oobonmetal.SchemeBuilder.Register(&oobonmetal.Machine{}, &oobonmetal.MachineList{})
+	oobonmetal.SchemeBuilder.Register(&oobonmetal.OOB{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
 	switchv1beta1.SchemeBuilder.Register(&switchv1beta1.Switch{}, &switchv1beta1.SwitchList{})
 	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})

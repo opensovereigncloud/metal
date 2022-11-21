@@ -29,7 +29,4 @@ type (
 		Prepare(context.Context, entity.Onboarding) error
 		GatherData(context.Context, entity.Onboarding) error
 	}
-	Synchronization interface {
-		Do(context.Context, entity.Synchronization) error
-	}
 )

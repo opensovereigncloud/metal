@@ -24,7 +24,7 @@ import (
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/onmetal/metal-api/internal/entity"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
-	oobv1 "github.com/onmetal/oob-controller/api/v1"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -53,7 +53,7 @@ func (o *ServerOnboardingRepo) Create(ctx context.Context) error {
 }
 
 func (o *ServerOnboardingRepo) InitializationStatus(ctx context.Context, e entity.Onboarding) entity.Initialization {
-	oobObj := &oobv1.Machine{}
+	oobObj := &oobv1.OOB{}
 	if err := o.client.Get(ctx, types.NamespacedName{
 		Name: e.RequestName, Namespace: e.RequestNamespace}, oobObj); err != nil {
 		return entity.Initialization{Require: false, Error: err}
@@ -68,7 +68,7 @@ func (o *ServerOnboardingRepo) InitializationStatus(ctx context.Context, e entit
 }
 
 func (o *ServerOnboardingRepo) Prepare(ctx context.Context, e entity.Onboarding) error {
-	oobObj := &oobv1.Machine{}
+	oobObj := &oobv1.OOB{}
 	if err := o.client.Get(ctx, types.NamespacedName{
 		Name: e.RequestName, Namespace: e.RequestNamespace}, oobObj); err != nil {
 		return err
@@ -85,7 +85,7 @@ func (o *ServerOnboardingRepo) Prepare(ctx context.Context, e entity.Onboarding)
 }
 
 func (o *ServerOnboardingRepo) GatherData(ctx context.Context, e entity.Onboarding) error {
-	oob := &oobv1.Machine{}
+	oob := &oobv1.OOB{}
 	if err := o.client.Get(ctx, types.NamespacedName{
 		Name: e.RequestName, Namespace: e.RequestNamespace}, oob); err != nil {
 		return err
@@ -120,8 +120,8 @@ func (o *ServerOnboardingRepo) IsSizeLabeled(labels map[string]string) bool {
 	return machine != "" || switches != ""
 }
 
-func (o *ServerOnboardingRepo) enableOOBMachineForInventory(ctx context.Context, oobObj *oobv1.Machine) error {
-	oobObj.Spec.PowerState = getPowerState(oobObj.Spec.PowerState)
+func (o *ServerOnboardingRepo) enableOOBMachineForInventory(ctx context.Context, oobObj *oobv1.OOB) error {
+	oobObj.Spec.Power = getPowerState(oobObj.Spec.Power)
 	oobObj.Labels = setUpLabels(oobObj)
 	return o.client.Update(ctx, oobObj)
 }
@@ -155,7 +155,7 @@ func getPowerState(state string) string {
 	}
 }
 
-func setUpLabels(oobObj *oobv1.Machine) map[string]string {
+func setUpLabels(oobObj *oobv1.OOB) map[string]string {
 	if oobObj.Labels == nil {
 		return map[string]string{machinev1alpha2.UUIDLabel: oobObj.Status.UUID}
 	}
