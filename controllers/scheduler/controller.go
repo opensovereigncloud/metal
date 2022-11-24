@@ -92,6 +92,41 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return ctrl.Result{}, err
 			}
 
+			// if there is a metal machine reference if needs to be removed
+			if machineAssignment.Status.MetalComputeRef != nil &&
+				machineAssignment.Status.MetalComputeRef.Name != "" &&
+				machineAssignment.Status.MetalComputeRef.Namespace != "" {
+
+				// get the referenced machine
+				machine, err := r.getMachine(ctx, machineAssignment.Status.MetalComputeRef)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+
+				// remove the metal machine reference and update it
+				machine.Status.Reservation.Reference = nil
+				err = r.Client.Status().Update(ctx, machine)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+
+				// get the OOB machine
+				oob, err := r.getOOBMachine(ctx, machine)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+
+				// if OOB is powered on then power it off
+				if oob.Status.Power == "On" && oob.Spec.Power == "On" {
+					oob.Spec.Power = "Off"
+					err = r.Client.Update(ctx, oob)
+					if err != nil {
+						return ctrl.Result{}, err
+					}
+				}
+
+				//TODO(flpeter) set machine is dirty and do some cleanup?
+			}
 			// remove our finalizer from the list and update it.
 			controllerutil.RemoveFinalizer(machineAssignment, SchedulerFinalizer)
 			if err = r.Client.Update(ctx, machineAssignment); err != nil {
