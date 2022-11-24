@@ -118,7 +118,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 				// if OOB is powered on then power it off
 				if oob.Status.Power == "On" && oob.Spec.Power == "On" {
-					oob.Spec.Power = "Off"
+					oob.Spec.Power = "OffImmediate"
 					err = r.Client.Update(ctx, oob)
 					if err != nil {
 						return ctrl.Result{}, err
