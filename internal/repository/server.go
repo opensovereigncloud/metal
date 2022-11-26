@@ -156,7 +156,7 @@ func prepareInventory(e entity.Onboarding) *inventoriesv1alpha1.Inventory {
 		},
 		Spec: inventoriesv1alpha1.InventorySpec{
 			System: &inventoriesv1alpha1.SystemSpec{
-				ID: e.InitializationObjectName,
+				ID: "",
 			},
 			Host: &inventoriesv1alpha1.HostSpec{
 				Name: "",
