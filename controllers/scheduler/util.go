@@ -18,13 +18,14 @@ package scheduler
 
 import (
 	"bytes"
-	"github.com/Masterminds/sprig"
-	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	"math"
 	"net"
-	yaml "sigs.k8s.io/yaml"
 	"strconv"
 	"text/template"
+
+	"github.com/Masterminds/sprig"
+	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	"sigs.k8s.io/yaml"
 )
 
 func getLabelSelectorForAvailableMachine(instanceType string) map[string]string {
@@ -57,7 +58,7 @@ func parseTemplate(temp map[string]string, wrapper IgnitionWrapper) (map[string]
 	return tempMap, nil
 }
 
-// TODO(flpeter) duplicate code from switch configurer
+// TODO(flpeter) duplicate code from switch configurer.
 func calculateAsn(addr net.IP) string {
 	var asn int
 	asn += int(addr[13]) * int(math.Pow(2, 16))

@@ -18,13 +18,13 @@ package controllers
 
 import (
 	"context"
-	"github.com/onmetal/metal-api/controllers/scheduler"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	"github.com/onmetal/metal-api/controllers/scheduler"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -111,7 +111,6 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	// trigger reconcile loop on machine assignment
 	if previousReservationStatus != machineObj.Status.Reservation.Status ||
 		machineObj.Status.Reservation.Status == scheduler.ReservationStatusAvailable {
-
 		// only get assignment machine if reference is set
 		if machineObj.Status.Reservation.Reference != nil {
 			machineAssignment := &machinev1alpha2.MachineAssignment{

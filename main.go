@@ -18,12 +18,9 @@ package main
 
 import (
 	"flag"
-	"github.com/onmetal/metal-api/internal/repository"
-	"github.com/onmetal/metal-api/internal/usecase"
 	"net/http"
 	"net/http/pprof"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
@@ -40,11 +37,13 @@ import (
 	schedulercontroller "github.com/onmetal/metal-api/controllers/scheduler"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switch/v1beta1"
 
-	// to ensure that exec-entrypoint and run can make use of them.
+	"github.com/onmetal/metal-api/internal/repository"
+	"github.com/onmetal/metal-api/internal/usecase"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -62,12 +61,12 @@ func main() {
 		webhookPort = 9443
 	}
 
-	var metricsAddr, probeAddr, namespace, bootstrapApiServer string
+	var metricsAddr, probeAddr, namespace, bootstrapAPIServer string
 	var enableLeaderElection, profiling bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&namespace, "namespace", "default", "Namespace name for object creation")
-	flag.StringVar(&bootstrapApiServer, "bootstrap-api-server", "", "Endpoint of the the k8s api server to join to like https://1.2.3.4:6443")
+	flag.StringVar(&bootstrapAPIServer, "bootstrap-api-server", "", "Endpoint of the the k8s api server to join to like https://1.2.3.4:6443")
 	flag.IntVar(&webhookPort, "webhook-bind-address", webhookPort, "The address the webhook endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -102,7 +101,7 @@ func main() {
 		namespace = os.Getenv("NAMESPACE")
 	}
 
-	startReconcilers(mgr, namespace, bootstrapApiServer)
+	startReconcilers(mgr, namespace, bootstrapAPIServer)
 	addHandlers(mgr, profiling)
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -122,7 +121,7 @@ func addToScheme() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func startReconcilers(mgr ctrl.Manager, namespace, bootstrapApiServer string) {
+func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 	var err error
 
 	deviceOnboardingRepo := repository.NewOnboardingRepo(mgr.GetClient())
@@ -211,7 +210,7 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapApiServer string) {
 		Client:             mgr.GetClient(),
 		Log:                ctrl.Log.WithName("controllers").WithName("Access"),
 		Scheme:             mgr.GetScheme(),
-		BootstrapApiServer: bootstrapApiServer,
+		BootstrapAPIServer: bootstrapAPIServer,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Access")
 		os.Exit(1)

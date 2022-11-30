@@ -19,6 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/go-logr/logr"
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	"github.com/pkg/errors"
@@ -32,10 +35,8 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	kubeadmv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	"k8s.io/utils/pointer"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 const (
@@ -52,7 +53,7 @@ const (
 type AccessReconciler struct {
 	client.Client
 
-	BootstrapApiServer string
+	BootstrapAPIServer string
 	Log                logr.Logger
 	Scheme             *runtime.Scheme
 }
@@ -265,7 +266,7 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	serverString := ""
-	if r.BootstrapApiServer == "" {
+	if r.BootstrapAPIServer == "" {
 		kubeadmConfigConfigMap := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: kubeSystemNamespace,
@@ -304,7 +305,7 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			break
 		}
 	} else {
-		serverString = r.BootstrapApiServer
+		serverString = r.BootstrapAPIServer
 	}
 
 	kubeconfig := clientcmdapi.Config{

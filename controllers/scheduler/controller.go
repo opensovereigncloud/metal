@@ -19,6 +19,8 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/pkg/errors"
@@ -26,7 +28,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"time"
 )
 
 // Reconciler reconciles a Ignition object.
@@ -96,7 +97,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			if machineAssignment.Status.MetalComputeRef != nil &&
 				machineAssignment.Status.MetalComputeRef.Name != "" &&
 				machineAssignment.Status.MetalComputeRef.Namespace != "" {
-
 				// get the referenced machine
 				machine, err := r.getMachine(ctx, machineAssignment.Status.MetalComputeRef)
 				if err != nil {

@@ -18,6 +18,8 @@ package scheduler
 
 import (
 	"context"
+	"net"
+
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/onmetal/metal-api/apis/switch/v1beta1"
@@ -25,7 +27,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -126,11 +127,7 @@ func (r *Reconciler) reconcileIgnition(ctx context.Context, machineAssignment *v
 
 		name := IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name
 		namespace := machineAssignment.Status.MetalComputeRef.Namespace
-		configMap, err := r.createConfigMap(data, name, namespace)
-		if err != nil {
-			return err
-		}
-
+		configMap := r.createConfigMap(data, name, namespace)
 		reqLogger.Info("applying ignition configuration", "configMap", configMap.Name)
 		if err := r.Patch(ctx, configMap, client.Apply, IgnitionFieldOwner, client.ForceOwnership); err != nil {
 			reqLogger.Error(err, "couldn't create config map", "resource", machineAssignment.Name, "namespace", machineAssignment.Namespace)
@@ -175,11 +172,7 @@ func (r *Reconciler) reconcileIgnition(ctx context.Context, machineAssignment *v
 
 		name := IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name
 		namespace := machineAssignment.Status.MetalComputeRef.Namespace
-		secret, err := r.createSecret(data, name, namespace)
-		if err != nil {
-			return err
-		}
-
+		secret := r.createSecret(data, name, namespace)
 		reqLogger.Info("applying ignition secret configuration", "secret", secret.Name)
 		if err := r.Patch(ctx, secret, client.Apply, IgnitionFieldOwner, client.ForceOwnership); err != nil {
 			reqLogger.Error(err, "couldn't create secret", "resource", machineAssignment.Name, "namespace", machineAssignment.Namespace)
@@ -226,7 +219,7 @@ func (r *Reconciler) ignitionCleanup(ctx context.Context, machineAssignment *v1a
 	return nil
 }
 
-func (r *Reconciler) createConfigMap(temp map[string]string, name string, namespace string) (*corev1.ConfigMap, error) {
+func (r *Reconciler) createConfigMap(temp map[string]string, name string, namespace string) *corev1.ConfigMap {
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -238,10 +231,10 @@ func (r *Reconciler) createConfigMap(temp map[string]string, name string, namesp
 		},
 		Data: temp,
 	}
-	return configMap, nil
+	return configMap
 }
 
-func (r *Reconciler) createSecret(temp map[string]string, name string, namespace string) (*corev1.Secret, error) {
+func (r *Reconciler) createSecret(temp map[string]string, name string, namespace string) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -253,7 +246,7 @@ func (r *Reconciler) createSecret(temp map[string]string, name string, namespace
 		},
 		StringData: temp,
 	}
-	return secret, nil
+	return secret
 }
 
 func (r *Reconciler) getMachineSubnet(ctx context.Context, machineAssignment *v1alpha2.MachineAssignment) (*ipamv1alpha1.Subnet, error) {

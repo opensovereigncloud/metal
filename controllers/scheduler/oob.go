@@ -18,6 +18,7 @@ package scheduler
 
 import (
 	"context"
+
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
