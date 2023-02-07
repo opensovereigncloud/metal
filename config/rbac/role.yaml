@@ -68,6 +68,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machinepools
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machinepools/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machinepools/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - ipam.onmetal.de
   resources:
   - ips

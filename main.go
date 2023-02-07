@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	poolv1alpha1 "github.com/onmetal/onmetal-api/apis/compute/v1alpha1"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -118,6 +119,7 @@ func addToScheme() {
 	utilruntime.Must(oobv1.AddToScheme(scheme))
 	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1beta1.AddToScheme(scheme))
+	utilruntime.Must(poolv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -241,6 +243,14 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		Log:    ctrl.Log.WithName("controllers").WithName("Scheduler"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
+		os.Exit(1)
+	}
+	if err = (&machinecontroller.PoolReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Pool"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-Pool")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

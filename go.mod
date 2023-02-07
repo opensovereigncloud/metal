@@ -11,8 +11,10 @@ require (
 	github.com/google/addlicense v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/onmetal/ipam v0.0.14
+	github.com/onmetal/onmetal-api v0.0.12
 	github.com/onmetal/oob-operator v0.0.0-20221121152953-de7ab8e4e84b
 	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/ginkgo/v2 v2.5.0
 	github.com/onsi/gomega v1.24.1
 	github.com/pkg/errors v0.9.1
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4

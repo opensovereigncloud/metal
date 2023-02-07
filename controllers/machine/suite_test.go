@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	poolv1alpha1 "github.com/onmetal/onmetal-api/apis/compute/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	"testing"
 	"time"
@@ -52,7 +54,7 @@ var (
 )
 
 const (
-	timeout  = time.Second * 75
+	timeout  = time.Second * 15
 	interval = time.Millisecond * 250
 )
 
@@ -78,6 +80,17 @@ var _ = BeforeSuite(func() {
 	}
 	ctx, cancel = context.WithCancel(context.TODO())
 
+	scheme.AddKnownTypes(
+		poolv1alpha1.SchemeGroupVersion,
+		&poolv1alpha1.Machine{},
+		&poolv1alpha1.MachineList{},
+		&poolv1alpha1.MachineClass{},
+		&poolv1alpha1.MachineClassList{},
+		&poolv1alpha1.MachinePool{},
+		&poolv1alpha1.MachinePoolList{},
+	)
+	metav1.AddToGroupVersion(scheme, poolv1alpha1.SchemeGroupVersion)
+
 	oobonmetal.SchemeBuilder.Register(&oobonmetal.OOB{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
 	switchv1beta1.SchemeBuilder.Register(&switchv1beta1.Switch{}, &switchv1beta1.SwitchList{})
@@ -95,6 +108,7 @@ var _ = BeforeSuite(func() {
 	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(poolv1alpha1.AddToScheme(scheme)).To(Succeed())
 
 	// +kubebuilder:scaffold:scheme
 
@@ -118,6 +132,12 @@ var _ = BeforeSuite(func() {
 		Log:       ctrl.Log.WithName("controllers").WithName("machine-oob"),
 		Recorder:  k8sManager.GetEventRecorderFor("Machine-OOB"),
 		Namespace: "default",
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = (&PoolReconciler{
+		Client: k8sManager.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
