@@ -10,6 +10,7 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/google/addlicense v1.0.0
 	github.com/google/uuid v1.3.0
+	github.com/onmetal/controller-utils v0.6.0
 	github.com/onmetal/ipam v0.0.14
 	github.com/onmetal/onmetal-api v0.0.12
 	github.com/onmetal/oob-operator v0.0.0-20221121152953-de7ab8e4e84b
@@ -128,6 +129,7 @@ require (
 	k8s.io/gengo v0.0.0-20211129171323-c02415ce4185 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
+	k8s.io/kube-aggregator v0.24.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect

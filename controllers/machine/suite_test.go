@@ -18,9 +18,19 @@ package controllers
 
 import (
 	"context"
-	poolv1alpha1 "github.com/onmetal/onmetal-api/apis/compute/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"errors"
+	"github.com/onmetal/controller-utils/modutils"
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	"github.com/onmetal/onmetal-api/envtestutils"
+	"github.com/onmetal/onmetal-api/envtestutils/apiserver"
+	"go/build"
+	"golang.org/x/mod/modfile"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,9 +38,12 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	computev1alpha1 "github.com/onmetal/onmetal-api/apis/compute/v1alpha1"
+	networkingv1alpha1 "github.com/onmetal/onmetal-api/apis/networking/v1alpha1"
+	storagev1alpha1 "github.com/onmetal/onmetal-api/apis/storage/v1alpha1"
 	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -69,27 +82,31 @@ func TestMachineController(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	var err error
 	By("bootstrapping test environment")
+	onmetalApiPackagePath := reflect.TypeOf(computev1alpha1.MachinePool{}).PkgPath()
+
+	goModData, err := ioutil.ReadFile(filepath.Join("..", "..", "go.mod"))
+	Expect(err).NotTo(HaveOccurred())
+
+	goModFile, err := modfile.Parse("", goModData, nil)
+	Expect(err).NotTo(HaveOccurred())
+
+	onmetalApiModulePath := findPackagePath(goModFile, onmetalApiPackagePath)
+	Expect(onmetalApiModulePath).NotTo(Equal(""))
+
+	//onmetalApiCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath, "config", "apiserver", "apiservice", "bases")
 
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{
-			filepath.Join("..", "..", "config", "crd", "additional"),
-			filepath.Join("..", "..", "config", "crd", "bases"),
-		},
-		ErrorIfCRDPathMissing: true,
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
-	ctx, cancel = context.WithCancel(context.TODO())
-
-	scheme.AddKnownTypes(
-		poolv1alpha1.SchemeGroupVersion,
-		&poolv1alpha1.Machine{},
-		&poolv1alpha1.MachineList{},
-		&poolv1alpha1.MachineClass{},
-		&poolv1alpha1.MachineClassList{},
-		&poolv1alpha1.MachinePool{},
-		&poolv1alpha1.MachinePoolList{},
-	)
-	metav1.AddToGroupVersion(scheme, poolv1alpha1.SchemeGroupVersion)
+	testEnvExt := &envtestutils.EnvironmentExtensions{
+		APIServiceDirectoryPaths: []string{
+			modutils.Dir("github.com/onmetal/onmetal-api", "config", "apiserver", "apiservice", "bases"),
+		},
+		ErrorIfAPIServicePathIsMissing: true,
+	}
 
 	oobonmetal.SchemeBuilder.Register(&oobonmetal.OOB{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
@@ -97,26 +114,68 @@ var _ = BeforeSuite(func() {
 	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})
 	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
 
-	var err error
-	cfg, err = testEnv.Start()
-	Expect(err).ToNot(HaveOccurred())
-	Expect(cfg).ToNot(BeNil())
-
 	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(benchv1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(switchv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(poolv1alpha1.AddToScheme(scheme)).To(Succeed())
 
-	// +kubebuilder:scaffold:scheme
+	Expect(computev1alpha1.AddToScheme(scheme)).To(Succeed())
+	Expect(networkingv1alpha1.AddToScheme(scheme)).To(Succeed())
+	Expect(ipamv1alpha1.AddToScheme(scheme)).To(Succeed())
+	Expect(storagev1alpha1.AddToScheme(scheme)).To(Succeed())
+
+	cfg, err = envtestutils.StartWithExtensions(testEnv, testEnvExt)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+	DeferCleanup(envtestutils.StopWithExtensions, testEnv, testEnvExt)
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
-	Expect(err).ToNot(HaveOccurred())
-	Expect(k8sClient).ToNot(BeNil())
+	Expect(err).NotTo(HaveOccurred())
+	Expect(k8sClient).NotTo(BeNil())
 
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
+	testbinPath := filepath.Join("..", "..", "testbin")
+	Expect(os.MkdirAll(testbinPath, os.ModePerm)).To(Succeed())
+
+	apiSrvBinPath := filepath.Join("..", "..", "testbin", "apiserver")
+	absApiSrvBinPath, err := filepath.Abs(apiSrvBinPath)
+	Expect(err).NotTo(HaveOccurred())
+
+	if _, err := os.Stat(apiSrvBinPath); errors.Is(err, os.ErrNotExist) {
+		cmd := exec.Command("go", "build", "-o",
+			absApiSrvBinPath,
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath, "cmd", "apiserver", "main.go"),
+		)
+		cmd.Dir = filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath)
+		Expect(cmd.Run()).To(Succeed())
+	}
+
+	apiSrv, err := apiserver.New(cfg, apiserver.Options{
+		Command:      []string{apiSrvBinPath},
+		ETCDServers:  []string{testEnv.ControlPlane.Etcd.URL.String()},
+		Host:         testEnvExt.APIServiceInstallOptions.LocalServingHost,
+		Port:         testEnvExt.APIServiceInstallOptions.LocalServingPort,
+		CertDir:      testEnvExt.APIServiceInstallOptions.LocalServingCertDir,
+		AttachOutput: true,
+	})
+	Expect(err).NotTo(HaveOccurred())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	DeferCleanup(cancel)
+	go func() {
+		defer GinkgoRecover()
+		err := apiSrv.Start(ctx)
+		Expect(err).NotTo(HaveOccurred())
+	}()
+
+	err = envtestutils.WaitUntilAPIServicesReadyWithTimeout(5*time.Minute, testEnvExt, k8sClient, scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:             scheme,
+		MetricsBindAddress: "0",
+	})
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&InventoryReconciler{
@@ -143,10 +202,9 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
-		err = k8sManager.Start(ctx)
-		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
+		Expect(k8sManager.Start(ctx)).To(Succeed())
 	}()
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	cancel()
@@ -154,3 +212,12 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+func findPackagePath(modFile *modfile.File, packagePath string) string {
+	for _, req := range modFile.Require {
+		if strings.HasPrefix(packagePath, req.Mod.Path) {
+			return req.Mod.String()
+		}
+	}
+	return ""
+}

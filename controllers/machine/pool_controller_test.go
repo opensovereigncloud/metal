@@ -19,7 +19,7 @@ import (
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/onmetal/metal-api/controllers/scheduler"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/apis/compute/v1alpha1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

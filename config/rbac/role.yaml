@@ -73,7 +73,6 @@ rules:
   - machinepools
   verbs:
   - create
-  - delete
   - get
   - list
   - patch
