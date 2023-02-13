@@ -19,10 +19,12 @@ package controllers
 import (
 	"context"
 	"errors"
+	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	"github.com/onmetal/onmetal-api/envtestutils"
-	"github.com/onmetal/onmetal-api/envtestutils/apiserver"
+	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
+
+	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
 	"go/build"
 	"golang.org/x/mod/modfile"
 	"io/ioutil"
@@ -38,9 +40,9 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	computev1alpha1 "github.com/onmetal/onmetal-api/apis/compute/v1alpha1"
-	networkingv1alpha1 "github.com/onmetal/onmetal-api/apis/networking/v1alpha1"
-	storagev1alpha1 "github.com/onmetal/onmetal-api/apis/storage/v1alpha1"
+	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	networkingv1alpha1 "github.com/onmetal/onmetal-api/api/networking/v1alpha1"
+	storagev1alpha1 "github.com/onmetal/onmetal-api/api/storage/v1alpha1"
 	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -101,7 +103,7 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
-	testEnvExt := &envtestutils.EnvironmentExtensions{
+	testEnvExt := &utilsenvtest.EnvironmentExtensions{
 		APIServiceDirectoryPaths: []string{
 			modutils.Dir("github.com/onmetal/onmetal-api", "config", "apiserver", "apiservice", "bases"),
 		},
@@ -126,10 +128,10 @@ var _ = BeforeSuite(func() {
 	Expect(ipamv1alpha1.AddToScheme(scheme)).To(Succeed())
 	Expect(storagev1alpha1.AddToScheme(scheme)).To(Succeed())
 
-	cfg, err = envtestutils.StartWithExtensions(testEnv, testEnvExt)
+	cfg, err = utilsenvtest.StartWithExtensions(testEnv, testEnvExt)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
-	DeferCleanup(envtestutils.StopWithExtensions, testEnv, testEnvExt)
+	DeferCleanup(utilsenvtest.StopWithExtensions, testEnv, testEnvExt)
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
@@ -152,12 +154,12 @@ var _ = BeforeSuite(func() {
 	}
 
 	apiSrv, err := apiserver.New(cfg, apiserver.Options{
-		Command:      []string{apiSrvBinPath},
+		MainPath:     "github.com/onmetal/onmetal-api/onmetal-apiserver/cmd/apiserver",
+		BuildOptions: []buildutils.BuildOption{buildutils.ModModeMod},
 		ETCDServers:  []string{testEnv.ControlPlane.Etcd.URL.String()},
 		Host:         testEnvExt.APIServiceInstallOptions.LocalServingHost,
 		Port:         testEnvExt.APIServiceInstallOptions.LocalServingPort,
 		CertDir:      testEnvExt.APIServiceInstallOptions.LocalServingCertDir,
-		AttachOutput: true,
 	})
 	Expect(err).NotTo(HaveOccurred())
 
@@ -165,11 +167,11 @@ var _ = BeforeSuite(func() {
 	DeferCleanup(cancel)
 	go func() {
 		defer GinkgoRecover()
-		err := apiSrv.Start(ctx)
+		err := apiSrv.Start()
 		Expect(err).NotTo(HaveOccurred())
 	}()
 
-	err = envtestutils.WaitUntilAPIServicesReadyWithTimeout(5*time.Minute, testEnvExt, k8sClient, scheme)
+	err = utilsenvtest.WaitUntilAPIServicesReadyWithTimeout(5*time.Minute, testEnvExt, k8sClient, scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{

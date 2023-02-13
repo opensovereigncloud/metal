@@ -18,7 +18,7 @@ package main
 
 import (
 	"flag"
-	poolv1alpha1 "github.com/onmetal/onmetal-api/apis/compute/v1alpha1"
+	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"net/http"
 	"net/http/pprof"
 	"os"
