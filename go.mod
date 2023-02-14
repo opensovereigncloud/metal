@@ -11,11 +11,11 @@ require (
 	github.com/google/addlicense v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/onmetal/controller-utils v0.7.0
-	github.com/onmetal/ipam v0.0.14
-	github.com/onmetal/onmetal-api v0.0.13-0.20230209150448-b34e9ebc560c
+	github.com/onmetal/ipam v0.0.18-0.20230207172629-4a0344245488
+	github.com/onmetal/onmetal-api v0.0.13-0.20230214071807-d6df8bd82de0
 	github.com/onmetal/oob-operator v0.0.0-20221121152953-de7ab8e4e84b
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/ginkgo/v2 v2.8.0
+	github.com/onsi/ginkgo/v2 v2.8.1
 	github.com/onsi/gomega v1.26.0
 	github.com/pkg/errors v0.9.1
 	golang.org/x/mod v0.7.0
@@ -25,8 +25,10 @@ require (
 	k8s.io/apiextensions-apiserver v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
+	k8s.io/kube-aggregator v0.26.1
 	k8s.io/kubernetes v1.25.4
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
+	sigs.k8s.io/controller-runtime v0.14.4
 	sigs.k8s.io/kustomize/api v0.13.1
 	sigs.k8s.io/kustomize/kyaml v0.14.0
 	sigs.k8s.io/yaml v1.3.0
@@ -58,7 +60,6 @@ replace (
 	k8s.io/mount-utils => k8s.io/mount-utils v0.24.1
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.24.1
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.24.1
-	sigs.k8s.io/controller-runtime => github.com/kubernetes-sigs/controller-runtime v0.13.1
 )
 
 require (
@@ -109,14 +110,15 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	go4.org/intern v0.0.0-20220301175310-a089fc204883 // indirect
+	go4.org/netipx v0.0.0-20220812043211-3cc044ffd68d // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760 // indirect
 	golang.org/x/crypto v0.3.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.6.0 // indirect
 	golang.org/x/oauth2 v0.4.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -129,11 +131,7 @@ require (
 	k8s.io/gengo v0.0.0-20211129171323-c02415ce4185 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.80.1 // indirect
-	k8s.io/kube-aggregator v0.26.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230109183929-3758b55a6596 // indirect
-	sigs.k8s.io/controller-runtime v0.14.4
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
-
-require go4.org/netipx v0.0.0-20220812043211-3cc044ffd68d // indirect

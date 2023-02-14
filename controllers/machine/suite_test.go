@@ -18,18 +18,14 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
 
 	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
-	"go/build"
 	"golang.org/x/mod/modfile"
 	"io/ioutil"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -44,6 +40,7 @@ import (
 	networkingv1alpha1 "github.com/onmetal/onmetal-api/api/networking/v1alpha1"
 	storagev1alpha1 "github.com/onmetal/onmetal-api/api/storage/v1alpha1"
 	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -127,6 +124,7 @@ var _ = BeforeSuite(func() {
 	Expect(networkingv1alpha1.AddToScheme(scheme)).To(Succeed())
 	Expect(ipamv1alpha1.AddToScheme(scheme)).To(Succeed())
 	Expect(storagev1alpha1.AddToScheme(scheme)).To(Succeed())
+	Expect(apiregistrationv1.AddToScheme(scheme)).To(Succeed())
 
 	cfg, err = utilsenvtest.StartWithExtensions(testEnv, testEnvExt)
 	Expect(err).NotTo(HaveOccurred())
@@ -137,29 +135,30 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	testbinPath := filepath.Join("..", "..", "testbin")
-	Expect(os.MkdirAll(testbinPath, os.ModePerm)).To(Succeed())
-
-	apiSrvBinPath := filepath.Join("..", "..", "testbin", "apiserver")
-	absApiSrvBinPath, err := filepath.Abs(apiSrvBinPath)
-	Expect(err).NotTo(HaveOccurred())
-
-	if _, err := os.Stat(apiSrvBinPath); errors.Is(err, os.ErrNotExist) {
-		cmd := exec.Command("go", "build", "-o",
-			absApiSrvBinPath,
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath, "cmd", "apiserver", "main.go"),
-		)
-		cmd.Dir = filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath)
-		Expect(cmd.Run()).To(Succeed())
-	}
+	//testbinPath := filepath.Join("..", "..", "testbin")
+	//Expect(os.MkdirAll(testbinPath, os.ModePerm)).To(Succeed())
+	//
+	//apiSrvBinPath := filepath.Join("..", "..", "testbin", "apiserver")
+	//absApiSrvBinPath, err := filepath.Abs(apiSrvBinPath)
+	//Expect(err).NotTo(HaveOccurred())
+	//
+	//if _, err := os.Stat(apiSrvBinPath); errors.Is(err, os.ErrNotExist) {
+	//	cmd := exec.Command("go", "build", "-o",
+	//		absApiSrvBinPath,
+	//		filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath, "cmd", "apiserver", "main.go"),
+	//	)
+	//	cmd.Dir = filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath)
+	//	Expect(cmd.Run()).To(Succeed())
+	//}
 
 	apiSrv, err := apiserver.New(cfg, apiserver.Options{
-		MainPath:     "github.com/onmetal/onmetal-api/onmetal-apiserver/cmd/apiserver",
+		MainPath:     "github.com/onmetal/onmetal-api/cmd/onmetal-apiserver",
 		BuildOptions: []buildutils.BuildOption{buildutils.ModModeMod},
 		ETCDServers:  []string{testEnv.ControlPlane.Etcd.URL.String()},
 		Host:         testEnvExt.APIServiceInstallOptions.LocalServingHost,
 		Port:         testEnvExt.APIServiceInstallOptions.LocalServingPort,
 		CertDir:      testEnvExt.APIServiceInstallOptions.LocalServingCertDir,
+		AttachOutput: true,
 	})
 	Expect(err).NotTo(HaveOccurred())
 
