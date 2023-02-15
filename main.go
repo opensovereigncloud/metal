@@ -34,6 +34,7 @@ import (
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
+	machinepoolcontroller "github.com/onmetal/metal-api/controllers/machine_pool"
 	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
 	schedulercontroller "github.com/onmetal/metal-api/controllers/scheduler"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switch/v1beta1"
@@ -245,7 +246,7 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
 		os.Exit(1)
 	}
-	if err = (&machinecontroller.PoolReconciler{
+	if err = (&machinepoolcontroller.PoolReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Pool"),

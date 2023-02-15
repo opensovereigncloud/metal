@@ -1,12 +1,9 @@
 /*
 Copyright (c) 2021 T-Systems International GmbH, SAP SE or an SAP affiliate company. All right reserved
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,11 +14,11 @@ limitations under the License.
 package controllers
 
 import (
-	"github.com/onmetal/onmetal-api/utils/testing"
+	"context"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,13 +33,11 @@ var _ = Describe("machine-controller", func() {
 })
 
 func testMachineOOB() {
-	ctx := testing.SetupContext()
-	ns := SetupTest(ctx)
-
 	var (
 		name      = "a237952c-3475-2b82-a85c-84d8b4f8cd2d"
-		namespace = ns.Namespace
+		namespace = "default"
 	)
+	ctx := context.Background()
 	oob := prepareOOB(name, namespace)
 
 	preparedMachine := prepareTestMachine(name, namespace)
