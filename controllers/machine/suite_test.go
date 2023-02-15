@@ -23,12 +23,10 @@ import (
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
 	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
-	"golang.org/x/mod/modfile"
-	"io/ioutil"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -83,19 +81,6 @@ var _ = BeforeSuite(func() {
 
 	var err error
 	By("bootstrapping test environment")
-	onmetalApiPackagePath := reflect.TypeOf(computev1alpha1.MachinePool{}).PkgPath()
-
-	goModData, err := ioutil.ReadFile(filepath.Join("..", "..", "go.mod"))
-	Expect(err).NotTo(HaveOccurred())
-
-	goModFile, err := modfile.Parse("", goModData, nil)
-	Expect(err).NotTo(HaveOccurred())
-
-	onmetalApiModulePath := findPackagePath(goModFile, onmetalApiPackagePath)
-	Expect(onmetalApiModulePath).NotTo(Equal(""))
-
-	//onmetalApiCrdPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath, "config", "apiserver", "apiservice", "bases")
-
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
@@ -105,6 +90,12 @@ var _ = BeforeSuite(func() {
 		},
 		ErrorIfAPIServicePathIsMissing: true,
 	}
+
+	cfg, err = utilsenvtest.StartWithExtensions(testEnv, testEnvExt)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+
+	DeferCleanup(utilsenvtest.StopWithExtensions, testEnv, testEnvExt)
 
 	oobonmetal.SchemeBuilder.Register(&oobonmetal.OOB{})
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
@@ -125,10 +116,7 @@ var _ = BeforeSuite(func() {
 	Expect(storagev1alpha1.AddToScheme(scheme)).To(Succeed())
 	Expect(apiregistrationv1.AddToScheme(scheme)).To(Succeed())
 
-	cfg, err = utilsenvtest.StartWithExtensions(testEnv, testEnvExt)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
-	DeferCleanup(utilsenvtest.StopWithExtensions, testEnv, testEnvExt)
+	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
@@ -145,63 +133,69 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	ctx, cancel := context.WithCancel(context.Background())
-	DeferCleanup(cancel)
-	go func() {
-		defer GinkgoRecover()
-		err := apiSrv.Start()
-		Expect(err).NotTo(HaveOccurred())
-	}()
+	Expect(apiSrv.Start()).To(Succeed())
+	DeferCleanup(apiSrv.Stop)
 
-	err = utilsenvtest.WaitUntilAPIServicesReadyWithTimeout(5*time.Minute, testEnvExt, k8sClient, scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: "0",
-	})
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&InventoryReconciler{
-		Client:    k8sManager.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("machine-inventory"),
-		Recorder:  k8sManager.GetEventRecorderFor("inventory-controller"),
-		Namespace: "default",
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&OOBReconciler{
-		Client:    k8sManager.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("machine-oob"),
-		Recorder:  k8sManager.GetEventRecorderFor("Machine-OOB"),
-		Namespace: "default",
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&PoolReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		defer GinkgoRecover()
-		Expect(k8sManager.Start(ctx)).To(Succeed())
-	}()
+	Expect(utilsenvtest.WaitUntilAPIServicesReadyWithTimeout(30*time.Second, testEnvExt, k8sClient, scheme)).To(Succeed())
 })
 
-var _ = AfterSuite(func() {
-	cancel()
-	By("tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
-})
-
-func findPackagePath(modFile *modfile.File, packagePath string) string {
-	for _, req := range modFile.Require {
-		if strings.HasPrefix(packagePath, req.Mod.Path) {
-			return req.Mod.String()
+func SetupTest(ctx context.Context) *corev1.Namespace {
+	var (
+		ns = &corev1.Namespace{}
+	)
+	BeforeEach(func() {
+		var mgrCtx context.Context
+		mgrCtx, cancel = context.WithCancel(ctx)
+		*ns = corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "testns-",
+			},
 		}
-	}
-	return ""
+		Expect(k8sClient.Create(ctx, ns)).To(Succeed(), "failed to create test namespace")
+
+		k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+			Scheme:             scheme,
+			Host:               "127.0.0.1",
+			MetricsBindAddress: "0",
+		})
+		Expect(err).ToNot(HaveOccurred())
+
+		// register reconciler here
+		err = (&InventoryReconciler{
+			Client:    k8sManager.GetClient(),
+			Log:       ctrl.Log.WithName("controllers").WithName("machine-inventory"),
+			Recorder:  k8sManager.GetEventRecorderFor("inventory-controller"),
+			Namespace: "default",
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = (&OOBReconciler{
+			Client:    k8sManager.GetClient(),
+			Log:       ctrl.Log.WithName("controllers").WithName("machine-oob"),
+			Recorder:  k8sManager.GetEventRecorderFor("Machine-OOB"),
+			Namespace: "default",
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = (&PoolReconciler{
+			Client: k8sManager.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+
+		go func() {
+			defer GinkgoRecover()
+			Expect(k8sManager.Start(mgrCtx)).To(Succeed(), "failed to start manager")
+		}()
+	})
+
+	AfterEach(func() {
+		cancel()
+		Expect(k8sClient.Delete(ctx, ns)).To(Succeed(), "failed to delete test namespace")
+		Expect(k8sClient.DeleteAllOf(ctx, &oobv1.OOB{})).To(Succeed())
+		Expect(k8sClient.DeleteAllOf(ctx, &machinev1alpha2.Machine{})).To(Succeed())
+		Expect(k8sClient.DeleteAllOf(ctx, &computev1alpha1.MachinePool{})).To(Succeed())
+	})
+
+	return ns
 }

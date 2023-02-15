@@ -17,7 +17,7 @@ limitations under the License.
 package controllers
 
 import (
-	"context"
+	"github.com/onmetal/onmetal-api/utils/testing"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
@@ -36,11 +36,13 @@ var _ = Describe("machine-controller", func() {
 })
 
 func testMachineOOB() {
+	ctx := testing.SetupContext()
+	ns := SetupTest(ctx)
+
 	var (
 		name      = "a237952c-3475-2b82-a85c-84d8b4f8cd2d"
-		namespace = "default"
+		namespace = ns.Namespace
 	)
-	ctx := context.Background()
 	oob := prepareOOB(name, namespace)
 
 	preparedMachine := prepareTestMachine(name, namespace)

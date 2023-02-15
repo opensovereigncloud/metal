@@ -19,6 +19,7 @@ import (
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/onmetal/metal-api/controllers/scheduler"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	"github.com/onmetal/onmetal-api/utils/testing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +29,9 @@ import (
 )
 
 var _ = Describe("pool-controller", func() {
+	ctx := testing.SetupContext()
+	ns := SetupTest(ctx)
+
 	Context("Controller Test", func() {
 		It("Should watch machine objects and maintain the pool", func() {
 			machine := &machinev1alpha2.Machine{}
@@ -37,7 +41,7 @@ var _ = Describe("pool-controller", func() {
 			Expect(err).ToNot(HaveOccurred())
 			var (
 				name      = u.String()
-				namespace = "default"
+				namespace = ns.Namespace
 			)
 
 			// prepare test data
