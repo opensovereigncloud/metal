@@ -51,9 +51,6 @@ import (
 var (
 	cfg       *rest.Config
 	k8sClient client.Client
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
 )
 
 const (
@@ -84,7 +81,7 @@ var _ = BeforeSuite(func() {
 
 	var err error
 	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
+	testEnv := &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
 	testEnvExt := &utilsenvtest.EnvironmentExtensions{
@@ -100,8 +97,8 @@ var _ = BeforeSuite(func() {
 
 	DeferCleanup(utilsenvtest.StopWithExtensions, testEnv, testEnvExt)
 
-	//machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
-	//inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Size{}, &inventoriesv1alpha1.SizeList{})
+	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
+	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Size{}, &inventoriesv1alpha1.SizeList{})
 
 	Expect(inventoriesv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
@@ -151,7 +148,6 @@ func SetupTest(ctx context.Context) *corev1.Namespace {
 
 		k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 			Scheme:             scheme.Scheme,
-			Host:               "127.0.0.1",
 			MetricsBindAddress: "0",
 		})
 		Expect(err).ToNot(HaveOccurred())

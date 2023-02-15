@@ -14,6 +14,7 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"github.com/google/uuid"
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
@@ -44,8 +45,8 @@ var _ = Describe("pool-controller", func() {
 		)
 
 		// prepare test data
-		createSizes(namespace)
-		createAvailableMachine(name, namespace, machine)
+		createSizes(ctx, namespace)
+		createAvailableMachine(ctx, name, namespace, machine)
 
 		// testing
 		By("Pool created")
@@ -160,7 +161,7 @@ var _ = Describe("pool-controller", func() {
 })
 
 // nolint reason:temp
-func createAvailableMachine(name, namespace string, machine *machinev1alpha2.Machine) {
+func createAvailableMachine(ctx context.Context, name, namespace string, machine *machinev1alpha2.Machine) {
 	By("Expect successful machine creation")
 	Expect(k8sClient.Create(ctx, prepareTestMachineWithSizeLabels(name, namespace))).Should(Succeed())
 
@@ -219,7 +220,7 @@ func prepareMachineStatus(status string) machinev1alpha2.MachineStatus {
 }
 
 // nolint reason:temp
-func createSizes(namespace string) {
+func createSizes(ctx context.Context, namespace string) {
 	size6cpu := inventoryv1alpha1.Size{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "m5.metal.6cpu",
