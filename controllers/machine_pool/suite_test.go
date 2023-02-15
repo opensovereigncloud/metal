@@ -20,30 +20,24 @@ import (
 	"context"
 	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
 	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
-	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/envtest/komega"
 	"testing"
 	"time"
 
-	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
-	networkingv1alpha1 "github.com/onmetal/onmetal-api/api/networking/v1alpha1"
-	storagev1alpha1 "github.com/onmetal/onmetal-api/api/storage/v1alpha1"
-	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
+	"k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -67,13 +61,22 @@ const (
 	interval = time.Millisecond * 250
 )
 
-var scheme = runtime.NewScheme()
+const (
+	pollingInterval      = 50 * time.Millisecond
+	eventuallyTimeout    = 3 * time.Second
+	consistentlyDuration = 1 * time.Second
+	apiServiceTimeout    = 30 * time.Second
+)
 
 // nolint
-func TestMachineController(t *testing.T) {
+func TestMachinePoolController(t *testing.T) {
+	SetDefaultConsistentlyPollingInterval(pollingInterval)
+	SetDefaultEventuallyPollingInterval(pollingInterval)
+	SetDefaultEventuallyTimeout(eventuallyTimeout)
+	SetDefaultConsistentlyDuration(consistentlyDuration)
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Machine Controller Suite")
+	RunSpecs(t, "MachinePool Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -97,30 +100,22 @@ var _ = BeforeSuite(func() {
 
 	DeferCleanup(utilsenvtest.StopWithExtensions, testEnv, testEnvExt)
 
-	oobonmetal.SchemeBuilder.Register(&oobonmetal.OOB{})
-	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
-	switchv1beta1.SchemeBuilder.Register(&switchv1beta1.Switch{}, &switchv1beta1.SwitchList{})
-	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})
-	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
+	//machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
+	//inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Size{}, &inventoriesv1alpha1.SizeList{})
 
-	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(benchv1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(switchv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
-
-	Expect(computev1alpha1.AddToScheme(scheme)).To(Succeed())
-	Expect(networkingv1alpha1.AddToScheme(scheme)).To(Succeed())
-	Expect(ipamv1alpha1.AddToScheme(scheme)).To(Succeed())
-	Expect(storagev1alpha1.AddToScheme(scheme)).To(Succeed())
-	Expect(apiregistrationv1.AddToScheme(scheme)).To(Succeed())
+	Expect(inventoriesv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(corev1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(machinev1alpha2.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(computev1alpha1.AddToScheme(scheme.Scheme)).To(Succeed())
+	Expect(apiregistrationv1.AddToScheme(scheme.Scheme)).To(Succeed())
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+
+	komega.SetClient(k8sClient)
 
 	apiSrv, err := apiserver.New(cfg, apiserver.Options{
 		MainPath:     "github.com/onmetal/onmetal-api/cmd/onmetal-apiserver",
@@ -136,12 +131,13 @@ var _ = BeforeSuite(func() {
 	Expect(apiSrv.Start()).To(Succeed())
 	DeferCleanup(apiSrv.Stop)
 
-	Expect(utilsenvtest.WaitUntilAPIServicesReadyWithTimeout(30*time.Second, testEnvExt, k8sClient, scheme)).To(Succeed())
+	Expect(utilsenvtest.WaitUntilAPIServicesReadyWithTimeout(apiServiceTimeout, testEnvExt, k8sClient, scheme.Scheme)).To(Succeed())
 })
 
 func SetupTest(ctx context.Context) *corev1.Namespace {
 	var (
-		ns = &corev1.Namespace{}
+		cancel context.CancelFunc
+		ns     = &corev1.Namespace{}
 	)
 	BeforeEach(func() {
 		var mgrCtx context.Context
@@ -154,7 +150,7 @@ func SetupTest(ctx context.Context) *corev1.Namespace {
 		Expect(k8sClient.Create(ctx, ns)).To(Succeed(), "failed to create test namespace")
 
 		k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-			Scheme:             scheme,
+			Scheme:             scheme.Scheme,
 			Host:               "127.0.0.1",
 			MetricsBindAddress: "0",
 		})
@@ -164,6 +160,7 @@ func SetupTest(ctx context.Context) *corev1.Namespace {
 		err = (&PoolReconciler{
 			Client: k8sManager.GetClient(),
 			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
+			Scheme: k8sManager.GetScheme(),
 		}).SetupWithManager(k8sManager)
 		Expect(err).ToNot(HaveOccurred())
 
@@ -176,8 +173,6 @@ func SetupTest(ctx context.Context) *corev1.Namespace {
 	AfterEach(func() {
 		cancel()
 		Expect(k8sClient.Delete(ctx, ns)).To(Succeed(), "failed to delete test namespace")
-		Expect(k8sClient.DeleteAllOf(ctx, &oobv1.OOB{})).To(Succeed())
-		Expect(k8sClient.DeleteAllOf(ctx, &machinev1alpha2.Machine{})).To(Succeed())
 		Expect(k8sClient.DeleteAllOf(ctx, &computev1alpha1.MachinePool{})).To(Succeed())
 	})
 

@@ -32,132 +32,130 @@ var _ = Describe("pool-controller", func() {
 	ctx := testing.SetupContext()
 	ns := SetupTest(ctx)
 
-	Context("Controller Test", func() {
-		It("Should watch machine objects and maintain the pool", func() {
-			machine := &machinev1alpha2.Machine{}
-			pool := &poolv1alpha1.MachinePool{}
+	It("Should watch machine objects and maintain the pool", func() {
+		machine := &machinev1alpha2.Machine{}
+		pool := &poolv1alpha1.MachinePool{}
 
-			u, err := uuid.NewUUID()
-			Expect(err).ToNot(HaveOccurred())
-			var (
-				name      = u.String()
-				namespace = ns.Namespace
-			)
+		u, err := uuid.NewUUID()
+		Expect(err).ToNot(HaveOccurred())
+		var (
+			name      = u.String()
+			namespace = ns.Name
+		)
 
-			// prepare test data
-			createSizes(namespace)
-			createAvailableMachine(name, namespace, machine)
+		// prepare test data
+		createSizes(namespace)
+		createAvailableMachine(name, namespace, machine)
 
-			// testing
-			By("Pool created")
-			Eventually(func() bool {
-				if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
-					return false
-				}
-
-				return true
-			}, timeout, interval).Should(BeTrue())
-
-			By("The pool has available machine classes")
-			Expect(len(pool.Status.AvailableMachineClasses)).Should(Equal(2))
-
-			By("Available machine classes matched with size labels")
-			Expect(func() bool {
-				var availableSizeLabels = map[string]string{
-					"m5.metal.4cpu": "true",
-					"m5.metal.2cpu": "true",
-				}
-
-				for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
-					if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
-						return false
-					}
-				}
-
-				return true
-			}()).Should(BeTrue())
-
-			By("Available machine classes do not contain a size label that is not assigned to a machine")
-			Expect(func() bool {
-				var notAssignedLabel = map[string]string{
-					"m5.metal.6cpu": "true",
-				}
-
-				for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
-					if _, ok := notAssignedLabel[availableMachineClass.Name]; ok {
-						return false
-					}
-				}
-
-				return true
-			}()).Should(BeTrue())
-
-			By("Expect successful machine labels update")
-			machine.Labels = map[string]string{
-				"machine.onmetal.de/size-m5.metal.6cpu": "true",
+		// testing
+		By("Pool created")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+				return false
 			}
-			Expect(k8sClient.Update(ctx, machine)).To(Succeed())
 
-			By("The available machine classes have been updated following the change in machine labels")
-			Eventually(func() bool {
-				if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+			return true
+		}, timeout, interval).Should(BeTrue())
+
+		By("The pool has available machine classes")
+		Expect(len(pool.Status.AvailableMachineClasses)).Should(Equal(2))
+
+		By("Available machine classes matched with size labels")
+		Expect(func() bool {
+			var availableSizeLabels = map[string]string{
+				"m5.metal.4cpu": "true",
+				"m5.metal.2cpu": "true",
+			}
+
+			for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
+				if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
 					return false
 				}
+			}
 
-				var availableSizeLabels = map[string]string{
-					"m5.metal.6cpu": "true",
-				}
+			return true
+		}()).Should(BeTrue())
 
-				for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
-					if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
-						return false
-					}
-				}
+		By("Available machine classes do not contain a size label that is not assigned to a machine")
+		Expect(func() bool {
+			var notAssignedLabel = map[string]string{
+				"m5.metal.6cpu": "true",
+			}
 
-				return true
-			}, timeout, interval).Should(BeTrue())
-
-			By("Expect successful machine status update to Running")
-			machine.Status = prepareMachineStatus(scheduler.ReservationStatusRunning)
-			Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
-
-			By("Expect there is machine in running reservation status")
-			Eventually(func() bool {
-				if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+			for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
+				if _, ok := notAssignedLabel[availableMachineClass.Name]; ok {
 					return false
 				}
+			}
 
-				return machine.Status.Reservation.Status == "Running"
-			}, timeout, interval).Should(BeTrue())
+			return true
+		}()).Should(BeTrue())
 
-			// refresh pool obj
-			Eventually(func() bool {
-				if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+		By("Expect successful machine labels update")
+		machine.Labels = map[string]string{
+			"machine.onmetal.de/size-m5.metal.6cpu": "true",
+		}
+		Expect(k8sClient.Update(ctx, machine)).To(Succeed())
+
+		By("The available machine classes have been updated following the change in machine labels")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+				return false
+			}
+
+			var availableSizeLabels = map[string]string{
+				"m5.metal.6cpu": "true",
+			}
+
+			for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
+				if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
 					return false
 				}
+			}
 
-				return true
-			}, timeout, interval).Should(BeTrue())
+			return true
+		}, timeout, interval).Should(BeTrue())
 
-			By("Pool has no available machine classes after machine becomes unavailable")
-			Expect(len(pool.Status.AvailableMachineClasses)).Should(Equal(0))
+		By("Expect successful machine status update to Running")
+		machine.Status = prepareMachineStatus(scheduler.ReservationStatusRunning)
+		Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
-			By("Machine deleted")
-			Eventually(func() bool {
-				if err := k8sClient.Delete(ctx, machine); err != nil {
-					return false
-				}
+		By("Expect there is machine in running reservation status")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+				return false
+			}
 
-				return true
-			}, timeout, interval).Should(BeTrue())
+			return machine.Status.Reservation.Status == "Running"
+		}, timeout, interval).Should(BeTrue())
 
-			By("Pool deleted after deleting machine")
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool)
+		// refresh pool obj
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+				return false
+			}
 
-				return apierrors.IsNotFound(err)
-			}, timeout, interval).Should(BeTrue())
-		})
+			return true
+		}, timeout, interval).Should(BeTrue())
+
+		By("Pool has no available machine classes after machine becomes unavailable")
+		Expect(len(pool.Status.AvailableMachineClasses)).Should(Equal(0))
+
+		By("Machine deleted")
+		Eventually(func() bool {
+			if err := k8sClient.Delete(ctx, machine); err != nil {
+				return false
+			}
+
+			return true
+		}, timeout, interval).Should(BeTrue())
+
+		By("Pool deleted after deleting machine")
+		Eventually(func() bool {
+			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool)
+
+			return apierrors.IsNotFound(err)
+		}, timeout, interval).Should(BeTrue())
 	})
 })
 
