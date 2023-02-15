@@ -21,13 +21,13 @@ import (
 	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
-
 	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
+	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
 	"golang.org/x/mod/modfile"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"testing"
 	"time"
@@ -47,7 +47,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -134,22 +133,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
-	//testbinPath := filepath.Join("..", "..", "testbin")
-	//Expect(os.MkdirAll(testbinPath, os.ModePerm)).To(Succeed())
-	//
-	//apiSrvBinPath := filepath.Join("..", "..", "testbin", "apiserver")
-	//absApiSrvBinPath, err := filepath.Abs(apiSrvBinPath)
-	//Expect(err).NotTo(HaveOccurred())
-	//
-	//if _, err := os.Stat(apiSrvBinPath); errors.Is(err, os.ErrNotExist) {
-	//	cmd := exec.Command("go", "build", "-o",
-	//		absApiSrvBinPath,
-	//		filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath, "cmd", "apiserver", "main.go"),
-	//	)
-	//	cmd.Dir = filepath.Join(build.Default.GOPATH, "pkg", "mod", onmetalApiModulePath)
-	//	Expect(cmd.Run()).To(Succeed())
-	//}
 
 	apiSrv, err := apiserver.New(cfg, apiserver.Options{
 		MainPath:     "github.com/onmetal/onmetal-api/cmd/onmetal-apiserver",
