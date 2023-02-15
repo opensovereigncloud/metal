@@ -5,6 +5,8 @@ IMG ?= controller:latest
 CRD_OPTIONS ?= "crd"
 # Docker image name for the mkdocs based local development setup
 IMAGE=metal-api/documentation
+# Kubebuilder assets version used to run testing environment
+KUBE_VERSION ?= 1.26.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -95,9 +97,8 @@ clean-docs: ## Remove all local mkdocs Docker images (cleanup).
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 .PHONY: test
 test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); ACK_GINKGO_DEPRECATIONS=1.16.5 go test ./... -coverprofile cover.out
+	source $(shell pwd)/hack/setup-envtest.sh; VERSION=${KUBE_VERSION} fetch_envtest_tools; VERSION=${KUBE_VERSION} setup_envtest_env; \
+	KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=600s KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT=600s go test ./... -coverprofile cover.out
 
 ##@ Build
 

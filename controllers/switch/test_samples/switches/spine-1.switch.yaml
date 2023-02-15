@@ -1,0 +1,16 @@
+apiVersion: switch.onmetal.de/v1beta1
+kind: Switch
+metadata:
+  name: a177382d-a3b4-3ecd-97a4-01cc15e749e4
+  namespace: onmetal
+  labels:
+    switch.onmetal.de/inventoried: "true"
+  annotations:
+    hardware/chassis-id: 68215f47176e
+spec:
+  inventoryRef:
+    name: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+  topSpine: true
+  managed: true
+  cordon: false
+  scanPorts: true

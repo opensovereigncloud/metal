@@ -72,24 +72,27 @@ rules:
   resources:
   - ips
   verbs:
+  - create
   - get
   - list
-  - watch
+  - patch
+  - update
 - apiGroups:
   - ipam.onmetal.de
   resources:
   - ips/status
   verbs:
   - get
-  - list
-  - watch
 - apiGroups:
   - ipam.onmetal.de
   resources:
   - subnets
   verbs:
+  - create
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - ipam.onmetal.de
@@ -97,8 +100,6 @@ rules:
   - subnets/status
   verbs:
   - get
-  - list
-  - watch
 - apiGroups:
   - machine.onmetal.de
   resources:

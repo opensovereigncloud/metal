@@ -174,6 +174,16 @@ func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
 		return false
 	}
 
+	// The status update below did literally nothing, since there were no changes
+	// of status fields. Also, I didn't manage to find where the following fields
+	// are updated in case of referenced OOB object deletion. Hence the status fields
+	// update was added. Apart from that, predicates should not contain any calls
+	// which updates either object - the source of the event, or any other related
+	// objects. In current case update logic should be moved to finalizer
+	// Artem Bortnikov <artem.bortnikov@t-systems.com>
+	machine.Status.OOB.Reference = nil
+	machine.Status.OOB.Exist = false
+
 	if updErr := r.Client.Status().Update(ctx, machine); updErr != nil {
 		r.Log.Info("can't update machine status for oob", "error", updErr)
 		return false

@@ -21,7 +21,7 @@ import (
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"

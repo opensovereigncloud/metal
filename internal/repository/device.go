@@ -350,7 +350,7 @@ func connectionInfoEnrichment(sw metav1.ObjectMeta, nicsSpec *inventoriesv1alpha
 	machineInterfaces []machinev1alpha2.Interface) []machinev1alpha2.Interface {
 	return append(interfaces, machinev1alpha2.Interface{
 		Name:            nicsSpec.Name,
-		Lanes:           switchInterface.Lanes,
+		Lanes:           uint8(switchInterface.GetLanes()),
 		IPv4:            &machinev1alpha2.IPAddressSpec{Address: getAddress(switchInterface, ipamv1alpha1.CIPv4SubnetType)},
 		IPv6:            &machinev1alpha2.IPAddressSpec{Address: getAddress(switchInterface, ipamv1alpha1.CIPv6SubnetType)},
 		Moved:           getMovedInterface(nicsSpec, machineInterfaces),
@@ -368,7 +368,7 @@ func connectionInfoEnrichment(sw metav1.ObjectMeta, nicsSpec *inventoriesv1alpha
 func getAddress(switchNIC *switchv1beta1.InterfaceSpec, af ipamv1alpha1.SubnetAddressType) string {
 	var ipAddress string
 	for _, addr := range switchNIC.IP {
-		ip, ipNet, err := net.ParseCIDR(addr.Address)
+		ip, ipNet, err := net.ParseCIDR(addr.GetAddress())
 		if err != nil {
 			return ipAddress
 		}

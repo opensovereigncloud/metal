@@ -2408,5 +2408,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>99a336f</code>.
+on git commit <code>1aa370a</code>.
 </em></p>

@@ -35,7 +35,7 @@ import (
 	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
 	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
 	schedulercontroller "github.com/onmetal/metal-api/controllers/scheduler"
-	switchcontroller "github.com/onmetal/metal-api/controllers/switch/v1beta1"
+	switchcontroller "github.com/onmetal/metal-api/controllers/switch"
 
 	"github.com/onmetal/metal-api/internal/repository"
 	"github.com/onmetal/metal-api/internal/usecase"
@@ -180,6 +180,14 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch")
+		os.Exit(1)
+	}
+	if err = (&switchcontroller.SwConfigReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SwitchConfig"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SwitchConfig")
 		os.Exit(1)
 	}
 	if err = (&inventorycontrollers.InventoryReconciler{

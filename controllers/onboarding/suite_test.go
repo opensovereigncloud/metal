@@ -27,7 +27,7 @@ import (
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/repository"
 	"github.com/onmetal/metal-api/internal/usecase"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -106,7 +106,7 @@ var _ = BeforeSuite(func() {
 		err = k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	cancel()

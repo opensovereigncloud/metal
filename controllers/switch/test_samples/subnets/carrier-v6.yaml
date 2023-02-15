@@ -1,0 +1,15 @@
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: Subnet
+metadata:
+  name: switch-ranges-v6
+  namespace: onmetal
+  labels:
+    ipam.onmetal.de/object-purpose: "switch-carrier"
+spec:
+  cidr: "fd00:afc0:e014::/52"
+  network:
+    name: underlay
+  regions:
+    - availabilityZones:
+        - B
+      name: eu-central

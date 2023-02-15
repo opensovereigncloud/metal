@@ -18,26 +18,30 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: Total amount of non-management network interfaces
+    - description: Switch ASN
+      jsonPath: .status.asn
+      name: ASN
+      type: integer
+    - description: Number of switch ports
       jsonPath: .status.switchPorts
       name: Ports
       type: integer
-    - description: switch's role
+    - description: Switch's role
       jsonPath: .status.role
       name: Role
       type: string
-    - description: Vertical level of switch connection
-      jsonPath: .status.connectionLevel
-      name: Connection Level
+    - description: Vertical level in switches' connections hierarchy
+      jsonPath: .status.layer
+      name: Layer
       type: integer
     - description: Switch state
-      jsonPath: .status.switch.state
-      name: Switch State
+      jsonPath: .status.state
+      name: State
       type: string
-    - description: Switch state message. Reports about any issues duiring reconciliation
-        process
-      jsonPath: .status.switch.message
+    - description: Switch state message reports about any issues during processing
+      jsonPath: .status.message
       name: Message
+      priority: 1
       type: string
     name: v1beta1
     schema:
@@ -82,24 +86,28 @@ spec:
                       ipv4MaskLength:
                         description: IPv4MaskLength defines prefix of subnet where
                           switch port's IPv4 address should be reserved
+                        format: int32
                         maximum: 32
                         minimum: 1
                         type: integer
                       ipv6Prefix:
                         description: IPv6Prefix defines prefix of subnet where switch
                           port's IPv6 address should be reserved
+                        format: int32
                         maximum: 128
                         minimum: 1
                         type: integer
                       lanes:
                         description: Lanes refers to a number of lanes used by switch
                           port
+                        format: int32
                         maximum: 8
                         minimum: 1
                         type: integer
                       mtu:
                         description: MTU refers to maximum transmission unit value
                           which should be applied on switch port
+                        format: int32
                         maximum: 65535
                         minimum: 84
                         type: integer
@@ -185,15 +193,31 @@ spec:
                                 type: object
                             type: object
                           type: array
+                        ipv4MaskLength:
+                          description: IPv4MaskLength defines prefix of subnet where
+                            switch port's IPv4 address should be reserved
+                          format: int32
+                          maximum: 32
+                          minimum: 1
+                          type: integer
+                        ipv6Prefix:
+                          description: IPv6Prefix defines prefix of subnet where switch
+                            port's IPv6 address should be reserved
+                          format: int32
+                          maximum: 128
+                          minimum: 1
+                          type: integer
                         lanes:
                           description: Lanes refers to a number of lanes used by switch
                             port
+                          format: int32
                           maximum: 8
                           minimum: 1
                           type: integer
                         mtu:
                           description: MTU refers to maximum transmission unit value
                             which should be applied on switch port
+                          format: int32
                           maximum: 65535
                           minimum: 84
                           type: integer
@@ -208,11 +232,16 @@ spec:
                           type: string
                       type: object
                     type: array
-                  scan:
-                    default: true
-                    description: Scan is a flag defining whether to run periodical
-                      scanning on switch ports
-                    type: boolean
+                type: object
+              inventoryRef:
+                description: InventoryRef contains reference to corresponding inventory
+                  object Empty InventoryRef means that there is no corresponding Inventory
+                  object
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
                 type: object
               ipam:
                 description: IPAM refers to selectors for subnets which will be used
@@ -222,21 +251,6 @@ spec:
                     description: LoopbackAddresses defines selector for IP object
                       which will be assigned to switch's loopback interface
                     properties:
-                      addressFamilies:
-                        description: AddressFamilies defines what ip address families
-                          should be claimed
-                        properties:
-                          ipv4:
-                            default: true
-                            description: IPv4 is a flag defining whether IPv4 is used
-                              or not
-                            type: boolean
-                          ipv6:
-                            default: true
-                            description: IPv6 is a flag defining whether IPv6 is used
-                              or not
-                            type: boolean
-                        type: object
                       fieldSelector:
                         description: FieldSelector contains label key and field path
                           where to get label value for search. If FieldSelector is
@@ -316,21 +330,6 @@ spec:
                     description: SouthSubnets defines selector for subnet object which
                       will be assigned to switch
                     properties:
-                      addressFamilies:
-                        description: AddressFamilies defines what ip address families
-                          should be claimed
-                        properties:
-                          ipv4:
-                            default: true
-                            description: IPv4 is a flag defining whether IPv4 is used
-                              or not
-                            type: boolean
-                          ipv6:
-                            default: true
-                            description: IPv6 is a flag defining whether IPv6 is used
-                              or not
-                            type: boolean
-                        type: object
                       fieldSelector:
                         description: FieldSelector contains label key and field path
                           where to get label value for search. If FieldSelector is
@@ -412,47 +411,79 @@ spec:
                 description: Managed is a flag defining whether Switch object would
                   be processed during reconciliation
                 type: boolean
+              scanPorts:
+                default: true
+                description: ScanPorts is a flag defining whether to run periodical
+                  scanning on switch ports
+                type: boolean
               topSpine:
                 default: false
                 description: TopSpine is a flag defining whether Switch is a top-level
                   spine switch
                 type: boolean
-              uuid:
-                description: UUID is a unique system identifier
-                type: string
             required:
             - cordon
             - managed
+            - scanPorts
             - topSpine
-            - uuid
             type: object
           status:
             description: SwitchStatus contains observed state of Switch
             properties:
-              agent:
-                description: ConfigAgent contains information about current state
-                  of configuration agent running on the switch
+              asn:
+                description: ASN contains current autonomous system number defined
+                  for switch
+                format: int32
+                type: integer
+              conditions:
+                description: Condition contains state of port parameters
+                items:
+                  description: ConditionSpec contains current condition of port parameters
+                  properties:
+                    lastTransitionTimestamp:
+                      description: LastTransitionTimestamp reflects the last timestamp
+                        when condition changed state from one to another
+                      type: string
+                    lastUpdateTimestamp:
+                      description: LastUpdateTimestamp reflects the last timestamp
+                        when condition was updated
+                      type: string
+                    message:
+                      description: Message reflects the verbose message about the
+                        reason
+                      type: string
+                    name:
+                      description: Name reflects the name of the condition
+                      enum:
+                      - Initialized
+                      - InterfacesOK
+                      - ConfigRefOK
+                      - PortParametersOK
+                      - NeighborsOK
+                      - LayerAndRoleOK
+                      - LoopbacksOK
+                      - AsnOK
+                      - SubnetsOK
+                      - IPAddressesOK
+                      type: string
+                    reason:
+                      description: Reason reflects the reason of condition state
+                      type: string
+                    state:
+                      description: State reflects the state of the condition
+                      type: boolean
+                  type: object
+                type: array
+              configRef:
+                description: ConfigRef contains reference to corresponding SwitchConfig
+                  object Empty ConfigRef means that there is no corresponding SwitchConfig
+                  object
                 properties:
-                  lastCheck:
-                    description: LastCheck refers to the last timestamp when configuration
-                      was applied
-                    type: string
-                  message:
-                    description: Message contains a brief description of the current
-                      state
-                    type: string
-                  state:
-                    description: State is the current state of corresponding object
-                      or process
-                    enum:
-                    - active
-                    - failed
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
-              connectionLevel:
-                description: ConnectionLevel refers to switch's current position in
-                  connection hierarchy
-                type: integer
               interfaces:
                 additionalProperties:
                   description: InterfaceSpec defines the state of switch's interface
@@ -465,12 +496,11 @@ spec:
                       - south
                       type: string
                     fec:
-                      description: FEC refers to the current interface's forward error
-                        correction type
+                      description: FEC refers to forward error correction method which
+                        should be applied on switch port
                       enum:
-                      - none
                       - rs
-                      - fc
+                      - none
                       type: string
                     ip:
                       description: IP contains a list of IP addresses that are assigned
@@ -481,6 +511,12 @@ spec:
                         properties:
                           address:
                             description: Address refers to the ip address value
+                            type: string
+                          addressFamily:
+                            description: AddressFamily refers to the AF of IP address
+                            enum:
+                            - IPv4
+                            - IPv6
                             type: string
                           extraAddress:
                             default: false
@@ -496,16 +532,37 @@ spec:
                             type: string
                         type: object
                       type: array
+                    ipv4MaskLength:
+                      description: IPv4MaskLength defines prefix of subnet where switch
+                        port's IPv4 address should be reserved
+                      format: int32
+                      maximum: 32
+                      minimum: 1
+                      type: integer
+                    ipv6Prefix:
+                      description: IPv6Prefix defines prefix of subnet where switch
+                        port's IPv6 address should be reserved
+                      format: int32
+                      maximum: 128
+                      minimum: 1
+                      type: integer
                     lanes:
-                      description: Lanes refers to the number of lanes used by interface
+                      description: Lanes refers to a number of lanes used by switch
+                        port
+                      format: int32
+                      maximum: 8
+                      minimum: 1
                       type: integer
                     macAddress:
                       description: MACAddress refers to the interface's hardware address
                         validation pattern
                       type: string
                     mtu:
-                      description: MTU refers to the current value of interface's
-                        MTU
+                      description: MTU refers to maximum transmission unit value which
+                        should be applied on switch port
+                      format: int32
+                      maximum: 65535
+                      minimum: 84
                       type: integer
                     peer:
                       description: Peer refers to the info about device connected
@@ -548,23 +605,23 @@ spec:
                       format: int32
                       type: integer
                     state:
-                      description: State refers to the current interface's operational
-                        state
+                      description: State defines default state of switch port
                       enum:
                       - up
                       - down
                       type: string
                   required:
                   - direction
-                  - fec
-                  - lanes
                   - macAddress
-                  - mtu
                   - speed
-                  - state
                   type: object
                 description: Interfaces refers to switch's interfaces configuration
                 type: object
+              layer:
+                description: Layer refers to switch's current position in connection
+                  hierarchy
+                format: int32
+                type: integer
               loopbackAddresses:
                 description: LoopbackAddresses refers to the switch's loopback addresses
                 items:
@@ -572,6 +629,12 @@ spec:
                   properties:
                     address:
                       description: Address refers to the ip address value
+                      type: string
+                    addressFamily:
+                      description: AddressFamily refers to the AF of IP address
+                      enum:
+                      - IPv4
+                      - IPv6
                       type: string
                     extraAddress:
                       default: false
@@ -587,6 +650,9 @@ spec:
                       type: string
                   type: object
                 type: array
+              message:
+                description: Message contains a brief description of the current state
+                type: string
               role:
                 description: Role refers to switch's role
                 enum:
@@ -594,11 +660,27 @@ spec:
                 - leaf
                 - edge-leaf
                 type: string
+              state:
+                description: State is the current state of corresponding object or
+                  process
+                enum:
+                - Initial
+                - Processing
+                - Ready
+                - Invalid
+                - Pending
+                type: string
               subnets:
                 description: Subnets refers to the switch's south subnets
                 items:
                   description: SubnetSpec defines switch's subnet info
                   properties:
+                    addressFamily:
+                      description: AddressFamily refers to the AF of subnet
+                      enum:
+                      - IPv4
+                      - IPv6
+                      type: string
                     cidr:
                       description: CIDR refers to subnet CIDR validation pattern
                       type: string
@@ -626,30 +708,14 @@ spec:
                       type: object
                   type: object
                 type: array
-              switch:
-                description: SwitchState contains information about current Switch
-                  object's processing state
-                properties:
-                  message:
-                    description: Message contains a brief description of the current
-                      state
-                    type: string
-                  state:
-                    description: State is the current state of corresponding object
-                      or process
-                    enum:
-                    - initial
-                    - processing
-                    - ready
-                    - invalid
-                    type: string
-                type: object
               switchPorts:
                 description: SwitchPorts refers to the number of ports excluding management
                   interfaces, loopback etc.
+                format: int32
                 type: integer
               totalPorts:
                 description: TotalPorts refers to total number of ports
+                format: int32
                 type: integer
             type: object
         required:

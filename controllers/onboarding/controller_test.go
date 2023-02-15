@@ -22,10 +22,12 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 )
 
 var _ = Describe("machine-controller", func() {
@@ -257,62 +259,65 @@ func prepareSwitch(namespace string) *switchv1beta1.Switch {
 			},
 		},
 		Spec: switchv1beta1.SwitchSpec{
-			UUID:     "40d13165-d984-331c-bca2-5a52f3072e2b",
-			TopSpine: false,
-			Managed:  true,
-			Cordon:   false,
+			InventoryRef: &v1.LocalObjectReference{Name: "40d13165-d984-331c-bca2-5a52f3072e2b"},
+			TopSpine:     pointer.Bool(false),
+			Managed:      pointer.Bool(true),
+			Cordon:       pointer.Bool(false),
+			ScanPorts:    pointer.Bool(true),
 		},
 	}
 }
 
 func getSwitchesStatus() switchv1beta1.SwitchStatus {
 	return switchv1beta1.SwitchStatus{
-		TotalPorts:      100,
-		SwitchPorts:     90,
-		Role:            switchv1beta1.MetalAPIString("leaf"),
-		ConnectionLevel: 2,
+		TotalPorts:  pointer.Uint32(100),
+		SwitchPorts: pointer.Uint32(90),
+		Role:        pointer.String("leaf"),
+		Layer:       pointer.Uint32(2),
 		Interfaces: map[string]*switchv1beta1.InterfaceSpec{
 			"Ethernet100": {
-				MACAddress: "3c:2c:99:9d:cd:48",
-				FEC:        "none",
+				MACAddress: pointer.String("3c:2c:99:9d:cd:48"),
+				PortParametersSpec: &switchv1beta1.PortParametersSpec{
+					FEC:   pointer.String("none"),
+					MTU:   pointer.Uint32(1500),
+					Lanes: pointer.Uint32(1),
+					State: pointer.String("up"),
+				},
+				Direction: pointer.String("south"),
+				Speed:     pointer.Uint32(10000),
 				IP: []*switchv1beta1.IPAddressSpec{
 					{
-						Address:      "100.64.4.70/30",
-						ExtraAddress: false,
+						Address:      pointer.String("100.64.4.70/30"),
+						ExtraAddress: pointer.Bool(false),
 					},
 					{
-						Address:      "64:ff9b:1::220/127",
-						ExtraAddress: false,
+						Address:      pointer.String("64:ff9b:1::220/127"),
+						ExtraAddress: pointer.Bool(false),
 					},
 				},
-				MTU:       1500,
-				Speed:     10000,
-				Lanes:     1,
-				State:     "up",
-				Direction: "north",
 			},
 			"Ethernet102": {
-				MACAddress: "3c:2c:99:9d:cd:48",
-				FEC:        "none",
+				MACAddress: pointer.String("3c:2c:99:9d:cd:48"),
+				PortParametersSpec: &switchv1beta1.PortParametersSpec{
+					FEC:   pointer.String("none"),
+					MTU:   pointer.Uint32(1500),
+					Lanes: pointer.Uint32(1),
+					State: pointer.String("up"),
+				},
 				IP: []*switchv1beta1.IPAddressSpec{
 					{
-						Address:      "100.64.6.70/30",
-						ExtraAddress: false,
+						Address:      pointer.String("100.64.6.70/30"),
+						ExtraAddress: pointer.Bool(false),
 					},
 					{
-						Address:      "64:ff9b:1::220/127",
-						ExtraAddress: false,
+						Address:      pointer.String("64:ff9b:1::220/127"),
+						ExtraAddress: pointer.Bool(false),
 					},
 				},
-				MTU:       1500,
-				Speed:     10000,
-				Lanes:     1,
-				State:     "up",
-				Direction: "north",
+				Speed:     pointer.Uint32(10000),
+				Direction: pointer.String("south"),
 			},
 		},
-		SwitchState: &switchv1beta1.SwitchStateSpec{
-			State: switchv1beta1.MetalAPIString("ready"),
-		},
+		State: pointer.String("Ready"),
 	}
 }
