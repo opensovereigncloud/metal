@@ -18,11 +18,12 @@ package main
 
 import (
 	"flag"
-	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"strconv"
+
+	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
