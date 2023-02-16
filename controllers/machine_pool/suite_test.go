@@ -140,7 +140,7 @@ func SetupTest(ctx context.Context) *corev1.Namespace {
 		Expect(err).ToNot(HaveOccurred())
 
 		// register reconciler here
-		err = (&PoolReconciler{
+		err = (&MachinePoolReconciler{
 			Client: k8sManager.GetClient(),
 			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
 			Scheme: k8sManager.GetScheme(),

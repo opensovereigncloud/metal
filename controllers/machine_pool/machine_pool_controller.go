@@ -31,8 +31,8 @@ import (
 
 const machineFinalizer = "metal-api.onmetal.de/machine-finalizer"
 
-// PoolReconciler reconciles a MachinePool object
-type PoolReconciler struct {
+// MachinePoolReconciler reconciles a MachinePool object
+type MachinePoolReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
@@ -51,7 +51,7 @@ type machinePoolReconcileWrappedCtx struct {
 //+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/finalizers,verbs=update
 
-func (r *PoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	wCtx := &machinePoolReconcileWrappedCtx{
 		ctx: ctx,
 		log: r.Log.WithValues("namespace", req.NamespacedName),
@@ -114,13 +114,13 @@ func (r *PoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return r.updateMachinePool(wCtx, machine, machinePool, sizeList)
 }
 
-func (r *PoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MachinePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&machinev1alpha2.Machine{}).
 		Complete(r)
 }
 
-func (r *PoolReconciler) handleMachineDeletion(
+func (r *MachinePoolReconciler) handleMachineDeletion(
 	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 ) (ctrl.Result, error) {
@@ -139,7 +139,7 @@ func (r *PoolReconciler) handleMachineDeletion(
 	return ctrl.Result{}, nil
 }
 
-func (r *PoolReconciler) createMachinePool(
+func (r *MachinePoolReconciler) createMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 	sizeList *v1alpha1.SizeList,
@@ -172,7 +172,7 @@ func (r *PoolReconciler) createMachinePool(
 	return ctrl.Result{}, nil
 }
 
-func (r *PoolReconciler) updateMachinePool(
+func (r *MachinePoolReconciler) updateMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 	machinePool *poolv1alpha1.MachinePool,
@@ -202,7 +202,7 @@ func (r *PoolReconciler) updateMachinePool(
 	return ctrl.Result{}, nil
 }
 
-func (r *PoolReconciler) deleteMachinePool(
+func (r *MachinePoolReconciler) deleteMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 ) (ctrl.Result, error) {
@@ -223,7 +223,7 @@ func (r *PoolReconciler) deleteMachinePool(
 	return ctrl.Result{}, nil
 }
 
-func (r *PoolReconciler) getAvailableMachineClasses(
+func (r *MachinePoolReconciler) getAvailableMachineClasses(
 	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 	sizeList *v1alpha1.SizeList,

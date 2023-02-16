@@ -246,7 +246,7 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
 		os.Exit(1)
 	}
-	if err = (&machinepoolcontroller.PoolReconciler{
+	if err = (&machinepoolcontroller.MachinePoolReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Pool"),
