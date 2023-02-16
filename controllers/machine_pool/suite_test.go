@@ -21,28 +21,25 @@ import (
 	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
-	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/komega"
-	"testing"
-	"time"
-
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
-	"k8s.io/client-go/kubernetes/scheme"
-	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-
+	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
+	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"testing"
+	"time"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -54,15 +51,10 @@ var (
 )
 
 const (
-	timeout  = time.Second * 15
-	interval = time.Millisecond * 250
-)
-
-const (
-	pollingInterval      = 50 * time.Millisecond
-	eventuallyTimeout    = 3 * time.Second
+	pollingInterval      = 250 * time.Millisecond
+	eventuallyTimeout    = 15 * time.Second
 	consistentlyDuration = 1 * time.Second
-	apiServiceTimeout    = 30 * time.Second
+	apiServiceTimeout    = 5 * time.Minute
 )
 
 // nolint
@@ -78,8 +70,8 @@ func TestMachinePoolController(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-
 	var err error
+
 	By("bootstrapping test environment")
 	testEnv := &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
@@ -94,11 +86,7 @@ var _ = BeforeSuite(func() {
 	cfg, err = utilsenvtest.StartWithExtensions(testEnv, testEnvExt)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
-
 	DeferCleanup(utilsenvtest.StopWithExtensions, testEnv, testEnvExt)
-
-	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
-	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Size{}, &inventoriesv1alpha1.SizeList{})
 
 	Expect(inventoriesv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
@@ -111,8 +99,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
-	komega.SetClient(k8sClient)
 
 	apiSrv, err := apiserver.New(cfg, apiserver.Options{
 		MainPath:     "github.com/onmetal/onmetal-api/cmd/onmetal-apiserver",
@@ -136,6 +122,7 @@ func SetupTest(ctx context.Context) *corev1.Namespace {
 		cancel context.CancelFunc
 		ns     = &corev1.Namespace{}
 	)
+
 	BeforeEach(func() {
 		var mgrCtx context.Context
 		mgrCtx, cancel = context.WithCancel(ctx)

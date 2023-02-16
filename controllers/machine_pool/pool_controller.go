@@ -33,13 +33,13 @@ const machineFinalizer = "metal-api.onmetal.de/machine-finalizer"
 
 // PoolReconciler reconciles a MachinePool object
 type PoolReconciler struct {
-	Log logr.Logger
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
 // Parameter Object
-type poolReconcileWrappedCtx struct {
+type machinePoolReconcileWrappedCtx struct {
 	ctx context.Context
 	log logr.Logger
 }
@@ -52,7 +52,7 @@ type poolReconcileWrappedCtx struct {
 //+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/finalizers,verbs=update
 
 func (r *PoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	wCtx := &poolReconcileWrappedCtx{
+	wCtx := &machinePoolReconcileWrappedCtx{
 		ctx: ctx,
 		log: r.Log.WithValues("namespace", req.NamespacedName),
 	}
@@ -65,7 +65,7 @@ func (r *PoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine); err != nil {
 		wCtx.log.Error(err, "could not get machine")
-		return ctrl.Result{}, err
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if !controllerutil.ContainsFinalizer(machine, machineFinalizer) {
@@ -82,24 +82,28 @@ func (r *PoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	switch {
 	case err == nil:
 		wCtx.log.Info("sizes list was found")
+		if len(sizeList.Items) == 0 {
+			wCtx.log.Info("unable to create the machine_pool. sizes list is empty")
+			return ctrl.Result{}, nil
+		}
 	case apierrors.IsNotFound(err):
-		wCtx.log.Info("the pool cannot be created or updated. valid sizes not found")
+		wCtx.log.Info("the machine_pool cannot be created or updated. valid sizes not found")
 		return ctrl.Result{}, nil
 	default:
 		wCtx.log.Error(err, "could not get sizes list")
 		return ctrl.Result{}, err
 	}
 
-	pool := &poolv1alpha1.MachinePool{
+	machinePool := &poolv1alpha1.MachinePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
 		},
 	}
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(pool), pool)
+	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machinePool), machinePool)
 
 	if apierrors.IsNotFound(err) {
-		return r.createPool(wCtx, machine, sizeList)
+		return r.createMachinePool(wCtx, machine, sizeList)
 	}
 
 	if err != nil {
@@ -107,7 +111,7 @@ func (r *PoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	return r.updatePool(wCtx, machine, pool, sizeList)
+	return r.updateMachinePool(wCtx, machine, machinePool, sizeList)
 }
 
 func (r *PoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -117,11 +121,11 @@ func (r *PoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *PoolReconciler) handleMachineDeletion(
-	wCtx *poolReconcileWrappedCtx,
+	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 ) (ctrl.Result, error) {
 	if controllerutil.ContainsFinalizer(machine, machineFinalizer) {
-		result, err := r.deletePool(wCtx, machine)
+		result, err := r.deleteMachinePool(wCtx, machine)
 		if err != nil {
 			return result, err
 		}
@@ -135,53 +139,53 @@ func (r *PoolReconciler) handleMachineDeletion(
 	return ctrl.Result{}, nil
 }
 
-func (r *PoolReconciler) createPool(
-	wCtx *poolReconcileWrappedCtx,
+func (r *PoolReconciler) createMachinePool(
+	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 	sizeList *v1alpha1.SizeList,
 ) (ctrl.Result, error) {
-	wCtx.log.Info("creating pool")
+	wCtx.log.Info("creating machine_pool")
 
 	availableMachineClasses := r.getAvailableMachineClasses(wCtx, machine, sizeList)
 	if len(availableMachineClasses) == 0 {
-		wCtx.log.Info("failed to create pool. no available machine classes")
+		wCtx.log.Info("failed to create machine_pool. no available machine classes")
 		return ctrl.Result{}, nil
 	}
 
-	pool := &poolv1alpha1.MachinePool{
+	machinePool := &poolv1alpha1.MachinePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      machine.Name,
 			Namespace: machine.Namespace,
 		},
 	}
-	if err := r.Create(wCtx.ctx, pool); err != nil {
-		wCtx.log.Error(err, "could not create pool")
+	if err := r.Create(wCtx.ctx, machinePool); err != nil {
+		wCtx.log.Error(err, "could not create machine_pool")
 		return ctrl.Result{}, err
 	}
 
-	pool.Status.AvailableMachineClasses = availableMachineClasses
-	if err := r.Status().Update(wCtx.ctx, pool); err != nil {
-		wCtx.log.Error(err, "could not update pool status")
+	machinePool.Status.AvailableMachineClasses = availableMachineClasses
+	if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
+		wCtx.log.Error(err, "could not update machine_pool status")
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *PoolReconciler) updatePool(
-	wCtx *poolReconcileWrappedCtx,
+func (r *PoolReconciler) updateMachinePool(
+	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
-	pool *poolv1alpha1.MachinePool,
+	machinePool *poolv1alpha1.MachinePool,
 	sizeList *v1alpha1.SizeList,
 ) (ctrl.Result, error) {
-	wCtx.log.Info("updating pool")
+	wCtx.log.Info("updating machine_pool")
 
 	// if machine is booked, remove available classes
 	if machine.Status.Reservation.Status != scheduler.ReservationStatusAvailable {
-		pool.Status.AvailableMachineClasses = make([]corev1.LocalObjectReference, 0)
+		machinePool.Status.AvailableMachineClasses = make([]corev1.LocalObjectReference, 0)
 
-		if err := r.Status().Update(wCtx.ctx, pool); err != nil {
-			wCtx.log.Error(err, "could not update pool")
+		if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
+			wCtx.log.Error(err, "could not update machine_pool")
 			return ctrl.Result{}, err
 		}
 
@@ -189,30 +193,30 @@ func (r *PoolReconciler) updatePool(
 	}
 
 	// refresh available classes
-	pool.Status.AvailableMachineClasses = r.getAvailableMachineClasses(wCtx, machine, sizeList)
-	if err := r.Status().Update(wCtx.ctx, pool); err != nil {
-		wCtx.log.Error(err, "could not update pool")
+	machinePool.Status.AvailableMachineClasses = r.getAvailableMachineClasses(wCtx, machine, sizeList)
+	if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
+		wCtx.log.Error(err, "could not update machine_pool")
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *PoolReconciler) deletePool(
-	wCtx *poolReconcileWrappedCtx,
+func (r *PoolReconciler) deleteMachinePool(
+	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 ) (ctrl.Result, error) {
-	wCtx.log.Info("deleting pool")
+	wCtx.log.Info("deleting machine_pool")
 
-	pool := &poolv1alpha1.MachinePool{
+	machinePool := &poolv1alpha1.MachinePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      machine.Name,
 			Namespace: machine.Namespace,
 		},
 	}
 
-	if err := r.Delete(wCtx.ctx, pool); err != nil {
-		wCtx.log.Error(err, "could not delete pool")
+	if err := r.Delete(wCtx.ctx, machinePool); err != nil {
+		wCtx.log.Error(err, "could not delete machine_pool")
 		return ctrl.Result{}, err
 	}
 
@@ -220,7 +224,7 @@ func (r *PoolReconciler) deletePool(
 }
 
 func (r *PoolReconciler) getAvailableMachineClasses(
-	wCtx *poolReconcileWrappedCtx,
+	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 	sizeList *v1alpha1.SizeList,
 ) []corev1.LocalObjectReference {

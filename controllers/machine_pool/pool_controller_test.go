@@ -29,13 +29,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var _ = Describe("pool-controller", func() {
+var _ = Describe("MachinePool-Controller", func() {
 	ctx := testing.SetupContext()
 	ns := SetupTest(ctx)
 
-	It("Should watch machine objects and maintain the pool", func() {
+	It("Should watch machine objects and maintain the machinePool", func() {
 		machine := &machinev1alpha2.Machine{}
-		pool := &poolv1alpha1.MachinePool{}
+		machinePool := &poolv1alpha1.MachinePool{}
 
 		u, err := uuid.NewUUID()
 		Expect(err).ToNot(HaveOccurred())
@@ -49,17 +49,17 @@ var _ = Describe("pool-controller", func() {
 		createAvailableMachine(ctx, name, namespace, machine)
 
 		// testing
-		By("Pool created")
+		By("MachinePool created")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
 				return false
 			}
 
 			return true
-		}, timeout, interval).Should(BeTrue())
+		}).Should(BeTrue())
 
-		By("The pool has available machine classes")
-		Expect(len(pool.Status.AvailableMachineClasses)).Should(Equal(2))
+		By("The MachinePool has available machine classes")
+		Expect(len(machinePool.Status.AvailableMachineClasses)).Should(Equal(2))
 
 		By("Available machine classes matched with size labels")
 		Expect(func() bool {
@@ -68,7 +68,7 @@ var _ = Describe("pool-controller", func() {
 				"m5.metal.2cpu": "true",
 			}
 
-			for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
+			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
 				if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
 					return false
 				}
@@ -83,7 +83,7 @@ var _ = Describe("pool-controller", func() {
 				"m5.metal.6cpu": "true",
 			}
 
-			for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
+			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
 				if _, ok := notAssignedLabel[availableMachineClass.Name]; ok {
 					return false
 				}
@@ -100,7 +100,7 @@ var _ = Describe("pool-controller", func() {
 
 		By("The available machine classes have been updated following the change in machine labels")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
 				return false
 			}
 
@@ -108,14 +108,14 @@ var _ = Describe("pool-controller", func() {
 				"m5.metal.6cpu": "true",
 			}
 
-			for _, availableMachineClass := range pool.Status.AvailableMachineClasses {
+			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
 				if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
 					return false
 				}
 			}
 
 			return true
-		}, timeout, interval).Should(BeTrue())
+		}).Should(BeTrue())
 
 		By("Expect successful machine status update to Running")
 		machine.Status = prepareMachineStatus(scheduler.ReservationStatusRunning)
@@ -128,19 +128,19 @@ var _ = Describe("pool-controller", func() {
 			}
 
 			return machine.Status.Reservation.Status == "Running"
-		}, timeout, interval).Should(BeTrue())
+		}).Should(BeTrue())
 
-		// refresh pool obj
+		// refresh MachinePool
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool); err != nil {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
 				return false
 			}
 
 			return true
-		}, timeout, interval).Should(BeTrue())
+		}).Should(BeTrue())
 
-		By("Pool has no available machine classes after machine becomes unavailable")
-		Expect(len(pool.Status.AvailableMachineClasses)).Should(Equal(0))
+		By("MachinePool has no available machine classes after machine becomes unavailable")
+		Expect(len(machinePool.Status.AvailableMachineClasses)).Should(Equal(0))
 
 		By("Machine deleted")
 		Eventually(func() bool {
@@ -149,14 +149,14 @@ var _ = Describe("pool-controller", func() {
 			}
 
 			return true
-		}, timeout, interval).Should(BeTrue())
+		}).Should(BeTrue())
 
-		By("Pool deleted after deleting machine")
+		By("MachinePool deleted after deleting machine")
 		Eventually(func() bool {
-			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, pool)
+			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool)
 
 			return apierrors.IsNotFound(err)
-		}, timeout, interval).Should(BeTrue())
+		}).Should(BeTrue())
 	})
 })
 
@@ -172,7 +172,7 @@ func createAvailableMachine(ctx context.Context, name, namespace string, machine
 		}
 
 		return controllerutil.ContainsFinalizer(machine, machineFinalizer)
-	}, timeout, interval).Should(BeTrue())
+	}).Should(BeTrue())
 
 	By("Expect successful machine status update")
 	machine.Status = prepareMachineStatus(scheduler.ReservationStatusAvailable)
@@ -185,7 +185,7 @@ func createAvailableMachine(ctx context.Context, name, namespace string, machine
 		}
 
 		return machine.Status.Reservation.Status == "Available"
-	}, timeout, interval).Should(BeTrue())
+	}).Should(BeTrue())
 }
 
 // nolint reason:temp
