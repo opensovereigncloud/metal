@@ -21,8 +21,10 @@ import (
 	"net"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -255,7 +257,7 @@ func (r *Reconciler) getMachineSubnet(ctx context.Context, machineAssignment *v1
 		"name", machineAssignment.Status.MetalComputeRef.Name)
 
 	ownerFilter := client.MatchingLabels{
-		v1beta1.IPAMObjectOwnerLabel: machineAssignment.Status.MetalComputeRef.Name,
+		constants.IPAMObjectOwnerLabel: machineAssignment.Status.MetalComputeRef.Name,
 	}
 	machineSubnetList := &ipamv1alpha1.SubnetList{}
 	if err := r.List(ctx, machineSubnetList, ownerFilter); err != nil {
@@ -271,7 +273,7 @@ func (r *Reconciler) getMachineSubnet(ctx context.Context, machineAssignment *v1
 		return nil, err
 	}
 
-	//TODO(flpeter) what if there are more subnets?
+	// TODO(flpeter) what if there are more subnets?
 	machineSubnet := machineSubnetList.Items[0]
 	if machineSubnet.Status.State != ipamv1alpha1.CFinishedSubnetState {
 		err := errors.New("subnet state is not Finished")
@@ -296,8 +298,8 @@ func (r *Reconciler) getMachineLoopbackIP(ctx context.Context, machineAssignment
 		"name", machineAssignment.Status.MetalComputeRef.Name)
 
 	filter := client.MatchingLabels{
-		v1beta1.IPAMObjectOwnerLabel:   machineAssignment.Status.MetalComputeRef.Name,
-		v1beta1.IPAMObjectPurposeLabel: v1beta1.CIPAMPurposeLoopback,
+		constants.IPAMObjectOwnerLabel:   machineAssignment.Status.MetalComputeRef.Name,
+		constants.IPAMObjectPurposeLabel: constants.IPAMLoopbackPurpose,
 	}
 	machineIPList := &ipamv1alpha1.IPList{}
 	if err := r.List(ctx, machineIPList, filter); err != nil {
@@ -313,7 +315,7 @@ func (r *Reconciler) getMachineLoopbackIP(ctx context.Context, machineAssignment
 		return nil, err
 	}
 
-	//TODO(flpeter) what if there are more subnets?
+	// TODO(flpeter) what if there are more subnets?
 	machineIP := machineIPList.Items[0]
 	if machineIP.Status.State != ipamv1alpha1.CFinishedIPState {
 		err := errors.New("ip state is not Finished")

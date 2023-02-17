@@ -23,7 +23,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,6 +30,7 @@ import (
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
 )
 
 // OnboardingReconciler reconciles Switch object corresponding
@@ -70,7 +70,7 @@ func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	labelSelectorPredicate, err := predicate.LabelSelectorPredicate(metav1.LabelSelector{
 		MatchExpressions: []metav1.LabelSelectorRequirement{
 			{
-				Key:      SizeLabel,
+				Key:      constants.SizeLabel,
 				Operator: metav1.LabelSelectorOpExists,
 				Values:   []string{},
 			},
@@ -91,11 +91,12 @@ func (r *OnboardingReconciler) reconcile(ctx context.Context, inv *inventoryv1al
 	if !inv.GetDeletionTimestamp().IsZero() {
 		return ctrl.Result{}, nil
 	}
-	return r.onboarding(ctx, client.ObjectKeyFromObject(inv))
+	return r.onboarding(ctx, inv)
 }
 
-func (r *OnboardingReconciler) onboarding(ctx context.Context, key types.NamespacedName) (ctrl.Result, error) {
+func (r *OnboardingReconciler) onboarding(ctx context.Context, inv *inventoryv1alpha1.Inventory) (ctrl.Result, error) {
 	var err error
+	key := client.ObjectKeyFromObject(inv)
 	targetSwitch := &switchv1beta1.Switch{}
 	if err = r.Get(ctx, key, targetSwitch); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -119,9 +120,10 @@ func (r *OnboardingReconciler) onboarding(ctx context.Context, key types.Namespa
 	if targetSwitch.Labels == nil {
 		targetSwitch.Labels = map[string]string{}
 	}
-	targetSwitch.Labels[InventoriedLabel] = "true"
+	targetSwitch.UpdateSwitchAnnotations(inv)
+	targetSwitch.UpdateSwitchLabels(inv)
 	targetSwitch.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-	targetSwitch.SetCondition(ConditionInterfacesOK, false).SetReason(ReasonSourceUpdated)
+	targetSwitch.SetCondition(constants.ConditionInterfacesOK, false).SetReason(constants.ReasonSourceUpdated)
 	err = r.Patch(ctx, targetSwitch, client.Apply, patchOpts)
 	return ctrl.Result{}, err
 }

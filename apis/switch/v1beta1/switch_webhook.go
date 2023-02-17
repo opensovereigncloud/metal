@@ -28,6 +28,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/onmetal/metal-api/internal/constants"
 )
 
 // log is for logging in this package.
@@ -93,7 +95,7 @@ func validateOverrides(currentState *Switch, newState *Switch) (err error) {
 			return
 		}
 
-		if currentInterface.GetDirection() == CDirectionSouth {
+		if currentInterface.GetDirection() == constants.DirectionSouth {
 			continue
 		}
 

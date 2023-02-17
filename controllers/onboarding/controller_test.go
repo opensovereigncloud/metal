@@ -22,6 +22,8 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -255,7 +257,7 @@ func prepareSwitch(namespace string) *switchv1beta1.Switch {
 			Name:      "switch",
 			Namespace: namespace,
 			Labels: map[string]string{
-				switchv1beta1.LabelChassisID: "3c-2c-99-9d-cd-48",
+				constants.LabelChassisID: "3c-2c-99-9d-cd-48",
 			},
 		},
 		Spec: switchv1beta1.SwitchSpec{

@@ -24,6 +24,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/onmetal/metal-api/internal/constants"
 )
 
 // log is for logging in this package.
@@ -57,7 +59,7 @@ func (in *SwitchConfig) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *SwitchConfig) ValidateUpdate(old runtime.Object) error {
+func (in *SwitchConfig) ValidateUpdate(_ runtime.Object) error {
 	// todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
 	return nil
 }
@@ -78,16 +80,16 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	if in.Spec.IPAM.SouthSubnets.LabelSelector == nil {
 		in.Spec.IPAM.SouthSubnets.LabelSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				IPAMObjectPurposeLabel: CIPAMPurposeSouthSubnet,
+				constants.IPAMObjectPurposeLabel: constants.IPAMSouthSubnetPurpose,
 			},
 		}
 	}
 	if in.Spec.IPAM.SouthSubnets.FieldSelector == nil {
 		in.Spec.IPAM.SouthSubnets.FieldSelector = &FieldSelectorSpec{
-			LabelKey: pointer.String(IPAMObjectOwnerLabel),
+			LabelKey: pointer.String(constants.IPAMObjectOwnerLabel),
 			FieldRef: &v1.ObjectFieldSelector{
-				APIVersion: CAPIVersion,
-				FieldPath:  DefaultIPAMFieldRef,
+				APIVersion: constants.APIVersion,
+				FieldPath:  constants.DefaultIPAMFieldRef,
 			},
 		}
 	}
@@ -102,16 +104,16 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	if in.Spec.IPAM.LoopbackAddresses.LabelSelector == nil {
 		in.Spec.IPAM.LoopbackAddresses.LabelSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				IPAMObjectPurposeLabel: CIPAMPurposeLoopback,
+				constants.IPAMObjectPurposeLabel: constants.IPAMLoopbackPurpose,
 			},
 		}
 	}
 	if in.Spec.IPAM.LoopbackAddresses.FieldSelector == nil {
 		in.Spec.IPAM.LoopbackAddresses.FieldSelector = &FieldSelectorSpec{
-			LabelKey: pointer.String(IPAMObjectOwnerLabel),
+			LabelKey: pointer.String(constants.IPAMObjectOwnerLabel),
 			FieldRef: &v1.ObjectFieldSelector{
-				APIVersion: CAPIVersion,
-				FieldPath:  DefaultIPAMFieldRef,
+				APIVersion: constants.APIVersion,
+				FieldPath:  constants.DefaultIPAMFieldRef,
 			},
 		}
 	}
@@ -139,9 +141,9 @@ func (in *SwitchConfig) setDefaultPortParams() {
 		in.Spec.PortsDefaults.SetIPv6Prefix(127)
 	}
 	if in.Spec.PortsDefaults.FEC == nil {
-		in.Spec.PortsDefaults.SetFEC(CFECNone)
+		in.Spec.PortsDefaults.SetFEC(constants.FECNone)
 	}
 	if in.Spec.PortsDefaults.State == nil {
-		in.Spec.PortsDefaults.SetState(CNICUp)
+		in.Spec.PortsDefaults.SetState(constants.NICUp)
 	}
 }

@@ -21,7 +21,10 @@ import (
 	"time"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,7 +74,7 @@ var _ = Describe("Switch controller", func() {
 	Context("Computing switches' configuration without pre-created IPAM objects", func() {
 		It("Should compute configs and create missing IPAM objects", func() {
 			By("Expect switches' state 'Pending' due to missing type label")
-			checkState(SwitchStatePending)
+			checkState(constants.SwitchStatePending)
 			setTypeLabel()
 
 			By("Expect successful switches' configuration")
@@ -82,12 +85,12 @@ var _ = Describe("Switch controller", func() {
 			checkASN()
 			checkSubnets()
 			checkIPAddresses()
-			checkState(SwitchStateReady)
+			checkState(constants.SwitchStateReady)
 
 			By("Expect switches' configuration matches updated global config")
 			updateSpinesConfig()
 			checkInterfacesUpdated()
-			checkState(SwitchStateReady)
+			checkState(constants.SwitchStateReady)
 		})
 	})
 
@@ -112,7 +115,7 @@ var _ = Describe("Switch controller", func() {
 			checkASN()
 			checkSubnets()
 			checkIPAddresses()
-			checkState(SwitchStateReady)
+			checkState(constants.SwitchStateReady)
 
 			By("Expect pre-created IPAM objects used in switches' configuration")
 			checkSeededLoopbacks()
@@ -127,9 +130,9 @@ func setTypeLabel() {
 	Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 	for _, item := range switches.Items {
 		if item.GetTopSpine() {
-			item.Labels[SwitchTypeLabel] = SwitchRoleSpine
+			item.Labels[constants.SwitchTypeLabel] = constants.SwitchRoleSpine
 		} else {
-			item.Labels[SwitchTypeLabel] = SwitchRoleLeaf
+			item.Labels[constants.SwitchTypeLabel] = constants.SwitchRoleLeaf
 		}
 		item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
 		Expect(k8sClient.Patch(testContext, &item, client.Apply, patchOpts)).NotTo(HaveOccurred())
@@ -225,7 +228,7 @@ func checkIPAddresses() {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
 			for _, nic := range item.Status.Interfaces {
-				if nic.GetDirection() == DirectionNorth && nic.Peer == nil {
+				if nic.GetDirection() == constants.DirectionNorth && nic.Peer == nil {
 					continue
 				}
 				g.Expect(nic.IP).NotTo(BeEmpty())
@@ -267,7 +270,7 @@ func checkInterfacesUpdated() {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
 			for _, nic := range item.Status.Interfaces {
-				if !item.GetTopSpine() && nic.GetDirection() == DirectionSouth {
+				if !item.GetTopSpine() && nic.GetDirection() == constants.DirectionSouth {
 					continue
 				}
 				g.Expect(nic.GetMTU()).To(Equal(uint32(9216)))
@@ -285,9 +288,9 @@ func checkSeededLoopbacks() {
 		for _, item := range switches.Items {
 			for _, lo := range item.Status.LoopbackAddresses {
 				switch lo.GetAddressFamily() {
-				case IPv4AF:
+				case constants.IPv4AF:
 					g.Expect(lo.GetAddress()).To(Equal(loopbacksV4[item.Name]))
-				case IPv6AF:
+				case constants.IPv6AF:
 					g.Expect(lo.GetAddress()).To(Equal(loopbacksV6[item.Name]))
 				}
 			}
@@ -297,7 +300,7 @@ func checkSeededLoopbacks() {
 
 func deleteSwitches(ctx context.Context) {
 	selector := labels.NewSelector()
-	req, _ := labels.NewRequirement(InventoriedLabel, selection.Exists, []string{})
+	req, _ := labels.NewRequirement(constants.InventoriedLabel, selection.Exists, []string{})
 	selector = selector.Add(*req)
 	opts := client.ListOptions{
 		LabelSelector: selector,
@@ -316,7 +319,7 @@ func deleteSwitches(ctx context.Context) {
 
 func deleteSouthSubnets(ctx context.Context) {
 	selector := labels.NewSelector()
-	req, _ := labels.NewRequirement(IPAMObjectPurposeLabel, selection.In, []string{IPAMSouthSubnetPurpose})
+	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMSouthSubnetPurpose})
 	selector = selector.Add(*req)
 	opts := client.ListOptions{
 		LabelSelector: selector,
@@ -335,7 +338,7 @@ func deleteSouthSubnets(ctx context.Context) {
 
 func deleteLoopbackIPs(ctx context.Context) {
 	selector := labels.NewSelector()
-	req, _ := labels.NewRequirement(IPAMObjectPurposeLabel, selection.In, []string{IPAMLoopbackPurpose})
+	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMLoopbackPurpose})
 	selector = selector.Add(*req)
 	opts := client.ListOptions{
 		LabelSelector: selector,

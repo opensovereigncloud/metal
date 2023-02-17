@@ -17,118 +17,8 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const CAPIVersion = "v1beta1"
-
-const (
-	CSwitchRoleLeaf     = "leaf"
-	CSwitchRoleSpine    = "spine"
-	CSwitchRoleEdgeLeaf = "edge-leaf"
-)
-
-const (
-	CFECNone = "none"
-	CFECRS   = "rs"
-)
-
-const (
-	CNICUp   = "up"
-	CNICDown = "down"
-)
-
-const (
-	CDirectionSouth = "south"
-	CDirectionNorth = "north"
-)
-
-const (
-	CSwitchStateInitial    = "initial"
-	CSwitchStateProcessing = "processing"
-	CSwitchStateReady      = "ready"
-	CSwitchStateInvalid    = "invalid"
-
-	CAgentStateActive = "active"
-	CAgentStateFailed = "failed"
-)
-
-const (
-	CIPAMLabelPrefix            = "ipam.onmetal.de"
-	CIPAMObjectPurposeLabel     = "object-purpose"
-	CIPAMObjectOwnerLabel       = "object-owner"
-	CIPAMPurposeSwitchCarrier   = "switch-carrier"
-	CIPAMPurposeSwitchLoopbacks = "switch-loopbacks"
-	CIPAMPurposeSouthSubnet     = "south-subnet"
-	CIPAMPurposeLoopback        = "loopback"
-	CIPAMPurposeInterfaceIP     = "interface-ip"
-
-	CMetalAPILabelPrefix   = "metalapi.onmetal.de"
-	CSwitchSizeName        = "switch"
-	CInventoriedLabel      = "inventoried"
-	CInventoryRefLabel     = "inventory-ref"
-	CSwitchConfigTypeLabel = "type-"
-	CSwitchTypeLabel       = "type"
-
-	DefaultIPAMFieldRef = "metadata.name"
-)
-
-const (
-	CSoftwareOSAnnotation       = "software/os"
-	CSoftwareVersionAnnotation  = "software/version"
-	CSoftwareOnieAnnotation     = "software/onie"
-	CSoftwareAsicAnnotation     = "software/asic"
-	CSoftwareHostnameAnnotation = "software/hostname"
-
-	CHardwareSkuAnnotation          = "hardware/sku"
-	CHardwareManufacturerAnnotation = "hardware/manufacturer"
-	CHardwareSerialAnnotation       = "hardware/serial"
-	CHardwareChassisIDAnnotation    = "hardware/chassis-id"
-
-	CLocationRoomAnnotation = "location/room"
-	CLocationRowAnnotation  = "location/row"
-	CLocationRackAnnotation = "location/rack"
-	CLocationHUAnnotation   = "location/hu"
-)
-
-const (
-	CPeerTypeMachine   = "machine"
-	CPeerTypeSwitch    = "switch"
-	CPeerTypeRouter    = "router"
-	CPeerTypeUndefined = "undefined"
-
-	CStationCapability = "Station"
-	CRouterCapability  = "Router"
-	CBridgeCapability  = "Bridge"
-	CNDPReachable      = "Reachable"
-)
-
-const (
-	CDefaultIPv4MaskLength uint32 = 30
-	CDefaultIPv6Prefix     uint32 = 127
-
-	CIPv4MaskLengthBits uint32 = 32
-	CIPv6PrefixBits     uint32 = 128
-)
-
-const CSwitchPortPrefix = "Ethernet"
-const CEmptyString = ""
-const CLabelChassisID = "chassis-id"
-
-var (
-	InventoriedLabel  = GetLabelKey(CMetalAPILabelPrefix, CInventoriedLabel)
-	InventoryRefLabel = GetLabelKey(CMetalAPILabelPrefix, CInventoryRefLabel)
-
-	SwitchTypeLabel       = GetLabelKey(CMetalAPILabelPrefix, CSwitchTypeLabel)
-	SwitchConfigTypeLabel = GetLabelKey(CMetalAPILabelPrefix, CSwitchConfigTypeLabel)
-
-	IPAMObjectPurposeLabel = GetLabelKey(CIPAMLabelPrefix, CIPAMObjectPurposeLabel)
-	IPAMObjectOwnerLabel   = GetLabelKey(CIPAMLabelPrefix, CIPAMObjectOwnerLabel)
-
-	LabelChassisID = GetLabelKey(CMetalAPILabelPrefix, CLabelChassisID)
 )
 
 type ConnectionsMap map[uint8]*SwitchList
@@ -240,6 +130,6 @@ type ObjectReference struct {
 }
 
 // GetLabelKey builds label key from prefix and suffix.
-func GetLabelKey(prefix, suffix string) string {
-	return fmt.Sprintf("%s/%s", prefix, suffix)
-}
+// func GetLabelKey(prefix, suffix string) string {
+// 	return fmt.Sprintf("%s/%s", prefix, suffix)
+// }
