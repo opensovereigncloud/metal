@@ -17,38 +17,47 @@
 package v1beta1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// SwitchConfigSpec contains desired configuration for selected switches
+// SwitchConfigSpec contains desired configuration for selected switches.
 // +kubebuilder:object:generate=true
 type SwitchConfigSpec struct {
 	// Switches contains label selector to pick up Switch objects
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	Switches *metav1.LabelSelector `json:"switches,omitempty"`
 	// PortsDefaults contains switch port parameters which will be applied to all ports of the switches
 	// which fit selector conditions
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	PortsDefaults *PortParametersSpec `json:"portsDefaults"`
 	// IPAM refers to selectors for subnets which will be used for Switch object
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	IPAM *GeneralIPAMSpec `json:"ipam"`
+	// RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config
+	// +kubebuilder:validation:Optional
+	RoutingConfigTemplate *v1.LocalObjectReference `json:"routingConfigTemplate,omitempty"`
 }
 
+// GeneralIPAMSpec contains definition of selectors, used to filter
+// required IPAM objects.
 type GeneralIPAMSpec struct {
+	// AddressFamily contains flags to define which address families are used for switch subnets
+	// +kubebuilder:validation:Required
+	AddressFamily *AddressFamiliesMap `json:"addressFamily"`
 	// CarrierSubnets contains label selector for Subnet object where switch's south subnet
 	// should be reserved
-	//+kubebuilder:validation:Required
-	CarrierSubnets *metav1.LabelSelector `json:"carrierSubnets"`
+	// +kubebuilder:validation:Required
+	CarrierSubnets *IPAMSelectionSpec `json:"carrierSubnets"`
 	// LoopbackSubnets contains label selector for Subnet object where switch's loopback
 	// IP addresses should be reserved
-	//+kubebuilder:validation:Required
-	LoopbackSubnets *metav1.LabelSelector `json:"loopbackSubnets"`
+	// +kubebuilder:validation:Required
+	LoopbackSubnets *IPAMSelectionSpec `json:"loopbackSubnets"`
 	// SouthSubnets defines selector for subnets object which will be assigned to switch
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	SouthSubnets *IPAMSelectionSpec `json:"southSubnets,omitempty"`
 	// LoopbackAddresses defines selector for IP objects which should be referenced as switch's loopback addresses
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	LoopbackAddresses *IPAMSelectionSpec `json:"loopbackAddresses,omitempty"`
 }
 
@@ -57,9 +66,9 @@ type GeneralIPAMSpec struct {
 type SwitchConfigStatus struct {
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:shortName=sc
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=sc
 
 // SwitchConfig is the Schema for switch config API.
 type SwitchConfig struct {
@@ -70,7 +79,7 @@ type SwitchConfig struct {
 	Status SwitchConfigStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // SwitchConfigList contains a list of SwitchConfig.
 type SwitchConfigList struct {

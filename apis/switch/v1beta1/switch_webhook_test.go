@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,14 +80,14 @@ var _ = Describe("Switch Webhook", func() {
 
 			switchObject.Status = switchStatus
 			interfaceStatus := switchObject.Status.Interfaces["Ethernet0"]
-			interfaceStatus.Direction = "north"
+			interfaceStatus.SetDirection("north")
 			switchObject.Status.Interfaces["Ethernet0"] = interfaceStatus
 			Expect(k8sClient.Status().Update(ctx, switchObject)).To(Succeed())
 
-			currentMTU := GoUint16(switchObject.Spec.Interfaces.Overrides[0].MTU)
-			currentFEC := GoString(switchObject.Spec.Interfaces.Overrides[0].FEC)
-			currentLanes := GoUint8(switchObject.Spec.Interfaces.Overrides[0].Lanes)
-			var newMTU uint16 = 576
+			currentMTU := switchObject.Spec.Interfaces.Overrides[0].GetMTU()
+			currentFEC := switchObject.Spec.Interfaces.Overrides[0].GetFEC()
+			currentLanes := switchObject.Spec.Interfaces.Overrides[0].GetLanes()
+			var newMTU uint32 = 576
 			if currentMTU == newMTU {
 				newMTU = 577
 			}
@@ -95,33 +95,33 @@ var _ = Describe("Switch Webhook", func() {
 			if currentFEC == newFEC {
 				newFEC = "none"
 			}
-			var newLanes uint8 = 2
+			var newLanes uint32 = 2
 			if currentLanes == newLanes {
 				newLanes = 1
 			}
 
 			By("On updating MTU")
-			switchObject.Spec.Interfaces.Overrides[0].MTU = &newMTU
+			switchObject.Spec.Interfaces.Overrides[0].SetMTU(newMTU)
 			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
 
 			By("On updating FEC")
-			switchObject.Spec.Interfaces.Overrides[0].MTU = &currentMTU
-			switchObject.Spec.Interfaces.Overrides[0].FEC = &newFEC
+			switchObject.Spec.Interfaces.Overrides[0].SetMTU(currentMTU)
+			switchObject.Spec.Interfaces.Overrides[0].SetFEC(newFEC)
 			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
 
 			By("On updating Lanes")
-			switchObject.Spec.Interfaces.Overrides[0].FEC = &currentFEC
-			switchObject.Spec.Interfaces.Overrides[0].Lanes = &newLanes
+			switchObject.Spec.Interfaces.Overrides[0].SetFEC(currentFEC)
+			switchObject.Spec.Interfaces.Overrides[0].SetLanes(newLanes)
 			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
 
 			By("But passing changes on south")
 			interfaceStatus = switchObject.Status.Interfaces["Ethernet0"]
-			interfaceStatus.Direction = "south"
+			interfaceStatus.SetDirection("south")
 			switchObject.Status.Interfaces["Ethernet0"] = interfaceStatus
 			Expect(k8sClient.Status().Update(ctx, switchObject)).To(Succeed())
-			switchObject.Spec.Interfaces.Overrides[0].Lanes = &newLanes
-			switchObject.Spec.Interfaces.Overrides[0].MTU = &newMTU
-			switchObject.Spec.Interfaces.Overrides[0].FEC = &newFEC
+			switchObject.Spec.Interfaces.Overrides[0].SetLanes(newLanes)
+			switchObject.Spec.Interfaces.Overrides[0].SetMTU(newMTU)
+			switchObject.Spec.Interfaces.Overrides[0].SetFEC(newFEC)
 			Expect(k8sClient.Update(ctx, switchObject)).To(Succeed())
 		})
 	})

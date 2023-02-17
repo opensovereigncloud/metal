@@ -36,76 +36,110 @@ spec:
             type: object
           spec:
             description: SwitchConfigSpec contains desired configuration for selected
-              switches
+              switches.
             properties:
               ipam:
                 description: IPAM refers to selectors for subnets which will be used
                   for Switch object
                 properties:
+                  addressFamily:
+                    description: AddressFamily contains flags to define which address
+                      families are used for switch subnets
+                    properties:
+                      ipv4:
+                        default: true
+                        description: IPv4 is a flag defining whether IPv4 is used
+                          or not
+                        type: boolean
+                      ipv6:
+                        default: false
+                        description: IPv6 is a flag defining whether IPv6 is used
+                          or not
+                        type: boolean
+                    type: object
                   carrierSubnets:
                     description: CarrierSubnets contains label selector for Subnet
                       object where switch's south subnet should be reserved
                     properties:
-                      matchExpressions:
-                        description: matchExpressions is a list of label selector
-                          requirements. The requirements are ANDed.
-                        items:
-                          description: A label selector requirement is a selector
-                            that contains values, a key, and an operator that relates
-                            the key and values.
-                          properties:
-                            key:
-                              description: key is the label key that the selector
-                                applies to.
-                              type: string
-                            operator:
-                              description: operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn,
-                                Exists and DoesNotExist.
-                              type: string
-                            values:
-                              description: values is an array of string values. If
-                                the operator is In or NotIn, the values array must
-                                be non-empty. If the operator is Exists or DoesNotExist,
-                                the values array must be empty. This array is replaced
-                                during a strategic merge patch.
-                              items:
+                      fieldSelector:
+                        description: FieldSelector contains label key and field path
+                          where to get label value for search. If FieldSelector is
+                          used as part of IPAM configuration in SwitchConfig object
+                          it will reference to the field path in related object. If
+                          FieldSelector is used as part of IPAM configuration in Switch
+                          object, it will reference to the field path in the same
+                          object
+                        properties:
+                          fieldRef:
+                            description: FieldRef contains reference to the field
+                              of resource where to get label's value
+                            properties:
+                              apiVersion:
+                                description: Version of the schema the FieldPath is
+                                  written in terms of, defaults to "v1".
                                 type: string
-                              type: array
-                          required:
-                          - key
-                          - operator
-                          type: object
-                        type: array
-                      matchLabels:
-                        additionalProperties:
-                          type: string
-                        description: matchLabels is a map of {key,value} pairs. A
-                          single {key,value} in the matchLabels map is equivalent
-                          to an element of matchExpressions, whose key field is "key",
-                          the operator is "In", and the values array contains only
-                          "value". The requirements are ANDed.
+                              fieldPath:
+                                description: Path of the field to select in the specified
+                                  API version.
+                                type: string
+                            required:
+                            - fieldPath
+                            type: object
+                          labelKey:
+                            description: LabelKey contains label key
+                            type: string
+                        type: object
+                      labelSelector:
+                        description: LabelSelector contains label selector to pick
+                          up IPAM objects
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
                         type: object
                     type: object
                   loopbackAddresses:
                     description: LoopbackAddresses defines selector for IP objects
                       which should be referenced as switch's loopback addresses
                     properties:
-                      addressFamilies:
-                        description: AddressFamilies defines what ip address families
-                          should be claimed
-                        properties:
-                          ipv4:
-                            default: true
-                            description: IPv4 is a flag defining whether IPv4 is used
-                              or not
-                            type: boolean
-                          ipv6:
-                            default: true
-                            description: IPv6 is a flag defining whether IPv6 is used
-                              or not
-                            type: boolean
-                        type: object
                       fieldSelector:
                         description: FieldSelector contains label key and field path
                           where to get label value for search. If FieldSelector is
@@ -185,66 +219,85 @@ spec:
                     description: LoopbackSubnets contains label selector for Subnet
                       object where switch's loopback IP addresses should be reserved
                     properties:
-                      matchExpressions:
-                        description: matchExpressions is a list of label selector
-                          requirements. The requirements are ANDed.
-                        items:
-                          description: A label selector requirement is a selector
-                            that contains values, a key, and an operator that relates
-                            the key and values.
-                          properties:
-                            key:
-                              description: key is the label key that the selector
-                                applies to.
-                              type: string
-                            operator:
-                              description: operator represents a key's relationship
-                                to a set of values. Valid operators are In, NotIn,
-                                Exists and DoesNotExist.
-                              type: string
-                            values:
-                              description: values is an array of string values. If
-                                the operator is In or NotIn, the values array must
-                                be non-empty. If the operator is Exists or DoesNotExist,
-                                the values array must be empty. This array is replaced
-                                during a strategic merge patch.
-                              items:
+                      fieldSelector:
+                        description: FieldSelector contains label key and field path
+                          where to get label value for search. If FieldSelector is
+                          used as part of IPAM configuration in SwitchConfig object
+                          it will reference to the field path in related object. If
+                          FieldSelector is used as part of IPAM configuration in Switch
+                          object, it will reference to the field path in the same
+                          object
+                        properties:
+                          fieldRef:
+                            description: FieldRef contains reference to the field
+                              of resource where to get label's value
+                            properties:
+                              apiVersion:
+                                description: Version of the schema the FieldPath is
+                                  written in terms of, defaults to "v1".
                                 type: string
-                              type: array
-                          required:
-                          - key
-                          - operator
-                          type: object
-                        type: array
-                      matchLabels:
-                        additionalProperties:
-                          type: string
-                        description: matchLabels is a map of {key,value} pairs. A
-                          single {key,value} in the matchLabels map is equivalent
-                          to an element of matchExpressions, whose key field is "key",
-                          the operator is "In", and the values array contains only
-                          "value". The requirements are ANDed.
+                              fieldPath:
+                                description: Path of the field to select in the specified
+                                  API version.
+                                type: string
+                            required:
+                            - fieldPath
+                            type: object
+                          labelKey:
+                            description: LabelKey contains label key
+                            type: string
+                        type: object
+                      labelSelector:
+                        description: LabelSelector contains label selector to pick
+                          up IPAM objects
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
                         type: object
                     type: object
                   southSubnets:
                     description: SouthSubnets defines selector for subnets object
                       which will be assigned to switch
                     properties:
-                      addressFamilies:
-                        description: AddressFamilies defines what ip address families
-                          should be claimed
-                        properties:
-                          ipv4:
-                            default: true
-                            description: IPv4 is a flag defining whether IPv4 is used
-                              or not
-                            type: boolean
-                          ipv6:
-                            default: true
-                            description: IPv6 is a flag defining whether IPv6 is used
-                              or not
-                            type: boolean
-                        type: object
                       fieldSelector:
                         description: FieldSelector contains label key and field path
                           where to get label value for search. If FieldSelector is
@@ -321,6 +374,7 @@ spec:
                         type: object
                     type: object
                 required:
+                - addressFamily
                 - carrierSubnets
                 - loopbackSubnets
                 type: object
@@ -338,24 +392,28 @@ spec:
                   ipv4MaskLength:
                     description: IPv4MaskLength defines prefix of subnet where switch
                       port's IPv4 address should be reserved
+                    format: int32
                     maximum: 32
                     minimum: 1
                     type: integer
                   ipv6Prefix:
                     description: IPv6Prefix defines prefix of subnet where switch
                       port's IPv6 address should be reserved
+                    format: int32
                     maximum: 128
                     minimum: 1
                     type: integer
                   lanes:
                     description: Lanes refers to a number of lanes used by switch
                       port
+                    format: int32
                     maximum: 8
                     minimum: 1
                     type: integer
                   mtu:
                     description: MTU refers to maximum transmission unit value which
                       should be applied on switch port
+                    format: int32
                     maximum: 65535
                     minimum: 84
                     type: integer
@@ -364,6 +422,15 @@ spec:
                     enum:
                     - up
                     - down
+                    type: string
+                type: object
+              routingConfigTemplate:
+                description: RoutingConfigTemplate contains the reference to the ConfigMap
+                  object which contains go-template for FRR config
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
               switches:

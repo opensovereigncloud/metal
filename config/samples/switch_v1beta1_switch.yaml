@@ -18,24 +18,20 @@ metadata:
     software/version: "1"
     software/asic: "broadcom"
 spec:
-  uuid: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+  inventoryRef:
+    name: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
   topSpine: true
   managed: true
   cordon: false
+  scanPorts: true
   ipam:
     southSubnets:
-      addressFamilies:
-        ipv4: true
-        ipv6: false
-      selector:
+      labelSelector:
         matchLabels:
           ipam.onmetal.de/object-purpose: "south-subnet"
           ipam.onmetal.de/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
     loopbackAddresses:
-      addressFamilies:
-        ipv4: true
-        ipv6: false
-      selector:
+      labelSelector:
         matchLabels:
           ipam.onmetal.de/object-purpose: "loopback"
           ipam.onmetal.de/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
@@ -69,14 +65,13 @@ spec:
         lanes: 1
         state: "down"
 status:
-  connectionLevel: 0
+  asn: 4200000001
+  layer: 0
   role: "spine"
   totalPorts: 5
   switchPorts: 4
-  switch:
-    state: "ready"
-  agent:
-    state: "active"
+  state: "Ready"
+  conditions: []
   subnets:
     - name: "some-subnet"
       namespace: "onmetal"
@@ -140,3 +135,5 @@ status:
         - address: "100.64.2.13/30"
           name: "ethernet3-computed-ip"
           namespace: "onmetal"
+  totalPorts: 4
+  switchPorts: 4

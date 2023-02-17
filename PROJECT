@@ -55,11 +55,15 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    domain: onmetal.de
     group: switch
     kind: SwitchConfig
+    controller: true
     path: github.com/onmetal/metal-api/apis/switch/v1beta1
     version: v1beta1
+    webhooks:
+      defaulting: true
+      validation: false
+      webhookVersion: v1
   - controller: true
     domain: machine.onmetal.de
     group: machine

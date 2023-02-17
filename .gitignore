@@ -27,3 +27,4 @@ dev/
 charts/
 /local
 /metal-api.iml
+compose-dev.yaml
