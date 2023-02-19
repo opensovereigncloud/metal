@@ -59,6 +59,7 @@ var (
 
 var (
 	ErrorTypeLabelMissed               string = "switch type label required"
+	ErrorInventoryReferenceMissed      string = "reference to Inventory object required: .spec.inventoryRef.name"
 	ErrorFailedToParseCIDR             string = "failed to parse CIDR"
 	ErrorFailedToParseIPAddress        string = "failed to parse IP address"
 	ErrorNoIPv4LoopbackAddressExists   string = "no IPv4 loopback address exists"
@@ -88,6 +89,9 @@ var patchOpts *client.SubResourcePatchOptions = &client.SubResourcePatchOptions{
 }
 
 func applyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventoryv1alpha1.Inventory) {
+	if obj.Status.Interfaces == nil {
+		obj.Status.Interfaces = make(map[string]*switchv1beta1.InterfaceSpec)
+	}
 	for _, item := range inventory.Spec.NICs {
 		if !strings.HasPrefix(item.Name, constants.SwitchPortNamePrefix) {
 			continue

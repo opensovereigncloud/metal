@@ -258,6 +258,10 @@ func (s *SwitchClient) preprocessingCheck(obj *switchv1beta1.Switch) StateFuncRe
 		result.Break = true
 		result.Err = reconciliationError(ErrorMissingRequirements)
 	}
+	if obj.GetInventoryRef() == constants.EmptyString {
+		result.Break = true
+		result.Err = reconciliationError(ErrorMissingRequirements)
+	}
 	return result
 }
 
@@ -269,7 +273,7 @@ func (s *SwitchClient) initialize(obj *switchv1beta1.Switch) StateFuncResult {
 			TotalPorts:        nil,
 			SwitchPorts:       nil,
 			Role:              nil,
-			Interfaces:        map[string]*switchv1beta1.InterfaceSpec{},
+			Interfaces:        make(map[string]*switchv1beta1.InterfaceSpec),
 			LoopbackAddresses: make([]*switchv1beta1.IPAddressSpec, 0),
 			Subnets:           make([]*switchv1beta1.SubnetSpec, 0),
 			Message:           nil,
@@ -286,6 +290,15 @@ func (s *SwitchClient) initialize(obj *switchv1beta1.Switch) StateFuncResult {
 
 func (s *SwitchClient) updateInterfaces(obj *switchv1beta1.Switch) StateFuncResult {
 	result := StateFuncResult{}
+	if obj.GetInventoryRef() == constants.EmptyString {
+		obj.SetCondition(constants.ConditionInterfacesOK, false).
+			SetReason(constants.ReasonMissingPrerequisites).
+			SetMessage(ErrorInventoryReferenceMissed)
+		setState(obj, constants.SwitchStatePending, ErrorMissingRequirements)
+		result.Break = true
+		result.Err = reconciliationError(ErrorInventoryReferenceMissed)
+		return result
+	}
 	inventory := &inventoryv1alpha1.Inventory{}
 	if err := s.Get(s.ctx, types.NamespacedName{
 		Namespace: obj.Namespace,

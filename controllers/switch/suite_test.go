@@ -36,13 +36,14 @@ import (
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	ipamctrl "github.com/onmetal/ipam/controllers"
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 )
 
 const defaultNamespace string = "onmetal"
@@ -138,6 +139,11 @@ var _ = BeforeSuite(func() {
 		Recorder: k8sManager.GetEventRecorderFor("switch-reconciler"),
 		Log:      ctrl.Log.WithName("controllers").WithName("switch-reconciler"),
 	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
+	Expect((&OnboardingReconciler{
+		Client: k8sManager.GetClient(),
+		Scheme: k8sManager.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("onboarding-reconciler"),
+	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
 	Expect((&switchv1beta1.Switch{}).SetupWebhookWithManager(k8sManager)).NotTo(HaveOccurred())
 	Expect((&SwConfigReconciler{
 		Client:   k8sManager.GetClient(),
@@ -186,7 +192,7 @@ var _ = BeforeSuite(func() {
 		return nil
 	}).Should(Succeed())
 
-	preseed(ctx, k8sClient)
+	seed(ctx, k8sClient)
 })
 
 var _ = AfterSuite(func() {
@@ -196,15 +202,15 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 
-func preseed(ctx context.Context, c client.Client) {
-	Expect(preseedNamespace(ctx, c)).NotTo(HaveOccurred())
-	Expect(preseedInventories(ctx, c)).NotTo(HaveOccurred())
-	Expect(preseedConfigs(ctx, c)).NotTo(HaveOccurred())
-	Expect(preseedNetworks(ctx, c)).NotTo(HaveOccurred())
-	Expect(preseedSubnets(ctx, c)).NotTo(HaveOccurred())
+func seed(ctx context.Context, c client.Client) {
+	Expect(seedNamespace(ctx, c)).NotTo(HaveOccurred())
+	// Expect(seedInventories(ctx, c)).NotTo(HaveOccurred())
+	Expect(seedConfigs(ctx, c)).NotTo(HaveOccurred())
+	Expect(seedNetworks(ctx, c)).NotTo(HaveOccurred())
+	Expect(seedSubnets(ctx, c)).NotTo(HaveOccurred())
 }
 
-func preseedNamespace(ctx context.Context, c client.Client) error {
+func seedNamespace(ctx context.Context, c client.Client) error {
 	obj := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{Name: defaultNamespace},
 		TypeMeta:   metav1.TypeMeta{Kind: "Namespace", APIVersion: "v1"},
@@ -213,7 +219,7 @@ func preseedNamespace(ctx context.Context, c client.Client) error {
 	return err
 }
 
-func preseedInventories(ctx context.Context, c client.Client) error {
+func seedInventories(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "inventories")
 	samples, err := getTestSamples(samplesPath)
 	if err != nil {
@@ -232,7 +238,7 @@ func preseedInventories(ctx context.Context, c client.Client) error {
 	return nil
 }
 
-func preseedConfigs(ctx context.Context, c client.Client) error {
+func seedConfigs(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "switch_configs")
 	samples, err := getTestSamples(samplesPath)
 	if err != nil {
@@ -251,7 +257,7 @@ func preseedConfigs(ctx context.Context, c client.Client) error {
 	return nil
 }
 
-func preseedNetworks(ctx context.Context, c client.Client) error {
+func seedNetworks(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "networks")
 	samples, err := getTestSamples(samplesPath)
 	if err != nil {
@@ -277,7 +283,7 @@ func preseedNetworks(ctx context.Context, c client.Client) error {
 	return nil
 }
 
-func preseedSubnets(ctx context.Context, c client.Client) error {
+func seedSubnets(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "subnets")
 	samples, err := getTestSamples(samplesPath)
 	if err != nil {
