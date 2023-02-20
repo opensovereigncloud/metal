@@ -284,6 +284,9 @@ func (s *SwitchClient) initialize(obj *switchv1beta1.Switch) StateFuncResult {
 		}
 		setState(obj, constants.SwitchStateInitial, constants.EmptyString)
 	}
+	if obj.GetTopSpine() && obj.GetLayer() != 0 {
+		obj.SetLayer(0)
+	}
 	obj.SetCondition(constants.ConditionInitialized, true)
 	return StateFuncResult{}
 }
