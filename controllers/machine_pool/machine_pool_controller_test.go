@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/google/uuid"
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
@@ -49,7 +51,13 @@ var _ = Describe("MachinePool-Controller", func() {
 		)
 
 		// prepare test data
+		By("Sizes list created")
 		createSizes(ctx, namespace)
+
+		By("Machine classes list created")
+		createMachineClasses(ctx, namespace)
+
+		By("Available machine created")
 		createAvailableMachine(ctx, name, namespace, machine)
 
 		// testing
@@ -68,8 +76,8 @@ var _ = Describe("MachinePool-Controller", func() {
 		By("Available machine classes matched with size labels")
 		Expect(func() bool {
 			var availableSizeLabels = map[string]string{
-				"m5.metal.4cpu": "true",
-				"m5.metal.2cpu": "true",
+				"m5-metal-4cpu": "true",
+				"m5-metal-2cpu": "true",
 			}
 
 			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
@@ -84,7 +92,7 @@ var _ = Describe("MachinePool-Controller", func() {
 		By("Available machine classes do not contain a size label that is not assigned to a machine")
 		Expect(func() bool {
 			var notAssignedLabel = map[string]string{
-				"m5.metal.6cpu": "true",
+				"m5-metal-6cpu": "true",
 			}
 
 			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
@@ -98,7 +106,7 @@ var _ = Describe("MachinePool-Controller", func() {
 
 		By("Expect successful machine labels update")
 		machine.Labels = map[string]string{
-			"machine.onmetal.de/size-m5.metal.6cpu": "true",
+			"machine.onmetal.de/size-m5-metal-6cpu": "true",
 		}
 		Expect(k8sClient.Update(ctx, machine)).To(Succeed())
 
@@ -109,7 +117,7 @@ var _ = Describe("MachinePool-Controller", func() {
 			}
 
 			var availableSizeLabels = map[string]string{
-				"m5.metal.6cpu": "true",
+				"m5-metal-6cpu": "true",
 			}
 
 			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
@@ -199,8 +207,8 @@ func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha2.M
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"machine.onmetal.de/size-m5.metal.4cpu": "true",
-				"machine.onmetal.de/size-m5.metal.2cpu": "true",
+				"machine.onmetal.de/size-m5-metal-4cpu": "true",
+				"machine.onmetal.de/size-m5-metal-2cpu": "true",
 			},
 		},
 		Spec: machinev1alpha2.MachineSpec{
@@ -227,21 +235,21 @@ func prepareMachineStatus(status string) machinev1alpha2.MachineStatus {
 func createSizes(ctx context.Context, namespace string) {
 	size6cpu := inventoryv1alpha1.Size{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "m5.metal.6cpu",
+			Name:      "m5-metal-6cpu",
 			Namespace: namespace,
 		},
 	}
 
 	size4cpu := inventoryv1alpha1.Size{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "m5.metal.4cpu",
+			Name:      "m5-metal-4cpu",
 			Namespace: namespace,
 		},
 	}
 
 	size2cpu := inventoryv1alpha1.Size{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "m5.metal.2cpu",
+			Name:      "m5-metal-2cpu",
 			Namespace: namespace,
 		},
 	}
@@ -255,4 +263,70 @@ func createSizes(ctx context.Context, namespace string) {
 	for _, size := range testSizes {
 		Expect(k8sClient.Create(ctx, &size)).Should(Succeed())
 	}
+
+	Eventually(func() bool {
+		list := &inventoryv1alpha1.SizeList{}
+
+		if err := k8sClient.List(ctx, list); err != nil {
+			return false
+		}
+
+		return len(list.Items) > 0
+	}).Should(BeTrue())
+}
+
+// nolint reason:temp
+func createMachineClasses(ctx context.Context, namespace string) {
+	class6cpu := poolv1alpha1.MachineClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "m5-metal-6cpu",
+			Namespace: namespace,
+		},
+		Capabilities: corev1alpha1.ResourceList{
+			corev1alpha1.ResourceCPU:    resource.MustParse("6"),
+			corev1alpha1.ResourceMemory: resource.MustParse("16Gi"),
+		},
+	}
+
+	class4cpu := poolv1alpha1.MachineClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "m5-metal-4cpu",
+			Namespace: namespace,
+		},
+		Capabilities: corev1alpha1.ResourceList{
+			corev1alpha1.ResourceCPU:    resource.MustParse("4"),
+			corev1alpha1.ResourceMemory: resource.MustParse("16Gi"),
+		},
+	}
+
+	class2cpu := poolv1alpha1.MachineClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "m5-metal-2cpu",
+			Namespace: namespace,
+		},
+		Capabilities: corev1alpha1.ResourceList{
+			corev1alpha1.ResourceCPU:    resource.MustParse("2"),
+			corev1alpha1.ResourceMemory: resource.MustParse("16Gi"),
+		},
+	}
+
+	testMachineClasses := []poolv1alpha1.MachineClass{
+		class6cpu,
+		class4cpu,
+		class2cpu,
+	}
+
+	for _, machineClass := range testMachineClasses {
+		Expect(k8sClient.Create(ctx, &machineClass)).Should(Succeed())
+	}
+
+	Eventually(func() bool {
+		list := &poolv1alpha1.MachineClassList{}
+
+		if err := k8sClient.List(ctx, list); err != nil {
+			return false
+		}
+
+		return len(list.Items) > 0
+	}).Should(BeTrue())
 }

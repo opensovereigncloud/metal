@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
@@ -35,6 +36,13 @@ import (
 
 const machineFinalizer = "metal-api.onmetal.de/machine-finalizer"
 
+var (
+	errorSizesListIsEmpty         = errors.New("sizes list is empty")
+	errorSizesListNotFound        = errors.New("sizes list not found")
+	errorMachineClassListIsEmpty  = errors.New("machine_class list is empty")
+	errorMachineClassListNotFound = errors.New("machine_class list not found")
+)
+
 // MachinePoolReconciler reconciles a MachinePool object.
 type MachinePoolReconciler struct {
 	client.Client
@@ -47,6 +55,7 @@ type MachinePoolReconciler struct {
 type machinePoolReconcileWrappedCtx struct {
 	ctx context.Context
 	log logr.Logger
+	req ctrl.Request
 }
 
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
@@ -59,6 +68,7 @@ type machinePoolReconcileWrappedCtx struct {
 func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	wCtx := &machinePoolReconcileWrappedCtx{
 		ctx: ctx,
+		req: req,
 		log: r.Log.WithValues("namespace", req.NamespacedName),
 	}
 
@@ -82,20 +92,14 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return r.handleMachineDeletion(wCtx, machine)
 	}
 
-	sizeList := &v1alpha1.SizeList{}
-	err := r.List(ctx, sizeList, client.InNamespace(req.Namespace))
-	switch {
-	case err == nil:
-		wCtx.log.Info("sizes list was found")
-		if len(sizeList.Items) == 0 {
-			wCtx.log.Info("unable to create the machine_pool. sizes list is empty")
-			return ctrl.Result{}, nil
-		}
-	case apierrors.IsNotFound(err):
-		wCtx.log.Info("the machine_pool cannot be created or updated. valid sizes not found")
+	sizes, err := r.resolveSizes(wCtx)
+	switch err {
+	case nil:
+	case errorSizesListIsEmpty, errorSizesListNotFound, errorMachineClassListIsEmpty, errorMachineClassListNotFound:
+		wCtx.log.Info(err.Error())
 		return ctrl.Result{}, nil
 	default:
-		wCtx.log.Error(err, "could not get sizes list")
+		wCtx.log.Error(err, "unable to create the machine_pool")
 		return ctrl.Result{}, err
 	}
 
@@ -108,7 +112,7 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machinePool), machinePool)
 
 	if apierrors.IsNotFound(err) {
-		return r.createMachinePool(wCtx, machine, sizeList)
+		return r.createMachinePool(wCtx, machine, sizes)
 	}
 
 	if err != nil {
@@ -116,7 +120,7 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	return r.updateMachinePool(wCtx, machine, machinePool, sizeList)
+	return r.updateMachinePool(wCtx, machine, machinePool, sizes)
 }
 
 func (r *MachinePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -147,11 +151,11 @@ func (r *MachinePoolReconciler) handleMachineDeletion(
 func (r *MachinePoolReconciler) createMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
-	sizeList *v1alpha1.SizeList,
+	sizes []string,
 ) (ctrl.Result, error) {
 	wCtx.log.Info("creating machine_pool")
 
-	availableMachineClasses := r.getAvailableMachineClasses(wCtx, machine, sizeList)
+	availableMachineClasses := r.getAvailableMachineClasses(machine, sizes)
 	if len(availableMachineClasses) == 0 {
 		wCtx.log.Info("failed to create machine_pool. no available machine classes")
 		return ctrl.Result{}, nil
@@ -181,7 +185,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
 	machinePool *poolv1alpha1.MachinePool,
-	sizeList *v1alpha1.SizeList,
+	sizes []string,
 ) (ctrl.Result, error) {
 	wCtx.log.Info("updating machine_pool")
 
@@ -198,7 +202,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 	}
 
 	// refresh available classes
-	machinePool.Status.AvailableMachineClasses = r.getAvailableMachineClasses(wCtx, machine, sizeList)
+	machinePool.Status.AvailableMachineClasses = r.getAvailableMachineClasses(machine, sizes)
 	if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
 		wCtx.log.Error(err, "could not update machine_pool")
 		return ctrl.Result{}, err
@@ -229,21 +233,69 @@ func (r *MachinePoolReconciler) deleteMachinePool(
 }
 
 func (r *MachinePoolReconciler) getAvailableMachineClasses(
-	wCtx *machinePoolReconcileWrappedCtx,
 	machine *machinev1alpha2.Machine,
-	sizeList *v1alpha1.SizeList,
+	sizes []string,
 ) []corev1.LocalObjectReference {
 	var availableMachineClasses []corev1.LocalObjectReference
 
 	availableMachineClasses = make([]corev1.LocalObjectReference, 0)
-	for _, sizeListItem := range sizeList.Items {
-		if metav1.HasLabel(machine.ObjectMeta, v1alpha1.GetSizeMatchLabel(sizeListItem.Name)) {
-			machineClass := corev1.LocalObjectReference{Name: sizeListItem.Name}
+	for _, size := range sizes {
+		if metav1.HasLabel(machine.ObjectMeta, v1alpha1.GetSizeMatchLabel(size)) {
+			machineClass := corev1.LocalObjectReference{Name: size}
 			availableMachineClasses = append(availableMachineClasses, machineClass)
 		}
 	}
 
-	wCtx.log.Info("matched available machine classes", "data", availableMachineClasses)
-
 	return availableMachineClasses
+}
+
+func (r *MachinePoolReconciler) resolveSizes(wCtx *machinePoolReconcileWrappedCtx) ([]string, error) {
+	sizes := make([]string, 0)
+
+	sizeList := &v1alpha1.SizeList{}
+	err := r.List(wCtx.ctx, sizeList, client.InNamespace(wCtx.req.Namespace))
+	switch {
+	case err == nil:
+		wCtx.log.Info("sizes list was found")
+		if len(sizeList.Items) == 0 {
+			wCtx.log.Info("unable to create the machine_pool. sizes list is empty")
+			return nil, errorSizesListIsEmpty
+		}
+	case apierrors.IsNotFound(err):
+		wCtx.log.Info("the machine_pool cannot be created or updated. sizes list not found")
+		return nil, errorSizesListNotFound
+	default:
+		wCtx.log.Error(err, "could not get sizes list")
+		return nil, err
+	}
+
+	machineClassList := &poolv1alpha1.MachineClassList{}
+	err = r.List(wCtx.ctx, machineClassList)
+	switch {
+	case err == nil:
+		wCtx.log.Info("machine_class list was found")
+		if len(machineClassList.Items) == 0 {
+			wCtx.log.Info("unable to create the machine_pool. machine_class list is empty")
+			return nil, errorMachineClassListIsEmpty
+		}
+	case apierrors.IsNotFound(err):
+		wCtx.log.Info("the machine_pool cannot be created or updated. machine_class list not found")
+		return nil, errorMachineClassListNotFound
+	default:
+		wCtx.log.Error(err, "could not get machine_class list")
+		return nil, err
+	}
+
+	machineClassNames := make(map[string]bool)
+	for _, machineClassItem := range machineClassList.Items {
+		machineClassNames[machineClassItem.Name] = true
+	}
+
+	for _, sizeListItem := range sizeList.Items {
+		if _, ok := machineClassNames[sizeListItem.Name]; ok {
+			sizes = append(sizes, sizeListItem.Name)
+		}
+	}
+
+	return sizes, nil
 }
