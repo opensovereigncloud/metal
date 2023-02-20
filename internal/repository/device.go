@@ -311,6 +311,10 @@ func (o *DeviceOnboarding) updateMachineInterfaces(ctx context.Context,
 			interfaces = baseConnectionInfo(&nicsSpec[nic], interfaces, machineInterfaces)
 			continue
 		}
+		if s.GetState() != constants.SwitchStateReady {
+			interfaces = baseConnectionInfo(&nicsSpec[nic], interfaces, machineInterfaces)
+			continue
+		}
 
 		switchInterface, ok := s.Status.Interfaces[nicsSpec[nic].LLDPs[0].PortDescription]
 		if !ok {
