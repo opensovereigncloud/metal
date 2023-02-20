@@ -286,9 +286,9 @@ func (r *MachinePoolReconciler) resolveSizes(wCtx *machinePoolReconcileWrappedCt
 		return nil, err
 	}
 
-	machineClassNames := make(map[string]bool)
+	machineClassNames := make(map[string]struct{})
 	for _, machineClassItem := range machineClassList.Items {
-		machineClassNames[machineClassItem.Name] = true
+		machineClassNames[machineClassItem.Name] = struct{}{}
 	}
 
 	for _, sizeListItem := range sizeList.Items {
