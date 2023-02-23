@@ -20,8 +20,13 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/util/json"
 	"net"
 	"path/filepath"
+	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
+	"sigs.k8s.io/kustomize/kyaml/resid"
 	"testing"
 	"time"
 
@@ -59,9 +64,36 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
+	// Since kubebuilder is not allowing to set complex types for fields with markers
+	// we have to build patched configuration with kustomize first
+	crdPath := filepath.Join("..", "..", "..", "config", "crd", "kustomization_runtime")
+	kfs := filesys.MakeFsOnDisk()
+	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
+
+	resMap, err := k.Run(kfs, crdPath)
+	Expect(err).NotTo(HaveOccurred())
+
+	resIds := resMap.GetMatchingResourcesByCurrentId(func(id resid.ResId) bool {
+		return id.Kind == "CustomResourceDefinition" &&
+			id.Group == "apiextensions.k8s.io" &&
+			id.Version == "v1"
+	})
+
+	crds := make([]*v1.CustomResourceDefinition, 0)
+
+	for _, resID := range resIds {
+		resJSONBytes, err := resID.MarshalJSON()
+		Expect(err).NotTo(HaveOccurred())
+
+		crd := &v1.CustomResourceDefinition{}
+		err = json.Unmarshal(resJSONBytes, crd)
+		Expect(err).NotTo(HaveOccurred())
+
+		crds = append(crds, crd)
+	}
+
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
+		CRDs: crds,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},

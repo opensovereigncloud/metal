@@ -17,17 +17,21 @@ limitations under the License.
 package controllers
 
 import (
-	"path/filepath"
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/kubernetes/scheme"
+	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
+	"sigs.k8s.io/kustomize/kyaml/resid"
+	"testing"
 
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	// +kubebuilder:scaffold:imports
@@ -50,9 +54,37 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
+	// Since kubebuilder is not allowing to set complex types for fields with markers
+	// we have to build patched configuration with kustomize first
+	crdPath := filepath.Join("..", "..", "config", "crd", "kustomization_runtime")
+	kfs := filesys.MakeFsOnDisk()
+	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
+
+	resMap, err := k.Run(kfs, crdPath)
+	Expect(err).NotTo(HaveOccurred())
+
+	resIds := resMap.GetMatchingResourcesByCurrentId(func(id resid.ResId) bool {
+		return id.Kind == "CustomResourceDefinition" &&
+			id.Group == "apiextensions.k8s.io" &&
+			id.Version == "v1"
+	})
+
+	crds := make([]*v1.CustomResourceDefinition, 0)
+
+	for _, resID := range resIds {
+		resJSONBytes, err := json.Marshal(resID)
+		Expect(err).NotTo(HaveOccurred())
+
+		crd := &v1.CustomResourceDefinition{}
+		//crd.ObjectMeta.SetCreationTimestamp(metav1.NewTime(time.Now()))
+		err = json.Unmarshal(resJSONBytes, crd)
+		Expect(err).NotTo(HaveOccurred())
+
+		crds = append(crds, crd)
+	}
+
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
+		CRDs: crds,
 	}
 
 	cfg, err := testEnv.Start()
