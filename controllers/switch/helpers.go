@@ -46,73 +46,7 @@ import (
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-)
-
-const (
-	EmptyString string = ""
-
-	SwitchStateInvalid    string = "Invalid"
-	SwitchStateInitial    string = "Initial"
-	SwitchStateProcessing string = "Processing"
-	SwitchStateReady      string = "Ready"
-	SwitchStatePending    string = "Pending"
-
-	SizeLabel                   string = "machine.onmetal.de/size-switch"
-	InventoriedLabel            string = "switch.onmetal.de/inventoried"
-	SwitchTypeLabel             string = "switch.onmetal.de/type"
-	SwitchConfigTypeLabelPrefix string = "switch.onmetal.de/type-"
-
-	IPAMObjectPurposeLabel string = "ipam.onmetal.de/object-purpose"
-	IPAMObjectOwnerLabel   string = "ipam.onmetal.de/object-owner"
-	IPAMObjectNICNameLabel string = "ipam.onmetal.de/interface-name"
-
-	IPAMLoopbackPurpose    string = "loopback"
-	IPAMSouthSubnetPurpose string = "south-subnet"
-	IPAMSwitchPortPurpose  string = "switch-port"
-
-	LLDPCapabilityStation inventoryv1alpha1.LLDPCapabilities = "Station"
-
-	NeighborTypeMachine string = "machine"
-	NeighborTypeSwitch  string = "switch"
-
-	HardwareChassisIDAnnotation string = "hardware/chassis-id"
-
-	DirectionSouth string = "south"
-	DirectionNorth string = "north"
-
-	SwitchRoleSpine string = "spine"
-	SwitchRoleLeaf  string = "leaf"
-
-	IPv4AF string = "IPv4"
-	IPv6AF string = "IPv6"
-
-	ASNBase uint32 = 4_200_000_000
-
-	SwitchPortNamePrefix string = "Ethernet"
-
-	IPv4LoopbackBits uint32 = 32
-	IPv6LoopbackBits uint32 = 128
-
-	IPv4MaskLength   uint32 = 32
-	IPv6PrefixLength uint32 = 128
-
-	ConditionInitialized      string = "Initialized"
-	ConditionInterfacesOK     string = "InterfacesOK"
-	ConditionConfigRefOK      string = "ConfigRefOK"
-	ConditionPortParametersOK string = "PortParametersOK"
-	ConditionNeighborsOK      string = "NeighborsOK"
-	ConditionLayerAndRoleOK   string = "LayerAndRoleOK"
-	ConditionLoopbacksOK      string = "LoopbacksOK"
-	ConditionAsnOK            string = "AsnOK"
-	ConditionSubnetsOK        string = "SubnetsOK"
-	ConditionIPAddressesOK    string = "IPAddressesOK"
-
-	ReasonRequestFailed        string = "APIRequestFailed"
-	ReasonObjectNotExists      string = "ObjectNotExists"
-	ReasonMissingPrerequisites string = "MissingPrerequisites"
-	ReasonASNCalculationFailed string = "ASNCalculationFailed"
-	ReasonIPAssignmentFailed   string = "IPAssignmentFailed"
-	ReasonSourceUpdated        string = "SourceUpdated"
+	"github.com/onmetal/metal-api/internal/constants"
 )
 
 var (
@@ -125,6 +59,7 @@ var (
 
 var (
 	ErrorTypeLabelMissed               string = "switch type label required"
+	ErrorInventoryReferenceMissed      string = "reference to Inventory object required: .spec.inventoryRef.name"
 	ErrorFailedToParseCIDR             string = "failed to parse CIDR"
 	ErrorFailedToParseIPAddress        string = "failed to parse IP address"
 	ErrorNoIPv4LoopbackAddressExists   string = "no IPv4 loopback address exists"
@@ -154,14 +89,17 @@ var patchOpts *client.SubResourcePatchOptions = &client.SubResourcePatchOptions{
 }
 
 func applyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventoryv1alpha1.Inventory) {
+	if obj.Status.Interfaces == nil {
+		obj.Status.Interfaces = make(map[string]*switchv1beta1.InterfaceSpec)
+	}
 	for _, item := range inventory.Spec.NICs {
-		if !strings.HasPrefix(item.Name, SwitchPortNamePrefix) {
+		if !strings.HasPrefix(item.Name, constants.SwitchPortNamePrefix) {
 			continue
 		}
 		iface := &switchv1beta1.InterfaceSpec{}
 		iface.SetMACAddress(item.MACAddress)
 		iface.SetSpeed(item.Speed)
-		iface.SetDirection(DirectionSouth)
+		iface.SetDirection(constants.DirectionSouth)
 		iface.SetIPEmpty()
 		iface.SetPortParametersEmpty()
 		if len(item.LLDPs) == 0 {
@@ -179,11 +117,11 @@ func applyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventor
 		peerData.SetPortID(neighborData.PortID)
 		peerData.SetType(func() string {
 			for _, capability := range neighborData.Capabilities {
-				if capability == LLDPCapabilityStation {
-					return NeighborTypeMachine
+				if capability == constants.LLDPCapabilityStation {
+					return constants.NeighborTypeMachine
 				}
 			}
-			return NeighborTypeSwitch
+			return constants.NeighborTypeSwitch
 		}())
 		iface.Peer = peerData
 		obj.Status.Interfaces[item.Name] = iface
@@ -232,7 +170,7 @@ func computeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
 	case true:
 		obj.SetLayer(0)
 		for _, nicData := range obj.Status.Interfaces {
-			nicData.SetDirection(DirectionSouth)
+			nicData.SetDirection(constants.DirectionSouth)
 		}
 		return
 	case false:
@@ -301,7 +239,7 @@ func getPeers(obj *switchv1beta1.Switch, switches *switchv1beta1.SwitchList) *sw
 				continue
 			}
 			peerChassisID := nicData.Peer.PeerInfoSpec.GetChassisID()
-			if strings.ReplaceAll(peerChassisID, ":", "") == item.Annotations[HardwareChassisIDAnnotation] {
+			if strings.ReplaceAll(peerChassisID, ":", "") == item.Annotations[constants.HardwareChassisIDAnnotation] {
 				result.Items = append(result.Items, item)
 			}
 		}
@@ -313,43 +251,43 @@ func setNICsDirections(obj *switchv1beta1.Switch, switches *switchv1beta1.Switch
 	for _, item := range switches.Items {
 		for _, nicData := range obj.Status.Interfaces {
 			if nicData.Peer == nil {
-				nicData.SetDirection(DirectionSouth)
+				nicData.SetDirection(constants.DirectionSouth)
 				continue
 			}
 			if nicData.Peer.ObjectReference == nil {
-				nicData.SetDirection(DirectionSouth)
+				nicData.SetDirection(constants.DirectionSouth)
 				continue
 			}
 			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &switchv1beta1.PeerInfoSpec{}) {
-				nicData.SetDirection(DirectionSouth)
+				nicData.SetDirection(constants.DirectionSouth)
 				continue
 			}
 			peerChassisID := nicData.Peer.PeerInfoSpec.GetChassisID()
-			peerFound := strings.ReplaceAll(peerChassisID, ":", "") == item.Annotations[HardwareChassisIDAnnotation]
+			peerFound := strings.ReplaceAll(peerChassisID, ":", "") == item.Annotations[constants.HardwareChassisIDAnnotation]
 			peerLayer := item.GetLayer()
 			objLayer := obj.GetLayer()
 			peerIsNorth := objLayer > peerLayer
 			peerIsSouth := objLayer < peerLayer
 			if peerFound && peerIsNorth {
-				nicData.SetDirection(DirectionNorth)
+				nicData.SetDirection(constants.DirectionNorth)
 				peerNICData := getPeerData(item.Status.Interfaces, nicData.Peer.GetPortDescription(), nicData.Peer.GetPortID())
 				copyPortParams(peerNICData.PortParametersSpec, nicData.PortParametersSpec)
 			}
 			if peerFound && peerIsSouth {
-				nicData.SetDirection(DirectionSouth)
+				nicData.SetDirection(constants.DirectionSouth)
 			}
 		}
 	}
 }
 
 func setRole(in *switchv1beta1.Switch) {
-	in.SetRole(SwitchRoleSpine)
+	in.SetRole(constants.SwitchRoleSpine)
 	for _, data := range in.Status.Interfaces {
 		if data.Peer == nil {
 			continue
 		}
-		if data.Peer.GetType() == NeighborTypeMachine {
-			in.SetRole(SwitchRoleLeaf)
+		if data.Peer.GetType() == constants.NeighborTypeMachine {
+			in.SetRole(constants.SwitchRoleLeaf)
 			break
 		}
 	}
@@ -504,10 +442,10 @@ func setState(obj *switchv1beta1.Switch, state, message string) {
 func calculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 	var result uint32 = 0
 	for _, item := range loopbacks {
-		if item.GetAddressFamily() != IPv4AF {
+		if item.GetAddressFamily() != constants.IPv4AF {
 			continue
 		}
-		asn := ASNBase
+		asn := constants.ASNBase
 		addr := net.ParseIP(item.GetAddress())
 		if addr == nil {
 			return 0, reconciliationError(ErrorFailedToParseIPAddress, "value", item.GetAddress())
@@ -553,12 +491,12 @@ func getExtraIPs(obj *switchv1beta1.Switch, name string) ([]*switchv1beta1.IPAdd
 func getAddressFamily(address string) (string, error) {
 	addr, err := netaddr.ParseIP(address)
 	if err != nil {
-		return EmptyString, reconciliationError(ErrorFailedToParseIPAddress, "value", address)
+		return constants.EmptyString, reconciliationError(ErrorFailedToParseIPAddress, "value", address)
 	}
 	if addr.Is4() {
-		return IPv4AF, nil
+		return constants.IPv4AF, nil
 	}
-	return IPv6AF, nil
+	return constants.IPv6AF, nil
 }
 
 func getComputedIPs(
@@ -574,13 +512,13 @@ func getComputedIPs(
 		}
 		mask := data.GetIPv4MaskLength()
 		addrIndex := BaseIPv4AddressIndex
-		af := IPv4AF
+		af := constants.IPv4AF
 		if cidr.IsIPv6() {
 			mask = data.GetIPv6Prefix()
 			addrIndex = BaseIPv6AddressIndex
-			af = IPv6AF
+			af = constants.IPv6AF
 		}
-		nicSubnet := getInterfaceSubnet(name, SwitchPortNamePrefix, cidr.Net.IPNet(), mask)
+		nicSubnet := getInterfaceSubnet(name, constants.SwitchPortNamePrefix, cidr.Net.IPNet(), mask)
 		nicAddr, err := gocidr.Host(nicSubnet, addrIndex)
 		if err != nil {
 			return nil, err
@@ -618,7 +556,7 @@ func requestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAdd
 	for _, addr := range peerNICData.IP {
 		_, cidr, _ := net.ParseCIDR(addr.GetAddress())
 		addressIndex := BaseIPv4AddressIndex + 1
-		if addr.GetAddressFamily() == IPv6AF {
+		if addr.GetAddressFamily() == constants.IPv6AF {
 			addressIndex = BaseIPv6AddressIndex + 1
 		}
 		ip, _ := gocidr.Host(cidr, addressIndex)
@@ -642,10 +580,10 @@ func getTotalAddressesCount(
 		var bits, ones uint32
 		switch af {
 		case ipamv1alpha1.CIPv4SubnetType:
-			bits = IPv4MaskLength
+			bits = constants.IPv4MaskLength
 			ones = item.GetIPv4MaskLength()
 		case ipamv1alpha1.CIPv6SubnetType:
-			bits = IPv6PrefixLength
+			bits = constants.IPv6PrefixLength
 			ones = item.GetIPv6Prefix()
 		}
 		addressesPerLane := math.Pow(2, float64(bits-ones))
@@ -677,7 +615,7 @@ func neighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
 	if nicData.Peer.PeerInfoSpec == nil {
 		return false
 	}
-	if nicData.Peer.GetType() != NeighborTypeSwitch {
+	if nicData.Peer.GetType() != constants.NeighborTypeSwitch {
 		return false
 	}
 	return true

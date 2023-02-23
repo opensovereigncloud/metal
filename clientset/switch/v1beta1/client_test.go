@@ -30,6 +30,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
 )
 
 var _ = PDescribe("Switch client", func() {
@@ -157,13 +158,13 @@ var _ = PDescribe("Switch client", func() {
 				Layer:       pointer.Uint32(0),
 				Interfaces: map[string]*switchv1beta1.InterfaceSpec{"Ethernet0": {
 					MACAddress: pointer.String("00:00:00:00:00:01"),
-					Direction:  pointer.String(switchv1beta1.CDirectionSouth),
+					Direction:  pointer.String(constants.DirectionSouth),
 					Speed:      pointer.Uint32(100000),
 					PortParametersSpec: &switchv1beta1.PortParametersSpec{
-						FEC:   pointer.String(switchv1beta1.CFECNone),
+						FEC:   pointer.String(constants.FECNone),
 						MTU:   pointer.Uint32(9100),
 						Lanes: pointer.Uint32(4),
-						State: pointer.String(switchv1beta1.CNICUp),
+						State: pointer.String(constants.NICUp),
 					},
 				}},
 				State: pointer.String("Initial"),

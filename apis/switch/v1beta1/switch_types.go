@@ -26,6 +26,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	"github.com/onmetal/metal-api/internal/constants"
 )
 
 // SwitchSpec contains desired state of resulting Switch configuration
@@ -1108,12 +1109,10 @@ func (in *IPAMSpec) GetSubnetsSelection() *IPAMSelectionSpec {
 	return in.SouthSubnets
 }
 
-// fixme: move to metal-exploitation/persistence-kubernetes/compute/instance/switches ?
 func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
 	appliedLabels := map[string]string{
-		InventoriedLabel:  "true",
-		InventoryRefLabel: inv.Name,
-		LabelChassisID: strings.ReplaceAll(
+		constants.InventoriedLabel: "true",
+		constants.LabelChassisID: strings.ReplaceAll(
 			func() string {
 				var chassisID string
 				for _, nic := range inv.Spec.NICs {
@@ -1133,26 +1132,25 @@ func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
 	}
 }
 
-// fixme: move to metal-exploitation/persistence-kubernetes/compute/instance/switches ?
 func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
 	hardwareAnnotations := make(map[string]string, 3)
 	softwareAnnotations := make(map[string]string, 5)
 	if inv.Spec.System != nil {
-		hardwareAnnotations[CHardwareSerialAnnotation] = inv.Spec.System.SerialNumber
-		hardwareAnnotations[CHardwareManufacturerAnnotation] = inv.Spec.System.Manufacturer
-		hardwareAnnotations[CHardwareSkuAnnotation] = inv.Spec.System.ProductSKU
+		hardwareAnnotations[constants.HardwareSerialAnnotation] = inv.Spec.System.SerialNumber
+		hardwareAnnotations[constants.HardwareManufacturerAnnotation] = inv.Spec.System.Manufacturer
+		hardwareAnnotations[constants.HardwareSkuAnnotation] = inv.Spec.System.ProductSKU
 	}
 	if inv.Spec.Distro != nil {
-		softwareAnnotations[CSoftwareOnieAnnotation] = "false"
-		softwareAnnotations[CSoftwareAsicAnnotation] = inv.Spec.Distro.AsicType
-		softwareAnnotations[CSoftwareVersionAnnotation] = inv.Spec.Distro.CommitID
-		softwareAnnotations[CSoftwareOSAnnotation] = "sonic"
-		softwareAnnotations[CSoftwareHostnameAnnotation] = inv.Spec.Host.Name
+		softwareAnnotations[constants.SoftwareOnieAnnotation] = "false"
+		softwareAnnotations[constants.SoftwareAsicAnnotation] = inv.Spec.Distro.AsicType
+		softwareAnnotations[constants.SoftwareVersionAnnotation] = inv.Spec.Distro.CommitID
+		softwareAnnotations[constants.SoftwareOSAnnotation] = "sonic"
+		softwareAnnotations[constants.SoftwareHostnameAnnotation] = inv.Spec.Host.Name
 	}
 	if in.Annotations == nil {
 		in.Annotations = make(map[string]string)
 	}
-	in.Annotations[CHardwareChassisIDAnnotation] = strings.ReplaceAll(
+	in.Annotations[constants.HardwareChassisIDAnnotation] = strings.ReplaceAll(
 		func() string {
 			var chassisID string
 			for _, nic := range inv.Spec.NICs {

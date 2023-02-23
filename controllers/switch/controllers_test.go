@@ -21,7 +21,12 @@ import (
 	"time"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	"k8s.io/utils/pointer"
+
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +37,7 @@ import (
 )
 
 const (
-	timeout  = time.Second * 30
+	timeout  = time.Second * 15
 	interval = time.Millisecond * 500
 )
 
@@ -52,26 +57,192 @@ var (
 	}
 )
 
-var _ = Describe("Switch controller", func() {
+// The following onboarding cases are covered:
+// - Inventory object is created. Onboarding-controller should reconcile object and create corresponding Switch object;
+//
+// - Onboarded Switch object was updated: onboarding metadata was deleted. Onboarding-controller should restore label
+//   and annotations related to onboarding process;
+//
+// - Inventory object exists, for some reason automatically created Switch object was deleted, new Switch object was
+//   created manually without onboarding metadata (labels/annotations/inventory reference). Onboarding-controller
+//   should handle "Create" event and update existing Switch object with proper metadata and Inventory reference;
+//   Constraints:
+//   - Switch object should either have the same name as Inventory object OR contain .spec.inventoryRef.name field
+//     filled with proper Inventory object name;
+//
+// - Switch object exists, it was created without required labels/annotations/inventory reference. After creation of
+//   Inventory object, onboarding-controller should update existing Switch object with proper metadata and Inventory
+//   reference;
+//   Constraints:
+//   - Switch object should either have the same name as Inventory object OR contain .spec.inventoryRef.name field
+//     filled with proper Inventory object name;
+//
+// The following cases for configuration processing are covered:
+// - IPAM objects are pre-created, switch-controller consumes existing subnets and IPs;
+// - IPAM objects are created during switch reconciliation;
+// - Interfaces' parameters are changed by changing of parameters defined in SwitchConfig object spec;
 
-	BeforeEach(func() {
-		preTestContext, preTestCancel := context.WithCancel(ctx)
-		defer preTestCancel()
-		Expect(seedSwitches(preTestContext, k8sClient)).NotTo(HaveOccurred())
-	})
+var _ = Describe("Switch controller", func() {
 
 	AfterEach(func() {
 		postTestContext, postTestCancel := context.WithCancel(ctx)
 		defer postTestCancel()
+		deleteInventories(postTestContext)
 		deleteSwitches(postTestContext)
 		deleteLoopbackIPs(postTestContext)
 		deleteSouthSubnets(postTestContext)
 	})
 
+	Context("Creating switches from inventories", func() {
+		It("Switches should be created from inventories by onboarding-controller", func() {
+			testContext, testCancel := context.WithCancel(ctx)
+			defer testCancel()
+
+			By("Seed Inventory objects")
+			Expect(seedInventories(testContext, k8sClient)).NotTo(HaveOccurred())
+
+			By("Expect switches exist")
+			checkSwitches()
+		})
+	})
+
+	Context("Onboarding metadata should be persistent", func() {
+		It("Onboarding-controller should restore labels and annotations if deleted", func() {
+			testContext, testCancel := context.WithCancel(ctx)
+			defer testCancel()
+
+			By("Seed Inventory objects")
+			Expect(seedInventories(testContext, k8sClient)).NotTo(HaveOccurred())
+
+			By("Expect switches exist")
+			checkSwitches()
+
+			By("Remove onboarding metadata")
+			switches := &switchv1beta1.SwitchList{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.List(testContext, switches)).To(Succeed())
+				for _, item := range switches.Items {
+					delete(item.Labels, constants.InventoriedLabel)
+					delete(item.Annotations, constants.HardwareChassisIDAnnotation)
+					g.Expect(k8sClient.Update(testContext, &item)).To(Succeed())
+				}
+			}, timeout, interval).Should(Succeed())
+
+			By("Expect switches' onboarding metadata was restored")
+			checkSwitches()
+		})
+	})
+
+	Context("Onboarding-controller handles CREATE events from switches", func() {
+		JustBeforeEach(func() {
+			preTestContext, preTestCancel := context.WithCancel(ctx)
+			defer preTestCancel()
+			Expect(seedInventories(preTestContext, k8sClient)).NotTo(HaveOccurred())
+			switches := &switchv1beta1.SwitchList{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.List(preTestContext, switches)).To(Succeed())
+				g.Expect(len(switches.Items)).To(Equal(4))
+			}, timeout, interval).Should(Succeed())
+			deleteSwitches(preTestContext)
+		})
+
+		It("Created switches should be updated with onboarding metadata after creation", func() {
+			testContext, testCancel := context.WithCancel(ctx)
+			defer testCancel()
+
+			By("Seed Switch objects without onboarding metadata - labels, annotations and inventory reference")
+			names := []string{
+				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+				"044ca7d1-c6f8-37d8-83ce-bf6a18318f2d",
+				"a177382d-a3b4-3ecd-97a4-01cc15e749e4",
+				"92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b",
+			}
+			for _, name := range names {
+				topSpine := false
+				if name == "a177382d-a3b4-3ecd-97a4-01cc15e749e4" || name == "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b" {
+					topSpine = true
+				}
+				obj := &switchv1beta1.Switch{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: defaultNamespace,
+					},
+					Spec: switchv1beta1.SwitchSpec{
+						TopSpine: pointer.Bool(topSpine),
+					},
+				}
+				Expect(k8sClient.Create(testContext, obj)).To(Succeed())
+			}
+
+			By("Expect Switch objects are updated with onboarding metadata")
+			switches := &switchv1beta1.SwitchList{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.List(testContext, switches)).To(Succeed())
+				for _, item := range switches.Items {
+					g.Expect(item.Labels[constants.InventoriedLabel]).NotTo(BeEmpty())
+					g.Expect(item.Annotations[constants.HardwareChassisIDAnnotation]).NotTo(BeEmpty())
+					g.Expect(item.GetInventoryRef()).NotTo(BeEmpty())
+				}
+			}, timeout, interval).Should(Succeed())
+		})
+	})
+
+	Context("Existing switches are updated by onboarding-controller on inventory creation", func() {
+		It("Existing switches should be updated with onboarding metadata after inventories are created", func() {
+			testContext, testCancel := context.WithCancel(ctx)
+			defer testCancel()
+
+			By("Seed Switch objects without onboarding metadata - labels, annotations and inventory reference")
+			names := []string{
+				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+				"044ca7d1-c6f8-37d8-83ce-bf6a18318f2d",
+				"a177382d-a3b4-3ecd-97a4-01cc15e749e4",
+				"92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b",
+			}
+			for _, name := range names {
+				topSpine := false
+				if name == "a177382d-a3b4-3ecd-97a4-01cc15e749e4" || name == "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b" {
+					topSpine = true
+				}
+				obj := &switchv1beta1.Switch{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      name,
+						Namespace: defaultNamespace,
+					},
+					Spec: switchv1beta1.SwitchSpec{
+						TopSpine: pointer.Bool(topSpine),
+					},
+				}
+				Expect(k8sClient.Create(testContext, obj)).To(Succeed())
+			}
+
+			By("Seed Inventory objects")
+			Expect(seedInventories(testContext, k8sClient)).NotTo(HaveOccurred())
+
+			By("Expect Switch objects are updated with onboarding metadata")
+			switches := &switchv1beta1.SwitchList{}
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.List(testContext, switches)).To(Succeed())
+				for _, item := range switches.Items {
+					g.Expect(item.Labels[constants.InventoriedLabel]).NotTo(BeEmpty())
+					g.Expect(item.Annotations[constants.HardwareChassisIDAnnotation]).NotTo(BeEmpty())
+					g.Expect(item.GetInventoryRef()).NotTo(BeEmpty())
+				}
+			}, timeout, interval).Should(Succeed())
+		})
+	})
+
 	Context("Computing switches' configuration without pre-created IPAM objects", func() {
+		JustBeforeEach(func() {
+			preTestContext, preTestCancel := context.WithCancel(ctx)
+			defer preTestCancel()
+			Expect(seedSwitches(preTestContext, k8sClient)).NotTo(HaveOccurred())
+			Expect(seedInventories(preTestContext, k8sClient)).NotTo(HaveOccurred())
+		})
+
 		It("Should compute configs and create missing IPAM objects", func() {
 			By("Expect switches' state 'Pending' due to missing type label")
-			checkState(SwitchStatePending)
+			checkState(constants.SwitchStatePending)
 			setTypeLabel()
 
 			By("Expect successful switches' configuration")
@@ -82,12 +253,12 @@ var _ = Describe("Switch controller", func() {
 			checkASN()
 			checkSubnets()
 			checkIPAddresses()
-			checkState(SwitchStateReady)
+			checkState(constants.SwitchStateReady)
 
 			By("Expect switches' configuration matches updated global config")
 			updateSpinesConfig()
 			checkInterfacesUpdated()
-			checkState(SwitchStateReady)
+			checkState(constants.SwitchStateReady)
 		})
 	})
 
@@ -96,6 +267,8 @@ var _ = Describe("Switch controller", func() {
 			By("Seeding switches' related IPAM objects")
 			preTestContext, preTestCancel := context.WithCancel(ctx)
 			defer preTestCancel()
+			Expect(seedSwitches(preTestContext, k8sClient)).NotTo(HaveOccurred())
+			Expect(seedInventories(preTestContext, k8sClient)).NotTo(HaveOccurred())
 			Expect(seedSwitchesSubnets(preTestContext, k8sClient)).NotTo(HaveOccurred())
 			Expect(seedSwitchesLoopbacks(preTestContext, k8sClient)).NotTo(HaveOccurred())
 		})
@@ -112,7 +285,7 @@ var _ = Describe("Switch controller", func() {
 			checkASN()
 			checkSubnets()
 			checkIPAddresses()
-			checkState(SwitchStateReady)
+			checkState(constants.SwitchStateReady)
 
 			By("Expect pre-created IPAM objects used in switches' configuration")
 			checkSeededLoopbacks()
@@ -127,13 +300,28 @@ func setTypeLabel() {
 	Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 	for _, item := range switches.Items {
 		if item.GetTopSpine() {
-			item.Labels[SwitchTypeLabel] = SwitchRoleSpine
+			item.Labels[constants.SwitchTypeLabel] = constants.SwitchRoleSpine
 		} else {
-			item.Labels[SwitchTypeLabel] = SwitchRoleLeaf
+			item.Labels[constants.SwitchTypeLabel] = constants.SwitchRoleLeaf
 		}
 		item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
 		Expect(k8sClient.Patch(testContext, &item, client.Apply, patchOpts)).NotTo(HaveOccurred())
 	}
+}
+
+func checkSwitches() {
+	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	defer testCancel()
+	switches := &switchv1beta1.SwitchList{}
+	Eventually(func(g Gomega) {
+		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
+		g.Expect(switches.Items).NotTo(BeEmpty())
+		for _, item := range switches.Items {
+			g.Expect(item.GetInventoryRef()).NotTo(BeEmpty())
+			g.Expect(item.Labels[constants.InventoriedLabel]).NotTo(BeEmpty())
+			g.Expect(item.Annotations[constants.HardwareChassisIDAnnotation]).NotTo(BeEmpty())
+		}
+	}, timeout, interval).Should(Succeed())
 }
 
 func checkConfigRef() {
@@ -225,7 +413,7 @@ func checkIPAddresses() {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
 			for _, nic := range item.Status.Interfaces {
-				if nic.GetDirection() == DirectionNorth && nic.Peer == nil {
+				if nic.GetDirection() == constants.DirectionNorth && nic.Peer == nil {
 					continue
 				}
 				g.Expect(nic.IP).NotTo(BeEmpty())
@@ -267,7 +455,7 @@ func checkInterfacesUpdated() {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
 			for _, nic := range item.Status.Interfaces {
-				if !item.GetTopSpine() && nic.GetDirection() == DirectionSouth {
+				if !item.GetTopSpine() && nic.GetDirection() == constants.DirectionSouth {
 					continue
 				}
 				g.Expect(nic.GetMTU()).To(Equal(uint32(9216)))
@@ -285,9 +473,9 @@ func checkSeededLoopbacks() {
 		for _, item := range switches.Items {
 			for _, lo := range item.Status.LoopbackAddresses {
 				switch lo.GetAddressFamily() {
-				case IPv4AF:
+				case constants.IPv4AF:
 					g.Expect(lo.GetAddress()).To(Equal(loopbacksV4[item.Name]))
-				case IPv6AF:
+				case constants.IPv6AF:
 					g.Expect(lo.GetAddress()).To(Equal(loopbacksV6[item.Name]))
 				}
 			}
@@ -295,9 +483,28 @@ func checkSeededLoopbacks() {
 	}, timeout, interval).Should(Succeed())
 }
 
+func deleteInventories(ctx context.Context) {
+	selector := labels.NewSelector()
+	req, _ := labels.NewRequirement(constants.SizeLabel, selection.Exists, []string{})
+	selector = selector.Add(*req)
+	opts := client.ListOptions{
+		LabelSelector: selector,
+		Namespace:     defaultNamespace,
+	}
+	delOpts := &client.DeleteAllOfOptions{
+		ListOptions: opts,
+	}
+	Expect(k8sClient.DeleteAllOf(ctx, &inventoryv1alpha1.Inventory{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	inventories := &inventoryv1alpha1.InventoryList{}
+	Eventually(func(g Gomega) {
+		g.Expect(k8sClient.List(ctx, inventories, &opts)).NotTo(HaveOccurred())
+		g.Expect(inventories.Items).To(BeEmpty())
+	}, timeout, interval).Should(Succeed())
+}
+
 func deleteSwitches(ctx context.Context) {
 	selector := labels.NewSelector()
-	req, _ := labels.NewRequirement(InventoriedLabel, selection.Exists, []string{})
+	req, _ := labels.NewRequirement(constants.InventoriedLabel, selection.Exists, []string{})
 	selector = selector.Add(*req)
 	opts := client.ListOptions{
 		LabelSelector: selector,
@@ -316,7 +523,7 @@ func deleteSwitches(ctx context.Context) {
 
 func deleteSouthSubnets(ctx context.Context) {
 	selector := labels.NewSelector()
-	req, _ := labels.NewRequirement(IPAMObjectPurposeLabel, selection.In, []string{IPAMSouthSubnetPurpose})
+	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMSouthSubnetPurpose})
 	selector = selector.Add(*req)
 	opts := client.ListOptions{
 		LabelSelector: selector,
@@ -335,7 +542,7 @@ func deleteSouthSubnets(ctx context.Context) {
 
 func deleteLoopbackIPs(ctx context.Context) {
 	selector := labels.NewSelector()
-	req, _ := labels.NewRequirement(IPAMObjectPurposeLabel, selection.In, []string{IPAMLoopbackPurpose})
+	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMLoopbackPurpose})
 	selector = selector.Add(*req)
 	opts := client.ListOptions{
 		LabelSelector: selector,

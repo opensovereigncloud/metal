@@ -25,6 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/internal/constants"
 )
 
 const (
@@ -56,9 +58,9 @@ var _ = Describe("SwitchConfig Webhook", func() {
 						MatchLabels: map[string]string{"switch.onmetal.de/type": "spine"},
 					},
 					PortsDefaults: &PortParametersSpec{
-						FEC:   pointer.String(CFECRS),
+						FEC:   pointer.String(constants.FECRS),
 						MTU:   pointer.Uint32(9216),
-						State: pointer.String(CNICUp),
+						State: pointer.String(constants.NICUp),
 					},
 					IPAM: &GeneralIPAMSpec{
 						CarrierSubnets: &IPAMSelectionSpec{
@@ -79,8 +81,8 @@ var _ = Describe("SwitchConfig Webhook", func() {
 				sampleConfig := &SwitchConfig{}
 				// check defaulted ports params
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: switchConfigObject.Name, Namespace: defaulNamespace}, sampleConfig)).Should(Succeed())
-				g.Expect(sampleConfig.Spec.PortsDefaults.GetFEC()).Should(Equal(CFECRS))
-				g.Expect(sampleConfig.Spec.PortsDefaults.GetState()).Should(Equal(CNICUp))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetFEC()).Should(Equal(constants.FECRS))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetState()).Should(Equal(constants.NICUp))
 				g.Expect(sampleConfig.Spec.PortsDefaults.IPv4MaskLength).NotTo(BeNil())
 				g.Expect(sampleConfig.Spec.PortsDefaults.GetIPv4MaskLength()).Should(Equal(uint32(30)))
 				g.Expect(sampleConfig.Spec.PortsDefaults.IPv6Prefix).NotTo(BeNil())
@@ -90,13 +92,13 @@ var _ = Describe("SwitchConfig Webhook", func() {
 				g.Expect(sampleConfig.Spec.PortsDefaults.GetMTU()).Should(Equal(uint32(9216)))
 				// check defaulted ipam selectors
 				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets).NotTo(BeNil())
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.LabelSelector.MatchLabels).Should(Equal(map[string]string{IPAMObjectPurposeLabel: CIPAMPurposeSouthSubnet}))
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.GetLabelKey()).Should(Equal(IPAMObjectOwnerLabel))
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.FieldRef.FieldPath).Should(Equal(DefaultIPAMFieldRef))
+				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.LabelSelector.MatchLabels).Should(Equal(map[string]string{constants.IPAMObjectPurposeLabel: constants.IPAMSouthSubnetPurpose}))
+				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.GetLabelKey()).Should(Equal(constants.IPAMObjectOwnerLabel))
+				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.FieldRef.FieldPath).Should(Equal(constants.DefaultIPAMFieldRef))
 				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses).NotTo(BeNil())
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.LabelSelector.MatchLabels).Should(Equal(map[string]string{IPAMObjectPurposeLabel: CIPAMPurposeLoopback}))
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.GetLabelKey()).Should(Equal(IPAMObjectOwnerLabel))
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.FieldRef.FieldPath).Should(Equal(DefaultIPAMFieldRef))
+				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.LabelSelector.MatchLabels).Should(Equal(map[string]string{constants.IPAMObjectPurposeLabel: constants.IPAMLoopbackPurpose}))
+				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.GetLabelKey()).Should(Equal(constants.IPAMObjectOwnerLabel))
+				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.FieldRef.FieldPath).Should(Equal(constants.DefaultIPAMFieldRef))
 				g.Expect(sampleConfig.Spec.IPAM.AddressFamily.GetIPv4()).To(BeTrue())
 				g.Expect(sampleConfig.Spec.IPAM.AddressFamily.GetIPv6()).To(BeFalse())
 			}, timeout, interval).Should(Succeed())

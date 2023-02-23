@@ -22,16 +22,18 @@ import (
 	"strings"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/internal/entity"
-	machinerr "github.com/onmetal/metal-api/pkg/errors"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/internal/entity"
+	machinerr "github.com/onmetal/metal-api/pkg/errors"
 )
 
 const (
@@ -302,10 +304,14 @@ func (o *DeviceOnboarding) updateMachineInterfaces(ctx context.Context,
 		}
 
 		label := map[string]string{
-			switchv1beta1.LabelChassisID: strings.ReplaceAll(nicsSpec[nic].LLDPs[0].ChassisID, ":", "-"),
+			constants.LabelChassisID: strings.ReplaceAll(nicsSpec[nic].LLDPs[0].ChassisID, ":", "-"),
 		}
 		s, err := o.getSwitchByLabel(ctx, label)
 		if apierrors.IsNotFound(err) || machinerr.IsNotFound(err) {
+			interfaces = baseConnectionInfo(&nicsSpec[nic], interfaces, machineInterfaces)
+			continue
+		}
+		if s.GetState() != constants.SwitchStateReady {
 			interfaces = baseConnectionInfo(&nicsSpec[nic], interfaces, machineInterfaces)
 			continue
 		}

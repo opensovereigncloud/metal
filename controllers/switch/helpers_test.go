@@ -23,7 +23,10 @@ import (
 	"time"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/internal/constants"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,11 +70,11 @@ func TestCalculateASN(t *testing.T) {
 
 		{
 			Address:       pointer.String("100.64.0.1"),
-			AddressFamily: pointer.String(IPv4AF),
+			AddressFamily: pointer.String(constants.IPv4AF),
 		},
 		{
 			Address:       pointer.String("fd00:afc0:e013:1003:ffff::"),
-			AddressFamily: pointer.String(IPv6AF),
+			AddressFamily: pointer.String(constants.IPv6AF),
 		},
 	}
 	asn, err := calculateASN(loopbacksSamples)
@@ -82,7 +85,7 @@ func TestCalculateASN(t *testing.T) {
 	loopbacksSamples = []*switchv1beta1.IPAddressSpec{
 		{
 			Address:       pointer.String("fd00:afc0:e013:1003:ffff::"),
-			AddressFamily: pointer.String(IPv6AF),
+			AddressFamily: pointer.String(constants.IPv6AF),
 		},
 	}
 	asn, err = calculateASN(loopbacksSamples)
@@ -92,11 +95,11 @@ func TestCalculateASN(t *testing.T) {
 	loopbacksSamples = []*switchv1beta1.IPAddressSpec{
 		{
 			Address:       pointer.String("100.64.999.1"),
-			AddressFamily: pointer.String(IPv4AF),
+			AddressFamily: pointer.String(constants.IPv4AF),
 		},
 		{
 			Address:       pointer.String("fd00:afc0:e013:1003:ffff::"),
-			AddressFamily: pointer.String(IPv6AF),
+			AddressFamily: pointer.String(constants.IPv6AF),
 		},
 	}
 	asn, err = calculateASN(loopbacksSamples)
@@ -110,11 +113,11 @@ func TestRequestIPs(t *testing.T) {
 		IP: []*switchv1beta1.IPAddressSpec{
 			{
 				Address:       pointer.String("100.64.0.1/30"),
-				AddressFamily: pointer.String(IPv4AF),
+				AddressFamily: pointer.String(constants.IPv4AF),
 			},
 			{
 				Address:       pointer.String("fd00:afc0:e013:1003:ffff::0/127"),
-				AddressFamily: pointer.String(IPv6AF),
+				AddressFamily: pointer.String(constants.IPv6AF),
 				ObjectReference: &switchv1beta1.ObjectReference{
 					Name:      pointer.String("sample"),
 					Namespace: pointer.String("default"),
@@ -126,7 +129,7 @@ func TestRequestIPs(t *testing.T) {
 		{
 			ObjectReference: nil,
 			Address:         pointer.String("100.64.0.2/30"),
-			AddressFamily:   pointer.String(IPv4AF),
+			AddressFamily:   pointer.String(constants.IPv4AF),
 			ExtraAddress:    pointer.Bool(false),
 		},
 		{
@@ -135,7 +138,7 @@ func TestRequestIPs(t *testing.T) {
 				Namespace: pointer.String("default"),
 			},
 			Address:       pointer.String("fd00:afc0:e013:1003:ffff::1/127"),
-			AddressFamily: pointer.String(IPv6AF),
+			AddressFamily: pointer.String(constants.IPv6AF),
 			ExtraAddress:  pointer.Bool(false),
 		},
 	}
@@ -165,19 +168,19 @@ func TestConditionsUpdated(t *testing.T) {
 	tsPast := tsNow.Add(-time.Hour)
 	conditionsNow := []*switchv1beta1.ConditionSpec{
 		{
-			Name:                    pointer.String(ConditionInitialized),
+			Name:                    pointer.String(constants.ConditionInitialized),
 			State:                   pointer.Bool(true),
 			LastUpdateTimestamp:     pointer.String(tsNow.String()),
 			LastTransitionTimestamp: pointer.String(tsNow.String()),
 		},
 		{
-			Name:                    pointer.String(ConditionInterfacesOK),
+			Name:                    pointer.String(constants.ConditionInterfacesOK),
 			State:                   pointer.Bool(true),
 			LastUpdateTimestamp:     pointer.String(tsNow.String()),
 			LastTransitionTimestamp: pointer.String(tsNow.String()),
 		},
 		{
-			Name:                    pointer.String(ConditionConfigRefOK),
+			Name:                    pointer.String(constants.ConditionConfigRefOK),
 			State:                   pointer.Bool(false),
 			LastUpdateTimestamp:     pointer.String(tsNow.String()),
 			LastTransitionTimestamp: pointer.String(tsNow.String()),
@@ -185,19 +188,19 @@ func TestConditionsUpdated(t *testing.T) {
 	}
 	conditionsPast := []*switchv1beta1.ConditionSpec{
 		{
-			Name:                    pointer.String(ConditionInitialized),
+			Name:                    pointer.String(constants.ConditionInitialized),
 			State:                   pointer.Bool(true),
 			LastUpdateTimestamp:     pointer.String(tsNow.String()),
 			LastTransitionTimestamp: pointer.String(tsPast.String()),
 		},
 		{
-			Name:                    pointer.String(ConditionInterfacesOK),
+			Name:                    pointer.String(constants.ConditionInterfacesOK),
 			State:                   pointer.Bool(true),
 			LastUpdateTimestamp:     pointer.String(tsNow.String()),
 			LastTransitionTimestamp: pointer.String(tsNow.String()),
 		},
 		{
-			Name:                    pointer.String(ConditionConfigRefOK),
+			Name:                    pointer.String(constants.ConditionConfigRefOK),
 			State:                   pointer.Bool(false),
 			LastUpdateTimestamp:     pointer.String(tsNow.String()),
 			LastTransitionTimestamp: pointer.String(tsNow.String()),
