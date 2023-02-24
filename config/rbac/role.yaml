@@ -70,6 +70,32 @@ rules:
 - apiGroups:
   - compute.api.onmetal.de
   resources:
+  - machineclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machineclasses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machineclasses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
   - machinepools
   verbs:
   - create

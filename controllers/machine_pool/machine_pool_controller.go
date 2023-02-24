@@ -64,6 +64,9 @@ type machinePoolReconcileWrappedCtx struct {
 //+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools,verbs=get;list;watch;update;patch;create
 //+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/finalizers,verbs=update
+//+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machineclasses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machineclasses/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machineclasses/finalizers,verbs=update
 
 func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	wCtx := &machinePoolReconcileWrappedCtx{
