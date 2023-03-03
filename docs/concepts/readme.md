@@ -4,3 +4,4 @@
 * [`inventory` API Group](inventory.md)
 * [`switches` API Group](switches.md)
 * [`machine` API Group](machine.md)
+* [`switch` API Group](switch.md)
