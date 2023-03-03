@@ -44,6 +44,7 @@ import (
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 )
 
 const defaultNamespace string = "onmetal"
@@ -71,9 +72,9 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 
 	metalapiCRDPath := filepath.Join("..", "..", "config", "crd", "bases")
-	ipamCRDPath, err := getCrdPath(ipamv1alpha1.Subnet{})
+	ipamCRDPath, err := switchespkg.GetCrdPath(ipamv1alpha1.Subnet{})
 	Expect(err).ToNot(HaveOccurred())
-	ipamWebhookPath, err := getWebhookPath(ipamv1alpha1.Subnet{})
+	ipamWebhookPath, err := switchespkg.GetWebhookPath(ipamv1alpha1.Subnet{})
 	Expect(err).ToNot(HaveOccurred())
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
@@ -221,7 +222,7 @@ func seedNamespace(ctx context.Context, c client.Client) error {
 
 func seedInventories(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "inventories")
-	samples, err := getTestSamples(samplesPath)
+	samples, err := switchespkg.GetTestSamples(samplesPath)
 	if err != nil {
 		return err
 	}
@@ -231,7 +232,7 @@ func seedInventories(ctx context.Context, c client.Client) error {
 			return err
 		}
 		obj := &inventoryv1alpha1.Inventory{}
-		if err := createSampleObject(ctx, c, obj, raw); err != nil {
+		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
 	}
@@ -240,7 +241,7 @@ func seedInventories(ctx context.Context, c client.Client) error {
 
 func seedConfigs(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "switch_configs")
-	samples, err := getTestSamples(samplesPath)
+	samples, err := switchespkg.GetTestSamples(samplesPath)
 	if err != nil {
 		return err
 	}
@@ -250,7 +251,7 @@ func seedConfigs(ctx context.Context, c client.Client) error {
 			return err
 		}
 		obj := &switchv1beta1.SwitchConfig{}
-		if err := createSampleObject(ctx, c, obj, raw); err != nil {
+		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
 	}
@@ -259,7 +260,7 @@ func seedConfigs(ctx context.Context, c client.Client) error {
 
 func seedNetworks(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "networks")
-	samples, err := getTestSamples(samplesPath)
+	samples, err := switchespkg.GetTestSamples(samplesPath)
 	if err != nil {
 		return err
 	}
@@ -269,7 +270,7 @@ func seedNetworks(ctx context.Context, c client.Client) error {
 			return err
 		}
 		obj := &ipamv1alpha1.Network{}
-		if err := createSampleObject(ctx, c, obj, raw); err != nil {
+		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
 	}
@@ -285,7 +286,7 @@ func seedNetworks(ctx context.Context, c client.Client) error {
 
 func seedSubnets(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "subnets")
-	samples, err := getTestSamples(samplesPath)
+	samples, err := switchespkg.GetTestSamples(samplesPath)
 	if err != nil {
 		return err
 	}
@@ -295,7 +296,7 @@ func seedSubnets(ctx context.Context, c client.Client) error {
 			return err
 		}
 		obj := &ipamv1alpha1.Subnet{}
-		if err := createSampleObject(ctx, c, obj, raw); err != nil {
+		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
 	}
@@ -311,7 +312,7 @@ func seedSubnets(ctx context.Context, c client.Client) error {
 
 func seedSwitches(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "switches")
-	samples, err := getTestSamples(samplesPath)
+	samples, err := switchespkg.GetTestSamples(samplesPath)
 	if err != nil {
 		return err
 	}
@@ -321,7 +322,7 @@ func seedSwitches(ctx context.Context, c client.Client) error {
 			return err
 		}
 		obj := &switchv1beta1.Switch{}
-		if err := createSampleObject(ctx, c, obj, raw); err != nil {
+		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
 	}
@@ -330,7 +331,7 @@ func seedSwitches(ctx context.Context, c client.Client) error {
 
 func seedSwitchesSubnets(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "switch_ipam_objects", "subnets")
-	samples, err := getTestSamples(samplesPath)
+	samples, err := switchespkg.GetTestSamples(samplesPath)
 	if err != nil {
 		return err
 	}
@@ -340,7 +341,7 @@ func seedSwitchesSubnets(ctx context.Context, c client.Client) error {
 			return err
 		}
 		obj := &ipamv1alpha1.Subnet{}
-		if err := createSampleObject(ctx, c, obj, raw); err != nil {
+		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
 	}
@@ -356,7 +357,7 @@ func seedSwitchesSubnets(ctx context.Context, c client.Client) error {
 
 func seedSwitchesLoopbacks(ctx context.Context, c client.Client) error {
 	samplesPath := filepath.Join(samplesPath, "switch_ipam_objects", "loopbacks")
-	samples, err := getTestSamples(samplesPath)
+	samples, err := switchespkg.GetTestSamples(samplesPath)
 	if err != nil {
 		return err
 	}
@@ -366,7 +367,7 @@ func seedSwitchesLoopbacks(ctx context.Context, c client.Client) error {
 			return err
 		}
 		obj := &ipamv1alpha1.IP{}
-		if err := createSampleObject(ctx, c, obj, raw); err != nil {
+		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
 	}

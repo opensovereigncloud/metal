@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package switches
 
 import (
 	"go/build"
@@ -64,6 +64,37 @@ func TestLabelFromFieldRef(t *testing.T) {
 	assert.Equal(t, expected, label)
 }
 
+func TestLabelFromFieldRefFail(t *testing.T) {
+	t.Parallel()
+	obj := &switchv1beta1.Switch{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sample-switch",
+			Namespace: "metal-api",
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Switch",
+			APIVersion: "v1beta1",
+		},
+		Spec: switchv1beta1.SwitchSpec{
+			Managed:   pointer.Bool(true),
+			Cordon:    pointer.Bool(false),
+			TopSpine:  pointer.Bool(true),
+			ScanPorts: pointer.Bool(true),
+		},
+	}
+	fieldSelector := &switchv1beta1.FieldSelectorSpec{
+		LabelKey: pointer.String("switch.onmetal.de/object-owner"),
+		FieldRef: &v1.ObjectFieldSelector{
+			APIVersion: "v1",
+			FieldPath:  "metadata.name",
+		},
+	}
+	expected := "API version mismatch: expected v1beta1, actual v1"
+	_, err := labelFromFieldRef(obj, fieldSelector)
+	assert.NotNil(t, err)
+	assert.Equal(t, expected, err.Error())
+}
+
 func TestCalculateASN(t *testing.T) {
 	t.Parallel()
 	loopbacksSamples := []*switchv1beta1.IPAddressSpec{
@@ -77,7 +108,7 @@ func TestCalculateASN(t *testing.T) {
 			AddressFamily: pointer.String(constants.IPv6AF),
 		},
 	}
-	asn, err := calculateASN(loopbacksSamples)
+	asn, err := CalculateASN(loopbacksSamples)
 	expected := uint32(4_204_194_305)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, asn)
@@ -88,7 +119,7 @@ func TestCalculateASN(t *testing.T) {
 			AddressFamily: pointer.String(constants.IPv6AF),
 		},
 	}
-	asn, err = calculateASN(loopbacksSamples)
+	asn, err = CalculateASN(loopbacksSamples)
 	assert.Equal(t, uint32(0), asn)
 	assert.NotNil(t, err)
 
@@ -102,7 +133,7 @@ func TestCalculateASN(t *testing.T) {
 			AddressFamily: pointer.String(constants.IPv6AF),
 		},
 	}
-	asn, err = calculateASN(loopbacksSamples)
+	asn, err = CalculateASN(loopbacksSamples)
 	assert.Equal(t, uint32(0), asn)
 	assert.NotNil(t, err)
 }
@@ -142,22 +173,22 @@ func TestRequestIPs(t *testing.T) {
 			ExtraAddress:  pointer.Bool(false),
 		},
 	}
-	requestedIPs := requestIPs(nicSample)
+	requestedIPs := RequestIPs(nicSample)
 	assert.ElementsMatch(t, expectedIPs, requestedIPs)
 }
 
 func TestGetCrdPath(t *testing.T) {
 	t.Parallel()
-	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.18-0.20230207172629-4a0344245488/config/crd/bases")
-	computed, err := getCrdPath(ipamv1alpha1.Subnet{})
+	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.20/config/crd/bases")
+	computed, err := GetCrdPath(ipamv1alpha1.Subnet{})
 	assert.Nil(t, err)
 	assert.Equal(t, expected, computed)
 }
 
 func TestGetWebhookPath(t *testing.T) {
 	t.Parallel()
-	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.18-0.20230207172629-4a0344245488/config/webhook")
-	computed, err := getWebhookPath(ipamv1alpha1.Subnet{})
+	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.20/config/webhook")
+	computed, err := GetWebhookPath(ipamv1alpha1.Subnet{})
 	assert.Nil(t, err)
 	assert.Equal(t, expected, computed)
 }
@@ -206,7 +237,6 @@ func TestConditionsUpdated(t *testing.T) {
 			LastTransitionTimestamp: pointer.String(tsNow.String()),
 		},
 	}
-	expect := true
 	actual := conditionsUpdated(conditionsPast, conditionsNow)
-	assert.Equal(t, expect, actual)
+	assert.True(t, actual)
 }

@@ -96,11 +96,4 @@ const (
 	ConditionAsnOK            string = "AsnOK"
 	ConditionSubnetsOK        string = "SubnetsOK"
 	ConditionIPAddressesOK    string = "IPAddressesOK"
-
-	ReasonRequestFailed        string = "APIRequestFailed"
-	ReasonObjectNotExists      string = "ObjectNotExists"
-	ReasonMissingPrerequisites string = "MissingPrerequisites"
-	ReasonASNCalculationFailed string = "ASNCalculationFailed"
-	ReasonIPAssignmentFailed   string = "IPAssignmentFailed"
-	ReasonSourceUpdated        string = "SourceUpdated"
 )

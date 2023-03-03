@@ -49,6 +49,9 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/errors"
+	"github.com/onmetal/metal-api/pkg/stateproc"
+	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 )
 
 // SwitchReconciler reconciles Switch object corresponding
@@ -149,7 +152,7 @@ func detectChangesPredicate(e event.UpdateEvent) bool {
 	if !okOld || !okNew {
 		return false
 	}
-	return reconciliationRequired(objOld, objNew)
+	return switchespkg.ReconciliationRequired(objOld, objNew)
 }
 
 func (r *SwitchReconciler) handleSwitchUpdateEvent(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
@@ -160,18 +163,18 @@ func (r *SwitchReconciler) handleSwitchUpdateEvent(e event.UpdateEvent, q workqu
 	}
 	// if switch object has no changes, which affect neighbors, then there is no need to
 	// enqueue it's neighbors for reconciliation.
-	if !reconciliationRequired(objOld, objNew) {
+	if !switchespkg.ReconciliationRequired(objOld, objNew) {
 		return
 	}
 	switchesQueue := make(map[string]struct{})
 	for _, nicData := range objOld.Status.Interfaces {
-		if !neighborIsSwitch(nicData) {
+		if !switchespkg.NeighborIsSwitch(nicData) {
 			continue
 		}
 		switchesQueue[nicData.Peer.GetObjectReferenceName()] = struct{}{}
 	}
 	for _, nicData := range objNew.Status.Interfaces {
-		if !neighborIsSwitch(nicData) {
+		if !switchespkg.NeighborIsSwitch(nicData) {
 			continue
 		}
 		switchesQueue[nicData.Peer.GetObjectReferenceName()] = struct{}{}
@@ -191,7 +194,7 @@ func (r *SwitchReconciler) handleSwitchDeleteEvent(e event.DeleteEvent, q workqu
 	}
 	switchesQueue := make(map[string]struct{})
 	for _, nicData := range obj.Status.Interfaces {
-		if !neighborIsSwitch(nicData) {
+		if !switchespkg.NeighborIsSwitch(nicData) {
 			continue
 		}
 		switchesQueue[nicData.Peer.GetObjectReferenceName()] = struct{}{}
@@ -212,8 +215,8 @@ func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Swi
 		return ctrl.Result{}, nil
 	}
 	cl := r.newSwitchClient(ctx)
-	proc := NewGenericStateProcessor[*switchv1beta1.Switch](cl, r.Log)
-	proc.setFunctions([]func(*switchv1beta1.Switch) StateFuncResult{
+	proc := stateproc.NewGenericStateProcessor[*switchv1beta1.Switch](cl, r.Log)
+	proc.SetFunctions([]func(*switchv1beta1.Switch) stateproc.StateFuncResult{
 		cl.preprocessingCheck,
 		cl.initialize,
 		cl.updateInterfaces,
@@ -228,8 +231,8 @@ func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Swi
 		cl.setStateReady,
 	})
 
-	err := proc.compute(obj)
-	if err != nil && err.Error() == ErrorMissingRequirements {
+	err := proc.Compute(obj)
+	if errors.IsMissingRequirements(err) {
 		return ctrl.Result{}, err
 	}
 	return r.patch(ctx, obj)
@@ -237,7 +240,7 @@ func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Swi
 
 func (r *SwitchReconciler) patch(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
 	obj.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-	if err := r.Status().Patch(ctx, obj, client.Apply, patchOpts); err != nil {
+	if err := r.Status().Patch(ctx, obj, client.Apply, switchespkg.PatchOpts); err != nil {
 		r.Log.Info("failed to update switch configuration", "name", obj.NamespacedName(), "error", err)
 		return ctrl.Result{}, err
 	}
@@ -249,23 +252,23 @@ func (r *SwitchReconciler) patch(ctx context.Context, obj *switchv1beta1.Switch)
 	}
 }
 
-func (s *SwitchClient) preprocessingCheck(obj *switchv1beta1.Switch) StateFuncResult {
-	var result StateFuncResult
+func (s *SwitchClient) preprocessingCheck(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	var result stateproc.StateFuncResult
 	if obj.GetState() != constants.SwitchStatePending {
 		return result
 	}
 	if _, ok := obj.Labels[constants.SwitchTypeLabel]; !ok {
 		result.Break = true
-		result.Err = reconciliationError(ErrorMissingRequirements)
+		result.Err = errors.NewSwitchError(errors.ErrorReasonMissingRequirements, errors.MessageMissingTypeLabel, nil)
 	}
 	if obj.GetInventoryRef() == constants.EmptyString {
 		result.Break = true
-		result.Err = reconciliationError(ErrorMissingRequirements)
+		result.Err = errors.NewSwitchError(errors.ErrorReasonMissingRequirements, errors.MessageMissingInventoryRef, nil)
 	}
 	return result
 }
 
-func (s *SwitchClient) initialize(obj *switchv1beta1.Switch) StateFuncResult {
+func (s *SwitchClient) initialize(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
 	if obj.GetState() == constants.EmptyString {
 		obj.Status = switchv1beta1.SwitchStatus{
 			ConfigRef:         nil,
@@ -282,24 +285,24 @@ func (s *SwitchClient) initialize(obj *switchv1beta1.Switch) StateFuncResult {
 		if obj.GetTopSpine() {
 			obj.SetLayer(0)
 		}
-		setState(obj, constants.SwitchStateInitial, constants.EmptyString)
+		switchespkg.SetState(obj, constants.SwitchStateInitial, constants.EmptyString)
 	}
 	if obj.GetTopSpine() && obj.GetLayer() != 0 {
 		obj.SetLayer(0)
 	}
 	obj.SetCondition(constants.ConditionInitialized, true)
-	return StateFuncResult{}
+	return stateproc.StateFuncResult{}
 }
 
-func (s *SwitchClient) updateInterfaces(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
+func (s *SwitchClient) updateInterfaces(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
 	if obj.GetInventoryRef() == constants.EmptyString {
 		obj.SetCondition(constants.ConditionInterfacesOK, false).
-			SetReason(constants.ReasonMissingPrerequisites).
-			SetMessage(ErrorInventoryReferenceMissed)
-		setState(obj, constants.SwitchStatePending, ErrorMissingRequirements)
+			SetReason(errors.ErrorReasonMissingRequirements.String()).
+			SetMessage(errors.MessageMissingInventoryRef)
+		switchespkg.SetState(obj, constants.SwitchStatePending, errors.StateMessageMissingRequirements)
 		result.Break = true
-		result.Err = reconciliationError(ErrorInventoryReferenceMissed)
+		result.Err = errors.NewSwitchError(errors.ErrorReasonMissingInventoryRef, errors.MessageMissingInventoryRef, nil)
 		return result
 	}
 	inventory := &inventoryv1alpha1.Inventory{}
@@ -307,37 +310,37 @@ func (s *SwitchClient) updateInterfaces(obj *switchv1beta1.Switch) StateFuncResu
 		Namespace: obj.Namespace,
 		Name:      obj.Spec.InventoryRef.Name,
 	}, inventory); err != nil {
-		reason := constants.ReasonRequestFailed
-		message := fmt.Sprintf("%s: Inventory", ErrorFailedToGetRequiredObject)
+		reason := errors.ErrorReasonRequestFailed
+		message := errors.MessageRequestFailedWithKind("Inventory")
 		if apierrors.IsNotFound(err) {
-			reason = constants.ReasonObjectNotExists
-			message = fmt.Sprintf("%s: Inventory", ErrorRequiredObjectNotExist)
+			reason = errors.ErrorReasonObjectNotExist
+			message = errors.MessageObjectNotExistWithKind("Inventory")
 		}
 		obj.SetCondition(constants.ConditionInterfacesOK, false).
-			SetReason(reason).
+			SetReason(reason.String()).
 			SetMessage(message)
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedToRequestRelatedObjects)
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedToGetRequiredObject, "type", "Inventory", "error", err)
+		result.Err = errors.NewSwitchError(reason, message, err)
 		return result
 	}
-	applyInterfacesFromInventory(obj, inventory)
+	switchespkg.ApplyInterfacesFromInventory(obj, inventory)
 	obj.SetCondition(constants.ConditionInterfacesOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
-func (s *SwitchClient) updateConfigRef(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
+func (s *SwitchClient) updateConfigRef(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
 	switchConfigs := &switchv1beta1.SwitchConfigList{}
 	switchType, ok := obj.Labels[constants.SwitchTypeLabel]
 	if !ok {
 		obj.SetCondition(constants.ConditionConfigRefOK, false).
-			SetReason(constants.ReasonMissingPrerequisites).
-			SetMessage(fmt.Sprintf("%s: %s", ErrorTypeLabelMissed, constants.SwitchTypeLabel))
-		setState(obj, constants.SwitchStatePending, ErrorMissingRequirements)
+			SetReason(errors.ErrorReasonMissingRequirements.String()).
+			SetMessage(errors.MessageMissingTypeLabel)
+		switchespkg.SetState(obj, constants.SwitchStatePending, errors.StateMessageMissingRequirements)
 		result.Break = true
-		result.Err = reconciliationError(ErrorTypeLabelMissed, "label", constants.SwitchTypeLabel)
+		result.Err = errors.NewSwitchError(errors.ErrorReasonMissingTypeLabel, errors.MessageMissingTypeLabel, nil)
 		return result
 	}
 	requirements, _ := labels.NewRequirement(constants.SwitchConfigTypeLabelPrefix+switchType, selection.Exists, []string{})
@@ -349,59 +352,75 @@ func (s *SwitchClient) updateConfigRef(obj *switchv1beta1.Switch) StateFuncResul
 	}
 	if err := s.List(s.ctx, switchConfigs, opts); err != nil {
 		obj.SetCondition(constants.ConditionConfigRefOK, false).
-			SetReason(constants.ReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: SwitchConfig", ErrorFailedToListObjects))
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedToRequestRelatedObjects)
+			SetReason(errors.ErrorReasonRequestFailed.String()).
+			SetMessage(errors.MessageRequestFailedWithKind("SwitchConfigList"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedToListObjects, "type", "SwitchConfig", "error", err)
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonRequestFailed,
+			errors.MessageRequestFailedWithKind("SwitchConfigList"),
+			err,
+		)
 		return result
 	}
 	if len(switchConfigs.Items) == 0 {
 		obj.SetCondition(constants.ConditionConfigRefOK, false).
-			SetReason(constants.ReasonObjectNotExists).
-			SetMessage(fmt.Sprintf("%s: SwitchConfig", ErrorRequiredObjectNotExist))
-		setState(obj, constants.SwitchStateInvalid, ErrorMissingRequirements)
+			SetReason(errors.ErrorReasonObjectNotExist.String()).
+			SetMessage(errors.MessageObjectNotExistWithKind("SwitchConfig"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageMissingRequirements)
 		result.Break = true
-		result.Err = reconciliationError(ErrorRequiredObjectNotExist, "type", "SwitchConfig")
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonObjectNotExist,
+			errors.MessageObjectNotExistWithKind("SwitchConfig"),
+			nil,
+		)
 		return result
 	}
 	obj.SetConfigRef(switchConfigs.Items[0].Name)
 	obj.SetCondition(constants.ConditionConfigRefOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
-func (s *SwitchClient) updatePortParameters(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
+func (s *SwitchClient) updatePortParameters(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
 	config := &switchv1beta1.SwitchConfig{}
 	if err := s.Get(s.ctx, types.NamespacedName{
 		Namespace: obj.Namespace,
 		Name:      obj.Status.ConfigRef.Name,
 	}, config); err != nil {
 		obj.SetCondition(constants.ConditionPortParametersOK, false).
-			SetReason(constants.ReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: SwitchConfig", ErrorFailedToGetRequiredObject))
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedToRequestRelatedObjects)
+			SetReason(errors.ErrorReasonRequestFailed.String()).
+			SetMessage(errors.MessageRequestFailedWithKind("SwitchConfigList"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedToGetRequiredObject, "type", "SwitchConfig", "error", err)
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonRequestFailed,
+			errors.MessageRequestFailedWithKind("SwitchConfig"),
+			err,
+		)
 		return result
 	}
-	applyInterfaceParams(obj, config)
+	switchespkg.ApplyInterfaceParams(obj, config)
 	obj.SetCondition(constants.ConditionPortParametersOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
-func (s *SwitchClient) updateNeighbors(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
-	switches, err := getSwitches(s.ctx, s.Client, obj.Namespace)
+func (s *SwitchClient) updateNeighbors(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
+	switches, err := s.getSwitches(obj.Namespace)
 	if err != nil {
 		obj.SetCondition(constants.ConditionNeighborsOK, false).
-			SetReason(constants.ReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: Switch", ErrorFailedToListObjects))
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedToRequestRelatedObjects)
+			SetReason(errors.ErrorReasonRequestFailed.String()).
+			SetMessage(errors.MessageRequestFailedWithKind("SwitchList"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedToListObjects, "type", "Switch", "error", err)
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonRequestFailed,
+			errors.MessageRequestFailedWithKind("SwitchList"),
+			err,
+		)
 		return result
 	}
 	for _, item := range switches.Items {
@@ -423,58 +442,66 @@ func (s *SwitchClient) updateNeighbors(obj *switchv1beta1.Switch) StateFuncResul
 		}
 	}
 	obj.SetCondition(constants.ConditionNeighborsOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
-func (s *SwitchClient) updateLayerAndRole(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
-	switches, err := getSwitches(s.ctx, s.Client, obj.Namespace)
+func (s *SwitchClient) updateLayerAndRole(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
+	switches, err := s.getSwitches(obj.Namespace)
 	if err != nil {
 		obj.SetCondition(constants.ConditionLayerAndRoleOK, false).
-			SetReason(constants.ReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: Switch", ErrorFailedToListObjects))
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedToRequestRelatedObjects)
+			SetReason(errors.ErrorReasonRequestFailed.String()).
+			SetMessage(errors.MessageRequestFailedWithKind("SwitchList"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedToListObjects, "type", "Switch", "error", err)
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonRequestFailed,
+			errors.MessageRequestFailedWithKind("SwitchList"),
+			err,
+		)
 		return result
 	}
-	computeLayer(obj, switches)
-	setRole(obj)
+	switchespkg.ComputeLayer(obj, switches)
+	switchespkg.SetRole(obj)
 	obj.SetCondition(constants.ConditionLayerAndRoleOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
-func (s *SwitchClient) updateLoopbacks(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
+func (s *SwitchClient) updateLoopbacks(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
 	loopbacks := &ipamv1alpha1.IPList{}
-	af, err := getIPAMObjectsList(s.ctx, s.Client, obj, loopbacks)
+	af, err := s.getIPAMObjectsList(obj, loopbacks)
 	if err != nil {
 		obj.SetCondition(constants.ConditionLoopbacksOK, false).
-			SetReason(constants.ReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: IP", ErrorFailedToListObjects))
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedToRequestRelatedObjects)
+			SetReason(errors.ErrorReasonRequestFailed.String()).
+			SetMessage(errors.MessageRequestFailedWithKind("IPList"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedToListObjects, "type", "IP", "error", err)
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonRequestFailed,
+			errors.MessageRequestFailedWithKind("IPList"),
+			err,
+		)
 		return result
 	}
 	loopbacksToApply, addressFamiliesMap := processLoopbacks(loopbacks, af)
-	afOK := addressFamiliesMatchConfig(true, af.GetIPv6(), addressFamiliesMap)
+	afOK := switchespkg.AddressFamiliesMatchConfig(true, af.GetIPv6(), addressFamiliesMap)
 	if len(loopbacksToApply) == 0 || !afOK {
-		_ = createLoopbackIPs(s.ctx, s.Client, obj)
+		_ = s.createLoopbackIPs(obj)
 		obj.SetCondition(constants.ConditionLoopbacksOK, false).
-			SetReason(constants.ReasonObjectNotExists).
-			SetMessage(fmt.Sprintf("%s: IP v4", ErrorRequiredObjectNotExist))
-		setState(obj, constants.SwitchStateInvalid, ErrorMissingRequirements)
+			SetReason(errors.ErrorReasonObjectNotExist.String()).
+			SetMessage(errors.MessageMissingLoopbackV4IP)
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageMissingRequirements)
 		result.Break = true
-		result.Err = reconciliationError(ErrorRequiredObjectNotExist, "type", "IP")
+		result.Err = errors.NewSwitchError(errors.ErrorReasonObjectNotExist, errors.MessageMissingLoopbackV4IP, nil)
 		return result
 	}
 	obj.Status.LoopbackAddresses = make([]*switchv1beta1.IPAddressSpec, len(loopbacksToApply))
 	copy(obj.Status.LoopbackAddresses, loopbacksToApply)
 	obj.SetCondition(constants.ConditionLoopbacksOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
@@ -512,53 +539,65 @@ func processLoopbacks(
 	return loopbacksToApply, addressFamiliesMap
 }
 
-func (s *SwitchClient) updateASN(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
-	asn, err := calculateASN(obj.Status.LoopbackAddresses)
+func (s *SwitchClient) updateASN(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
+	asn, err := switchespkg.CalculateASN(obj.Status.LoopbackAddresses)
 	if err != nil {
 		obj.SetCondition(constants.ConditionAsnOK, false).
-			SetReason(constants.ReasonASNCalculationFailed).
+			SetReason(errors.ErrorReasonASNCalculationFailed.String()).
 			SetMessage(err.Error())
-		setState(obj, constants.SwitchStateInvalid, err.Error())
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, err.Error())
 		result.Break = true
-		result.Err = err
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonASNCalculationFailed,
+			constants.EmptyString,
+			err,
+		)
 		return result
 	}
 	obj.SetASN(asn)
 	obj.SetCondition(constants.ConditionAsnOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
-func (s *SwitchClient) updateSubnets(obj *switchv1beta1.Switch) StateFuncResult {
-	result := StateFuncResult{}
+func (s *SwitchClient) updateSubnets(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	result := stateproc.StateFuncResult{}
 	subnets := &ipamv1alpha1.SubnetList{}
-	af, err := getIPAMObjectsList(s.ctx, s.Client, obj, subnets)
+	af, err := s.getIPAMObjectsList(obj, subnets)
 	if err != nil {
 		obj.SetCondition(constants.ConditionSubnetsOK, false).
-			SetReason(constants.ReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: Subnet", ErrorFailedToListObjects))
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedToRequestRelatedObjects)
+			SetReason(errors.ErrorReasonRequestFailed.String()).
+			SetMessage(errors.MessageRequestFailedWithKind("SubnetList"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedToListObjects, "type", "Subnet", "error", err)
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonRequestFailed,
+			errors.MessageRequestFailedWithKind("SubnetList"),
+			err,
+		)
 		return result
 	}
 	subnetsToApply, addressFamiliesMap := processSubnets(obj, subnets, af)
-	afOK := addressFamiliesMatchConfig(af.GetIPv4(), af.GetIPv6(), addressFamiliesMap)
+	afOK := switchespkg.AddressFamiliesMatchConfig(af.GetIPv4(), af.GetIPv6(), addressFamiliesMap)
 	if len(subnetsToApply) == 0 || !afOK {
-		_ = createSubnets(s.ctx, s.Client, obj, addressFamiliesMap)
+		_ = s.createSubnets(obj, addressFamiliesMap)
 		obj.SetCondition(constants.ConditionSubnetsOK, false).
-			SetReason(constants.ReasonObjectNotExists).
-			SetMessage(fmt.Sprintf("%s: Subnet", ErrorRequiredObjectNotExist))
-		setState(obj, constants.SwitchStateInvalid, ErrorMissingRequirements)
+			SetReason(errors.ErrorReasonObjectNotExist.String()).
+			SetMessage(errors.MessageObjectNotExistWithKind("Subnet"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageMissingRequirements)
 		result.Break = true
-		result.Err = reconciliationError(ErrorRequiredObjectNotExist, "type", "Subnet")
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonObjectNotExist,
+			errors.MessageObjectNotExistWithKind("Subnet"),
+			nil,
+		)
 		return result
 	}
 	obj.Status.Subnets = make([]*switchv1beta1.SubnetSpec, len(subnetsToApply))
 	copy(obj.Status.Subnets, subnetsToApply)
 	obj.SetCondition(constants.ConditionSubnetsOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
@@ -582,7 +621,7 @@ func processSubnets(
 		if (!af.GetIPv4() && item.Status.Reserved.IsIPv4()) || (!af.GetIPv6() && item.Status.Reserved.IsIPv6()) {
 			continue
 		}
-		requiredCapacity := getTotalAddressesCount(obj.Status.Interfaces, item.Status.Type)
+		requiredCapacity := switchespkg.GetTotalAddressesCount(obj.Status.Interfaces, item.Status.Type)
 		if requiredCapacity.Cmp(item.Status.CapacityLeft) > 0 {
 			continue
 		}
@@ -596,9 +635,9 @@ func processSubnets(
 	return subnetsToApply, addressFamiliesMap
 }
 
-func (s *SwitchClient) updateIPAddresses(obj *switchv1beta1.Switch) StateFuncResult {
+func (s *SwitchClient) updateIPAddresses(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
 	var err error
-	result := StateFuncResult{}
+	result := stateproc.StateFuncResult{}
 	for name, data := range obj.Status.Interfaces {
 		if !strings.HasPrefix(name, constants.SwitchPortNamePrefix) {
 			continue
@@ -608,35 +647,38 @@ func (s *SwitchClient) updateIPAddresses(obj *switchv1beta1.Switch) StateFuncRes
 			if data.Peer == nil {
 				continue
 			}
-			err = updateNorthIPs(s.ctx, s.Client, name, data, obj)
+			err = s.updateNorthIPs(name, data, obj)
 		case constants.DirectionSouth:
-			err = updateSouthIPs(s.ctx, name, data, obj)
+			err = s.updateSouthIPs(name, data, obj)
 		}
 	}
 	if err != nil {
 		obj.SetCondition(constants.ConditionIPAddressesOK, false).
-			SetReason(constants.ReasonIPAssignmentFailed).
-			SetMessage(ErrorFailedIPAddressAssignment)
-		setState(obj, constants.SwitchStateInvalid, ErrorFailedIPAddressAssignment)
+			SetReason(errors.ErrorReasonIPAssignmentFailed.String()).
+			SetMessage(err.Error())
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.MessageFailedToAssignIPAddresses)
 		result.Break = true
-		result.Err = reconciliationError(ErrorFailedIPAddressAssignment, "error", err)
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonIPAssignmentFailed,
+			errors.MessageFailedToAssignIPAddresses,
+			err,
+		)
 		return result
 	}
 	obj.SetCondition(constants.ConditionIPAddressesOK, true)
-	setState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
 }
 
 // IP objects' creation commented out due to decision that at the moment it is not required.
 // If necessary it might be used.
-func updateNorthIPs(
-	ctx context.Context,
-	cl client.Client,
+func (s *SwitchClient) updateNorthIPs(
+	// NIC name is only needed in case of IP object creation
 	_ string,
 	data *switchv1beta1.InterfaceSpec,
 	obj *switchv1beta1.Switch,
 ) error {
-	switches, err := getSwitches(ctx, cl, obj.Namespace)
+	switches, err := s.getSwitches(obj.Namespace)
 	if err != nil {
 		return err
 	}
@@ -645,15 +687,15 @@ func updateNorthIPs(
 		if item.Name != data.Peer.GetObjectReferenceName() {
 			continue
 		}
-		peerNICData := getPeerData(item.Status.Interfaces, data.Peer.GetPortDescription(), data.Peer.GetPortID())
+		peerNICData := switchespkg.GetPeerData(item.Status.Interfaces, data.Peer.GetPortDescription(), data.Peer.GetPortID())
 		if peerNICData == nil {
 			continue
 		}
-		requestedIPs := requestIPs(peerNICData)
+		requestedIPs := switchespkg.RequestIPs(peerNICData)
 		ipsToApply = append(ipsToApply, requestedIPs...)
 		data.IP = make([]*switchv1beta1.IPAddressSpec, len(ipsToApply))
 		copy(data.IP, ipsToApply)
-		// if err := r.createIPs(ctx, obj, nic, ipsToApply); err != nil {
+		// if err := s.createIPs(obj, nic, ipsToApply); err != nil {
 		// 	return err
 		// }
 	}
@@ -662,37 +704,36 @@ func updateNorthIPs(
 
 // IP objects' creation commented out due to decision that at the moment it is not required.
 // If necessary it might be used.
-func updateSouthIPs(
-	_ context.Context,
+func (s *SwitchClient) updateSouthIPs(
 	nic string,
 	data *switchv1beta1.InterfaceSpec,
 	obj *switchv1beta1.Switch,
 ) error {
 	ipsToApply := make([]*switchv1beta1.IPAddressSpec, 0)
-	extraIPs, err := getExtraIPs(obj, nic)
+	extraIPs, err := switchespkg.GetExtraIPs(obj, nic)
 	if err != nil {
 		return err
 	}
 	ipsToApply = append(ipsToApply, extraIPs...)
-	computedIPs, err := getComputedIPs(obj, nic, data)
+	computedIPs, err := switchespkg.GetComputedIPs(obj, nic, data)
 	if err != nil {
 		return err
 	}
 	ipsToApply = append(ipsToApply, computedIPs...)
 	data.IP = make([]*switchv1beta1.IPAddressSpec, len(ipsToApply))
 	copy(data.IP, ipsToApply)
-	// if err := r.createIPs(ctx, obj, nic, computedIPs); err != nil {
+	// if err := s.createIPs(obj, nic, computedIPs); err != nil {
 	// 	return err
 	// }
 	return nil
 }
 
-func (s *SwitchClient) setStateReady(obj *switchv1beta1.Switch) StateFuncResult {
-	setState(obj, constants.SwitchStateReady, constants.EmptyString)
-	return StateFuncResult{}
+func (s *SwitchClient) setStateReady(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
+	switchespkg.SetState(obj, constants.SwitchStateReady, constants.EmptyString)
+	return stateproc.StateFuncResult{}
 }
 
-func getSwitches(ctx context.Context, cl client.Client, ns string) (*switchv1beta1.SwitchList, error) {
+func (s *SwitchClient) getSwitches(ns string) (*switchv1beta1.SwitchList, error) {
 	switches := &switchv1beta1.SwitchList{}
 	inventoriedLabelReq, _ := labels.NewRequirement(constants.InventoriedLabel, selection.Exists, []string{})
 	typedLabelReq, _ := labels.NewRequirement(constants.SwitchTypeLabel, selection.Exists, []string{})
@@ -702,7 +743,7 @@ func getSwitches(ctx context.Context, cl client.Client, ns string) (*switchv1bet
 		Namespace:     ns,
 		Limit:         100,
 	}
-	if err := cl.List(ctx, switches, opts); err != nil {
+	if err := s.List(s.ctx, switches, opts); err != nil {
 		return nil, err
 	}
 	return switches, nil
@@ -712,15 +753,13 @@ func getSwitches(ctx context.Context, cl client.Client, ns string) (*switchv1bet
 // IPAM related functions for objects creation
 // ----------------------------------------
 
-func getIPAMObjectsList(
-	ctx context.Context,
-	cl client.Client,
+func (s *SwitchClient) getIPAMObjectsList(
 	obj *switchv1beta1.Switch,
 	list client.ObjectList) (*switchv1beta1.AddressFamiliesMap, error) {
 	config := &switchv1beta1.SwitchConfig{}
 	key := types.NamespacedName{Namespace: obj.Namespace, Name: obj.Status.ConfigRef.Name}
-	if err := cl.Get(ctx, key, config); err != nil {
-		return nil, fmt.Errorf("failed to get related switch config: %w", err)
+	if err := s.Get(s.ctx, key, config); err != nil {
+		return nil, err
 	}
 	var params *switchv1beta1.IPAMSelectionSpec
 	switch list.(type) {
@@ -735,25 +774,25 @@ func getIPAMObjectsList(
 			params = obj.Spec.IPAM.SouthSubnets
 		}
 	default:
-		return nil, reconciliationError(ErrorInvalidInputType)
+		return nil, switchespkg.NewProcessingError(errors.MessageInvalidInputType)
 	}
-	if err := listIPAMObjects(ctx, cl, obj, params, list); err != nil {
-		return nil, reconciliationError(ErrorFailedToListObjects, "error", err)
+	if err := s.listIPAMObjects(obj, params, list); err != nil {
+		return nil, err
 	}
 	return config.Spec.IPAM.AddressFamily, nil
 }
 
-func createLoopbackIPs(ctx context.Context, cl client.Client, obj *switchv1beta1.Switch) error {
+func (s *SwitchClient) createLoopbackIPs(obj *switchv1beta1.Switch) error {
 	config := &switchv1beta1.SwitchConfig{}
 	key := types.NamespacedName{Name: obj.Status.ConfigRef.Name, Namespace: obj.Namespace}
-	if err := cl.Get(ctx, key, config); err != nil {
+	if err := s.Get(s.ctx, key, config); err != nil {
 		return err
 	}
 	loopbacksSubnets := &ipamv1alpha1.SubnetList{}
-	if err := listIPAMObjects(ctx, cl, obj, config.Spec.IPAM.LoopbackSubnets, loopbacksSubnets); err != nil {
+	if err := s.listIPAMObjects(obj, config.Spec.IPAM.LoopbackSubnets, loopbacksSubnets); err != nil {
 		return err
 	}
-	labelsToApply, err := resultingLabels(
+	labelsToApply, err := switchespkg.ResultingLabels(
 		obj, obj.Spec.IPAM.GetLoopbacksSelection(), config.Spec.IPAM.LoopbackAddresses)
 	if err != nil {
 		return err
@@ -770,11 +809,11 @@ func createLoopbackIPs(ctx context.Context, cl client.Client, obj *switchv1beta1
 		if !config.Spec.IPAM.AddressFamily.GetIPv6() && item.Status.Type == ipamv1alpha1.CIPv6SubnetType {
 			continue
 		}
-		ipObject, err := buildIPObject(ctx, cl, obj, item, labelsToApply)
+		ipObject, err := s.buildIPObject(obj, item, labelsToApply)
 		if err != nil {
 			return err
 		}
-		if err := cl.Create(ctx, ipObject); err != nil {
+		if err := s.Create(s.ctx, ipObject); err != nil {
 			if !apierrors.IsAlreadyExists(err) {
 				return err
 			}
@@ -783,9 +822,7 @@ func createLoopbackIPs(ctx context.Context, cl client.Client, obj *switchv1beta1
 	return nil
 }
 
-func buildIPObject(
-	ctx context.Context,
-	cl client.Client,
+func (s *SwitchClient) buildIPObject(
 	obj *switchv1beta1.Switch,
 	subnet ipamv1alpha1.Subnet,
 	labelsToApply map[string]string,
@@ -799,12 +836,12 @@ func buildIPObject(
 		return nil, err
 	}
 	ip := proposedCIDR.Net.IP()
-	ok, err := checkIPAvailable(ctx, cl, ip, obj.Namespace)
+	ok, err := s.checkIPAvailable(ip, obj.Namespace)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, reconciliationError(ErrorDuplicateIPAddress)
+		return nil, switchespkg.NewProcessingError(errors.MessageDuplicatedIPAddress)
 	}
 	ipObject := &ipamv1alpha1.IP{
 		ObjectMeta: metav1.ObjectMeta{
@@ -827,7 +864,7 @@ func buildIPObject(
 	return ipObject, nil
 }
 
-func checkIPAvailable(ctx context.Context, cl client.Client, ip netaddr.IP, ns string) (bool, error) {
+func (s *SwitchClient) checkIPAvailable(ip netaddr.IP, ns string) (bool, error) {
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMLoopbackPurpose})
 	selector = selector.Add(*req)
@@ -837,7 +874,7 @@ func checkIPAvailable(ctx context.Context, cl client.Client, ip netaddr.IP, ns s
 		Limit:         100,
 	}
 	ips := &ipamv1alpha1.IPList{}
-	if err := cl.List(ctx, ips, opts); err != nil {
+	if err := s.List(s.ctx, ips, opts); err != nil {
 		return false, err
 	}
 	for _, item := range ips.Items {
@@ -848,22 +885,20 @@ func checkIPAvailable(ctx context.Context, cl client.Client, ip netaddr.IP, ns s
 	return true, nil
 }
 
-func createSubnets(
-	ctx context.Context,
-	cl client.Client,
+func (s *SwitchClient) createSubnets(
 	obj *switchv1beta1.Switch,
 	requiredAFFound map[ipamv1alpha1.SubnetAddressType]*bool,
 ) error {
 	config := &switchv1beta1.SwitchConfig{}
 	key := types.NamespacedName{Name: obj.Status.ConfigRef.Name, Namespace: obj.Namespace}
-	if err := cl.Get(ctx, key, config); err != nil {
+	if err := s.Get(s.ctx, key, config); err != nil {
 		return err
 	}
 	carrierSubnets := &ipamv1alpha1.SubnetList{}
-	if err := listIPAMObjects(ctx, cl, obj, config.Spec.IPAM.CarrierSubnets, carrierSubnets); err != nil {
+	if err := s.listIPAMObjects(obj, config.Spec.IPAM.CarrierSubnets, carrierSubnets); err != nil {
 		return err
 	}
-	labelsToApply, err := resultingLabels(obj, obj.Spec.IPAM.GetSubnetsSelection(), config.Spec.IPAM.SouthSubnets)
+	labelsToApply, err := switchespkg.ResultingLabels(obj, obj.Spec.IPAM.GetSubnetsSelection(), config.Spec.IPAM.SouthSubnets)
 	if err != nil {
 		return err
 	}
@@ -877,11 +912,11 @@ func createSubnets(
 		if pointer.BoolDeref(requiredAFFound[item.Status.Type], false) {
 			continue
 		}
-		subnet, err := buildSubnetObject(ctx, cl, obj, item, labelsToApply)
+		subnet, err := s.buildSubnetObject(obj, item, labelsToApply)
 		if err != nil {
 			return err
 		}
-		if err := cl.Create(ctx, subnet); err != nil {
+		if err := s.Create(s.ctx, subnet); err != nil {
 			if !apierrors.IsAlreadyExists(err) {
 				return err
 			}
@@ -890,24 +925,22 @@ func createSubnets(
 	return nil
 }
 
-func buildSubnetObject(
-	ctx context.Context,
-	cl client.Client,
+func (s *SwitchClient) buildSubnetObject(
 	obj *switchv1beta1.Switch,
 	item ipamv1alpha1.Subnet,
 	labelsToApply map[string]string,
 ) (*ipamv1alpha1.Subnet, error) {
-	addressesRequired := getTotalAddressesCount(obj.Status.Interfaces, item.Status.Type)
+	addressesRequired := switchespkg.GetTotalAddressesCount(obj.Status.Interfaces, item.Status.Type)
 	proposedCIDR, err := item.ProposeForCapacity(addressesRequired)
 	if err != nil {
 		return nil, err
 	}
-	ok, err := checkSubnetAvailable(ctx, cl, proposedCIDR, obj.Namespace)
+	ok, err := s.checkSubnetAvailable(proposedCIDR, obj.Namespace)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, reconciliationError(ErrorDuplicateSubnet)
+		return nil, switchespkg.NewProcessingError(errors.MessageDuplicatedSubnet)
 	}
 	subnet := &ipamv1alpha1.Subnet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -933,7 +966,7 @@ func buildSubnetObject(
 	return subnet, nil
 }
 
-func checkSubnetAvailable(ctx context.Context, cl client.Client, cidr *ipamv1alpha1.CIDR, ns string) (bool, error) {
+func (s *SwitchClient) checkSubnetAvailable(cidr *ipamv1alpha1.CIDR, ns string) (bool, error) {
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMSouthSubnetPurpose})
 	selector = selector.Add(*req)
@@ -943,7 +976,7 @@ func checkSubnetAvailable(ctx context.Context, cl client.Client, cidr *ipamv1alp
 		Limit:         100,
 	}
 	subnets := &ipamv1alpha1.SubnetList{}
-	if err := cl.List(ctx, subnets, opts); err != nil {
+	if err := s.List(s.ctx, subnets, opts); err != nil {
 		return false, err
 	}
 	for _, item := range subnets.Items {
@@ -954,14 +987,12 @@ func checkSubnetAvailable(ctx context.Context, cl client.Client, cidr *ipamv1alp
 	return true, nil
 }
 
-func listIPAMObjects(
-	ctx context.Context,
-	cl client.Client,
+func (s *SwitchClient) listIPAMObjects(
 	obj *switchv1beta1.Switch,
 	params *switchv1beta1.IPAMSelectionSpec,
 	list client.ObjectList,
 ) error {
-	selector, err := getSelectorFromIPAMSpec(obj, params)
+	selector, err := switchespkg.GetSelectorFromIPAMSpec(obj, params)
 	if err != nil {
 		return err
 	}
@@ -970,15 +1001,14 @@ func listIPAMObjects(
 		Namespace:     obj.Namespace,
 		Limit:         100,
 	}
-	if err := cl.List(ctx, list, opts); err != nil {
+	if err := s.List(s.ctx, list, opts); err != nil {
 		return err
 	}
 	return nil
 }
 
 //nolint:unused
-func (r *SwitchReconciler) createIPs(
-	ctx context.Context, obj *switchv1beta1.Switch, nic string, ips []*switchv1beta1.IPAddressSpec) error {
+func (s *SwitchClient) createIPs(obj *switchv1beta1.Switch, nic string, ips []*switchv1beta1.IPAddressSpec) error {
 	for _, item := range ips {
 		prefix, _ := netaddr.ParseIPPrefix(item.GetAddress())
 		addr := prefix.IP()
@@ -1007,7 +1037,7 @@ func (r *SwitchReconciler) createIPs(
 				},
 			},
 		}
-		if err := r.Create(ctx, ip); err != nil {
+		if err := s.Create(s.ctx, ip); err != nil {
 			if !apierrors.IsAlreadyExists(err) {
 				return err
 			}

@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -39,6 +40,8 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/errors"
+	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 )
 
 // OnboardingReconciler reconciles Switch object corresponding
@@ -54,7 +57,7 @@ type OnboardingReconciler struct {
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch
 
 func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Log.V(7).Info("reconciliation started", "name", req.NamespacedName)
+	r.Log.Info("reconciliation started", "name", req.NamespacedName)
 	nestedCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -62,9 +65,9 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	if err := r.Get(nestedCtx, req.NamespacedName, inventory); err != nil {
 		switch {
 		case apierrors.IsNotFound(err):
-			r.Log.V(1).Info("requested Inventory object not found", "name", req.NamespacedName)
+			r.Log.Info("requested Inventory object not found", "name", req.NamespacedName)
 		default:
-			r.Log.V(0).Info(
+			r.Log.Info(
 				"failed to get requested Inventory object",
 				"name", req.NamespacedName,
 				"error", err.Error(),
@@ -73,7 +76,7 @@ func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	result, err := r.reconcile(nestedCtx, inventory)
-	r.Log.V(7).Info("reconciliation finished", "name", req.NamespacedName)
+	r.Log.Info("reconciliation finished", "name", req.NamespacedName)
 	return result, err
 }
 
@@ -114,16 +117,21 @@ func labelsCreateEventPredicate(e event.CreateEvent) bool {
 }
 
 func labelsUpdateEventPredicate(e event.UpdateEvent) bool {
-	result := false
 	inventoryObject, sourceIsInventory := e.ObjectNew.(*inventoryv1alpha1.Inventory)
 	switchObject, sourceIsSwitch := e.ObjectNew.(*switchv1beta1.Switch)
 	if sourceIsInventory {
-		result = checkObjectMetadata(inventoryObject)
+		inventoryOld, ok := e.ObjectOld.(*inventoryv1alpha1.Inventory)
+		if !ok {
+			return false
+		}
+		specChanged := !reflect.DeepEqual(inventoryOld.Spec, inventoryObject.Spec)
+		metaMatchRequirements := checkObjectMetadata(inventoryObject)
+		return specChanged && metaMatchRequirements
 	}
 	if sourceIsSwitch {
-		result = checkObjectMetadata(switchObject)
+		return checkObjectMetadata(switchObject)
 	}
-	return result
+	return false
 }
 
 func checkObjectMetadata(obj client.Object) bool {
@@ -176,16 +184,15 @@ func (r *OnboardingReconciler) reconcile(ctx context.Context, inv *inventoryv1al
 }
 
 func (r *OnboardingReconciler) onboarding(ctx context.Context, inv *inventoryv1alpha1.Inventory) (ctrl.Result, error) {
-	var err error
 	key := client.ObjectKeyFromObject(inv)
-	r.Log.V(7).Info("onboarding finished", "name", key)
+	r.Log.Info("onboarding started", "name", key)
 	targetSwitch := &switchv1beta1.Switch{}
-	if err = r.Get(ctx, key, targetSwitch); err != nil {
+	if err := r.Get(ctx, key, targetSwitch); err != nil {
 		if !apierrors.IsNotFound(err) {
-			r.Log.V(0).Info("failed to get Switch object", "name", key, "error", err.Error())
+			r.Log.Error(err, "failed to get Switch object", "name", key)
 			return ctrl.Result{}, err
 		}
-		r.Log.V(7).Info("prepare switch object to create", "name", key)
+		r.Log.Info("prepare switch object to create", "name", key)
 		targetSwitch = &switchv1beta1.Switch{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Switch",
@@ -203,7 +210,7 @@ func (r *OnboardingReconciler) onboarding(ctx context.Context, inv *inventoryv1a
 			},
 		}
 	}
-	r.Log.V(7).Info("set switch properties, labels, annotations", "name", key)
+	r.Log.Info("set switch properties, labels, annotations", "name", key)
 	targetSwitch.SetInventoryRef(key.Name)
 	if targetSwitch.Labels == nil {
 		targetSwitch.Labels = map[string]string{}
@@ -211,12 +218,15 @@ func (r *OnboardingReconciler) onboarding(ctx context.Context, inv *inventoryv1a
 	targetSwitch.UpdateSwitchAnnotations(inv)
 	targetSwitch.UpdateSwitchLabels(inv)
 	targetSwitch.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-	targetSwitch.SetCondition(constants.ConditionInterfacesOK, false).SetReason(constants.ReasonSourceUpdated)
-	r.Log.V(7).Info("apply changes for switch", "name", key)
+	targetSwitch.SetCondition(constants.ConditionInterfacesOK, false).
+		SetReason(errors.ErrorReasonDataOutdated.String())
+	r.Log.Info("apply changes for switch", "name", key)
 	result := ctrl.Result{}
-	err = r.Patch(ctx, targetSwitch, client.Apply, patchOpts)
+	err := r.Patch(ctx, targetSwitch, client.Apply, switchespkg.PatchOpts)
 	if apierrors.IsConflict(err) {
+		r.Log.Info("failed to patch Switch, object is outdated")
 		result.Requeue = true
+		return result, nil
 	}
 	return result, err
 }

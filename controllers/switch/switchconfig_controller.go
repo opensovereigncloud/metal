@@ -35,6 +35,8 @@ import (
 
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/errors"
+	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 )
 
 // SwConfigReconciler reconciles SwitchConfig object corresponding.
@@ -120,9 +122,9 @@ func (r *SwConfigReconciler) updateSwitches(ctx context.Context, obj *switchv1be
 	}
 	for _, item := range relatedSwitches.Items {
 		item.SetCondition(constants.ConditionPortParametersOK, false).
-			SetReason(constants.ReasonSourceUpdated)
+			SetReason(errors.ErrorReasonDataOutdated.String())
 		item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-		if err := r.Status().Patch(ctx, &item, client.Apply, patchOpts); err != nil {
+		if err := r.Status().Patch(ctx, &item, client.Apply, switchespkg.PatchOpts); err != nil {
 			result.RequeueAfter = time.Second * 5
 			return result, err
 		}

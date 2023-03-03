@@ -14,11 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package stateproc
 
 import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/errors"
 )
 
 type GenericStateProcessor[T client.Object] struct {
@@ -38,34 +41,45 @@ func NewGenericStateProcessor[T client.Object](
 	}
 }
 
-func (gsp *GenericStateProcessor[T]) setFunctions(list []func(T) StateFuncResult) {
+func (gsp *GenericStateProcessor[T]) SetFunctions(list []func(T) StateFuncResult) {
 	gsp.Functions = append(gsp.Functions, list...)
 }
 
-func (gsp *GenericStateProcessor[T]) compute(obj T) error {
-	var err error
+func (gsp *GenericStateProcessor[T]) Compute(obj T) errors.StateProcError {
 	for _, f := range gsp.Functions {
 		res := f(obj)
-		err = res.Err
+		err := res.Err
 		if err != nil {
 			gsp.log(err, obj.GetName())
 		}
 		if res.Break {
-			break
+			return err
 		}
 	}
-	return err
+	return nil
 }
 
-func (gsp *GenericStateProcessor[T]) log(err error, name string) {
-	gsp.Log.V(1).Info(
-		"object processing was interrupted due to an error",
-		"name", name,
-		"error", err.Error(),
-	)
+func (gsp *GenericStateProcessor[T]) log(err errors.StateProcError, name string) {
+	switch err.Error() {
+	case constants.EmptyString:
+		gsp.Log.Info(
+			"object processing was interrupted",
+			"name", name,
+			"reason", err.Reason(),
+			"verbose", err.Message(),
+		)
+	default:
+		gsp.Log.Error(
+			err,
+			"object processing was interrupted",
+			"name", name,
+			"reason", err.Reason(),
+			"verbose", err.Message(),
+		)
+	}
 }
 
 type StateFuncResult struct {
-	Err   error
+	Err   errors.StateProcError
 	Break bool
 }

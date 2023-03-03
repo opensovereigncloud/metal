@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package switches
 
 import (
 	"bytes"
@@ -34,7 +34,6 @@ import (
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	"github.com/pkg/errors"
 	"golang.org/x/mod/modfile"
 	"inet.af/netaddr"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -47,6 +46,7 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/errors"
 )
 
 var (
@@ -57,38 +57,14 @@ var (
 	BaseIPv6AddressIndex int = 0
 )
 
-var (
-	ErrorTypeLabelMissed               string = "switch type label required"
-	ErrorInventoryReferenceMissed      string = "reference to Inventory object required: .spec.inventoryRef.name"
-	ErrorFailedToParseCIDR             string = "failed to parse CIDR"
-	ErrorFailedToParseIPAddress        string = "failed to parse IP address"
-	ErrorNoIPv4LoopbackAddressExists   string = "no IPv4 loopback address exists"
-	ErrorInvalidFieldPath              string = "field path is invalid"
-	ErrorInvalidFieldType              string = "field must have string type"
-	ErrorFailedToMarshal               string = "failed to marshal input to bytes"
-	ErrorFailedToUnmarshal             string = "failed to unmarshal bytes to map"
-	ErrorAPIVersionMismatch            string = "api version mismatch"
-	ErrorAPIVersionMissed              string = "api version missed"
-	ErrorFieldSelectorNotDefined       string = "field selector is not defined"
-	ErrorRequiredObjectNotExist        string = "required object does not exist"
-	ErrorFailedToListObjects           string = "failed to list objects"
-	ErrorFailedToGetRequiredObject     string = "failed to get required object"
-	ErrorInvalidInputType              string = "invalid input type"
-	ErrorDuplicateIPAddress            string = "duplicate IP address"
-	ErrorDuplicateSubnet               string = "duplicate subnet"
-	ErrorFailedIPAddressAssignment     string = "IP address assignment failed"
-	ErrorMissingRequirements           string = "some requirements are missing, check conditions' states for further information"
-	ErrorFailedToRequestRelatedObjects string = "failed to request related objects, check conditions' states for further information"
-)
-
-var patchOpts *client.SubResourcePatchOptions = &client.SubResourcePatchOptions{
+var PatchOpts *client.SubResourcePatchOptions = &client.SubResourcePatchOptions{
 	PatchOptions: client.PatchOptions{
 		Force:        pointer.Bool(true),
 		FieldManager: "metal-api-controller-manager",
 	},
 }
 
-func applyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventoryv1alpha1.Inventory) {
+func ApplyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventoryv1alpha1.Inventory) {
 	if obj.Status.Interfaces == nil {
 		obj.Status.Interfaces = make(map[string]*switchv1beta1.InterfaceSpec)
 	}
@@ -130,7 +106,7 @@ func applyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventor
 	obj.SetTotalPorts(uint32(len(inventory.Spec.NICs)))
 }
 
-func applyInterfaceParams(obj *switchv1beta1.Switch, config *switchv1beta1.SwitchConfig) {
+func ApplyInterfaceParams(obj *switchv1beta1.Switch, config *switchv1beta1.SwitchConfig) {
 	// set interfaces params:
 	//   overrides - the highest priority
 	//   defaults defined in switch spec - have higher priority then global params
@@ -160,7 +136,7 @@ func applyInterfaceParams(obj *switchv1beta1.Switch, config *switchv1beta1.Switc
 	}
 }
 
-func computeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
+func ComputeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
 	connectionsMap, keys := buildConnectionMap(list)
 	if _, ok := connectionsMap[0]; !ok {
 		return
@@ -270,7 +246,7 @@ func setNICsDirections(obj *switchv1beta1.Switch, switches *switchv1beta1.Switch
 			peerIsSouth := objLayer < peerLayer
 			if peerFound && peerIsNorth {
 				nicData.SetDirection(constants.DirectionNorth)
-				peerNICData := getPeerData(item.Status.Interfaces, nicData.Peer.GetPortDescription(), nicData.Peer.GetPortID())
+				peerNICData := GetPeerData(item.Status.Interfaces, nicData.Peer.GetPortDescription(), nicData.Peer.GetPortID())
 				copyPortParams(peerNICData.PortParametersSpec, nicData.PortParametersSpec)
 			}
 			if peerFound && peerIsSouth {
@@ -280,7 +256,7 @@ func setNICsDirections(obj *switchv1beta1.Switch, switches *switchv1beta1.Switch
 	}
 }
 
-func setRole(in *switchv1beta1.Switch) {
+func SetRole(in *switchv1beta1.Switch) {
 	in.SetRole(constants.SwitchRoleSpine)
 	for _, data := range in.Status.Interfaces {
 		if data.Peer == nil {
@@ -317,7 +293,7 @@ func copyPortParams(src, dst *switchv1beta1.PortParametersSpec) {
 	}
 }
 
-func resultingLabels(
+func ResultingLabels(
 	obj *switchv1beta1.Switch,
 	objectSelectors, globalSelectors *switchv1beta1.IPAMSelectionSpec,
 ) (map[string]string, error) {
@@ -340,7 +316,7 @@ func resultingLabels(
 	return result, err
 }
 
-func getSelectorFromIPAMSpec(
+func GetSelectorFromIPAMSpec(
 	obj *switchv1beta1.Switch, spec *switchv1beta1.IPAMSelectionSpec) (labels.Selector, error) {
 	selector := labels.NewSelector()
 	if spec != nil {
@@ -371,7 +347,7 @@ func getSelectorFromIPAMSpec(
 
 func labelFromFieldRef(obj interface{}, src *switchv1beta1.FieldSelectorSpec) (map[string]string, error) {
 	if src == nil {
-		return nil, reconciliationError(ErrorFieldSelectorNotDefined)
+		return nil, NewProcessingError(errors.MessageFieldSelectorNotDefined)
 	}
 	mapRepr, err := interfaceToMap(obj)
 	if err != nil {
@@ -379,11 +355,11 @@ func labelFromFieldRef(obj interface{}, src *switchv1beta1.FieldSelectorSpec) (m
 	}
 	apiVersion, ok := mapRepr["apiVersion"]
 	if !ok {
-		return nil, reconciliationError(ErrorAPIVersionMissed)
+		return nil, NewProcessingError(errors.MessageMissingAPIVersion)
 	}
 	if src.FieldRef.APIVersion != "" && apiVersion != src.FieldRef.APIVersion {
-		return nil, reconciliationError(
-			ErrorAPIVersionMismatch, "expected", src.FieldRef.APIVersion, "actual", apiVersion)
+		return nil, NewProcessingError(
+			"%s: expected %s, actual %s", errors.MessageAPIVersionMismatch, apiVersion, src.FieldRef.APIVersion)
 	}
 	nested := strings.Split(src.FieldRef.FieldPath, ".")
 	label, err := processObjectMap(mapRepr, nested, src)
@@ -401,7 +377,7 @@ func processObjectMap(
 	for i, f := range path {
 		v, ok := currentSearchObj[f]
 		if !ok {
-			return nil, reconciliationError(ErrorInvalidFieldPath, "value", strings.Join(path, "."))
+			return nil, NewProcessingError("%s: %s", errors.MessageInvalidFieldPath, strings.Join(path, "."))
 		}
 		if i == len(path)-1 {
 			switch v.(type) {
@@ -409,7 +385,7 @@ func processObjectMap(
 				label[src.GetLabelKey()] = fmt.Sprintf("%v", v)
 				return label, nil
 			default:
-				return nil, reconciliationError(ErrorInvalidFieldType)
+				return nil, NewProcessingError(errors.MessageInvalidInputType)
 			}
 		}
 		currentSearchObj, err = interfaceToMap(v)
@@ -425,21 +401,21 @@ func interfaceToMap(i interface{}) (map[string]interface{}, error) {
 	m := make(map[string]interface{})
 	raw, err := json.Marshal(i)
 	if err != nil {
-		return nil, reconciliationError(ErrorFailedToMarshal)
+		return nil, NewProcessingError(errors.MessageMarshallingFailed)
 	}
 	err = json.Unmarshal(raw, &m)
 	if err != nil {
-		return nil, reconciliationError(ErrorFailedToUnmarshal)
+		return nil, NewProcessingError(errors.MessageUnmarshallingFailed)
 	}
 	return m, nil
 }
 
-func setState(obj *switchv1beta1.Switch, state, message string) {
+func SetState(obj *switchv1beta1.Switch, state, message string) {
 	obj.SetState(state)
 	obj.SetMessage(message)
 }
 
-func calculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
+func CalculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 	var result uint32 = 0
 	for _, item := range loopbacks {
 		if item.GetAddressFamily() != constants.IPv4AF {
@@ -448,7 +424,7 @@ func calculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 		asn := constants.ASNBase
 		addr := net.ParseIP(item.GetAddress())
 		if addr == nil {
-			return 0, reconciliationError(ErrorFailedToParseIPAddress, "value", item.GetAddress())
+			return 0, NewProcessingError("%s: %s", errors.MessageParseIPFailed, item.GetAddress())
 		}
 		asn += uint32(addr[13]) * uint32(math.Pow(2, 16))
 		asn += uint32(addr[14]) * uint32(math.Pow(2, 8))
@@ -457,12 +433,12 @@ func calculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 		break
 	}
 	if result == 0 {
-		return 0, reconciliationError(ErrorNoIPv4LoopbackAddressExists)
+		return 0, NewProcessingError(errors.MessageMissingLoopbackV4IP)
 	}
 	return result, nil
 }
 
-func getExtraIPs(obj *switchv1beta1.Switch, name string) ([]*switchv1beta1.IPAddressSpec, error) {
+func GetExtraIPs(obj *switchv1beta1.Switch, name string) ([]*switchv1beta1.IPAddressSpec, error) {
 	ips := make([]*switchv1beta1.IPAddressSpec, 0)
 	if obj.Spec.Interfaces != nil && obj.Spec.Interfaces.Overrides != nil {
 		for _, item := range obj.Spec.Interfaces.Overrides {
@@ -491,7 +467,7 @@ func getExtraIPs(obj *switchv1beta1.Switch, name string) ([]*switchv1beta1.IPAdd
 func getAddressFamily(address string) (string, error) {
 	addr, err := netaddr.ParseIP(address)
 	if err != nil {
-		return constants.EmptyString, reconciliationError(ErrorFailedToParseIPAddress, "value", address)
+		return constants.EmptyString, NewProcessingError("%s: %s", errors.MessageParseIPFailed, address)
 	}
 	if addr.Is4() {
 		return constants.IPv4AF, nil
@@ -499,7 +475,7 @@ func getAddressFamily(address string) (string, error) {
 	return constants.IPv6AF, nil
 }
 
-func getComputedIPs(
+func GetComputedIPs(
 	obj *switchv1beta1.Switch, name string, data *switchv1beta1.InterfaceSpec) ([]*switchv1beta1.IPAddressSpec, error) {
 	ips := make([]*switchv1beta1.IPAddressSpec, 0)
 	for _, subnet := range obj.Status.Subnets {
@@ -508,7 +484,7 @@ func getComputedIPs(
 			return nil, err
 		}
 		if cidr == nil {
-			return nil, reconciliationError(ErrorFailedToParseCIDR, "value", subnet.GetCIDR())
+			return nil, NewProcessingError("%s: %s", errors.MessageParseCIDRFailed, subnet.GetCIDR())
 		}
 		mask := data.GetIPv4MaskLength()
 		addrIndex := BaseIPv4AddressIndex
@@ -540,7 +516,7 @@ func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, mask
 	return ifaceNet
 }
 
-func getPeerData(
+func GetPeerData(
 	interfaces map[string]*switchv1beta1.InterfaceSpec, portDesc, portID string) *switchv1beta1.InterfaceSpec {
 	var nicData *switchv1beta1.InterfaceSpec
 	if v, ok := interfaces[portDesc]; ok {
@@ -551,7 +527,7 @@ func getPeerData(
 	return nicData
 }
 
-func requestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAddressSpec {
+func RequestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAddressSpec {
 	requestedAddresses := make([]*switchv1beta1.IPAddressSpec, 0)
 	for _, addr := range peerNICData.IP {
 		_, cidr, _ := net.ParseCIDR(addr.GetAddress())
@@ -573,7 +549,7 @@ func requestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAdd
 	return requestedAddresses
 }
 
-func getTotalAddressesCount(
+func GetTotalAddressesCount(
 	ports map[string]*switchv1beta1.InterfaceSpec, af ipamv1alpha1.SubnetAddressType) *resource.Quantity {
 	var counter int64 = 0
 	for _, item := range ports {
@@ -592,7 +568,7 @@ func getTotalAddressesCount(
 	return resource.NewQuantity(counter, resource.DecimalSI)
 }
 
-func addressFamiliesMatchConfig(ipv4, ipv6 bool, foundAF map[ipamv1alpha1.SubnetAddressType]*bool) bool {
+func AddressFamiliesMatchConfig(ipv4, ipv6 bool, foundAF map[ipamv1alpha1.SubnetAddressType]*bool) bool {
 	result := true
 	if ipv4 && foundAF[ipamv1alpha1.CIPv4SubnetType] == nil {
 		foundAF[ipamv1alpha1.CIPv4SubnetType] = pointer.Bool(false)
@@ -605,7 +581,7 @@ func addressFamiliesMatchConfig(ipv4, ipv6 bool, foundAF map[ipamv1alpha1.Subnet
 	return result
 }
 
-func neighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
+func NeighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
 	if nicData.Peer == nil {
 		return false
 	}
@@ -621,7 +597,7 @@ func neighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
 	return true
 }
 
-func reconciliationRequired(objOld, objNew *switchv1beta1.Switch) bool {
+func ReconciliationRequired(objOld, objNew *switchv1beta1.Switch) bool {
 	labelsChanged := !reflect.DeepEqual(objOld.GetLabels(), objNew.GetLabels())
 	annotationsChanged := !reflect.DeepEqual(objOld.GetAnnotations(), objNew.GetAnnotations())
 	metadataChanged := labelsChanged || annotationsChanged
@@ -647,7 +623,7 @@ func conditionsUpdated(oldData, newData []*switchv1beta1.ConditionSpec) bool {
 }
 
 // functions used in tests.
-func getCrdPath(crdPackageScheme interface{}) (string, error) {
+func GetCrdPath(crdPackageScheme interface{}) (string, error) {
 	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
 	goModData, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
 	if err != nil {
@@ -667,7 +643,7 @@ func getCrdPath(crdPackageScheme interface{}) (string, error) {
 	return filepath.Join(build.Default.GOPATH, "pkg", "mod", globalModulePath, "config", "crd", "bases"), nil
 }
 
-func getWebhookPath(crdPackageScheme interface{}) (string, error) {
+func GetWebhookPath(crdPackageScheme interface{}) (string, error) {
 	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
 	goModData, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
 	if err != nil {
@@ -687,7 +663,7 @@ func getWebhookPath(crdPackageScheme interface{}) (string, error) {
 	return filepath.Join(build.Default.GOPATH, "pkg", "mod", globalModulePath, "config", "webhook"), nil
 }
 
-func getTestSamples(path string) ([]string, error) {
+func GetTestSamples(path string) ([]string, error) {
 	samples := make([]string, 0)
 	if err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -703,7 +679,7 @@ func getTestSamples(path string) ([]string, error) {
 	return samples, nil
 }
 
-func createSampleObject(ctx context.Context, c client.Client, obj client.Object, raw []byte) error {
+func CreateSampleObject(ctx context.Context, c client.Client, obj client.Object, raw []byte) error {
 	sampleYaml := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
 	err := sampleYaml.Decode(obj)
 	if err != nil {
@@ -715,8 +691,14 @@ func createSampleObject(ctx context.Context, c client.Client, obj client.Object,
 	return nil
 }
 
-func reconciliationError(message string, args ...interface{}) error {
-	errMessage := fmt.Sprintf(message, args...)
-	err := errors.New(errMessage)
-	return err
+type ProcessingError struct {
+	message string
+}
+
+func NewProcessingError(message string, args ...interface{}) *ProcessingError {
+	return &ProcessingError{message: fmt.Sprintf(message, args...)}
+}
+
+func (e *ProcessingError) Error() string {
+	return e.message
 }

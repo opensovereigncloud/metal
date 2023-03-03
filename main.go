@@ -40,8 +40,6 @@ import (
 	schedulercontroller "github.com/onmetal/metal-api/controllers/scheduler"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switch"
 
-	"github.com/onmetal/metal-api/internal/repository"
-	"github.com/onmetal/metal-api/internal/usecase"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -49,6 +47,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/onmetal/metal-api/internal/repository"
+	"github.com/onmetal/metal-api/internal/usecase"
 )
 
 var (
@@ -122,7 +123,7 @@ func addToScheme() {
 	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1beta1.AddToScheme(scheme))
 	utilruntime.Must(poolv1alpha1.AddToScheme(scheme))
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
@@ -263,7 +264,7 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-Pool")
 		os.Exit(1)
 	}
-	//+kubebuilder:scaffold:builder
+	// +kubebuilder:scaffold:builder
 }
 
 func addHandlers(mgr ctrl.Manager, profiling bool) {

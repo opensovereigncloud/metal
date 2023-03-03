@@ -26,6 +26,7 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/internal/constants"
+	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -232,6 +233,48 @@ var _ = Describe("Switch controller", func() {
 		})
 	})
 
+	Context("Onboarding-controller updates condition of the switch on inventory update", func() {
+		JustBeforeEach(func() {
+			preTestContext, preTestCancel := context.WithCancel(ctx)
+			defer preTestCancel()
+			Expect(seedSwitches(preTestContext, k8sClient)).NotTo(HaveOccurred())
+			Expect(seedInventories(preTestContext, k8sClient)).NotTo(HaveOccurred())
+		})
+
+		It("Should update interfaces so they are aligned with corresponding inventory", func() {
+			testContext, testCancel := context.WithCancel(ctx)
+			defer testCancel()
+
+			By("Expect switches' state 'Pending' due to missing type label")
+			checkState(constants.SwitchStatePending)
+			setTypeLabel()
+
+			By("Expect switch spec matches initial state")
+			checkInterfaces()
+			target := &switchv1beta1.Switch{}
+			Consistently(func(g Gomega) {
+				g.Expect(k8sClient.Get(testContext, types.NamespacedName{
+					Namespace: "onmetal",
+					Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+				}, target)).NotTo(HaveOccurred())
+				targetInterface := target.Status.Interfaces["Ethernet100"]
+				g.Expect(targetInterface.Peer).To(BeNil())
+			}, timeout, interval).Should(Succeed())
+
+			By("Expect switches' configuration matches updated inventory")
+			updateInventory()
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(testContext, types.NamespacedName{
+					Namespace: "onmetal",
+					Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+				}, target)).NotTo(HaveOccurred())
+				targetInterface := target.Status.Interfaces["Ethernet100"]
+				g.Expect(targetInterface.Peer).NotTo(BeNil())
+				g.Expect(targetInterface.Peer.GetChassisID()).To(Equal("2a30fd70-008e-4975-ba77-8f5683505e37"))
+			}, timeout, interval).Should(Succeed())
+		})
+	})
+
 	Context("Computing switches' configuration without pre-created IPAM objects", func() {
 		JustBeforeEach(func() {
 			preTestContext, preTestCancel := context.WithCancel(ctx)
@@ -305,7 +348,7 @@ func setTypeLabel() {
 			item.Labels[constants.SwitchTypeLabel] = constants.SwitchRoleLeaf
 		}
 		item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-		Expect(k8sClient.Patch(testContext, &item, client.Apply, patchOpts)).NotTo(HaveOccurred())
+		Expect(k8sClient.Patch(testContext, &item, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
 	}
 }
 
@@ -445,6 +488,45 @@ func updateSpinesConfig() {
 	}, config)).NotTo(HaveOccurred())
 	config.Spec.PortsDefaults.SetMTU(9216)
 	Expect(k8sClient.Update(testContext, config)).NotTo(HaveOccurred())
+}
+
+func updateInventory() {
+	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	defer testCancel()
+	inventory := &inventoryv1alpha1.Inventory{}
+	Expect(k8sClient.Get(testContext, types.NamespacedName{
+		Namespace: "onmetal",
+		Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
+	}, inventory)).NotTo(HaveOccurred())
+	updatedInventory := inventory.DeepCopy()
+	updatedInventory.TypeMeta = metav1.TypeMeta{
+		Kind:       "Inventory",
+		APIVersion: "machine.onmetal.de/v1alpha1",
+	}
+	discovered := inventoryv1alpha1.LLDPSpec{
+		ChassisID:         "2a30fd70-008e-4975-ba77-8f5683505e37",
+		SystemName:        "fake-neighbor",
+		SystemDescription: "linux",
+		PortID:            "ens0p1",
+		PortDescription:   "ens0p1",
+		Capabilities: []inventoryv1alpha1.LLDPCapabilities{
+			constants.LLDPCapabilityStation,
+		},
+	}
+	updatedNICs := make([]inventoryv1alpha1.NICSpec, 0)
+	for _, nic := range updatedInventory.Spec.NICs {
+		if nic.Name == "Ethernet100" {
+			tmp := nic.DeepCopy()
+			tmp.LLDPs = []inventoryv1alpha1.LLDPSpec{discovered}
+			updatedNICs = append(updatedNICs, *tmp)
+			continue
+		}
+		updatedNICs = append(updatedNICs, nic)
+	}
+	updatedInventory.Spec.NICs = make([]inventoryv1alpha1.NICSpec, len(updatedNICs))
+	copy(updatedInventory.Spec.NICs, updatedNICs)
+	updatedInventory.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
+	Expect(k8sClient.Patch(testContext, updatedInventory, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
 }
 
 func checkInterfacesUpdated() {
