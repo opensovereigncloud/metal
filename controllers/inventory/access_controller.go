@@ -23,329 +23,364 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	kubeadmv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	"k8s.io/utils/pointer"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	inventoryServiceAccountPrefix = "inventory-"
+	InventoryServiceAccountPrefix = "inventory-"
 	kubeconfigSecretPrefix        = "kubeconfig-inventory-"
-	inventoryNamespace            = "metal-api-system"
 	inventoryKind                 = "Inventory"
-	kubeadmConfigConfigMapName    = "kubeadm-config"
-	kubeSystemNamespace           = "kube-system"
-	clusterStatusKey              = "ClusterStatus"
+	kubernetesServiceName         = "kubernetes"
+	kubernetesServiceNamespace    = "default"
 )
+
+type APIEndpoint struct {
+	Address string
+	Port    int32
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *AccessReconciler) SetupWithManager(mgr ctrlruntime.Manager) error {
+	return ctrlruntime.NewControllerManagedBy(mgr).
+		For(&inventoryv1alpaha1.Inventory{}).
+		Complete(r)
+}
 
 // AccessReconciler reconciles an Inventory object for creating a dedicated kubeconfig.
 type AccessReconciler struct {
-	client.Client
+	ctrlclient.Client
 
 	BootstrapAPIServer string
+	TargetNamespace    string
 	Log                logr.Logger
-	Scheme             *runtime.Scheme
+	Scheme             *k8sruntime.Scheme
 }
 
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 
-func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrlruntime.Request) (ctrlruntime.Result, error) {
 	log := r.Log.WithValues("access", req.NamespacedName)
 
-	inventory := &machinev1alpha1.Inventory{}
+	inventory, err := r.ExtractInventory(ctx, req)
+	if err != nil {
+		log.Error(err, "unable to get inventory resource", "error", err)
+		return ctrlruntime.Result{}, ctrlclient.IgnoreNotFound(err)
+	}
 
-	err := r.Get(ctx, req.NamespacedName, inventory)
-	if apierrors.IsNotFound(err) {
-		log.Error(err, "requested inventory resource not found", "name", req.NamespacedName)
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	inventoryServiceAccount := r.InventoryServiceAccount(inventory)
+
+	clusterAccessSecret, err := r.CreateAccountForServerToClusterAccess(
+		ctx,
+		inventoryServiceAccount,
+		inventory)
+	if err != nil {
+		return ctrlruntime.Result{}, err
+	}
+
+	newKubeconfigSecret, err := r.ClientKubeconfigSecret(
+		ctx,
+		inventory,
+		clusterAccessSecret,
+		inventoryServiceAccount.Name,
+		r.TargetNamespace)
+	if err != nil {
+		return ctrlruntime.Result{}, err
+	}
+
+	currentKubeconfigSecret, err := r.CurrentKubeConfig(ctx, newKubeconfigSecret)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			log.Error(err, "failed to get current kubeconfig for inventory",
+				"name", newKubeconfigSecret.Name)
+			return ctrlruntime.Result{}, err
+		}
+		if err = r.CreateNewKubeconfigForClusterAccess(ctx, newKubeconfigSecret); err != nil {
+			log.Error(err, "unable to create inventory kubeconfig",
+				"name", newKubeconfigSecret.Name)
+			return ctrlruntime.Result{}, err
+		}
+		return ctrlruntime.Result{}, nil
+	}
+
+	if r.UpdateNeeded(currentKubeconfigSecret, newKubeconfigSecret) {
+		if err = r.UpdateExistingKubeconfigForClusterAccess(
+			ctx,
+			currentKubeconfigSecret,
+			newKubeconfigSecret); err != nil {
+			return ctrlruntime.Result{}, err
+		}
+	}
+	return ctrlruntime.Result{}, nil
+}
+
+func (r *AccessReconciler) CurrentKubeConfig(
+	ctx context.Context,
+	kubeconfigSecret *corev1.Secret) (*corev1.Secret, error) {
+	currentKubeconfigSecret := &corev1.Secret{}
+	err := r.
+		Client.
+		Get(
+			ctx,
+			ctrlclient.ObjectKeyFromObject(kubeconfigSecret),
+			currentKubeconfigSecret)
+	if err != nil {
+		return nil, err
+	}
+	return currentKubeconfigSecret, nil
+}
+
+func (r *AccessReconciler) CreateAccountForServerToClusterAccess(
+	ctx context.Context,
+	machineInventoryServiceAccount *corev1.ServiceAccount,
+	inventory *inventoryv1alpaha1.Inventory) (*corev1.Secret, error) {
+	exist, err := r.InventoryServiceAccountExist(ctx, machineInventoryServiceAccount)
+	if !exist {
+		if err := r.CreateInventoryServiceAccount(ctx, machineInventoryServiceAccount); err != nil {
+			return nil, err
+		}
 	}
 	if err != nil {
-		log.Error(err, "unable to get inventory resource", "name", req.NamespacedName)
-		return ctrl.Result{}, err
+		return nil, err
 	}
 
-	machineInventoryServiceAccountName := inventoryServiceAccountPrefix + inventory.Name
-	machineInventoryNamespace := inventoryNamespace
-	machineInventoryServiceAccount := &corev1.ServiceAccount{
-		ObjectMeta: ctrl.ObjectMeta{
-			Namespace: machineInventoryNamespace,
-			Name:      machineInventoryServiceAccountName,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         machinev1alpha1.GroupVersion.Version,
-					Kind:               inventoryKind,
-					Name:               inventory.Name,
-					UID:                inventory.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
-				},
-			},
-		},
-	}
+	serviceAccountSecretToken := r.InventoryServiceAccountSecretToken(
+		r.TargetNamespace,
+		machineInventoryServiceAccount.Name,
+		inventory)
 
-	currentMachineInventoryServiceAccount := &corev1.ServiceAccount{}
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machineInventoryServiceAccount), currentMachineInventoryServiceAccount)
-	if err != nil && apierrors.IsNotFound(err) {
-		err = r.Client.Create(ctx, machineInventoryServiceAccount)
-		if err != nil {
-			log.Error(err, "unable to create machine inventory service account", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
+	exist, err = r.InventoryServiceAccountSecretExist(ctx, serviceAccountSecretToken)
+	if !exist {
+		if err := r.CreateInventoryServiceAccountSecret(ctx, serviceAccountSecretToken); err != nil {
+			return nil, errors.Wrapf(err, "unable to create machine inventory service account secret")
 		}
-	} else if err != nil {
-		log.Error(err, "unable to get machine inventory service account", "name", machineInventoryServiceAccountName)
-		return ctrl.Result{}, err
 	}
-
-	saTokenSecret := &corev1.Secret{
-		ObjectMeta: ctrl.ObjectMeta{
-			Namespace: machineInventoryNamespace,
-			Name:      machineInventoryServiceAccountName,
-			Annotations: map[string]string{
-				corev1.ServiceAccountNameKey: machineInventoryServiceAccountName,
-			},
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         machinev1alpha1.GroupVersion.Version,
-					Kind:               inventoryKind,
-					Name:               inventory.Name,
-					UID:                inventory.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
-				},
-			},
-		},
-		Type: corev1.SecretTypeServiceAccountToken,
-	}
-
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(saTokenSecret), saTokenSecret)
-	if err != nil && apierrors.IsNotFound(err) {
-		err = r.Client.Create(ctx, saTokenSecret)
-		if err != nil {
-			log.Error(err, "unable to create machine inventory service account secret", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
-		}
-	} else if err != nil {
-		log.Error(err, "unable to get machine inventory service account secret", "name", machineInventoryServiceAccountName)
-		return ctrl.Result{}, err
-	}
-
-	machineInventoryRole := &rbacv1.Role{
-		ObjectMeta: ctrl.ObjectMeta{
-			Namespace: machineInventoryNamespace,
-			Name:      machineInventoryServiceAccountName,
-		},
-	}
-
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machineInventoryRole), machineInventoryRole)
-	if err != nil && apierrors.IsNotFound(err) {
-		machineInventoryRole = &rbacv1.Role{
-			ObjectMeta: ctrl.ObjectMeta{
-				Namespace: machineInventoryNamespace,
-				Name:      machineInventoryServiceAccountName,
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion:         machinev1alpha1.GroupVersion.Version,
-						Kind:               inventoryKind,
-						Name:               inventory.Name,
-						UID:                inventory.UID,
-						Controller:         pointer.Bool(true),
-						BlockOwnerDeletion: pointer.Bool(true),
-					},
-				},
-			},
-			Rules: []rbacv1.PolicyRule{
-				{
-					Verbs: []string{
-						"get",
-						"create",
-						"update",
-						"patch",
-					},
-					APIGroups: []string{
-						"machine.onmetal.de",
-					},
-					Resources: []string{
-						"inventories",
-					},
-				},
-			},
-		}
-
-		err = r.Client.Create(ctx, machineInventoryRole)
-		if err != nil {
-			logr.FromContextOrDiscard(ctx).Error(err, "unable to create machine inventory role", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
-		}
-	} else if err != nil {
-		logr.FromContextOrDiscard(ctx).Error(err, "unable to get machine inventory role", "name", machineInventoryServiceAccountName)
-		return ctrl.Result{}, err
-	}
-
-	machineInventoryRoleBinding := &rbacv1.RoleBinding{
-		ObjectMeta: ctrl.ObjectMeta{
-			Namespace: machineInventoryNamespace,
-			Name:      machineInventoryServiceAccountName,
-		},
-	}
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machineInventoryRoleBinding), machineInventoryRoleBinding)
-	if err != nil && apierrors.IsNotFound(err) {
-		machineRoleBinding := &rbacv1.RoleBinding{
-			ObjectMeta: ctrl.ObjectMeta{
-				Namespace: machineInventoryNamespace,
-				Name:      machineInventoryServiceAccountName,
-				OwnerReferences: []metav1.OwnerReference{
-					{
-						APIVersion:         machinev1alpha1.GroupVersion.Version,
-						Kind:               inventoryKind,
-						Name:               inventory.Name,
-						UID:                inventory.UID,
-						Controller:         pointer.Bool(true),
-						BlockOwnerDeletion: pointer.Bool(true),
-					},
-				},
-			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					APIGroup:  corev1.GroupName,
-					Name:      machineInventoryServiceAccount.Name,
-					Namespace: machineInventoryServiceAccount.Namespace,
-				},
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "Role",
-				Name:     machineInventoryRole.Name,
-			},
-		}
-
-		err = r.Client.Create(ctx, machineRoleBinding)
-		if err != nil {
-			logr.FromContextOrDiscard(ctx).Error(err, "unable to create machine inventory role binding", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
-		}
-	} else if err != nil {
-		logr.FromContextOrDiscard(ctx).Error(err, "unable to get rolebinding", "name", machineInventoryServiceAccountName)
-		return ctrl.Result{}, err
-	}
-
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machineInventoryServiceAccount), machineInventoryServiceAccount)
 	if err != nil {
-		logr.FromContextOrDiscard(ctx).Error(err, "unable to get machine inventory service account", "name", machineInventoryServiceAccountName)
-		return ctrl.Result{}, err
+		return nil, errors.Wrapf(err, "unable to get machine inventory service account secret")
 	}
 
-	machineInventoryTokenSecret := &corev1.Secret{
+	if err = r.BindInventoryAccountWithPermissions(
+		ctx,
+		machineInventoryServiceAccount,
+		r.TargetNamespace,
+		inventory); err != nil {
+		return nil, err
+	}
+	return serviceAccountSecretToken, nil
+}
+
+func (r *AccessReconciler) BindInventoryAccountWithPermissions(
+	ctx context.Context,
+	machineInventoryServiceAccount *corev1.ServiceAccount,
+	machineInventoryNamespace string,
+	inventory *inventoryv1alpaha1.Inventory) error {
+	machineInventoryRole := r.InventoryBaseRole(
+		machineInventoryNamespace,
+		machineInventoryServiceAccount.Name)
+	exist, err := r.InventoryServiceAccountRoleExist(ctx, machineInventoryRole)
+	if !exist {
+		machineInventoryRole = r.RoleForInventoryWithPermissions(
+			machineInventoryNamespace,
+			machineInventoryServiceAccount.Name,
+			inventory)
+		if err = r.CreateInventoryRoleWithPermissions(
+			ctx,
+			machineInventoryRole); err != nil {
+			return errors.Wrapf(err, "unable to create machine inventory service account role")
+		}
+	}
+	if err != nil {
+		return errors.Wrapf(err, "unable to get machine inventory service account role")
+	}
+
+	if err = r.BindPermissionsToTheServiceAccount(
+		ctx,
+		machineInventoryServiceAccount,
+		machineInventoryNamespace,
+		inventory,
+		machineInventoryRole); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *AccessReconciler) BindPermissionsToTheServiceAccount(
+	ctx context.Context,
+	machineInventoryServiceAccount *corev1.ServiceAccount,
+	machineInventoryNamespace string,
+	inventory *inventoryv1alpaha1.Inventory,
+	machineInventoryRole *rbacv1.Role) error {
+	machineInventoryRoleBinding := r.BaseInventoryRoleBinding(
+		machineInventoryNamespace,
+		machineInventoryServiceAccount.Name)
+	exist, err := r.InventoryServiceAccountRoleBindingExist(ctx, machineInventoryRoleBinding)
+	if !exist {
+		inventoryRoleBinding := r.InventoryBindingRoleForServiceAccount(
+			machineInventoryRole,
+			machineInventoryNamespace,
+			machineInventoryServiceAccount,
+			inventory)
+		if err := r.CreateInventoryServiceAccountBindingRole(
+			ctx,
+			inventoryRoleBinding,
+		); err != nil {
+			return errors.Wrapf(err, "unable to create machine inventory service account role binding")
+		}
+	}
+	if err != nil {
+		return errors.Wrapf(err, "unable to get machine inventory service account role binding")
+	}
+	return nil
+}
+
+func (r *AccessReconciler) InventorySecretForServiceAccount(
+	ctx context.Context, machineInventoryServiceAccount *corev1.ServiceAccount) (*corev1.Secret, error) {
+	machineInventorySecret := r.InventorySecret(machineInventoryServiceAccount)
+	if err := r.GetKubernetesObject(ctx, machineInventorySecret); err != nil {
+		return nil, err
+	}
+	return machineInventorySecret, nil
+}
+
+func (r *AccessReconciler) APIServerEndpoint(ctx context.Context) (string, error) {
+	if r.BootstrapAPIServer != "" {
+		return r.BootstrapAPIServer, nil
+	}
+	kubernetesAPIEndpoint, err := r.RetrieveServerAddressAndPortFromCluster(ctx)
+	if err != nil {
+		return "", err
+	}
+	return SanitizeAPIServerEndpointString(kubernetesAPIEndpoint), nil
+}
+
+func SanitizeAPIServerEndpointString(apiEndpoint APIEndpoint) string {
+	if strings.Contains(apiEndpoint.Address, ":") {
+		return fmt.Sprintf("https://[%s]:%d",
+			apiEndpoint.Address, apiEndpoint.Port)
+	}
+	return fmt.Sprintf("https://%s:%d",
+		apiEndpoint.Address, apiEndpoint.Port)
+}
+
+func (r *AccessReconciler) ExtractKubernetesAPIEndpoint(ctx context.Context) (*corev1.Endpoints, error) {
+	kubernetesEndpoints := &corev1.Endpoints{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: machineInventoryServiceAccount.Namespace,
+			Namespace: kubernetesServiceNamespace,
+			Name:      kubernetesServiceName,
+		},
+	}
+	if err := r.GetKubernetesObject(ctx, kubernetesEndpoints); err != nil {
+		return nil, err
+	}
+	return kubernetesEndpoints, nil
+}
+
+func (r *AccessReconciler) BaseInventoryRoleBinding(
+	machineInventoryNamespace string,
+	machineInventoryServiceAccountName string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: machineInventoryNamespace,
 			Name:      machineInventoryServiceAccountName,
 		},
 	}
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machineInventoryTokenSecret), machineInventoryTokenSecret)
+}
+
+func (r *AccessReconciler) InventoryBaseRole(
+	machineInventoryNamespace string,
+	machineInventoryServiceAccountName string) *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: machineInventoryNamespace,
+			Name:      machineInventoryServiceAccountName,
+		},
+	}
+}
+
+func (r *AccessReconciler) ExtractInventory(ctx context.Context,
+	req ctrlruntime.Request) (*inventoryv1alpaha1.Inventory, error) {
+	inventory := &inventoryv1alpaha1.Inventory{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: req.Namespace,
+			Name:      req.Name,
+		},
+	}
+	if err := r.GetKubernetesObject(ctx, inventory); err != nil {
+		return nil, err
+	}
+	return inventory, nil
+}
+
+func (r *AccessReconciler) InventorySecret(inventoryServiceAccount *corev1.ServiceAccount) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: inventoryServiceAccount.Namespace,
+			Name:      inventoryServiceAccount.Name,
+		},
+	}
+}
+
+func (r *AccessReconciler) UpdateNeeded(
+	currentKubeconfigSecret, newkubeconfigSecret *corev1.Secret) bool {
+	return !reflect.DeepEqual(currentKubeconfigSecret.Data["kubeconfig"], newkubeconfigSecret.Data["kubeconfig"])
+}
+
+func (r *AccessReconciler) UpdateExistingKubeconfigForClusterAccess(
+	ctx context.Context,
+	currentKubeconfigSecret *corev1.Secret,
+	kubeconfigSecret *corev1.Secret) error {
+	currentKubeconfigSecret.Data = kubeconfigSecret.Data
+	if err := r.Client.Update(ctx, currentKubeconfigSecret); err != nil {
+		return errors.Wrapf(err, "unable to update machine inventory kubeconfig")
+	}
+	return nil
+}
+
+func (r *AccessReconciler) ClientKubeconfigSecret(
+	ctx context.Context,
+	inventory *inventoryv1alpaha1.Inventory,
+	clusterAccessSecret *corev1.Secret,
+	inventoryServiceAccountName string,
+	targetNamespace string) (*corev1.Secret, error) {
+	kubeconfig, err := r.KubeconfigForServer(
+		ctx,
+		clusterAccessSecret,
+		inventoryServiceAccountName)
 	if err != nil {
-		logr.FromContextOrDiscard(ctx).Error(err, "unable to get machine inventory token secret", "name", machineInventoryServiceAccountName)
-		return ctrl.Result{}, err
-	}
-
-	serverString := ""
-	if r.BootstrapAPIServer == "" {
-		kubeadmConfigConfigMap := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: kubeSystemNamespace,
-				Name:      kubeadmConfigConfigMapName,
-			},
-		}
-		err = r.Client.Get(ctx, client.ObjectKeyFromObject(kubeadmConfigConfigMap), kubeadmConfigConfigMap)
-		if err != nil {
-			logr.FromContextOrDiscard(ctx).Error(err, "unable to get kubeadm configmap", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
-		}
-
-		clusterStatusString, ok := kubeadmConfigConfigMap.Data[clusterStatusKey]
-		if !ok {
-			err := errors.New("ClusterStatus is missing in kubeadm configuration")
-			logr.FromContextOrDiscard(ctx).Error(err, "", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
-		}
-
-		clusterStatus := &kubeadmv1beta2.ClusterStatus{}
-		clusterStatusDecoder := k8syaml.NewYAMLOrJSONDecoder(strings.NewReader(clusterStatusString), 4096)
-		err = clusterStatusDecoder.Decode(clusterStatus)
-		if err != nil {
-			logr.FromContextOrDiscard(ctx).Error(err, "unable to deserialize cluster status", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
-		}
-
-		if len(clusterStatus.APIEndpoints) == 0 {
-			err = errors.New("cluster status has no API endpoints specified")
-			logr.FromContextOrDiscard(ctx).Error(err, "", "name", machineInventoryServiceAccountName)
-			return ctrl.Result{}, err
-		}
-
-		for _, v := range clusterStatus.APIEndpoints {
-			serverString = fmt.Sprintf("https://%s:%d", v.AdvertiseAddress, v.BindPort)
-			break
-		}
-	} else {
-		serverString = r.BootstrapAPIServer
-	}
-
-	kubeconfig := clientcmdapi.Config{
-		Kind:       "Config",
-		APIVersion: "v1",
-		Clusters: map[string]*clientcmdapi.Cluster{
-			"onmetal": {
-				CertificateAuthorityData: machineInventoryTokenSecret.Data["ca.crt"],
-				Server:                   serverString,
-			},
-		},
-		AuthInfos: map[string]*clientcmdapi.AuthInfo{
-			machineInventoryServiceAccount.Name: {
-				Token: string(machineInventoryTokenSecret.Data["token"]),
-			},
-		},
-		Contexts: map[string]*clientcmdapi.Context{
-			machineInventoryServiceAccount.Name + "@" + "onmetal": {
-				Cluster:   "onmetal",
-				AuthInfo:  machineInventoryServiceAccount.Name,
-				Namespace: inventoryNamespace,
-			},
-		},
-		CurrentContext: machineInventoryServiceAccount.Name + "@" + "onmetal",
+		return nil, err
 	}
 
 	kubeconfigBytes, err := clientcmd.Write(kubeconfig)
 	if err != nil {
-		logr.FromContextOrDiscard(ctx).Error(err, "unable to write kubeconfig", "name", machineInventoryServiceAccountName)
-		return ctrl.Result{}, err
+		return nil, errors.Wrapf(err, "unable to marshal kubeconfig")
 	}
 
 	kubeconfigName := kubeconfigSecretPrefix + inventory.Name
-	kubeconfigSecret := &corev1.Secret{
-		ObjectMeta: ctrl.ObjectMeta{
-			Namespace: machineInventoryNamespace,
+	return &corev1.Secret{
+		ObjectMeta: ctrlruntime.ObjectMeta{
+			Namespace: targetNamespace,
 			Name:      kubeconfigName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         machinev1alpha1.GroupVersion.Version,
+					APIVersion:         inventoryv1alpaha1.GroupVersion.Version,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -358,35 +393,330 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		Data: map[string][]byte{
 			"kubeconfig": kubeconfigBytes,
 		},
-	}
-	currentKubeconfigSecret := &corev1.Secret{}
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(kubeconfigSecret), currentKubeconfigSecret)
-	if err != nil && apierrors.IsNotFound(err) {
-		if err = r.Client.Create(ctx, kubeconfigSecret); err != nil {
-			logr.FromContextOrDiscard(ctx).Error(err, "unable to create machine inventory kubeconfig", "name", kubeconfigName)
-			return ctrl.Result{}, err
-		}
-	} else if err != nil {
-		logr.FromContextOrDiscard(ctx).Error(err, "unable to get machine inventory kubeconfig", "name", kubeconfigName)
-		return ctrl.Result{}, err
-	} else {
-		if !reflect.DeepEqual(currentKubeconfigSecret.Data["kubeconfig"], kubeconfigSecret.Data["kubeconfig"]) {
-			logr.FromContextOrDiscard(ctx).Info("update machine inventory kubeconfig", "name", kubeconfigName)
-			currentKubeconfigSecret.Data = kubeconfigSecret.Data
-			err = r.Client.Update(ctx, currentKubeconfigSecret)
-			if err != nil {
-				logr.FromContextOrDiscard(ctx).Error(err, "unable to update machine inventory kubeconfig", "name", kubeconfigName)
-				return ctrl.Result{}, err
-			}
-		}
-	}
-
-	return ctrl.Result{}, nil
+	}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *AccessReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&machinev1alpha1.Inventory{}).
-		Complete(r)
+func (r *AccessReconciler) KubeconfigForServer(
+	ctx context.Context,
+	inventoryTokenSecret *corev1.Secret,
+	inventoryServiceAccountName string) (clientcmdapi.Config, error) {
+	apiServerEndpoint, err := r.APIServerEndpoint(ctx)
+	if err != nil {
+		return clientcmdapi.Config{}, err
+	}
+	return r.kubernetesClientConfig(inventoryTokenSecret, inventoryServiceAccountName, apiServerEndpoint), nil
+}
+
+func (r *AccessReconciler) kubernetesClientConfig(
+	inventoryTokenSecret *corev1.Secret,
+	inventoryServiceAccountName string,
+	apiServerEndpoint string) clientcmdapi.Config {
+	return clientcmdapi.Config{
+		Kind:       "Config",
+		APIVersion: "v1",
+		Clusters: map[string]*clientcmdapi.Cluster{
+			r.ClusterName(): {
+				CertificateAuthorityData: inventoryTokenSecret.Data["ca.crt"],
+				Server:                   apiServerEndpoint,
+			},
+		},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{
+			inventoryServiceAccountName: {
+				Token: string(inventoryTokenSecret.Data["token"]),
+			},
+		},
+		Contexts: map[string]*clientcmdapi.Context{
+			inventoryServiceAccountName + "@" + r.ClusterName(): {
+				Cluster:   r.ClusterName(),
+				AuthInfo:  inventoryServiceAccountName,
+				Namespace: r.TargetNamespace,
+			},
+		},
+		CurrentContext: inventoryServiceAccountName + "@" + r.ClusterName(),
+	}
+}
+
+func (r *AccessReconciler) ClusterName() string {
+	return "onmetal"
+}
+
+func (r *AccessReconciler) InventoryRoleBinding(
+	machineInventoryNamespace string,
+	inventory *inventoryv1alpaha1.Inventory,
+	machineInventoryServiceAccount *corev1.ServiceAccount,
+	machineInventoryRole *rbacv1.Role) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: ctrlruntime.ObjectMeta{
+			Namespace: machineInventoryNamespace,
+			Name:      machineInventoryServiceAccount.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         inventoryv1alpaha1.GroupVersion.Version,
+					Kind:               inventoryKind,
+					Name:               inventory.Name,
+					UID:                inventory.UID,
+					Controller:         pointer.Bool(true),
+					BlockOwnerDeletion: pointer.Bool(true),
+				},
+			},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				APIGroup:  corev1.GroupName,
+				Name:      machineInventoryServiceAccount.Name,
+				Namespace: machineInventoryServiceAccount.Namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     machineInventoryRole.Name,
+		},
+	}
+}
+
+func (r *AccessReconciler) RoleForInventoryWithPermissions(
+	machineInventoryNamespace string,
+	machineInventoryServiceAccountName string,
+	inventory *inventoryv1alpaha1.Inventory) *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: ctrlruntime.ObjectMeta{
+			Namespace: machineInventoryNamespace,
+			Name:      machineInventoryServiceAccountName,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         inventoryv1alpaha1.GroupVersion.Version,
+					Kind:               inventoryKind,
+					Name:               inventory.Name,
+					UID:                inventory.UID,
+					Controller:         pointer.Bool(true),
+					BlockOwnerDeletion: pointer.Bool(true),
+				},
+			},
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs: []string{
+					"get",
+					"create",
+					"update",
+					"patch",
+				},
+				APIGroups: []string{
+					"machine.onmetal.de",
+				},
+				Resources: []string{
+					"inventories",
+				},
+			},
+		},
+	}
+}
+
+func (r *AccessReconciler) InventoryServiceAccountSecretToken(
+	machineInventoryNamespace string,
+	machineInventoryServiceAccountName string,
+	inventory *inventoryv1alpaha1.Inventory) *corev1.Secret {
+	saTokenSecret := &corev1.Secret{
+		ObjectMeta: ctrlruntime.ObjectMeta{
+			Namespace: machineInventoryNamespace,
+			Name:      machineInventoryServiceAccountName,
+			Annotations: map[string]string{
+				corev1.ServiceAccountNameKey: machineInventoryServiceAccountName,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         inventoryv1alpaha1.GroupVersion.Version,
+					Kind:               inventoryKind,
+					Name:               inventory.Name,
+					UID:                inventory.UID,
+					Controller:         pointer.Bool(true),
+					BlockOwnerDeletion: pointer.Bool(true),
+				},
+			},
+		},
+		Type: corev1.SecretTypeServiceAccountToken,
+	}
+	return saTokenSecret
+}
+
+func (r *AccessReconciler) CreateInventoryServiceAccount(
+	ctx context.Context,
+	inventoryServiceAccount *corev1.ServiceAccount) error {
+	return r.Client.Create(ctx, inventoryServiceAccount)
+}
+
+func (r *AccessReconciler) InventoryServiceAccount(
+	inventory *inventoryv1alpaha1.Inventory) *corev1.ServiceAccount {
+	machineInventoryServiceAccountName := InventoryServiceAccountPrefix + inventory.Name
+	return &corev1.ServiceAccount{
+		ObjectMeta: ctrlruntime.ObjectMeta{
+			Namespace: r.TargetNamespace,
+			Name:      machineInventoryServiceAccountName,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         inventoryv1alpaha1.GroupVersion.Version,
+					Kind:               inventoryKind,
+					Name:               inventory.Name,
+					UID:                inventory.UID,
+					Controller:         pointer.Bool(true),
+					BlockOwnerDeletion: pointer.Bool(true),
+				},
+			},
+		},
+	}
+}
+
+func (r *AccessReconciler) InventoryServiceAccountExist(
+	ctx context.Context,
+	machineInventoryServiceAccount *corev1.ServiceAccount) (bool, error) {
+	err := r.GetKubernetesObject(ctx, machineInventoryServiceAccount)
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func (r *AccessReconciler) InventoryServiceAccountSecretExist(
+	ctx context.Context,
+	secret *corev1.Secret) (bool, error) {
+	err := r.GetKubernetesObject(ctx, secret)
+	if err == nil {
+		return true, nil
+	}
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func (r *AccessReconciler) CreateInventoryServiceAccountSecret(ctx context.Context, secret *corev1.Secret) error {
+	return r.CreateObjectInCluster(ctx, secret)
+}
+
+func (r *AccessReconciler) InventoryServiceAccountRoleExist(ctx context.Context, role *rbacv1.Role) (bool, error) {
+	err := r.GetKubernetesObject(ctx, role)
+	if err == nil {
+		return true, nil
+	}
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func (r *AccessReconciler) InventoryServiceAccountRoleBindingExist(
+	ctx context.Context, roleBinding *rbacv1.RoleBinding) (bool, error) {
+	err := r.GetKubernetesObject(ctx, roleBinding)
+	if err == nil {
+		return true, nil
+	}
+	if apierrors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func (r *AccessReconciler) CreateInventoryRoleWithPermissions(
+	ctx context.Context,
+	roleForInventory *rbacv1.Role) error {
+	return r.CreateObjectInCluster(ctx, roleForInventory)
+}
+
+func (r *AccessReconciler) InventoryBindingRoleForServiceAccount(machineInventoryRole *rbacv1.Role,
+	machineInventoryNamespace string,
+	machineInventoryServiceAccount *corev1.ServiceAccount,
+	inventory *inventoryv1alpaha1.Inventory) *rbacv1.RoleBinding {
+	return r.InventoryRoleBinding(
+		machineInventoryNamespace,
+		inventory,
+		machineInventoryServiceAccount,
+		machineInventoryRole)
+}
+func (r *AccessReconciler) CreateInventoryServiceAccountBindingRole(
+	ctx context.Context,
+	machineRoleBinding *rbacv1.RoleBinding) error {
+	return r.CreateObjectInCluster(ctx, machineRoleBinding)
+}
+
+func (r *AccessReconciler) CreateObjectInCluster(ctx context.Context, object ctrlclient.Object) error {
+	return r.
+		Client.
+		Create(
+			ctx,
+			object)
+}
+
+func (r *AccessReconciler) GetKubernetesObject(
+	ctx context.Context,
+	object ctrlclient.Object) error {
+	err := r.
+		Client.
+		Get(
+			ctx,
+			ctrlclient.ObjectKeyFromObject(object),
+			object)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *AccessReconciler) CreateNewKubeconfigForClusterAccess(
+	ctx context.Context,
+	newKubeconfigSecret *corev1.Secret) error {
+	return r.
+		Client.
+		Create(
+			ctx,
+			newKubeconfigSecret)
+}
+
+func (r *AccessReconciler) RetrieveServerAddressAndPortFromCluster(ctx context.Context) (APIEndpoint, error) {
+	kubernetesEndpoints, err := r.ExtractKubernetesAPIEndpoint(ctx)
+	if err != nil {
+		return APIEndpoint{}, err
+	}
+	if len(kubernetesEndpoints.Subsets) == 0 {
+		return APIEndpoint{}, errKubernetesEndpointIsEmpty
+	}
+	kubernetesAPIAddress := KubernetesAPIAddressFromEndpoint(kubernetesEndpoints.Subsets[0])
+	if kubernetesAPIAddress == "" {
+		return APIEndpoint{}, errKubernetesEndpointAddressIsEmpty
+	}
+	kubernetesAPIPort := KubernetesAPIPortFromEndpoint(kubernetesEndpoints.Subsets[0].Ports)
+	if kubernetesAPIPort == 0 {
+		return APIEndpoint{}, errKubernetesEndpointAddressPortIsEmpty
+	}
+	return APIEndpoint{
+		Address: kubernetesAPIAddress,
+		Port:    kubernetesAPIPort,
+	}, nil
+}
+
+func (r *AccessReconciler) TargetNamespaceForAccessObjects() string {
+	if r.TargetNamespace != "" {
+		return r.TargetNamespace
+	}
+	return "metal-api-system"
+}
+
+func KubernetesAPIAddressFromEndpoint(subset corev1.EndpointSubset) string {
+	for address := range subset.Addresses {
+		if subset.Addresses[address].IP != "" {
+			return subset.Addresses[address].IP
+		}
+	}
+	return ""
+}
+
+func KubernetesAPIPortFromEndpoint(ports []corev1.EndpointPort) int32 {
+	for p := range ports {
+		if ports[p].Port == 0 {
+			continue
+		}
+		return ports[p].Port
+	}
+	return 0
 }

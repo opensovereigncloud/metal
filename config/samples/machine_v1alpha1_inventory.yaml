@@ -19,7 +19,6 @@ spec:
     - name: nvme0n1
       type: NVMe
       rotational: false
-      bus:
       model: SAMSUNG MZVLW256HEHP-000L7
       size: 256060514304
       partitionTable:
