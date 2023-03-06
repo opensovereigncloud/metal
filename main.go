@@ -264,6 +264,14 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-Pool")
 		os.Exit(1)
 	}
+	if err = (&machinepoolcontroller.MachineReservationReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Reservation"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-Reservation")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 }
 
