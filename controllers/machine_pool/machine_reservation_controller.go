@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
@@ -27,6 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // MachineReservationReconciler reconciles a MachineReservation object.
@@ -97,5 +98,41 @@ func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.R
 func (r *MachineReservationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&computev1alpha1.Machine{}).
+		WithEventFilter(r.constructPredicates()).
 		Complete(r)
+}
+
+func (r *MachineReservationReconciler) handleComputeMachineDeletion(e event.DeleteEvent) bool {
+	ctx := context.Background()
+	computeMachine, ok := e.Object.(*computev1alpha1.Machine)
+	if !ok {
+		r.Log.Info("compute machine cast failed")
+		return false
+	}
+
+	metalMachine := &machinev1alpha2.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      computeMachine.Name,
+			Namespace: computeMachine.Namespace,
+		},
+	}
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(metalMachine), metalMachine); err != nil {
+		r.Log.Error(err, "could not get metal machine")
+		return false
+	}
+
+	metalMachine.Status.Reservation.Reference = nil
+
+	if err := r.Client.Status().Update(ctx, metalMachine); err != nil {
+		r.Log.Error(err, "could not update metal machine status")
+		return false
+	}
+
+	return false
+}
+
+func (r *MachineReservationReconciler) constructPredicates() predicate.Predicate {
+	return predicate.Funcs{
+		DeleteFunc: r.handleComputeMachineDeletion,
+	}
 }

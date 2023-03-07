@@ -102,6 +102,18 @@ var _ = Describe("MachineReservation-Controller", func() {
 				metalMachine.Status.Reservation.Reference.Name == computeMachine.Name &&
 				metalMachine.Status.Reservation.Reference.Namespace == computeMachine.Namespace
 		}).Should(BeTrue())
+
+		By("Compute machine is deleted")
+		Expect(k8sClient.Delete(ctx, computeMachine)).Should(Succeed())
+
+		By("Expect metal machine has no reservation")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, metalMachine); err != nil {
+				return false
+			}
+
+			return metalMachine.Status.Reservation.Reference == nil
+		}).Should(BeTrue())
 	})
 })
 
