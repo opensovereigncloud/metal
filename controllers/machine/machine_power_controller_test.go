@@ -93,6 +93,40 @@ var _ = Describe("machine-power-controller", func() {
 
 			return oob.Spec.Power == "On"
 		}).Should(BeTrue())
+
+		By("Expect machine status reservation set nil")
+		machine.Status.Reservation.Reference = nil
+		Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
+
+		By("Expect machine has no reservation")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+				return false
+			}
+
+			return machine.Status.Reservation.Reference == nil
+		}).Should(BeTrue())
+
+		By("Expect OOB is turned off")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
+				return false
+			}
+
+			return oob.Spec.Power == "Off"
+		}).Should(BeTrue())
+
+		By("Expect machine was deleted")
+		Expect(k8sClient.Delete(ctx, machine)).To(Succeed())
+
+		By("Expect OOB is turned off")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
+				return false
+			}
+
+			return oob.Spec.Power == "Off"
+		}).Should(BeTrue())
 	})
 })
 
