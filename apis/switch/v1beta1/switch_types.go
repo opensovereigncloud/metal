@@ -26,7 +26,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 // SwitchSpec contains desired state of resulting Switch configuration

@@ -30,7 +30,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 var _ = PDescribe("Switch client", func() {

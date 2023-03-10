@@ -20,7 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/constants"
 	"github.com/onmetal/metal-api/pkg/errors"
 )
 

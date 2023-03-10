@@ -22,7 +22,7 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/constants"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

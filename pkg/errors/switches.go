@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 
-	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 const (

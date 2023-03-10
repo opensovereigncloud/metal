@@ -31,8 +31,8 @@ import (
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/internal/constants"
 	"github.com/onmetal/metal-api/internal/entity"
+	"github.com/onmetal/metal-api/pkg/constants"
 	machinerr "github.com/onmetal/metal-api/pkg/errors"
 )
 

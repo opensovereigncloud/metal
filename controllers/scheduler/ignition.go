@@ -23,7 +23,7 @@ import (
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/constants"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
