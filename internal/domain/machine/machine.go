@@ -14,19 +14,37 @@
 // limitations under the License.
 // */
 
-package repository
+package domain
 
 import (
-	"context"
-
-	"github.com/onmetal/metal-api/internal/entity"
+	machine "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
-type (
-	Onboarding interface {
-		Create(context.Context) error
-		InitializationStatus(context.Context, entity.Onboarding) entity.Initialization
-		Prepare(context.Context, entity.Onboarding) error
-		GatherData(context.Context, entity.Onboarding) error
-	}
-)
+type Machine struct {
+	UUID         string
+	Namespace    string
+	SKU          string
+	SerialNumber string
+	Interfaces   []machine.Interface
+	Size         map[string]string
+}
+
+func NewMachine(
+	UUID string,
+	namespace string,
+	SKU string,
+	serialNumber string,
+	interfaces []machine.Interface,
+	size map[string]string) Machine {
+	return Machine{
+		UUID:         UUID,
+		Namespace:    namespace,
+		SKU:          SKU,
+		SerialNumber: serialNumber,
+		Interfaces:   interfaces,
+		Size:         size}
+}
+
+func (m *Machine) MachineSizes(sizes map[string]string) {
+	m.Size = sizes
+}

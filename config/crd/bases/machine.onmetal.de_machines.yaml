@@ -19,15 +19,6 @@ spec:
     - jsonPath: .status.health
       name: Healthy
       type: string
-    - jsonPath: .status.inventory.exist
-      name: Inventory
-      type: boolean
-    - jsonPath: .status.oob.exist
-      name: OOB
-      type: boolean
-    - jsonPath: .status.orphaned
-      name: Orphaned
-      type: boolean
     - jsonPath: .status.network.redundancy
       name: Redundancy
       type: string
@@ -248,31 +239,6 @@ spec:
                       type: boolean
                   type: object
                 type: array
-              inventory:
-                description: Inventory - defines status of Inventory
-                properties:
-                  exist:
-                    description: Exist - defines where referenced object exist or
-                      not
-                    type: boolean
-                  reference:
-                    description: Reference - defines underlaying referenced object
-                      e.g. Inventory or OOB kind.
-                    properties:
-                      apiVersion:
-                        description: APIVersion refers to the resource API version
-                        type: string
-                      kind:
-                        description: Kind refers to the resource kind
-                        type: string
-                      name:
-                        description: Name refers to the resource name
-                        type: string
-                      namespace:
-                        description: Namespace refers to the resource namespace
-                        type: string
-                    type: object
-                type: object
               network:
                 description: Network - defines machine network status
                 properties:
@@ -288,31 +254,6 @@ spec:
                     description: UnknownPorts - defines number of machine interface
                       without info
                     type: integer
-                type: object
-              oob:
-                description: OOB - defines status of OOB
-                properties:
-                  exist:
-                    description: Exist - defines where referenced object exist or
-                      not
-                    type: boolean
-                  reference:
-                    description: Reference - defines underlaying referenced object
-                      e.g. Inventory or OOB kind.
-                    properties:
-                      apiVersion:
-                        description: APIVersion refers to the resource API version
-                        type: string
-                      kind:
-                        description: Kind refers to the resource kind
-                        type: string
-                      name:
-                        description: Name refers to the resource name
-                        type: string
-                      namespace:
-                        description: Namespace refers to the resource namespace
-                        type: string
-                    type: object
                 type: object
               orphaned:
                 description: Orphaned - defines machine condition whether OOB or Inventory

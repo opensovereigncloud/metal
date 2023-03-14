@@ -20,53 +20,45 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/internal/entity"
-	"github.com/onmetal/metal-api/internal/usecase"
+	usecase "github.com/onmetal/metal-api/internal/usecase/onboarding"
+	"github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InventoryOnboardingReconciler struct {
-	client.Client
+	log               logr.Logger
+	onboardingUseCase usecase.OnboardingUseCase
+}
 
-	Log                  logr.Logger
-	Scheme               *runtime.Scheme
-	OnboardingRepo       usecase.Onboarding
-	DestinationNamespace string
+func NewInventoryOnboardingReconciler(
+	log logr.Logger,
+	onboardingUseCase usecase.OnboardingUseCase) *InventoryOnboardingReconciler {
+	return &InventoryOnboardingReconciler{log: log, onboardingUseCase: onboardingUseCase}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InventoryOnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.log.Info("reconciler started")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&oobv1.OOB{}).
 		Complete(r)
 }
 
-func (r *InventoryOnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	reqLogger := r.Log.WithValues("namespace", req.NamespacedName)
+func (r *InventoryOnboardingReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
+	reqLogger := r.log.WithValues("namespace", req.NamespacedName)
 
-	e := entity.Onboarding{
-		RequestName:                   req.Name,
-		RequestNamespace:              req.Namespace,
-		InitializationObjectNamespace: r.DestinationNamespace,
+	request := dto.Request{
+		Name:      req.Name,
+		Namespace: req.Namespace,
 	}
-	is := r.OnboardingRepo.InitializationStatus(ctx, e)
-	if is.Error != nil {
-		reqLogger.Info("inventory initialization status", "error", is.Error)
+	err := r.onboardingUseCase.Execute(request)
+	if usecase.IsAlreadyOnboarded(err) {
 		return ctrl.Result{}, nil
 	}
-
-	if is.Require {
-		if err := r.OnboardingRepo.Initiate(ctx, e); err != nil {
-			reqLogger.Info("inventory initialization failed", "error", err)
-			return ctrl.Result{}, nil
-		}
-	}
-
-	if err := r.OnboardingRepo.GatherData(ctx, e); err != nil {
-		reqLogger.Info("can't gather the information", "error", err)
+	if err != nil {
+		reqLogger.Info("inventory onboarding failed", "error", err)
+		return ctrl.Result{}, err
 	}
 
 	reqLogger.Info("reconciliation finished")
