@@ -39,7 +39,7 @@ import (
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/internal/constants"
+	"github.com/onmetal/metal-api/pkg/constants"
 	"github.com/onmetal/metal-api/pkg/errors"
 	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 )

@@ -28,12 +28,6 @@ const (
 	TolerationOpExists TolerationOperator = "Exists"
 )
 
-const (
-	MachinePowerStateON    = "On"
-	MachinePowerStateOFF   = "Off"
-	MachinePowerStateReset = "Reset"
-)
-
 type TaintEffect string
 
 const (
@@ -50,9 +44,9 @@ const (
 type MachineState string
 
 const (
-	// When State is `Healthy` Machine` is allowed to be booked.
+	// MachineStateHealthy - When State is `Healthy` Machine` is allowed to be booked.
 	MachineStateHealthy MachineState = "Healthy"
-	// When State is `Unhealthy`` Machine isn't allowed to be booked.
+	// MachineStateUnhealthy - When State is `Unhealthy`` Machine isn't allowed to be booked.
 	MachineStateUnhealthy MachineState = "Unhealthy"
 )
 
@@ -65,15 +59,11 @@ const (
 const (
 	UUIDLabel          = "machine.onmetal.de/uuid"
 	UnschedulableLabel = "machine.onmetal.de/unschedulable"
-	SuspendedLabel     = "machine.onmetal.de/suspended"
-	NotAvailableLabel  = "machine.onmetal.de/notavailable"
-	ErrorLabel         = "machine.onmetal.de/error"
 )
 
 const (
-	LeasedLabel                   = "machine.onmetal.de/leased"
-	MetalAssignmentLabel          = "machine.onmetal.de/metal-assignment"
-	MetalAssignmentNamespaceLabel = "machine.onmetal.de/metal-assignment-namespace"
+	LeasedLabel          = "machine.onmetal.de/leased"
+	MetalAssignmentLabel = "machine.onmetal.de/metal-assignment"
 )
 
 // MachineSpec - defines the desired spec of Machine.
@@ -166,12 +156,6 @@ type MachineStatus struct {
 	// Network - defines machine network status
 	// +optional
 	Network Network `json:"network,omitempty"`
-	// OOB - defines status of OOB
-	// +optional
-	OOB ObjectReference `json:"oob,omitempty"`
-	// Inventory - defines status of Inventory
-	// +optional
-	Inventory ObjectReference `json:"inventory,omitempty"`
 	// Reservation - defines machine reservation state and reference object.
 	// +optional
 	Reservation Reservation `json:"reservation,omitempty"`
@@ -292,9 +276,6 @@ type ResourceReference struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Healthy",type=string,JSONPath=`.status.health`
-// +kubebuilder:printcolumn:name="Inventory",type=boolean,JSONPath=`.status.inventory.exist`
-// +kubebuilder:printcolumn:name="OOB",type=boolean,JSONPath=`.status.oob.exist`
-// +kubebuilder:printcolumn:name="Orphaned",type=boolean,JSONPath=`.status.orphaned`
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
 // +kubebuilder:printcolumn:name="Reservation Status",type=string,JSONPath=`.status.reservation.status`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"

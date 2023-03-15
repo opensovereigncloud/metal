@@ -14,16 +14,28 @@
 // limitations under the License.
 // */
 
-package entity
+package usecase
 
-type Onboarding struct {
-	RequestName                   string
-	RequestNamespace              string
-	InitializationObjectName      string
-	InitializationObjectNamespace string
+import (
+	"fmt"
+
+	"github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
+)
+
+type OnboardingUseCase interface {
+	Execute(request dto.Request) error
 }
 
-type Initialization struct {
-	Require bool
-	Error   error
+func InventoryAlreadyOnboarded(name string) error {
+	return &OnboardingError{
+		Reason:  alreadyOnboarded,
+		Message: fmt.Sprintf("Inventory Already Onboarded: %s", name),
+	}
+}
+
+func MachineAlreadyOnboarded(name string) error {
+	return &OnboardingError{
+		Reason:  alreadyOnboarded,
+		Message: fmt.Sprintf("Machine Already Onboarded: %s", name),
+	}
 }

@@ -191,13 +191,23 @@ func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha2.M
 // nolint reason:temp
 func prepareMachineStatus(status string) machinev1alpha2.MachineStatus {
 	return machinev1alpha2.MachineStatus{
-		Health:    machinev1alpha2.MachineStateHealthy,
-		OOB:       machinev1alpha2.ObjectReference{Exist: true},
-		Inventory: machinev1alpha2.ObjectReference{Exist: true},
+		Health: machinev1alpha2.MachineStateHealthy,
 		Interfaces: []machinev1alpha2.Interface{
 			{Name: "test"},
 			{Name: "test2"},
 		},
 		Reservation: machinev1alpha2.Reservation{Status: status},
+	}
+}
+
+func prepareOOB(name, namespace string) *oobv1.OOB {
+	return &oobv1.OOB{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: oobv1.OOBSpec{
+			Power: "Off",
+		},
 	}
 }

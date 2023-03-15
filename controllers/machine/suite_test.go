@@ -18,15 +18,13 @@ package controllers
 
 import (
 	"context"
-	"path/filepath"
-	"testing"
-	"time"
-
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
+	"path/filepath"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -49,11 +47,6 @@ var (
 	testEnv   *envtest.Environment
 	ctx       context.Context
 	cancel    context.CancelFunc
-)
-
-const (
-	timeout  = time.Second * 75
-	interval = time.Millisecond * 250
 )
 
 var scheme = runtime.NewScheme()
@@ -103,22 +96,6 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient).ToNot(BeNil())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&InventoryReconciler{
-		Client:    k8sManager.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("machine-inventory"),
-		Recorder:  k8sManager.GetEventRecorderFor("inventory-controller"),
-		Namespace: "default",
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&OOBReconciler{
-		Client:    k8sManager.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("machine-oob"),
-		Recorder:  k8sManager.GetEventRecorderFor("Machine-OOB"),
-		Namespace: "default",
-	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&MachinePowerReconciler{
