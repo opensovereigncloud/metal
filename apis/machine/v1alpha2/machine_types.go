@@ -57,13 +57,11 @@ const (
 )
 
 const (
-	UUIDLabel          = "machine.onmetal.de/uuid"
-	UnschedulableLabel = "machine.onmetal.de/unschedulable"
-)
-
-const (
-	LeasedLabel          = "machine.onmetal.de/leased"
-	MetalAssignmentLabel = "machine.onmetal.de/metal-assignment"
+	ReservationStatusAvailable = "Available"
+	ReservationStatusReserved  = "Reserved"
+	ReservationStatusPending   = "Pending"
+	ReservationStatusError     = "Error"
+	ReservationStatusRunning   = "Running"
 )
 
 // MachineSpec - defines the desired spec of Machine.
