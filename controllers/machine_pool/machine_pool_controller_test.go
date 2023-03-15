@@ -25,7 +25,6 @@ import (
 	"github.com/google/uuid"
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/controllers/scheduler"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
 	. "github.com/onsi/ginkgo/v2"
@@ -131,7 +130,7 @@ var _ = Describe("MachinePool-Controller", func() {
 		}).Should(BeTrue())
 
 		By("Expect successful machine status update to Running")
-		machine.Status = prepareMachineStatus(scheduler.ReservationStatusRunning)
+		machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusRunning)
 		Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
 		By("Expect there is machine in running reservation status")
@@ -188,7 +187,7 @@ func createAvailableMachine(ctx context.Context, name, namespace string, machine
 	}).Should(BeTrue())
 
 	By("Expect successful machine status update")
-	machine.Status = prepareMachineStatus(scheduler.ReservationStatusAvailable)
+	machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusAvailable)
 	Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
 	By("Expect there is machine in available reservation status")

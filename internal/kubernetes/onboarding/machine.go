@@ -123,12 +123,12 @@ func (r *MachineRepository) updateMachine(machineObj *machine.Machine, machine d
 	machineObj.Spec.Identity.SerialNumber = machine.SerialNumber
 }
 
-func (r *MachineRepository) updateMachineStatus(machineObj *machine.Machine, machine domain.Machine) {
+func (r *MachineRepository) updateMachineStatus(machineObj *machine.Machine, domainMachine domain.Machine) {
 	if machineObj.Status.Reservation.Status == "" {
-		machineObj.Status.Reservation.Status = "Available"
+		machineObj.Status.Reservation.Status = machine.ReservationStatusAvailable
 	}
 
-	machineObj.Status.Interfaces = machine.Interfaces
+	machineObj.Status.Interfaces = domainMachine.Interfaces
 
 	machineObj.Status.Health = updateHealthStatus(machineObj.Status.Interfaces)
 

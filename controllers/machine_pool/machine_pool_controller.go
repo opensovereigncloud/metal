@@ -23,7 +23,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/controllers/scheduler"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -193,7 +192,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 	wCtx.log.Info("updating machine_pool")
 
 	// if machine is booked, remove available classes
-	if machine.Status.Reservation.Status != scheduler.ReservationStatusAvailable {
+	if machine.Status.Reservation.Status != machinev1alpha2.ReservationStatusAvailable {
 		machinePool.Status.AvailableMachineClasses = make([]corev1.LocalObjectReference, 0)
 
 		if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
