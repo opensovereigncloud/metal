@@ -18,13 +18,14 @@ package controllers
 
 import (
 	"context"
+	"path/filepath"
+	"testing"
+
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
-	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

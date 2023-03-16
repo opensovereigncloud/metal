@@ -18,11 +18,12 @@ package main
 
 import (
 	"flag"
-	controllers "github.com/onmetal/metal-api/controllers/machine"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"strconv"
+
+	controllers "github.com/onmetal/metal-api/controllers/machine"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"

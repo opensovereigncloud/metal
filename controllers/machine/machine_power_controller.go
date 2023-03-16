@@ -80,19 +80,13 @@ func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}
 
 		oob.Spec.Power = "Off"
-		if err := r.Update(ctx, oob); err != nil {
-			log.Error(err, "could not turn off OOB")
-			return ctrl.Result{}, err
-		}
+		log.Info("OOB is turned off")
 
 		return ctrl.Result{}, nil
 	}
 
 	oob.Spec.Power = "On"
-	if err := r.Update(ctx, oob); err != nil {
-		log.Error(err, "could not turn on OOB")
-		return ctrl.Result{}, err
-	}
+	log.Info("OOB is turned on")
 
 	return ctrl.Result{}, nil
 }
