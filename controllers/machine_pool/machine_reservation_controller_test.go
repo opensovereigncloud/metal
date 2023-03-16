@@ -23,7 +23,6 @@ import (
 
 	"github.com/google/uuid"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/controllers/scheduler"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
@@ -133,7 +132,7 @@ func createHealthyRunningMachine(ctx context.Context, name, namespace string, ma
 	}).Should(BeTrue())
 
 	By("Expect successful machine status update")
-	machine.Status = prepareMachineStatus(scheduler.ReservationStatusRunning)
+	machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusRunning)
 	Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
 	By("Expect there is a healthy machine in running reservation status")
