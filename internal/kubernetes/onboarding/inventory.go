@@ -64,11 +64,17 @@ func (r *InventoryRepository) Get(request dto.Request) (dto.Inventory, error) {
 		return dto.Inventory{}, err
 	}
 	sizes := sizeLabels(inv.Labels)
+
+	var productSKU, serialNumber string
+	if inv.Spec.System != nil {
+		productSKU = inv.Spec.System.ProductSKU
+		serialNumber = inv.Spec.System.SerialNumber
+	}
 	inventory := dto.NewInventory(
 		inv.Name,
 		inv.Namespace,
-		inv.Spec.System.ProductSKU,
-		inv.Spec.System.SerialNumber,
+		productSKU,
+		serialNumber,
 		sizes,
 		inv.Spec.NICs)
 	return inventory, nil

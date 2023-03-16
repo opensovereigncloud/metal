@@ -27,11 +27,12 @@ import (
 	"github.com/onmetal/metal-api/internal/usecase/onboarding/rules"
 	"github.com/onmetal/metal-api/internal/usecase/onboarding/scenarios"
 	"github.com/stretchr/testify/assert"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func newInventoryOnboardingUseCase(a *assert.Assertions,
-	rule rules.ServerMustBeEnabledOnFirstTime) usecase.OnboardingUseCase {
-	fakeClient, err := fake.NewFakeClient()
+	rule rules.ServerMustBeEnabledOnFirstTime, objs ...ctrlclient.Object) usecase.OnboardingUseCase {
+	fakeClient, err := fake.NewFakeWithObjects(objs...)
 	a.Nil(err, "must create client")
 
 	inventoryRepository := persistence.NewInventoryRepository(fakeClient)
@@ -53,6 +54,23 @@ func TestInventoryOnboardingUseCaseExecuteSuccess(t *testing.T) {
 	}
 	err := newInventoryOnboardingUseCase(a, rule).Execute(request)
 	a.Nil(err, "must onboard inventory without error")
+}
+
+func TestInventoryOnboardingUseCaseExecuteAlreadyOnboarded(t *testing.T) {
+	t.Parallel()
+
+	name, namespace := "exist", "default"
+
+	inv := fake.InventoryObject(name, namespace)
+	a := assert.New(t)
+
+	rule := &fakeRule{err: nil}
+	request := dto.Request{
+		Name:      name,
+		Namespace: namespace,
+	}
+	err := newInventoryOnboardingUseCase(a, rule, inv).Execute(request)
+	a.True(usecase.IsAlreadyOnboarded(err))
 }
 
 func TestInventoryOnboardingUseCaseExecuteRuleFailed(t *testing.T) {
