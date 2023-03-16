@@ -255,7 +255,7 @@ func (r *MachinePoolReconciler) resolveSizes(wCtx *machinePoolReconcileWrappedCt
 	sizes := make([]string, 0)
 
 	sizeList := &v1alpha1.SizeList{}
-	err := r.List(wCtx.ctx, sizeList, client.InNamespace(wCtx.req.Namespace))
+	err := r.List(wCtx.ctx, sizeList)
 	switch {
 	case err == nil:
 		wCtx.log.Info("sizes list was found")
