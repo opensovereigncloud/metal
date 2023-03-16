@@ -22,6 +22,7 @@ import (
 	machine "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	oob "github.com/onmetal/oob-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -80,4 +81,26 @@ func getInitObjectList(objects ...ctrlclient.Object) []ctrlclient.Object {
 		objectList = append(objectList, objects[o])
 	}
 	return objectList
+}
+
+func InventoryObject(name, namespace string) *inventories.Inventory {
+	return &inventories.Inventory{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: inventories.InventorySpec{
+			System: &inventories.SystemSpec{
+				ID: "",
+			},
+			Host: &inventories.HostSpec{
+				Name: "",
+			},
+		},
+		Status: inventories.InventoryStatus{
+			InventoryStatuses: inventories.InventoryStatuses{
+				RequestsCount: 1,
+			},
+		},
+	}
 }
