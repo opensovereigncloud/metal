@@ -124,9 +124,6 @@ func (r *MachinePowerReconciler) handleMachineDeletion(e event.DeleteEvent) bool
 	}
 
 	oob.Spec.Power = "Off"
-	if err := r.Update(ctx, oob); err != nil {
-		r.Log.Error(err, "could not turn off OOB")
-		return false
-	}
+	r.Log.Info("OOB is turned off")
 	return false
 }
