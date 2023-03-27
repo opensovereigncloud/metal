@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/google/uuid"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
@@ -29,102 +30,68 @@ import (
 
 var _ = Describe("machine-power-controller", func() {
 	It("Should watch machine objects and turn it on if reservation exists", func() {
-		//machine := &machinev1alpha2.Machine{}
-		//oob := &oobv1.OOB{}
-		//
-		//u, err := uuid.NewUUID()
-		//Expect(err).ToNot(HaveOccurred())
-		//var (
-		//	name      = u.String()
-		//	namespace = "default"
-		//)
+		machine := &machinev1alpha2.Machine{}
+		oob := &oobv1.OOB{}
+
+		u, err := uuid.NewUUID()
+		Expect(err).ToNot(HaveOccurred())
+		var (
+			name      = u.String()
+			namespace = "default"
+		)
 
 		// prepare test data
-		//createOOB(ctx, name, namespace, oob)
-		//createHealthyRunningMachine(ctx, name, namespace, machine)
-		//
-		//// testing
-		//By("Expect machine has no reservation")
-		//Eventually(func() bool {
-		//	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
-		//		return false
-		//	}
-		//
-		//	return machine.Status.Reservation.Reference == nil
-		//}).Should(BeTrue())
-		//
-		//By("Expect OOB is turned off")
-		//Eventually(func() bool {
-		//	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
-		//		return false
-		//	}
-		//
-		//	return oob.Spec.Power == "Off"
-		//}).Should(BeTrue())
-		//
-		//By("Expect machine status reservation updated successfully")
-		//machine.Status.Reservation = machinev1alpha2.Reservation{
-		//	Status: machine.Status.Reservation.Status,
-		//	Reference: &machinev1alpha2.ResourceReference{
-		//		Name:      name,
-		//		Namespace: namespace,
-		//	},
-		//}
-		//Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
-		//
-		//By("Expect machine has reservation")
-		//Eventually(func() bool {
-		//	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
-		//		return false
-		//	}
-		//
-		//	return machine.Status.Reservation.Reference != nil &&
-		//		machine.Status.Reservation.Reference.Name == name &&
-		//		machine.Status.Reservation.Reference.Namespace == namespace
-		//}).Should(BeTrue())
-		//
-		//By("Expect OOB is turned on")
-		//Eventually(func() bool {
-		//	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
-		//		return false
-		//	}
-		//
-		//	return oob.Spec.Power == "On"
-		//}).Should(BeTrue())
-		//
-		//By("Expect machine status reservation set nil")
-		//machine.Status.Reservation.Reference = nil
-		//Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
-		//
-		//By("Expect machine has no reservation")
-		//Eventually(func() bool {
-		//	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
-		//		return false
-		//	}
-		//
-		//	return machine.Status.Reservation.Reference == nil
-		//}).Should(BeTrue())
-		//
-		//By("Expect OOB is turned off")
-		//Eventually(func() bool {
-		//	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
-		//		return false
-		//	}
-		//
-		//	return oob.Spec.Power == "Off"
-		//}).Should(BeTrue())
-		//
-		//By("Expect machine was deleted")
-		//Expect(k8sClient.Delete(ctx, machine)).To(Succeed())
-		//
-		//By("Expect OOB is turned off")
-		//Eventually(func() bool {
-		//	if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
-		//		return false
-		//	}
-		//
-		//	return oob.Spec.Power == "Off"
-		//}).Should(BeTrue())
+		createOOB(ctx, name, namespace, oob)
+		createHealthyRunningMachine(ctx, name, namespace, machine)
+
+		// testing
+		By("Expect machine has no reservation")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+				return false
+			}
+
+			return machine.Status.Reservation.Reference == nil
+		}).Should(BeTrue())
+
+		By("Expect OOB is turned off")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
+				return false
+			}
+
+			return oob.Spec.Power == "Off"
+		}).Should(BeTrue())
+
+		By("Expect machine status reservation updated successfully")
+		machine.Status.Reservation = machinev1alpha2.Reservation{
+			Status: machine.Status.Reservation.Status,
+			Reference: &machinev1alpha2.ResourceReference{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+		Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
+
+		By("Expect machine has reservation")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+				return false
+			}
+
+			return machine.Status.Reservation.Reference != nil &&
+				machine.Status.Reservation.Reference.Name == name &&
+				machine.Status.Reservation.Reference.Namespace == namespace
+		}).Should(BeTrue())
+
+		By("Expect OOB is turned on")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, oob); err != nil {
+				return false
+			}
+
+			return oob.Spec.Power == "On"
+		}).Should(BeTrue())
 	})
 })
 
