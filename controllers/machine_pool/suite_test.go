@@ -18,7 +18,9 @@ package controllers
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"testing"
 	"time"
 
@@ -47,8 +49,9 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg       *rest.Config
-	k8sClient client.Client
+	cfg            *rest.Config
+	k8sClient      client.Client
+	reconcilersMap map[string]func(k8sManager manager.Manager, log logr.Logger)
 )
 
 const (
@@ -56,6 +59,9 @@ const (
 	eventuallyTimeout    = 15 * time.Second
 	consistentlyDuration = 1 * time.Second
 	apiServiceTimeout    = 5 * time.Minute
+
+	machinePoolReconcilers        = "machine-pool-reconcilers"
+	machineReservationReconcilers = "machine-reservation-reconcilers"
 )
 
 // nolint
@@ -65,6 +71,25 @@ func TestMachinePoolController(t *testing.T) {
 	SetDefaultEventuallyTimeout(eventuallyTimeout)
 	SetDefaultConsistentlyDuration(consistentlyDuration)
 	RegisterFailHandler(Fail)
+	reconcilersMap = make(map[string]func(k8sManager manager.Manager, log logr.Logger))
+
+	reconcilersMap[machinePoolReconcilers] = func(k8sManager manager.Manager, log logr.Logger) {
+		err := (&MachinePoolReconciler{
+			Client: k8sManager.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
+			Scheme: k8sManager.GetScheme(),
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	reconcilersMap[machineReservationReconcilers] = func(k8sManager manager.Manager, log logr.Logger) {
+		err := (&MachineReservationReconciler{
+			Client: k8sManager.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
+			Scheme: k8sManager.GetScheme(),
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+	}
 
 	RunSpecs(t, "MachinePool Controller Suite")
 }
@@ -118,7 +143,7 @@ var _ = BeforeSuite(func() {
 	Expect(utilsenvtest.WaitUntilAPIServicesReadyWithTimeout(apiServiceTimeout, testEnvExt, k8sClient, scheme.Scheme)).To(Succeed())
 })
 
-func SetupTest(ctx context.Context) *corev1.Namespace {
+func SetupTest(ctx context.Context, reconcilers string) *corev1.Namespace {
 	var (
 		cancel context.CancelFunc
 		ns     = &corev1.Namespace{}
@@ -140,20 +165,7 @@ func SetupTest(ctx context.Context) *corev1.Namespace {
 		})
 		Expect(err).ToNot(HaveOccurred())
 
-		// register reconciler here
-		err = (&MachinePoolReconciler{
-			Client: k8sManager.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
-			Scheme: k8sManager.GetScheme(),
-		}).SetupWithManager(k8sManager)
-		Expect(err).ToNot(HaveOccurred())
-
-		err = (&MachineReservationReconciler{
-			Client: k8sManager.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("machine-reservation"),
-			Scheme: k8sManager.GetScheme(),
-		}).SetupWithManager(k8sManager)
-		Expect(err).ToNot(HaveOccurred())
+		reconcilersMap[reconcilers](k8sManager, ctrl.Log)
 
 		go func() {
 			defer GinkgoRecover()

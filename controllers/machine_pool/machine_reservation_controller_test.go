@@ -19,8 +19,6 @@ package controllers
 import (
 	"context"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	"github.com/google/uuid"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
@@ -36,7 +34,7 @@ import (
 
 var _ = Describe("MachineReservation-Controller", func() {
 	ctx := testing.SetupContext()
-	ns := SetupTest(ctx)
+	ns := SetupTest(ctx, machineReservationReconcilers)
 
 	It("Should watch compute machine objects and update metal machine reservation", func() {
 		machinePool := &computev1alpha1.MachinePool{}
@@ -121,14 +119,13 @@ func createHealthyRunningMachine(ctx context.Context, name, namespace string, ma
 	By("Expect successful machine creation")
 	Expect(k8sClient.Create(ctx, prepareTestMachineWithSizeLabels(name, namespace))).Should(Succeed())
 
-	// finalizer sets by machine-pool controller, because it watches metal machines
-	By("Expect machine was created and contain finalizer")
+	By("Expect machine was created")
 	Eventually(func() bool {
 		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
 			return false
 		}
 
-		return controllerutil.ContainsFinalizer(machine, machineFinalizer)
+		return true
 	}).Should(BeTrue())
 
 	By("Expect successful machine status update")

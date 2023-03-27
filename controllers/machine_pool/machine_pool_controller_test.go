@@ -37,7 +37,7 @@ import (
 
 var _ = Describe("MachinePool-Controller", func() {
 	ctx := testing.SetupContext()
-	ns := SetupTest(ctx)
+	ns := SetupTest(ctx, machinePoolReconcilers)
 
 	It("Should watch machine objects and maintain the machinePool", func() {
 		machine := &machinev1alpha2.Machine{}

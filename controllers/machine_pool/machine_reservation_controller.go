@@ -18,11 +18,11 @@ package controllers
 
 import (
 	"context"
-
 	"github.com/go-logr/logr"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,15 +65,35 @@ func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	metalMachine := &machinev1alpha2.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      req.Name,
-			Namespace: req.Namespace,
-		},
+	metalMachinesList := &machinev1alpha2.MachineList{}
+	err := r.List(ctx, metalMachinesList)
+	switch {
+	case err == nil:
+		log.Info("metal machines list was found")
+		if len(metalMachinesList.Items) == 0 {
+			log.Info("unable to create machine reservation. metal machines list is empty")
+			return ctrl.Result{}, nil
+		}
+	case apierrors.IsNotFound(err):
+		log.Info("metal machines list not found")
+		return ctrl.Result{}, nil
+	default:
+		log.Error(err, "could not get metal machines list")
+		return ctrl.Result{}, err
 	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(metalMachine), metalMachine); err != nil {
-		log.Error(err, "could not get metal machine")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+
+	var metalMachine *machinev1alpha2.Machine
+	for _, item := range metalMachinesList.Items {
+		if item.Name == computeMachine.Spec.MachinePoolRef.Name {
+			log.Info("metal machine matched with machine pool name")
+			metalMachine = &item
+			break
+		}
+	}
+
+	if metalMachine == nil {
+		log.Info("could not find metal machine")
+		return ctrl.Result{}, nil
 	}
 
 	if metalMachine.Status.Health != machinev1alpha2.MachineStateHealthy {
