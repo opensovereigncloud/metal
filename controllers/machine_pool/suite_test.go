@@ -18,11 +18,12 @@ package controllers
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"path/filepath"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"testing"
 	"time"
+
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"

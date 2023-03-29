@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
