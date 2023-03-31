@@ -22,11 +22,12 @@ import (
 	"testing"
 	"time"
 
+	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
+
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
