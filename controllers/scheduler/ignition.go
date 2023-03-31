@@ -18,15 +18,17 @@ package scheduler
 
 import (
 	"context"
+	"net"
+
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	"github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	"github.com/onmetal/metal-api/apis/switch/v1beta1"
 )
 
 type IgnitionWrapper struct {
@@ -126,7 +128,7 @@ func (r *Reconciler) reconcileIgnition(ctx context.Context, machineAssignment *v
 
 		name := IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name
 		namespace := machineAssignment.Status.MetalComputeRef.Namespace
-		configMap, err := r.createConfigMap(data, name, namespace)
+		configMap := r.createConfigMap(data, name, namespace)
 		if err != nil {
 			return err
 		}
@@ -175,7 +177,7 @@ func (r *Reconciler) reconcileIgnition(ctx context.Context, machineAssignment *v
 
 		name := IgnitionIpxePrefix + machineAssignment.Status.MetalComputeRef.Name
 		namespace := machineAssignment.Status.MetalComputeRef.Namespace
-		secret, err := r.createSecret(data, name, namespace)
+		secret := r.createSecret(data, name, namespace)
 		if err != nil {
 			return err
 		}
@@ -226,8 +228,8 @@ func (r *Reconciler) ignitionCleanup(ctx context.Context, machineAssignment *v1a
 	return nil
 }
 
-func (r *Reconciler) createConfigMap(temp map[string]string, name string, namespace string) (*corev1.ConfigMap, error) {
-	configMap := &corev1.ConfigMap{
+func (r *Reconciler) createConfigMap(temp map[string]string, name string, namespace string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
@@ -238,11 +240,10 @@ func (r *Reconciler) createConfigMap(temp map[string]string, name string, namesp
 		},
 		Data: temp,
 	}
-	return configMap, nil
 }
 
-func (r *Reconciler) createSecret(temp map[string]string, name string, namespace string) (*corev1.Secret, error) {
-	secret := &corev1.Secret{
+func (r *Reconciler) createSecret(temp map[string]string, name string, namespace string) *corev1.Secret {
+	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: "v1",
@@ -253,7 +254,6 @@ func (r *Reconciler) createSecret(temp map[string]string, name string, namespace
 		},
 		StringData: temp,
 	}
-	return secret, nil
 }
 
 func (r *Reconciler) getMachineSubnet(ctx context.Context, machineAssignment *v1alpha2.MachineAssignment) (*ipamv1alpha1.Subnet, error) {
@@ -278,7 +278,7 @@ func (r *Reconciler) getMachineSubnet(ctx context.Context, machineAssignment *v1
 		return nil, err
 	}
 
-	//TODO(flpeter) what if there are more subnets?
+	// TODO(flpeter) what if there are more subnets?
 	machineSubnet := machineSubnetList.Items[0]
 	if machineSubnet.Status.State != ipamv1alpha1.CFinishedSubnetState {
 		err := errors.New("subnet state is not Finished")
@@ -320,7 +320,7 @@ func (r *Reconciler) getMachineLoopbackIP(ctx context.Context, machineAssignment
 		return nil, err
 	}
 
-	//TODO(flpeter) what if there are more subnets?
+	// TODO(flpeter) what if there are more subnets?
 	machineIP := machineIPList.Items[0]
 	if machineIP.Status.State != ipamv1alpha1.CFinishedIPState {
 		err := errors.New("ip state is not Finished")

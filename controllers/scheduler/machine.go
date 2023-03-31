@@ -19,11 +19,13 @@ package scheduler
 import (
 	"context"
 	"fmt"
-	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
 func (r *Reconciler) findAvailableMachine(ctx context.Context, machineAssignment *v1alpha2.MachineAssignment) (*v1alpha2.Machine, error) {

@@ -114,7 +114,6 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	// trigger reconcile loop on machine assignment
 	if previousReservationStatus != machineObj.Status.Reservation.Status ||
 		machineObj.Status.Reservation.Status == scheduler.ReservationStatusAvailable {
-
 		// only get assignment machine if reference is set
 		if machineObj.Status.Reservation.Reference != nil {
 			machineAssignment := &machinev1alpha2.MachineAssignment{

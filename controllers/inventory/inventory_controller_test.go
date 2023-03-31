@@ -248,10 +248,7 @@ var _ = Describe("Inventory controller", func() {
 				}
 				createdAggregate := inventoryv1alpha1.Aggregate{}
 				err := k8sClient.Get(ctx, createdAggregateNamespacedName, &createdAggregate)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			By("Inventory is installed")
@@ -317,10 +314,7 @@ var _ = Describe("Inventory controller", func() {
 			createdInventory := inventoryv1alpha1.Inventory{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &createdInventory)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			Expect(createdInventory.Spec).To(Equal(testInventory.Spec))
 

@@ -35,6 +35,6 @@ const (
 	IgnitionConfigMapTemplateName = "ipxe-template"
 	IgnitionSecretTemplateName    = "ignition-template"
 	IgnitionIpxePrefix            = "ipxe-"
-	// TODO(flpeter) duplicate code from switch configurer
+	// TODO(flpeter) duplicate code from switch configurer.
 	IgnitionASNBase = 4200000000
 )

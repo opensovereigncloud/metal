@@ -18,10 +18,12 @@ package scheduler
 
 import (
 	"context"
-	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
+
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
 func (r *Reconciler) getOOBMachine(ctx context.Context, machine *v1alpha2.Machine) (*oobv1.OOB, error) {

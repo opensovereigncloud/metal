@@ -19,8 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/go-logr/logr"
-	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -32,10 +34,10 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	kubeadmv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
 	"k8s.io/utils/pointer"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
+
+	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 const (
@@ -52,7 +54,7 @@ const (
 type AccessReconciler struct {
 	client.Client
 
-	BootstrapApiServer string
+	BootstrapAPIServer string
 	Log                logr.Logger
 	Scheme             *runtime.Scheme
 }
@@ -60,9 +62,9 @@ type AccessReconciler struct {
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 
@@ -265,7 +267,7 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	serverString := ""
-	if r.BootstrapApiServer == "" {
+	if r.BootstrapAPIServer == "" {
 		kubeadmConfigConfigMap := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: kubeSystemNamespace,
@@ -304,7 +306,7 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			break
 		}
 	} else {
-		serverString = r.BootstrapApiServer
+		serverString = r.BootstrapAPIServer
 	}
 
 	kubeconfig := clientcmdapi.Config{

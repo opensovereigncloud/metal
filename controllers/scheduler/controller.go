@@ -19,14 +19,16 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"time"
+
+	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
 // Reconciler reconciles a Ignition object.
@@ -44,14 +46,14 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machineassignments/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("namespace", req.NamespacedName, "machineAssignment", req.Name)
@@ -96,7 +98,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			if machineAssignment.Status.MetalComputeRef != nil &&
 				machineAssignment.Status.MetalComputeRef.Name != "" &&
 				machineAssignment.Status.MetalComputeRef.Namespace != "" {
-
 				// get the referenced machine
 				machine, err := r.getMachine(ctx, machineAssignment.Status.MetalComputeRef)
 				if err != nil {
@@ -125,7 +126,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 					}
 				}
 
-				//TODO(flpeter) set machine is dirty and do some cleanup?
+				// TODO(flpeter) set machine is dirty and do some cleanup?
 			}
 			// remove our finalizer from the list and update it.
 			controllerutil.RemoveFinalizer(machineAssignment, SchedulerFinalizer)
@@ -237,7 +238,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 
 			if oobMachine.Status.Power == "Off" && oobMachine.Spec.Power == "Off" {
-				//TODO(flpeter) set .Spec.PowerState
+				// TODO(flpeter) set .Spec.PowerState
 				reqLogger.Info("power on", "machine", machineAssignment.Status.MetalComputeRef.Name)
 			}
 		}

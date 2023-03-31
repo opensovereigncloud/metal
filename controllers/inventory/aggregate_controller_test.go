@@ -194,10 +194,7 @@ var _ = Describe("Aggregate controller", func() {
 			Eventually(func() bool {
 				createdInventory := inventoryv1alpha1.Inventory{}
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &createdInventory)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			By("Aggregate is installed")
