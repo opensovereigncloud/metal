@@ -37,6 +37,7 @@ import (
 )
 
 const maintainedMachineLabel = "onmetal.de/oob-ignore"
+const finalizer = "onmetal.de/oob-finalizer"
 
 // OOBReconciler reconciles a Machine object.
 type OOBReconciler struct {
@@ -60,7 +61,6 @@ func (r *OOBReconciler) constructPredicates() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: isUUIDExist,
 		UpdateFunc: onUpdate,
-		DeleteFunc: r.onDelete,
 	}
 }
 
@@ -79,6 +79,24 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(oobObj), oobObj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if !oobObj.GetDeletionTimestamp().IsZero() {
+		if finalizerExists(oobObj, finalizer) {
+			err := r.finalize(ctx, oobObj)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			removeFinalizer(oobObj, finalizer)
+			err = r.Update(ctx, oobObj)
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+	if !finalizerExists(oobObj, finalizer) {
+		addFinalizer(oobObj, finalizer)
+		err := r.Update(ctx, oobObj)
+		return ctrl.Result{}, err
 	}
 
 	machineObj := &machinev1alpha2.Machine{
@@ -148,6 +166,34 @@ func (r *OOBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	return ctrl.Result{}, nil
 }
 
+func finalizerExists(obj *oobv1.OOB, finalizer string) bool {
+	for _, fin := range obj.GetFinalizers() {
+		if fin == finalizer {
+			return true
+		}
+	}
+	return false
+}
+
+func addFinalizer(obj *oobv1.OOB, finalizer string) {
+	fins := obj.GetFinalizers()
+	renewedFins := make([]string, len(fins))
+	copy(renewedFins, fins)
+	renewedFins = append(renewedFins, finalizer)
+	obj.SetFinalizers(renewedFins)
+}
+
+func removeFinalizer(obj *oobv1.OOB, finalizer string) {
+	renewedFins := make([]string, 0)
+	for _, fin := range obj.GetFinalizers() {
+		if fin == finalizer {
+			continue
+		}
+		renewedFins = append(renewedFins, fin)
+	}
+	obj.SetFinalizers(renewedFins)
+}
+
 func prepareReferenceSpec(oob *oobv1.OOB) machinev1alpha2.ObjectReference {
 	return machinev1alpha2.ObjectReference{
 		Exist: true,
@@ -157,14 +203,7 @@ func prepareReferenceSpec(oob *oobv1.OOB) machinev1alpha2.ObjectReference {
 	}
 }
 
-func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
-	ctx := context.Background()
-	obj, ok := e.Object.(*oobv1.OOB)
-	if !ok {
-		r.Log.Info("machine oob type assertion failed")
-		return false
-	}
-
+func (r *OOBReconciler) finalize(ctx context.Context, obj *oobv1.OOB) error {
 	machine := &machinev1alpha2.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      obj.Status.UUID,
@@ -174,14 +213,16 @@ func (r *OOBReconciler) onDelete(e event.DeleteEvent) bool {
 	err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine)
 	if err != nil {
 		r.Log.Info("failed to retrieve machine object from cluster", "error", err)
-		return false
+		return nil
 	}
 
-	if updErr := r.Client.Status().Update(ctx, machine); updErr != nil {
-		r.Log.Info("can't update machine status for oob", "error", updErr)
-		return false
+	machine.Status.OOB.Exist = false
+	machine.Status.OOB.Reference = nil
+	err = r.Status().Update(ctx, machine)
+	if err != nil {
+		r.Log.Info("can't update machine status for oob", "error", err)
 	}
-	return false
+	return err
 }
 
 func isUUIDExist(e event.CreateEvent) bool {
