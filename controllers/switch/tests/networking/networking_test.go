@@ -24,14 +24,15 @@ import (
 	"strings"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 )
 
 var _ = Describe("IPAM interaction test", func() {
@@ -187,6 +188,12 @@ var _ = Describe("IPAM interaction test", func() {
 		for _, item := range subnets.Items {
 			Expect(k8sClient.Delete(ctx, &item)).To(Succeed())
 		}
+		Eventually(func(g Gomega) {
+			g.Expect(k8sClient.List(ctx, subnets, opts)).To(Succeed())
+			g.Expect(subnets.Items).Should(BeEmpty())
+		}, timeout, interval).Should(Succeed())
+
+		By("Remove parent subnets if exist")
 		req, _ = labels.NewRequirement("ipam.onmetal.de/object-purpose", selection.In, []string{"switch-carrier"})
 		sel = labels.NewSelector().Add(*req)
 		opts = &client.ListOptions{
@@ -198,6 +205,10 @@ var _ = Describe("IPAM interaction test", func() {
 		for _, item := range subnets.Items {
 			Expect(k8sClient.Delete(ctx, &item)).To(Succeed())
 		}
+		Eventually(func(g Gomega) {
+			g.Expect(k8sClient.List(ctx, subnets, opts)).To(Succeed())
+			g.Expect(subnets.Items).Should(BeEmpty())
+		}, timeout, interval).Should(Succeed())
 
 		Eventually(func(g Gomega) {
 			list := &ipamv1alpha1.SubnetList{}
