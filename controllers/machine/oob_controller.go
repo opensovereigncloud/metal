@@ -18,12 +18,13 @@ package controllers
 
 import (
 	"context"
-	"github.com/onmetal/metal-api/controllers/scheduler"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/onmetal/metal-api/controllers/scheduler"
+
 	"github.com/go-logr/logr"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -31,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 )
 
 const maintainedMachineLabel = "onmetal.de/oob-ignore"
@@ -226,7 +229,11 @@ func getNoScheduleTaintIdx(taints []machinev1alpha2.Taint) int {
 func syncStatusState(oobObj *oobv1.OOB, machineObj *machinev1alpha2.Machine) {
 	switch {
 	case oobObj.Status.OS == "TimedOut":
-		machineObj.Status.Reservation.Status = scheduler.ReservationStatusError
+		if oobObj.Status.Manufacturer == "Lenovo" {
+			machineObj.Status.Reservation.Status = scheduler.ReservationStatusError
+			break
+		}
+		fallthrough
 	case oobObj.Status.OS == "Ok" && oobObj.Status.Power != "Off":
 		machineObj.Status.Reservation.Status = scheduler.ReservationStatusRunning
 	}
