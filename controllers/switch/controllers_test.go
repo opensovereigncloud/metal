@@ -17,10 +17,14 @@ limitations under the License.
 package v1beta1
 
 import (
+	"bytes"
 	"context"
+	"os"
+	"path/filepath"
 	"time"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/pointer"
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
@@ -38,7 +42,7 @@ import (
 )
 
 const (
-	timeout  = time.Second * 15
+	timeout  = time.Second * 30
 	interval = time.Millisecond * 500
 )
 
@@ -247,7 +251,7 @@ var _ = Describe("Switch controller", func() {
 
 			By("Expect switches' state 'Pending' due to missing type label")
 			checkState(constants.SwitchStatePending)
-			setTypeLabel()
+			setConfigSelector()
 
 			By("Expect switch spec matches initial state")
 			checkInterfaces()
@@ -271,7 +275,7 @@ var _ = Describe("Switch controller", func() {
 				targetInterface := target.Status.Interfaces["Ethernet100"]
 				g.Expect(targetInterface.Peer).NotTo(BeNil())
 				g.Expect(targetInterface.Peer.GetChassisID()).To(Equal("2a30fd70-008e-4975-ba77-8f5683505e37"))
-			}, timeout, interval).Should(Succeed())
+			}, timeout*2, interval).Should(Succeed())
 		})
 	})
 
@@ -284,14 +288,15 @@ var _ = Describe("Switch controller", func() {
 		})
 
 		It("Should compute configs and create missing IPAM objects", func() {
-			By("Expect switches' state 'Pending' due to missing type label")
-			checkState(constants.SwitchStatePending)
-			setTypeLabel()
-
 			By("Expect successful switches' configuration")
 			checkInterfaces()
-			checkConfigRef()
 			checkLayerAndRole()
+
+			By("Expect switches' state 'Pending'")
+			checkState(constants.SwitchStatePending)
+			setConfigSelector()
+
+			checkConfigRef()
 			checkLoopbacks()
 			checkASN()
 			checkSubnets()
@@ -317,13 +322,15 @@ var _ = Describe("Switch controller", func() {
 		})
 
 		It("Should compute configs and use existing IPAM objects", func() {
-			By("Setting type labels on switches")
-			setTypeLabel()
-
 			By("Expect successful switches' configuration")
 			checkInterfaces()
-			checkConfigRef()
 			checkLayerAndRole()
+
+			By("Expect switches' state 'Pending'")
+			checkState(constants.SwitchStatePending)
+			setConfigSelector()
+
+			checkConfigRef()
 			checkLoopbacks()
 			checkASN()
 			checkSubnets()
@@ -334,22 +341,130 @@ var _ = Describe("Switch controller", func() {
 			checkSeededLoopbacks()
 		})
 	})
+
+	Context("Updating mapping between switches and switch configs", func() {
+		JustBeforeEach(func() {
+			preTestContext, preTestCancel := context.WithCancel(ctx)
+			defer preTestCancel()
+			Expect(seedInventories(preTestContext, k8sClient)).NotTo(HaveOccurred())
+			checkSwitches()
+			setTopSpines()
+		})
+
+		It("Should update mapping between switches and switch configs", func() {
+			By("Expect switches' state 'Pending' due to inability to discover related switch config")
+			checkState(constants.SwitchStatePending)
+			checkLayerAndRole()
+			checkConfigSelectorPopulated()
+			setConfigSelector()
+
+			By("Configuration process proceeds further")
+			checkConfigRef()
+			checkState(constants.SwitchStateReady)
+
+			By("Removing of config selector causes 'Pending' state for switches")
+			flushConfigSelector()
+			checkConfigSelectorPopulated()
+			checkState(constants.SwitchStatePending)
+
+			By("Updating of switch configs labels should lead to proper switch configuration")
+			updateSwitchConfigLabels()
+			checkState(constants.SwitchStateReady)
+		})
+	})
 })
 
-func setTypeLabel() {
+func setTopSpines() {
+	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	defer testCancel()
+	spineOne := &switchv1beta1.Switch{}
+	Expect(k8sClient.Get(testContext, types.NamespacedName{
+		Namespace: "onmetal",
+		Name:      "a177382d-a3b4-3ecd-97a4-01cc15e749e4",
+	}, spineOne)).To(Succeed())
+	spineOne.SetTopSpine(true)
+	Expect(k8sClient.Update(testContext, spineOne)).To(Succeed())
+	spineTwo := &switchv1beta1.Switch{}
+	Expect(k8sClient.Get(testContext, types.NamespacedName{
+		Namespace: "onmetal",
+		Name:      "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b",
+	}, spineTwo)).To(Succeed())
+	spineTwo.SetTopSpine(true)
+	Expect(k8sClient.Update(testContext, spineTwo)).To(Succeed())
+}
+
+func setConfigSelector() {
 	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
-	Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
-	for _, item := range switches.Items {
-		if item.GetTopSpine() {
-			item.Labels[constants.SwitchTypeLabel] = constants.SwitchRoleSpine
-		} else {
-			item.Labels[constants.SwitchTypeLabel] = constants.SwitchRoleLeaf
+	Eventually(func(g Gomega) {
+		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
+		for _, item := range switches.Items {
+			if item.GetTopSpine() {
+				item.Spec.ConfigSelector = &metav1.LabelSelector{
+					MatchLabels: map[string]string{constants.SwitchTypeLabel: constants.SwitchRoleSpine},
+				}
+			} else {
+				item.Spec.ConfigSelector = &metav1.LabelSelector{
+					MatchLabels: map[string]string{constants.SwitchTypeLabel: constants.SwitchRoleLeaf},
+				}
+			}
+			item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
+			g.Expect(k8sClient.Patch(testContext, &item, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
 		}
-		item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-		Expect(k8sClient.Patch(testContext, &item, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
-	}
+	}, timeout, interval).Should(Succeed())
+}
+
+func flushConfigSelector() {
+	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	defer testCancel()
+	switches := &switchv1beta1.SwitchList{}
+	Eventually(func(g Gomega) {
+		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
+		for _, item := range switches.Items {
+			item.Spec.ConfigSelector = nil
+			item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
+			g.Expect(k8sClient.Patch(testContext, &item, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
+		}
+	}, timeout, interval).Should(Succeed())
+}
+
+func checkConfigSelectorPopulated() {
+	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	defer testCancel()
+	switches := &switchv1beta1.SwitchList{}
+	Consistently(func(g Gomega) {
+		g.Expect(k8sClient.List(testContext, switches))
+		for _, item := range switches.Items {
+			if item.GetTopSpine() {
+				g.Expect(item.GetConfigSelector().MatchLabels).NotTo(BeNil())
+				g.Expect(item.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(Equal("0"))
+			} else {
+				g.Expect(item.GetConfigSelector().MatchLabels).NotTo(BeNil())
+				g.Expect(item.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(Equal("1"))
+			}
+		}
+	}, timeout, interval).Should(Succeed())
+}
+
+func updateSwitchConfigLabels() {
+	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	defer testCancel()
+	switchConfigs := &switchv1beta1.SwitchConfigList{}
+	Eventually(func(g Gomega) {
+		g.Expect(k8sClient.List(testContext, switchConfigs)).NotTo(HaveOccurred())
+		for _, item := range switchConfigs.Items {
+			typeValue := item.Labels[constants.SwitchTypeLabel]
+			if typeValue == "spine" {
+				item.Labels[constants.SwitchConfigLayerLabel] = "0"
+			}
+			if typeValue == "leaf" {
+				item.Labels[constants.SwitchConfigLayerLabel] = "1"
+			}
+			delete(item.Labels, constants.SwitchTypeLabel)
+			g.Expect(k8sClient.Update(ctx, &item)).NotTo(HaveOccurred())
+		}
+	}, timeout, interval).Should(Succeed())
 }
 
 func checkSwitches() {
@@ -475,7 +590,7 @@ func checkState(expected string) {
 		for _, item := range switches.Items {
 			g.Expect(item.GetState()).To(Equal(expected))
 		}
-	}, timeout, interval).Should(Succeed())
+	}, timeout*2, interval).Should(Succeed())
 }
 
 func updateSpinesConfig() {
@@ -493,39 +608,16 @@ func updateSpinesConfig() {
 func updateInventory() {
 	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
 	defer testCancel()
-	inventory := &inventoryv1alpha1.Inventory{}
-	Expect(k8sClient.Get(testContext, types.NamespacedName{
-		Namespace: "onmetal",
-		Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
-	}, inventory)).NotTo(HaveOccurred())
-	updatedInventory := inventory.DeepCopy()
+	samplePath := filepath.Join(samplesPath, "updatedInventory", "leaf-1.inventory.yaml")
+	raw, err := os.ReadFile(samplePath)
+	Expect(err).To(BeNil())
+	updatedInventory := &inventoryv1alpha1.Inventory{}
+	sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
+	Expect(sampleYAML.Decode(updatedInventory)).To(Succeed())
 	updatedInventory.TypeMeta = metav1.TypeMeta{
 		Kind:       "Inventory",
 		APIVersion: "machine.onmetal.de/v1alpha1",
 	}
-	discovered := inventoryv1alpha1.LLDPSpec{
-		ChassisID:         "2a30fd70-008e-4975-ba77-8f5683505e37",
-		SystemName:        "fake-neighbor",
-		SystemDescription: "linux",
-		PortID:            "ens0p1",
-		PortDescription:   "ens0p1",
-		Capabilities: []inventoryv1alpha1.LLDPCapabilities{
-			constants.LLDPCapabilityStation,
-		},
-	}
-	updatedNICs := make([]inventoryv1alpha1.NICSpec, 0)
-	for _, nic := range updatedInventory.Spec.NICs {
-		if nic.Name == "Ethernet100" {
-			tmp := nic.DeepCopy()
-			tmp.LLDPs = []inventoryv1alpha1.LLDPSpec{discovered}
-			updatedNICs = append(updatedNICs, *tmp)
-			continue
-		}
-		updatedNICs = append(updatedNICs, nic)
-	}
-	updatedInventory.Spec.NICs = make([]inventoryv1alpha1.NICSpec, len(updatedNICs))
-	copy(updatedInventory.Spec.NICs, updatedNICs)
-	updatedInventory.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
 	Expect(k8sClient.Patch(testContext, updatedInventory, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
 }
 

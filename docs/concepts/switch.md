@@ -19,11 +19,6 @@ The purpose of `SwitchConfig` type is to describe and define the common network 
 - selectors for loopback IP addresses which will be used by controller to filter out existing `IP` objects and pick up those are match to criteria;
 - definition for addresses families (IPv4 and IPv6) which subnets and loopback addresses are expected to belong to. With an exception that in any case there should be IPv4 loopback address, due to ASN calculation depends on its value. Hence, controller will ignore `false` value of IPv4 address family field during loopback addresses configuration;
 
-There are two options to set up relationship between `Switch` and `SwitchConfig` objects:
-
-- Set label `switch.onmetal.de/layer` to the `SwitchConfig` object. For instance `SwitchConfig` labeled as `switch.onmetal.de/layer: 0` will be mapped to all switches which have `.status.layer` equals to 0. As you can see in example, the value should be equal to the layer of switches which should consume global parameters;
-- Set identical `switch.onmetal.de/type` labels to `SwitchConfig` object and all `Switch` objects you want to map to it; 
-
 ## Switch
 
 The main goals of `Switch` type are:
@@ -36,6 +31,7 @@ The main goals of `Switch` type are:
 `Switch` object's spec contains:
 
 - reference to the corresponding `Inventory` object;
+- label selector for discovering of corresponding`SwitchConfig` object;
 - flags `topSpine`, `managed`, `cordon` and `scanPorts` which are used to:
   - define respectively whether switch is a top-spine in connections hierarchy (equals to `false` by default);
   - define if `Switch` object should be reconciled or not (equals to `true` by default);
@@ -60,6 +56,17 @@ The main goals of `Switch` type are:
 - object state which reflects current reconciliation progress;
 - list of object conditions, where each item reflects the readiness of particular part of switch configuration; 
 
+## Mapping between Switch and SwitchConfig objects
+
+The mapping between `Switch` and `SwitchConfig` objects is set up using labels. There is the field `.spec.configSelector` in `Switch` object definition. It contains native kubernetes labels selector for filtering out which `SwitchConfig` objects to consume. The field `.spec.configSelector` in `Switch` object is optional. However, in case it is not defined, it will be populated by defaulting webhook with `MatchLabels` item containing `switch.onmetal.de/layer` label. The label will reflect the value of `.status.layer` field of the `Switch` object.
+
+If later selector will be defined, defaulting webhook will remove `switch.onmetal.de/layer` label from selector.
+
+Thus, there are two mutually exclusive options to set up relationship between `Switch` and `SwitchConfig` objects:
+
+- Leave `.spec.configSelector` blank for `Switch` object and set label `switch.onmetal.de/layer` to the `SwitchConfig` object;
+- Define labelSelector in `.spec.configSelector` for `Switch` object and label `SwitchConfig` object with respective labels;
+
 ## How it works at scale
 
 Switch operator contains three controllers: `onboarding-controller`, `switch-controller` and `switchconfig-controller`. Each of them responsible for the particular part of switches configuration.
@@ -73,7 +80,6 @@ The purpose of the first one is to onboard switches by creating `Switch` object 
 Controller is configured in such a way to watch for both `Inventory` and `Switch` object types, which means it will reflect on events spawned by the objects of these types. Apart from that, there are configured event filters, which restrict the response to events to the following mandatory conditions:
 
 - `Inventory` object which is the source of `CREATE` or `UPDATE` event has to be labeled with `switch-size` label, otherwise event will be discarded;
-- `Inventory` object which is the source of `UPDATE` event has to have its spec updated, otherwise event will be discarded;
 - `Switch` object which is the source of `CREATE` or `UPDATE` event has not to have `inventoried` label OR has not to have annotation containing its chassis ID, otherwise event will be discarded;
 
 Apart from that, controller configuration contains event handlers for `Switch` objects watcher:
@@ -92,10 +98,10 @@ These steps are:
 - check of pre-requisites: it checks whether object is labeled with type label and if its spec contains reference to the corresponding `Inventory` object;
 - populate status with default values (default for types of the struct fields, so for string fields it will be empty string, for pointers it will be `nil` value etc.). This step will be taken if the object's state is empty what means that it is a newly created object;
 - update interfaces, using corresponding `Inventory` object as a source of truth;[*](#footnote)
-- update reference to the `SwitchConfig` object;[*](#footnote)
-- update interfaces parameters according to resulting parameters,which are computed from corresponding `SwitchConfig` object.Default parameters and overrides are stored in `.spec.interfaces`;
 - update info about neighbors;
 - define layer and role;
+- update reference to the `SwitchConfig` object;
+- update interfaces parameters according to resulting parameters,which are computed from corresponding `SwitchConfig` object.Default parameters and overrides are stored in `.spec.interfaces`;
 - define loopback IP addresses;
 - define ASN;
 - define south subnets;
@@ -122,4 +128,4 @@ As soon as `SwitchConfig` object is updated the corresponding `Switch` objects w
 ---
 ###### Footnote
 
-If steps are failed, due to unfilled `.spec.inventoryRef.name` or absent switch type label, object's state will be set to `Pending` value. After it switch will not be ever requeued for reconciliation until both of these conditions.
+If the field `.spec.inventoryRef.name` is empty, object's state will be set to `Pending` value. After it switch will never be re-queued for reconciliation until the condition is satisfied.

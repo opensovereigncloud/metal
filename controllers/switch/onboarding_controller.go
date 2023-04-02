@@ -18,7 +18,7 @@ package v1beta1
 
 import (
 	"context"
-	"reflect"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -85,7 +85,7 @@ func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&inventoryv1alpha1.Inventory{}).
 		WithOptions(controller.Options{
-			RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute*5),
+			RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute),
 			RecoverPanic: pointer.Bool(true),
 		}).
 		WithEventFilter(setupPredicates()).
@@ -120,13 +120,8 @@ func labelsUpdateEventPredicate(e event.UpdateEvent) bool {
 	inventoryObject, sourceIsInventory := e.ObjectNew.(*inventoryv1alpha1.Inventory)
 	switchObject, sourceIsSwitch := e.ObjectNew.(*switchv1beta1.Switch)
 	if sourceIsInventory {
-		inventoryOld, ok := e.ObjectOld.(*inventoryv1alpha1.Inventory)
-		if !ok {
-			return false
-		}
-		specChanged := !reflect.DeepEqual(inventoryOld.Spec, inventoryObject.Spec)
 		metaMatchRequirements := checkObjectMetadata(inventoryObject)
-		return specChanged && metaMatchRequirements
+		return metaMatchRequirements
 	}
 	if sourceIsSwitch {
 		return checkObjectMetadata(switchObject)
@@ -184,33 +179,45 @@ func (r *OnboardingReconciler) reconcile(ctx context.Context, inv *inventoryv1al
 }
 
 func (r *OnboardingReconciler) onboarding(ctx context.Context, inv *inventoryv1alpha1.Inventory) (ctrl.Result, error) {
+	var (
+		result ctrl.Result
+		err    error
+	)
 	key := client.ObjectKeyFromObject(inv)
 	r.Log.Info("onboarding started", "name", key)
 	targetSwitch := &switchv1beta1.Switch{}
-	if err := r.Get(ctx, key, targetSwitch); err != nil {
+	err = r.Get(ctx, key, targetSwitch)
+	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			r.Log.Error(err, "failed to get Switch object", "name", key)
 			return ctrl.Result{}, err
 		}
-		r.Log.Info("prepare switch object to create", "name", key)
-		targetSwitch = &switchv1beta1.Switch{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Switch",
-				APIVersion: "switch.onmetal.de/v1beta1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      key.Name,
-				Namespace: key.Namespace,
-			},
-			Spec: switchv1beta1.SwitchSpec{
-				Managed:   pointer.Bool(true),
-				Cordon:    pointer.Bool(false),
-				TopSpine:  pointer.Bool(false),
-				ScanPorts: pointer.Bool(true),
-			},
-		}
+		result, err = r.onboardNewSwitch(ctx, inv)
+	} else {
+		result, err = r.onboardExistingSwitch(ctx, inv, targetSwitch)
 	}
-	r.Log.Info("set switch properties, labels, annotations", "name", key)
+	return result, err
+}
+
+func (r *OnboardingReconciler) onboardNewSwitch(ctx context.Context, inv *inventoryv1alpha1.Inventory) (ctrl.Result, error) {
+	key := client.ObjectKeyFromObject(inv)
+	r.Log.Info("prepare switch object to create", "name", key)
+	targetSwitch := &switchv1beta1.Switch{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Switch",
+			APIVersion: "switch.onmetal.de/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: switchv1beta1.SwitchSpec{
+			Managed:   pointer.Bool(true),
+			Cordon:    pointer.Bool(false),
+			TopSpine:  pointer.Bool(false),
+			ScanPorts: pointer.Bool(true),
+		},
+	}
 	targetSwitch.SetInventoryRef(key.Name)
 	if targetSwitch.Labels == nil {
 		targetSwitch.Labels = map[string]string{}
@@ -218,15 +225,100 @@ func (r *OnboardingReconciler) onboarding(ctx context.Context, inv *inventoryv1a
 	targetSwitch.UpdateSwitchAnnotations(inv)
 	targetSwitch.UpdateSwitchLabels(inv)
 	targetSwitch.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-	targetSwitch.SetCondition(constants.ConditionInterfacesOK, false).
-		SetReason(errors.ErrorReasonDataOutdated.String())
 	r.Log.Info("apply changes for switch", "name", key)
-	result := ctrl.Result{}
 	err := r.Patch(ctx, targetSwitch, client.Apply, switchespkg.PatchOpts)
-	if apierrors.IsConflict(err) {
-		r.Log.Info("failed to patch Switch, object is outdated")
-		result.Requeue = true
-		return result, nil
+	return ctrl.Result{}, err
+}
+
+func (r *OnboardingReconciler) onboardExistingSwitch(
+	ctx context.Context,
+	inv *inventoryv1alpha1.Inventory,
+	targetSwitch *switchv1beta1.Switch,
+) (ctrl.Result, error) {
+	var (
+		result ctrl.Result
+		err    error
+	)
+	key := client.ObjectKeyFromObject(inv)
+	targetSwitch.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
+	r.Log.Info("set switch properties, labels, annotations", "name", key)
+	if !(inventoryRefExist(targetSwitch) && requiredLabelsExist(targetSwitch)) {
+		// requeue object in any case: since it is impossible to patch spec and status at the same time,
+		// we need to patch spec first, then requeue object and then patch status
+		result = ctrl.Result{Requeue: true}
+		targetSwitch.SetInventoryRef(key.Name)
+		if targetSwitch.Labels == nil {
+			targetSwitch.Labels = map[string]string{}
+		}
+		targetSwitch.UpdateSwitchAnnotations(inv)
+		targetSwitch.UpdateSwitchLabels(inv)
+		r.Log.Info("apply changes for switch", "name", key)
+		err = r.Patch(ctx, targetSwitch, client.Apply, switchespkg.PatchOpts)
+		if apierrors.IsConflict(err) {
+			r.Log.Info("failed to patch Switch, object is outdated")
+			return result, nil
+		}
+	}
+	if interfacesChanged(inv, targetSwitch) {
+		targetSwitch.SetCondition(constants.ConditionInterfacesOK, false).
+			SetReason(errors.ErrorReasonDataOutdated.String())
+		r.Log.Info("apply changes for switch condition", "name", key)
+		err = r.Status().Patch(ctx, targetSwitch, client.Apply, switchespkg.PatchOpts)
+		if apierrors.IsConflict(err) {
+			r.Log.Info("failed to patch Switch, object is outdated")
+			result.Requeue = true
+			return result, nil
+		}
 	}
 	return result, err
+}
+
+func inventoryRefExist(targetSwitch *switchv1beta1.Switch) bool {
+	return targetSwitch.GetInventoryRef() != constants.EmptyString
+}
+
+func requiredLabelsExist(targetSwitch *switchv1beta1.Switch) bool {
+	_, inventoriedLabel := targetSwitch.Labels[constants.InventoriedLabel]
+	_, chassisIDLabel := targetSwitch.Labels[constants.LabelChassisID]
+	return inventoriedLabel && chassisIDLabel
+}
+
+func interfacesChanged(inv *inventoryv1alpha1.Inventory, targetSwitch *switchv1beta1.Switch) bool {
+	if len(inv.Spec.NICs) != int(targetSwitch.GetTotalPorts()) {
+		return true
+	}
+	for _, nic := range inv.Spec.NICs {
+		data, exist := targetSwitch.Status.Interfaces[nic.Name]
+		if strings.Contains(nic.Name, constants.SwitchPortNamePrefix) && !exist {
+			return true
+		}
+		if !exist {
+			continue
+		}
+		if len(nic.LLDPs) > 0 && data.Peer == nil {
+			return true
+		}
+		if peerDataChanged(nic.LLDPs, data.Peer) {
+			return true
+		}
+	}
+	return false
+}
+
+func peerDataChanged(lldps []inventoryv1alpha1.LLDPSpec, peer *switchv1beta1.PeerSpec) bool {
+	for _, item := range lldps {
+		if item.ChassisID != peer.GetChassisID() {
+			return true
+		}
+		if item.PortID != peer.GetPortID() {
+			return true
+		}
+		if item.PortDescription != peer.GetPortDescription() {
+			return true
+		}
+		if item.SystemName != peer.GetPortDescription() {
+			return true
+		}
+	}
+	return false
 }

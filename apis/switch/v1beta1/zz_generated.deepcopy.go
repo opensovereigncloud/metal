@@ -790,6 +790,11 @@ func (in *SwitchSpec) DeepCopyInto(out *SwitchSpec) {
 		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
+	if in.ConfigSelector != nil {
+		in, out := &in.ConfigSelector, &out.ConfigSelector
+		*out = new(v1.LabelSelector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Managed != nil {
 		in, out := &in.Managed, &out.Managed
 		*out = new(bool)

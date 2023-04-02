@@ -37,6 +37,7 @@ import (
 	"golang.org/x/mod/modfile"
 	"inet.af/netaddr"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -92,6 +93,9 @@ func ApplyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventor
 		peerData.SetPortDescription(neighborData.PortDescription)
 		peerData.SetPortID(neighborData.PortID)
 		peerData.SetType(func() string {
+			if len(neighborData.Capabilities) == 0 {
+				return constants.NeighborTypeMachine
+			}
 			for _, capability := range neighborData.Capabilities {
 				if capability == constants.LLDPCapabilityStation {
 					return constants.NeighborTypeMachine
@@ -170,6 +174,26 @@ func ComputeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
 			continue
 		}
 		obj.SetLayer(connectionLevel + 1)
+	}
+}
+
+func InheritInterfaceParams(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
+	if obj.GetTopSpine() {
+		return
+	}
+	connectionsMap, keys := buildConnectionMap(list)
+	for _, connectionLevel := range keys {
+		if connectionLevel == 255 {
+			continue
+		}
+		if connectionLevel >= obj.GetLayer() {
+			continue
+		}
+		switches := connectionsMap[connectionLevel]
+		northPeers := getPeers(obj, switches)
+		if len(northPeers.Items) == 0 {
+			continue
+		}
 		setNICsDirections(obj, list)
 	}
 }
@@ -318,17 +342,12 @@ func ResultingLabels(
 
 func GetSelectorFromIPAMSpec(
 	obj *switchv1beta1.Switch, spec *switchv1beta1.IPAMSelectionSpec) (labels.Selector, error) {
-	selector := labels.NewSelector()
+	var err error
+	var selector labels.Selector
 	if spec != nil {
-		for key, value := range spec.LabelSelector.MatchLabels {
-			req, _ := labels.NewRequirement(key, selection.In, []string{value})
-			selector = selector.Add(*req)
-		}
-		if len(spec.LabelSelector.MatchExpressions) > 0 {
-			for _, item := range spec.LabelSelector.MatchExpressions {
-				req, _ := labels.NewRequirement(item.Key, selection.Operator(item.Operator), item.Values)
-				selector = selector.Add(*req)
-			}
+		selector, err = metav1.LabelSelectorAsSelector(spec.LabelSelector)
+		if err != nil {
+			return nil, err
 		}
 		if spec.FieldSelector == nil {
 			return selector, nil
@@ -620,6 +639,85 @@ func conditionsUpdated(oldData, newData []*switchv1beta1.ConditionSpec) bool {
 		item.LastUpdateTimestamp = nil
 	}
 	return !reflect.DeepEqual(oldData, newData)
+}
+
+func SwitchConfigSelectorInvalid(obj *switchv1beta1.Switch) bool {
+	selector := obj.GetConfigSelector()
+	if selector == nil {
+		return obj.GetLayer() != 255
+	}
+	matchLabelsLen := len(obj.Spec.ConfigSelector.MatchLabels)
+	matchExpressionsLen := len(obj.Spec.ConfigSelector.MatchExpressions)
+	matchLabelLayerRefExists := matchLabelsContainsLayerLabel(obj.Spec.ConfigSelector.MatchLabels)
+	_, matchExpressionLayerRefExists := matchExpressionsContainsLayerLabel(obj.Spec.ConfigSelector.MatchExpressions)
+	if matchLabelLayerRefExists {
+		value := obj.Spec.ConfigSelector.MatchLabels[constants.SwitchConfigLayerLabel]
+		layerAsString := strconv.Itoa(int(obj.GetLayer()))
+		if (matchLabelsLen + matchExpressionsLen) > 1 {
+			return true
+		}
+		if value != layerAsString {
+			return true
+		}
+	}
+	if matchExpressionLayerRefExists && (matchLabelsLen+matchExpressionsLen) > 1 {
+		return true
+	}
+	return false
+}
+
+func UpdateSwitchConfigSelector(obj *switchv1beta1.Switch) {
+	selector := obj.GetConfigSelector()
+	if selector == nil {
+		if obj.GetLayer() == 255 {
+			return
+		}
+		layerAsString := strconv.Itoa(int(obj.GetLayer()))
+		obj.Spec.ConfigSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{constants.SwitchConfigLayerLabel: layerAsString},
+		}
+		return
+	}
+	matchLabelsLen := len(obj.Spec.ConfigSelector.MatchLabels)
+	matchExpressionsLen := len(obj.Spec.ConfigSelector.MatchExpressions)
+	matchLabelLayerRefExists := matchLabelsContainsLayerLabel(obj.Spec.ConfigSelector.MatchLabels)
+	idx, matchExpressionLayerRefExists := matchExpressionsContainsLayerLabel(obj.Spec.ConfigSelector.MatchExpressions)
+	if matchLabelLayerRefExists {
+		value := obj.Spec.ConfigSelector.MatchLabels[constants.SwitchConfigLayerLabel]
+		layerAsString := strconv.Itoa(int(obj.GetLayer()))
+		if (matchLabelsLen + matchExpressionsLen) > 1 {
+			delete(obj.Spec.ConfigSelector.MatchLabels, constants.SwitchConfigLayerLabel)
+			matchLabelsLen = len(obj.Spec.ConfigSelector.MatchLabels)
+		}
+		if value != layerAsString {
+			obj.Spec.ConfigSelector.MatchLabels[constants.SwitchConfigLayerLabel] = layerAsString
+		}
+	}
+	if matchExpressionLayerRefExists && (matchLabelsLen+matchExpressionsLen) > 1 {
+		expressions := deleteLayerRefFromMatchExpressions(idx, obj.Spec.ConfigSelector.MatchExpressions)
+		obj.Spec.ConfigSelector.MatchExpressions = expressions
+	}
+}
+
+func matchLabelsContainsLayerLabel(in map[string]string) bool {
+	_, ok := in[constants.SwitchConfigLayerLabel]
+	return ok
+}
+
+func matchExpressionsContainsLayerLabel(in []metav1.LabelSelectorRequirement) (int, bool) {
+	for i, expr := range in {
+		if expr.Key == constants.SwitchConfigLayerLabel {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+func deleteLayerRefFromMatchExpressions(idx int, list []metav1.LabelSelectorRequirement) []metav1.LabelSelectorRequirement {
+	result := make([]metav1.LabelSelectorRequirement, 0)
+	result = append(result, list[:idx]...)
+	result = append(result, list[idx:]...)
+	return result
 }
 
 // functions used in tests.
