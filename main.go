@@ -32,7 +32,6 @@ import (
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
-	machinepoolcontroller "github.com/onmetal/metal-api/controllers/machine_pool"
 	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switch"
 	persistence "github.com/onmetal/metal-api/internal/kubernetes/onboarding"
@@ -210,7 +209,7 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		os.Exit(1)
 	}
 
-	if err = (&machinepoolcontroller.MachinePoolReconciler{
+	if err = (&controllers.MachinePoolReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Pool"),
@@ -218,7 +217,7 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-Pool")
 		os.Exit(1)
 	}
-	if err = (&machinepoolcontroller.MachineReservationReconciler{
+	if err = (&controllers.MachineReservationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Reservation"),
@@ -232,6 +231,14 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Power"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-Power")
+		os.Exit(1)
+	}
+	if err = (&controllers.IpxeReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Ipxe"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Ipxe")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
