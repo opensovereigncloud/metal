@@ -1,0 +1,20 @@
+- op: add
+  path: "/spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/constraints/items/properties/eq/anyOf"
+  value:
+    - type: integer
+    - type: string
+- op: add
+  path: "/spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/constraints/items/properties/eq/x-kubernetes-int-or-string"
+  value: true
+- op: remove
+  path: "/spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/constraints/items/properties/eq/type"
+- op: add
+  path: "/spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/constraints/items/properties/neq/anyOf"
+  value:
+    - type: integer
+    - type: string
+- op: add
+  path: "/spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/constraints/items/properties/neq/x-kubernetes-int-or-string"
+  value: true
+- op: remove
+  path: "/spec/versions/0/schema/openAPIV3Schema/properties/spec/properties/constraints/items/properties/neq/type"

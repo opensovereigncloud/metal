@@ -20,20 +20,19 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/json"
-	"sigs.k8s.io/kustomize/api/krusty"
-	"sigs.k8s.io/kustomize/kyaml/filesys"
-	"sigs.k8s.io/kustomize/kyaml/resid"
-
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
+	"sigs.k8s.io/kustomize/kyaml/resid"
 
 	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	// +kubebuilder:scaffold:imports
@@ -58,7 +57,7 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	// Since kubebuilder is not allowing to set complex types for fields with markers
 	// we have to build patched configuration with kustomize first
-	crdPath := filepath.Join("..", "..", "config", "crd")
+	crdPath := filepath.Join("..", "..", "config", "crd", "kustomization_runtime")
 	kfs := filesys.MakeFsOnDisk()
 	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 
@@ -74,10 +73,11 @@ var _ = BeforeSuite(func() {
 	crds := make([]*v1.CustomResourceDefinition, 0)
 
 	for _, resID := range resIds {
-		resJSONBytes, err := resID.MarshalJSON()
+		resJSONBytes, err := json.Marshal(resID)
 		Expect(err).NotTo(HaveOccurred())
 
 		crd := &v1.CustomResourceDefinition{}
+		//crd.ObjectMeta.SetCreationTimestamp(metav1.NewTime(time.Now()))
 		err = json.Unmarshal(resJSONBytes, crd)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -124,7 +124,7 @@ var _ = BeforeSuite(func() {
 
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).NotTo(BeNil())
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

@@ -19,11 +19,14 @@ package v1beta1
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 const (
@@ -55,16 +58,20 @@ var _ = Describe("SwitchConfig Webhook", func() {
 						MatchLabels: map[string]string{"switch.onmetal.de/type": "spine"},
 					},
 					PortsDefaults: &PortParametersSpec{
-						FEC:   MetalAPIString(CFECRS),
-						MTU:   MetalAPIUint16(9216),
-						State: MetalAPIString(CNICUp),
+						FEC:   pointer.String(constants.FECRS),
+						MTU:   pointer.Uint32(9216),
+						State: pointer.String(constants.NICUp),
 					},
 					IPAM: &GeneralIPAMSpec{
-						CarrierSubnets: &v1.LabelSelector{
-							MatchLabels: map[string]string{"ipam.onmetal.de/object-purpose": "switch-carrier"},
+						CarrierSubnets: &IPAMSelectionSpec{
+							LabelSelector: &v1.LabelSelector{
+								MatchLabels: map[string]string{"ipam.onmetal.de/object-purpose": "switch-carrier"},
+							},
 						},
-						LoopbackSubnets: &v1.LabelSelector{
-							MatchLabels: map[string]string{"ipam.onmetal.de/object-purpose": "switch-loopbacks"},
+						LoopbackSubnets: &IPAMSelectionSpec{
+							LabelSelector: &v1.LabelSelector{
+								MatchLabels: map[string]string{"ipam.onmetal.de/object-purpose": "switch-loopbacks"},
+							},
 						},
 					},
 				},
@@ -74,28 +81,26 @@ var _ = Describe("SwitchConfig Webhook", func() {
 				sampleConfig := &SwitchConfig{}
 				// check defaulted ports params
 				g.Expect(k8sClient.Get(ctx, types.NamespacedName{Name: switchConfigObject.Name, Namespace: defaulNamespace}, sampleConfig)).Should(Succeed())
-				g.Expect(GoString(sampleConfig.Spec.PortsDefaults.FEC)).Should(Equal(CFECRS))
-				g.Expect(GoString(sampleConfig.Spec.PortsDefaults.State)).Should(Equal(CNICUp))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetFEC()).Should(Equal(constants.FECRS))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetState()).Should(Equal(constants.NICUp))
 				g.Expect(sampleConfig.Spec.PortsDefaults.IPv4MaskLength).NotTo(BeNil())
-				g.Expect(GoUint8(sampleConfig.Spec.PortsDefaults.IPv4MaskLength)).Should(Equal(uint8(30)))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetIPv4MaskLength()).Should(Equal(uint32(30)))
 				g.Expect(sampleConfig.Spec.PortsDefaults.IPv6Prefix).NotTo(BeNil())
-				g.Expect(GoUint8(sampleConfig.Spec.PortsDefaults.IPv6Prefix)).Should(Equal(uint8(127)))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetIPv6Prefix()).Should(Equal(uint32(127)))
 				g.Expect(sampleConfig.Spec.PortsDefaults.Lanes).NotTo(BeNil())
-				g.Expect(GoUint8(sampleConfig.Spec.PortsDefaults.Lanes)).Should(Equal(uint8(4)))
-				g.Expect(GoUint16(sampleConfig.Spec.PortsDefaults.MTU)).Should(Equal(uint16(9216)))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetLanes()).Should(Equal(uint32(4)))
+				g.Expect(sampleConfig.Spec.PortsDefaults.GetMTU()).Should(Equal(uint32(9216)))
 				// check defaulted ipam selectors
 				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets).NotTo(BeNil())
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.AddressFamilies.IPv4).Should(BeTrue())
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.AddressFamilies.IPv6).Should(BeTrue())
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.LabelSelector.MatchLabels).Should(Equal(map[string]string{IPAMObjectPurposeLabel: CIPAMPurposeSouthSubnet}))
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.LabelKey).Should(Equal(IPAMObjectOwnerLabel))
-				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.FieldRef.FieldPath).Should(Equal(CDefaultIPAMFieldRef))
+				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.LabelSelector.MatchLabels).Should(Equal(map[string]string{constants.IPAMObjectPurposeLabel: constants.IPAMSouthSubnetPurpose}))
+				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.GetLabelKey()).Should(Equal(constants.IPAMObjectOwnerLabel))
+				g.Expect(sampleConfig.Spec.IPAM.SouthSubnets.FieldSelector.FieldRef.FieldPath).Should(Equal(constants.DefaultIPAMFieldRef))
 				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses).NotTo(BeNil())
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv4).Should(BeTrue())
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv6).Should(BeTrue())
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.LabelSelector.MatchLabels).Should(Equal(map[string]string{IPAMObjectPurposeLabel: CIPAMPurposeLoopback}))
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.LabelKey).Should(Equal(IPAMObjectOwnerLabel))
-				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.FieldRef.FieldPath).Should(Equal(CDefaultIPAMFieldRef))
+				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.LabelSelector.MatchLabels).Should(Equal(map[string]string{constants.IPAMObjectPurposeLabel: constants.IPAMLoopbackPurpose}))
+				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.GetLabelKey()).Should(Equal(constants.IPAMObjectOwnerLabel))
+				g.Expect(sampleConfig.Spec.IPAM.LoopbackAddresses.FieldSelector.FieldRef.FieldPath).Should(Equal(constants.DefaultIPAMFieldRef))
+				g.Expect(sampleConfig.Spec.IPAM.AddressFamily.GetIPv4()).To(BeTrue())
+				g.Expect(sampleConfig.Spec.IPAM.AddressFamily.GetIPv6()).To(BeFalse())
 			}, timeout, interval).Should(Succeed())
 		})
 	})

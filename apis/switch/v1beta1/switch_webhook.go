@@ -18,16 +18,20 @@ package v1beta1
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 // log is for logging in this package.
@@ -85,30 +89,34 @@ func validateOverrides(currentState *Switch, newState *Switch) (err error) {
 	}
 
 	for _, newInterface := range newInterfaces {
-		currentInterface, ok := currentInterfaces[newInterface.Name]
+		currentInterface, ok := currentInterfaces[newInterface.GetName()]
 		if !ok {
 			err = errors.Errorf(
 				"%s interface override for update was not found in the interfaces status, probably one does not exists",
-				newInterface.Name)
+				newInterface.GetName())
 			return
+		}
+
+		if currentInterface.GetDirection() == constants.DirectionSouth {
+			continue
 		}
 
 		interfaceChanged := false
 		switch {
-		case newInterface.FEC != nil && *newInterface.FEC != currentInterface.FEC:
+		case newInterface.FEC != nil && newInterface.GetFEC() != currentInterface.GetFEC():
 			interfaceChanged = true
-		case newInterface.Lanes != nil && *newInterface.Lanes != currentInterface.Lanes:
+		case newInterface.Lanes != nil && newInterface.GetLanes() != currentInterface.GetLanes():
 			interfaceChanged = true
-		case newInterface.MTU != nil && *newInterface.MTU != currentInterface.MTU:
+		case newInterface.MTU != nil && newInterface.GetMTU() != currentInterface.GetMTU():
 			interfaceChanged = true
 		}
 
-		if interfaceChanged && currentInterface.Direction == CDirectionNorth {
+		if interfaceChanged {
 			errList = append(
 				errList,
 				field.Invalid(
 					field.NewPath("spec.interfaces.overrides"),
-					newInterface.Name,
+					newInterface.GetName(),
 					"Changing FEC, MTU, Lanes are not allowed for north interfaces"))
 		}
 	}
@@ -131,16 +139,41 @@ func (in *Switch) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-switch-onmetal-de-v1beta1-switch,mutating=true,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switches,verbs=create;update,versions=v1beta1,name=mswitch.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/mutate-switch-onmetal-de-v1beta1-switch,mutating=true,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switches,verbs=create;update,versions=v1beta1,name=mswitch.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &Switch{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (in *Switch) Default() {
 	switchlog.Info("default", "name", in.Name)
+	in.setDefaultConfigSelector()
 }
 
-//+kubebuilder:webhook:path=/validate-switch-onmetal-de-v1beta1-switch,mutating=false,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switches,verbs=create;update,versions=v1beta1,name=vswitch.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
+func (in *Switch) setDefaultConfigSelector() {
+	selector := in.GetConfigSelector()
+	if selector == nil {
+		if in.GetLayer() == 255 {
+			return
+		}
+		layerAsString := strconv.Itoa(int(in.GetLayer()))
+		in.Spec.ConfigSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{constants.SwitchConfigLayerLabel: layerAsString},
+		}
+		return
+	}
+	_, ok := selector.MatchLabels[constants.SwitchConfigLayerLabel]
+	if ok && len(selector.MatchLabels) <= 1 {
+		layerAsString := strconv.Itoa(int(in.GetLayer()))
+		in.Spec.ConfigSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{constants.SwitchConfigLayerLabel: layerAsString},
+		}
+	}
+	if ok && len(selector.MatchLabels) > 1 {
+		delete(selector.MatchLabels, constants.SwitchConfigLayerLabel)
+	}
+}
+
+// +kubebuilder:webhook:path=/validate-switch-onmetal-de-v1beta1-switch,mutating=false,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switches,verbs=create;update,versions=v1beta1,name=vswitch.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &Switch{}
 
@@ -167,8 +200,18 @@ func (in *Switch) ValidateUpdate(old runtime.Object) (err error) {
 		return
 	}
 
-	if currentState.Spec.UUID != in.Spec.UUID {
-		err = errors.New("cannot change switch UUID, operation denied")
+	if currentState.Spec.InventoryRef == nil && in.Spec.InventoryRef == nil {
+		return
+	}
+	if currentState.Spec.InventoryRef == nil && in.Spec.InventoryRef != nil {
+		return
+	}
+	if currentState.Spec.InventoryRef != nil && in.Spec.InventoryRef == nil {
+		err = errors.New("cannot change inventory reference, operation denied")
+		return
+	}
+	if currentState.GetInventoryRef() != in.GetInventoryRef() {
+		err = errors.New("cannot change inventory reference, operation denied")
 		return
 	}
 

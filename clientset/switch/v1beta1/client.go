@@ -17,10 +17,9 @@ limitations under the License.
 package v1beta1
 
 import (
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 )
 
 type SwitchV1Alpha1Interface interface {

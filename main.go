@@ -23,22 +23,23 @@ import (
 	"os"
 	"strconv"
 
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
+	controllers "github.com/onmetal/metal-api/controllers/machine"
 
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1lpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
-	machinecontroller "github.com/onmetal/metal-api/controllers/machine"
+	machinepoolcontroller "github.com/onmetal/metal-api/controllers/machine_pool"
 	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
-	schedulercontroller "github.com/onmetal/metal-api/controllers/scheduler"
-	switchcontroller "github.com/onmetal/metal-api/controllers/switch/v1beta1"
-
-	"github.com/onmetal/metal-api/internal/repository"
-	"github.com/onmetal/metal-api/internal/usecase"
+	switchcontroller "github.com/onmetal/metal-api/controllers/switch"
+	persistence "github.com/onmetal/metal-api/internal/kubernetes/onboarding"
+	"github.com/onmetal/metal-api/internal/usecase/onboarding/rules"
+	"github.com/onmetal/metal-api/internal/usecase/onboarding/scenarios"
+	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -101,7 +102,7 @@ func main() {
 		namespace = os.Getenv("NAMESPACE")
 	}
 
-	startReconcilers(mgr, namespace, bootstrapAPIServer)
+	startReconcilers(mgr, bootstrapAPIServer)
 	addHandlers(mgr, profiling)
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -118,17 +119,12 @@ func addToScheme() {
 	utilruntime.Must(oobv1.AddToScheme(scheme))
 	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(switchv1beta1.AddToScheme(scheme))
-	//+kubebuilder:scaffold:scheme
+	utilruntime.Must(poolv1alpha1.AddToScheme(scheme))
+	// +kubebuilder:scaffold:scheme
 }
 
-func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
+func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 	var err error
-
-	deviceOnboardingRepo := repository.NewOnboardingRepo(mgr.GetClient())
-	deviceOnboardingUseCase := usecase.NewDeviceOnboarding(deviceOnboardingRepo)
-
-	serverOnboardingRepo := repository.NewServerOnboardingRepo(mgr.GetClient())
-	serverOnboardingUseCase := usecase.NewServerOnboarding(serverOnboardingRepo)
 
 	if err = (&benchmarkcontroller.Reconciler{
 		Client: mgr.GetClient(),
@@ -146,26 +142,7 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Benchmark-onboarding")
 		os.Exit(1)
 	}
-	if err = (&machinecontroller.InventoryReconciler{
-		Client:    mgr.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("Machine-inventory"),
-		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("Machine-inventory"),
-		Namespace: namespace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine-inventory")
-		os.Exit(1)
-	}
-	if err = (&machinecontroller.OOBReconciler{
-		Client:    mgr.GetClient(),
-		Log:       ctrl.Log.WithName("controllers").WithName("OOB"),
-		Scheme:    mgr.GetScheme(),
-		Recorder:  mgr.GetEventRecorderFor("OOB"),
-		Namespace: namespace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Machine-OOB")
-		os.Exit(1)
-	}
+
 	if err = (&switchcontroller.OnboardingReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Switch-onboarding"),
@@ -180,6 +157,14 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch")
+		os.Exit(1)
+	}
+	if err = (&switchcontroller.SwConfigReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SwitchConfig"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SwitchConfig")
 		os.Exit(1)
 	}
 	if err = (&inventorycontrollers.InventoryReconciler{
@@ -215,35 +200,41 @@ func startReconcilers(mgr ctrl.Manager, namespace, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Access")
 		os.Exit(1)
 	}
-	if err = (&onboardingcontroller.OnboardingReconciler{
-		Client:               mgr.GetClient(),
-		Log:                  ctrl.Log.WithName("controllers").WithName("Device-onboarding"),
-		Scheme:               mgr.GetScheme(),
-		OnboardingRepo:       deviceOnboardingUseCase,
-		DestinationNamespace: namespace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Device-onboarding")
+	if err = inventoryOnboardingReconciler(mgr).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Inventory-onboarding")
 		os.Exit(1)
 	}
-	if err = (&onboardingcontroller.InventoryOnboardingReconciler{
-		Client:               mgr.GetClient(),
-		Log:                  ctrl.Log.WithName("controllers").WithName("Server-onboarding"),
-		Scheme:               mgr.GetScheme(),
-		OnboardingRepo:       serverOnboardingUseCase,
-		DestinationNamespace: namespace,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Server-onboarding")
+
+	if err := machineOnboardingReconciler(mgr).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-onboarding")
 		os.Exit(1)
 	}
-	if err = (&schedulercontroller.Reconciler{
+
+	if err = (&machinepoolcontroller.MachinePoolReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Scheduler"),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Pool"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Scheduler")
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-Pool")
 		os.Exit(1)
 	}
-	//+kubebuilder:scaffold:builder
+	if err = (&machinepoolcontroller.MachineReservationReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Reservation"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-Reservation")
+		os.Exit(1)
+	}
+	if err = (&controllers.MachinePowerReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Power"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Machine-Power")
+		os.Exit(1)
+	}
+	// +kubebuilder:scaffold:builder
 }
 
 func addHandlers(mgr ctrl.Manager, profiling bool) {
@@ -286,4 +277,45 @@ func addHandlers(mgr ctrl.Manager, profiling bool) {
 		}
 		setupLog.Info("profiling activated")
 	}
+}
+
+func inventoryOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.InventoryOnboardingReconciler {
+	inventoryRepository := persistence.NewInventoryRepository(mgr.GetClient())
+	executor := persistence.NewFakeServerExecutor(mgr.GetLogger())
+	rule := rules.NewServerMustBeEnabledOnFirstTimeRule(executor, mgr.GetLogger())
+
+	inventoryOnboardingUseCase := scenarios.NewInventoryOnboardingUseCase(
+		inventoryRepository,
+		rule,
+	)
+
+	return onboardingcontroller.NewInventoryOnboardingReconciler(
+		ctrl.Log.WithName("controllers").WithName("Inventory-onboarding"),
+		inventoryOnboardingUseCase,
+	)
+}
+
+func machineOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.OnboardingMachineReconciler {
+	machineRepository := persistence.NewMachineRepository(mgr.GetClient())
+	machineNetwork := persistence.NewMachineInterfaces(mgr.GetClient())
+
+	inventoryRepository := persistence.NewInventoryRepository(mgr.GetClient())
+
+	machineUseCase := scenarios.NewGetMachineUseCase(machineRepository)
+
+	getInventoryUseCase := scenarios.NewGetInventoryUseCase(inventoryRepository)
+
+	addMachineUseCase := scenarios.NewAddMachineUseCase(machineRepository)
+
+	machineOnboardUseCase := scenarios.NewMachineOnboardingUseCase(
+		machineNetwork,
+		machineRepository)
+
+	return onboardingcontroller.NewOnboardingMachineReconciler(
+		ctrl.Log.WithName("controllers").WithName("Machine-onboarding"),
+		machineUseCase,
+		getInventoryUseCase,
+		addMachineUseCase,
+		machineOnboardUseCase,
+	)
 }

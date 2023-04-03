@@ -20,18 +20,20 @@ import (
 	"context"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/utils/pointer"
 
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
-// nolint:forcetypeassert
-var _ = Describe("Switch client", func() {
+var _ = PDescribe("Switch client", func() {
 	const (
 		SwitchName         = "test-switch"
 		SwitchToDeleteName = "test-switch-to-delete"
@@ -54,20 +56,21 @@ var _ = Describe("Switch client", func() {
 			client := clientset.Switches(SwitchesNamespace)
 
 			res := &switchv1beta1.Switch{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name:      SwitchName,
 					Namespace: SwitchesNamespace,
 				},
 				Spec: switchv1beta1.SwitchSpec{
-					UUID:     "a177382d-a3b4-3ecd-97a4-01cc15e749e4",
-					TopSpine: false,
-					Managed:  true,
-					Cordon:   false,
+					InventoryRef: &v1.LocalObjectReference{Name: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"},
+					TopSpine:     pointer.Bool(false),
+					Managed:      pointer.Bool(true),
+					Cordon:       pointer.Bool(false),
+					ScanPorts:    pointer.Bool(true),
 				},
 			}
 
 			By("Creating watcher")
-			watcher, err := client.Watch(ctx, v1.ListOptions{})
+			watcher, err := client.Watch(ctx, metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			events := watcher.ResultChan()
 
@@ -75,7 +78,7 @@ var _ = Describe("Switch client", func() {
 			createdSwitch := &switchv1beta1.Switch{}
 			go func() {
 				defer GinkgoRecover()
-				createdSwitch, err = client.Create(ctx, res, v1.CreateOptions{})
+				createdSwitch, err = client.Create(ctx, res, metav1.CreateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(createdSwitch.Spec).Should(Equal(res.Spec))
 				finished <- true
@@ -84,20 +87,21 @@ var _ = Describe("Switch client", func() {
 			event := &watch.Event{}
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Added))
-			eventSwitch := event.Object.(*switchv1beta1.Switch)
+			eventSwitch, ok := event.Object.(*switchv1beta1.Switch)
+			Expect(ok).To(BeTrue())
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Spec).Should(Equal(res.Spec))
 
 			<-finished
 
 			By("Updating Switch")
-			createdSwitch, err = client.Get(ctx, SwitchName, v1.GetOptions{})
+			createdSwitch, err = client.Get(ctx, SwitchName, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			createdSwitch.Spec.Cordon = true
+			createdSwitch.SetCordon(true)
 			go func() {
 				defer GinkgoRecover()
 				var updatedSwitch *switchv1beta1.Switch
-				updatedSwitch, err = client.Update(ctx, createdSwitch, v1.UpdateOptions{})
+				updatedSwitch, err = client.Update(ctx, createdSwitch, metav1.UpdateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(updatedSwitch.Spec).Should(Equal(createdSwitch.Spec))
 				finished <- true
@@ -105,7 +109,8 @@ var _ = Describe("Switch client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSwitch = event.Object.(*switchv1beta1.Switch)
+			eventSwitch, ok = event.Object.(*switchv1beta1.Switch)
+			Expect(ok).To(BeTrue())
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Spec).Should(Equal(createdSwitch.Spec))
 
@@ -128,45 +133,46 @@ var _ = Describe("Switch client", func() {
 			go func() {
 				defer GinkgoRecover()
 				var patchedSwitch *switchv1beta1.Switch
-				patchedSwitch, err = client.Patch(ctx, SwitchName, types.JSONPatchType, patchData, v1.PatchOptions{})
+				patchedSwitch, err = client.Patch(ctx, SwitchName, types.JSONPatchType, patchData, metav1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedSwitch.Spec.Managed).Should(BeFalse())
+				Expect(patchedSwitch.GetManaged()).Should(BeFalse())
 				finished <- true
 			}()
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSwitch = event.Object.(*switchv1beta1.Switch)
+			eventSwitch, ok = event.Object.(*switchv1beta1.Switch)
+			Expect(ok).To(BeTrue())
 			Expect(eventSwitch).NotTo(BeNil())
-			Expect(eventSwitch.Spec.Managed).Should(BeFalse())
+			Expect(eventSwitch.GetManaged()).Should(BeFalse())
 
 			<-finished
 
 			By("Updating Switch status")
-			createdSwitch, err = client.Get(ctx, SwitchName, v1.GetOptions{})
+			createdSwitch, err = client.Get(ctx, SwitchName, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			createdSwitch.Status = switchv1beta1.SwitchStatus{
-				TotalPorts:      1,
-				SwitchPorts:     1,
-				Role:            switchv1beta1.MetalAPIString("spine"),
-				ConnectionLevel: 0,
+				TotalPorts:  pointer.Uint32(1),
+				SwitchPorts: pointer.Uint32(1),
+				Role:        pointer.String("spine"),
+				Layer:       pointer.Uint32(0),
 				Interfaces: map[string]*switchv1beta1.InterfaceSpec{"Ethernet0": {
-					MACAddress: "00:00:00:00:00:01",
-					FEC:        switchv1beta1.CFECNone,
-					MTU:        9100,
-					Speed:      100000,
-					Lanes:      4,
-					State:      switchv1beta1.CNICUp,
-					Direction:  switchv1beta1.CDirectionSouth,
+					MACAddress: pointer.String("00:00:00:00:00:01"),
+					Direction:  pointer.String(constants.DirectionSouth),
+					Speed:      pointer.Uint32(100000),
+					PortParametersSpec: &switchv1beta1.PortParametersSpec{
+						FEC:   pointer.String(constants.FECNone),
+						MTU:   pointer.Uint32(9100),
+						Lanes: pointer.Uint32(4),
+						State: pointer.String(constants.NICUp),
+					},
 				}},
-				SwitchState: &switchv1beta1.SwitchStateSpec{
-					State: switchv1beta1.MetalAPIString("initial"),
-				},
+				State: pointer.String("Initial"),
 			}
 			go func() {
 				defer GinkgoRecover()
 				var updatedSwitch *switchv1beta1.Switch
-				updatedSwitch, err = client.UpdateStatus(ctx, createdSwitch, v1.UpdateOptions{})
+				updatedSwitch, err = client.UpdateStatus(ctx, createdSwitch, metav1.UpdateOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(updatedSwitch.Status).Should(Equal(createdSwitch.Status))
 				finished <- true
@@ -174,7 +180,8 @@ var _ = Describe("Switch client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSwitch = event.Object.(*switchv1beta1.Switch)
+			eventSwitch, ok = event.Object.(*switchv1beta1.Switch)
+			Expect(ok).To(BeTrue())
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Status).Should(Equal(createdSwitch.Status))
 
@@ -185,45 +192,49 @@ var _ = Describe("Switch client", func() {
 			}
 
 			By("Creating Switch collection")
-			_, err = client.Create(ctx, switchToDelete, v1.CreateOptions{})
+			_, err = client.Create(ctx, switchToDelete, metav1.CreateOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(events).Should(Receive())
 
 			By("Listing Switches")
-			switchesList, err := client.List(ctx, v1.ListOptions{})
+			switchesList, err := client.List(ctx, metav1.ListOptions{})
 			Expect(switchesList).NotTo(BeNil())
 			Expect(switchesList.Items).To(HaveLen(2))
 
 			By("Bulk deleting Switches")
-			Expect(client.DeleteCollection(ctx, v1.DeleteOptions{}, v1.ListOptions{LabelSelector: DeleteLabel})).To(Succeed())
+			Expect(client.DeleteCollection(
+				ctx, metav1.DeleteOptions{},
+				metav1.ListOptions{LabelSelector: DeleteLabel})).To(Succeed())
 
 			By("Requesting created Switch")
 			Eventually(func() bool {
-				_, err = client.Get(ctx, SwitchName, v1.GetOptions{})
+				_, err = client.Get(ctx, SwitchName, metav1.GetOptions{})
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			Eventually(func() bool {
-				_, err = client.Get(ctx, SwitchToDeleteName, v1.GetOptions{})
+				_, err = client.Get(ctx, SwitchToDeleteName, metav1.GetOptions{})
 				return err == nil
 			}, timeout, interval).Should(BeFalse())
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventSwitch = event.Object.(*switchv1beta1.Switch)
+			eventSwitch, ok = event.Object.(*switchv1beta1.Switch)
+			Expect(ok).To(BeTrue())
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Name).To(Equal(SwitchToDeleteName))
 
 			By("Deleting Switch")
 			go func() {
 				defer GinkgoRecover()
-				err := client.Delete(ctx, SwitchName, v1.DeleteOptions{})
+				err := client.Delete(ctx, SwitchName, metav1.DeleteOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				finished <- true
 			}()
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventSwitch = event.Object.(*switchv1beta1.Switch)
+			eventSwitch, ok = event.Object.(*switchv1beta1.Switch)
+			Expect(ok).To(BeTrue())
 			Expect(eventSwitch).NotTo(BeNil())
 			Expect(eventSwitch.Name).To(Equal(SwitchName))
 

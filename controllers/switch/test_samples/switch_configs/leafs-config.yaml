@@ -1,0 +1,46 @@
+apiVersion: switch.onmetal.de/v1beta1
+kind: SwitchConfig
+metadata:
+  name: leafs-config
+  namespace: onmetal
+  labels:
+    switch.onmetal.de/type: "leaf"
+spec:
+  switches:
+    matchLabels:
+      switch.onmetal.de/type: "leaf"
+  portsDefaults:
+    lanes: 1
+    fec: "none"
+    ipv4MaskLength: 30
+    ipv6Prefix: 112
+    mtu: 9100
+    state: "up"
+  ipam:
+    addressFamily:
+      ipv4: true
+      ipv6: true
+    carrierSubnets:
+      labelSelector:
+        matchLabels:
+          ipam.onmetal.de/object-purpose: "switch-carrier"
+    loopbackSubnets:
+      labelSelector:
+        matchLabels:
+          ipam.onmetal.de/object-purpose: "switch-loopbacks"
+    southSubnets:
+      labelSelector:
+        matchLabels:
+          ipam.onmetal.de/object-purpose: "south-subnet"
+      fieldSelector:
+        labelKey: "ipam.onmetal.de/object-owner"
+        fieldRef:
+          fieldPath: "metadata.name"
+    loopbackAddresses:
+      labelSelector:
+        matchLabels:
+          ipam.onmetal.de/object-purpose: "loopback"
+      fieldSelector:
+        labelKey: "ipam.onmetal.de/object-owner"
+        fieldRef:
+          fieldPath: "metadata.name"

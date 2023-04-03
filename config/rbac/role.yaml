@@ -42,6 +42,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - benchmark.onmetal.de
   resources:
   - machines
@@ -68,28 +76,109 @@ rules:
   - patch
   - update
 - apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machineclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machineclasses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machineclasses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machinepools
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machinepools/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machinepools/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machines
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - compute.api.onmetal.de
+  resources:
+  - machines/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - ipam.onmetal.de
   resources:
   - ips
   verbs:
+  - create
   - get
   - list
-  - watch
+  - patch
+  - update
 - apiGroups:
   - ipam.onmetal.de
   resources:
   - ips/status
   verbs:
   - get
-  - list
-  - watch
 - apiGroups:
   - ipam.onmetal.de
   resources:
   - subnets
   verbs:
+  - create
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - ipam.onmetal.de
@@ -97,8 +186,6 @@ rules:
   - subnets/status
   verbs:
   - get
-  - list
-  - watch
 - apiGroups:
   - machine.onmetal.de
   resources:
@@ -153,32 +240,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - machineassignments
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - machineassignments/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - machine.onmetal.de
-  resources:
-  - machineassignments/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - machine.onmetal.de
   resources:

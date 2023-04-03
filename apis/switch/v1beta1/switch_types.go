@@ -17,160 +17,146 @@
 package v1beta1
 
 import (
-	"fmt"
-	"math"
-	"net"
-	"reflect"
-	"sort"
-	"strconv"
 	"strings"
+	"time"
 
-	gocidr "github.com/apparentlymart/go-cidr/cidr"
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-)
+	"k8s.io/utils/pointer"
 
-//todo: clientset for v1beta1
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	"github.com/onmetal/metal-api/pkg/constants"
+)
 
 // SwitchSpec contains desired state of resulting Switch configuration
 // +kubebuilder:object:generate=true
 type SwitchSpec struct {
-	// UUID is a unique system identifier
-	//+kubebuilder:validation:Required
-	UUID string `json:"uuid"`
+	// InventoryRef contains reference to corresponding inventory object
+	// Empty InventoryRef means that there is no corresponding Inventory object
+	// +kubebuilder:validation:Optional
+	InventoryRef *v1.LocalObjectReference `json:"inventoryRef,omitempty"`
+	// ConfigSelector contains selector to filter out corresponding SwitchConfig.
+	// If the selector is not defined, it will be populated by defaulting webhook
+	// with MatchLabels item, containing 'switch.onmetal.de/layer' key with value
+	// equals to object's .status.layer.
+	// +kubebuilder:validation:Optional
+	ConfigSelector *metav1.LabelSelector `json:"configSelector,omitempty"`
 	// Managed is a flag defining whether Switch object would be processed during reconciliation
-	//+kubebuilder:validation:Required
-	//+kubebuilder:default=true
-	Managed bool `json:"managed"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=true
+	Managed *bool `json:"managed"`
 	// Cordon is a flag defining whether Switch object is taken offline
-	//+kubebuilder:validation:Required
-	//+kubebuilder:default=false
-	Cordon bool `json:"cordon"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=false
+	Cordon *bool `json:"cordon"`
 	// TopSpine is a flag defining whether Switch is a top-level spine switch
-	//+kubebuilder:validation:Required
-	//+kubebuilder:default=false
-	TopSpine bool `json:"topSpine"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=false
+	TopSpine *bool `json:"topSpine"`
+	// ScanPorts is a flag defining whether to run periodical scanning on switch ports
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=true
+	ScanPorts *bool `json:"scanPorts"`
 	// IPAM refers to selectors for subnets which will be used for Switch object
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	IPAM *IPAMSpec `json:"ipam,omitempty"`
 	// Interfaces contains general configuration for all switch ports
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Interfaces *InterfacesSpec `json:"interfaces,omitempty"`
 }
 
 // InterfacesSpec contains definitions for general switch ports' configuration
 // +kubebuilder:object:generate=true
 type InterfacesSpec struct {
-	// Scan is a flag defining whether to run periodical scanning on switch ports
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:default=true
-	Scan bool `json:"scan"`
 	// Defaults contains switch port parameters which will be applied to all ports of the switches
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Defaults *PortParametersSpec `json:"defaults,omitempty"`
 	// Overrides contains set of parameters which should be overridden for listed switch ports
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Overrides []*InterfaceOverridesSpec `json:"overrides,omitempty"`
 }
 
 // InterfaceOverridesSpec contains overridden parameters for certain switch port
 // +kubebuilder:object:generate=true
 type InterfaceOverridesSpec struct {
-	// Lanes refers to a number of lanes used by switch port
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Minimum=1
-	//+kubebuilder:validation:Maximum=8
-	Lanes *uint8 `json:"lanes,omitempty"`
-	// MTU refers to maximum transmission unit value which should be applied on switch port
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Minimum=84
-	//+kubebuilder:validation:Maximum=65535
-	MTU *uint16 `json:"mtu,omitempty"`
+	// Contains port parameters overrides
+	// +kubebuilder:validation:Required
+	*PortParametersSpec `json:",inline"`
 	// Name refers to switch port name
-	//+kubebuilder:validation:Optional
-	Name string `json:"name,omitempty"`
-	// State defines default state of switch port
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=up;down
-	State *string `json:"state,omitempty"`
-	// FEC refers to forward error correction method which should be applied on switch port
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=rs;none
-	FEC *string `json:"fec,omitempty"`
+	// +kubebuilder:validation:Optional
+	Name *string `json:"name,omitempty"`
 	// IP contains a list of additional IP addresses for interface
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	IP []*AdditionalIPSpec `json:"ip,omitempty"`
 }
 
 // SwitchStatus contains observed state of Switch
 // +kubebuilder:object:generate=true
 type SwitchStatus struct {
+	// ConfigRef contains reference to corresponding SwitchConfig object
+	// Empty ConfigRef means that there is no corresponding SwitchConfig object
+	// +kubebuilder:validation:Optional
+	ConfigRef *v1.LocalObjectReference `json:"configRef,omitempty"`
+	// ASN contains current autonomous system number defined for switch
+	// +kubebuilder:validation:Optional
+	ASN *uint32 `json:"asn,omitempty"`
 	// TotalPorts refers to total number of ports
-	//+kubebuilder:validation:Optional
-	TotalPorts uint16 `json:"totalPorts,omitempty"`
+	// +kubebuilder:validation:Optional
+	TotalPorts *uint32 `json:"totalPorts,omitempty"`
 	// SwitchPorts refers to the number of ports excluding management interfaces, loopback etc.
-	//+kubebuilder:validation:Optional
-	SwitchPorts uint16 `json:"switchPorts,omitempty"`
+	// +kubebuilder:validation:Optional
+	SwitchPorts *uint32 `json:"switchPorts,omitempty"`
 	// Role refers to switch's role
-	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Enum=spine;leaf;edge-leaf
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=spine;leaf;edge-leaf
 	Role *string `json:"role,omitempty"`
-	// ConnectionLevel refers to switch's current position in connection hierarchy
-	//+kubebuilder:validation:Optional
-	ConnectionLevel uint8 `json:"connectionLevel"`
+	// Layer refers to switch's current position in connection hierarchy
+	// +kubebuilder:validation:Optional
+	Layer *uint32 `json:"layer"`
 	// Interfaces refers to switch's interfaces configuration
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Interfaces map[string]*InterfaceSpec `json:"interfaces,omitempty"`
 	// Subnets refers to the switch's south subnets
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Subnets []*SubnetSpec `json:"subnets,omitempty"`
 	// LoopbackAddresses refers to the switch's loopback addresses
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	LoopbackAddresses []*IPAddressSpec `json:"loopbackAddresses,omitempty"`
-	// SwitchState contains information about current Switch object's processing state
-	//+kubebuilder:validation:Optional
-	SwitchState *SwitchStateSpec `json:"switch,omitempty"`
-	// ConfigAgent contains information about current state of configuration agent
-	// running on the switch
-	//+kubebuilder:validation:Optional
-	ConfigAgent *ConfigAgentStateSpec `json:"agent,omitempty"`
+	// State is the current state of corresponding object or process
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=Initial;Processing;Ready;Invalid;Pending
+	State *string `json:"state,omitempty"`
+	// Message contains a brief description of the current state
+	// +kubebuilder:validation:Optional
+	Message *string `json:"message,omitempty"`
+	// Condition contains state of port parameters
+	// +kubebuilder:validation:Optional
+	Conditions []*ConditionSpec `json:"conditions,omitempty"`
 }
 
 // InterfaceSpec defines the state of switch's interface
 // +kubebuilder:object:generate=true
 type InterfaceSpec struct {
+	// Contains port parameters
+	// +kubebuilder:validation:Required
+	*PortParametersSpec `json:",inline"`
 	// MACAddress refers to the interface's hardware address
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	// validation pattern
-	MACAddress string `json:"macAddress"`
-	// FEC refers to the current interface's forward error correction type
-	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Enum=none;rs;fc
-	FEC string `json:"fec"`
-	// MTU refers to the current value of interface's MTU
-	//+kubebuilder:validation:Required
-	MTU uint16 `json:"mtu"`
+	MACAddress *string `json:"macAddress"`
 	// Speed refers to interface's speed
-	//+kubebuilder:validation:Required
-	Speed uint32 `json:"speed"`
-	// Lanes refers to the number of lanes used by interface
-	//+kubebuilder:validation:Required
-	Lanes uint8 `json:"lanes"`
-	// State refers to the current interface's operational state
-	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Enum=up;down
-	State string `json:"state"`
+	// +kubebuilder:validation:Required
+	Speed *uint32 `json:"speed"`
 	// IP contains a list of IP addresses that are assigned to interface
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	IP []*IPAddressSpec `json:"ip,omitempty"`
 	// Direction refers to the interface's connection 'direction'
-	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:Enum=north;south
-	Direction string `json:"direction"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=north;south
+	Direction *string `json:"direction"`
 	// Peer refers to the info about device connected to current switch port
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Peer *PeerSpec `json:"peer,omitempty"`
 }
 
@@ -178,10 +164,10 @@ type InterfaceSpec struct {
 // +kubebuilder:object:generate=true
 type PeerSpec struct {
 	// Contains information to locate the referenced object
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	*ObjectReference `json:",inline"`
 	// Contains LLDP info about peer
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	*PeerInfoSpec `json:",inline"`
 }
 
@@ -189,101 +175,108 @@ type PeerSpec struct {
 // +kubebuilder:object:generate=true
 type PeerInfoSpec struct {
 	// ChassisID refers to the chassis identificator - either MAC-address or system uuid
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// validation pattern
-	ChassisID string `json:"chassisId,omitempty"`
+	ChassisID *string `json:"chassisId,omitempty"`
 	// SystemName refers to the advertised peer's name
-	//+kubebuilder:validation:Optional
-	SystemName string `json:"systemName,omitempty"`
+	// +kubebuilder:validation:Optional
+	SystemName *string `json:"systemName,omitempty"`
 	// PortID refers to the advertised peer's port ID
-	//+kubebuilder:validation:Optional
-	PortID string `json:"portId,omitempty"`
+	// +kubebuilder:validation:Optional
+	PortID *string `json:"portId,omitempty"`
 	// PortDescription refers to the advertised peer's port description
-	//+kubebuilder:validation:Optional
-	PortDescription string `json:"portDescription,omitempty"`
+	// +kubebuilder:validation:Optional
+	PortDescription *string `json:"portDescription,omitempty"`
 	// Type refers to the peer type
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=machine;switch;router;undefined
-	Type string `json:"type,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=machine;switch;router;undefined
+	Type *string `json:"type,omitempty"`
 }
 
 // SubnetSpec defines switch's subnet info
 // +kubebuilder:object:generate=true
 type SubnetSpec struct {
 	// Contains information to locate the referenced object
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	*ObjectReference `json:",inline"`
 	// CIDR refers to subnet CIDR
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	// validation pattern
-	CIDR string `json:"cidr,omitempty"`
+	CIDR *string `json:"cidr,omitempty"`
 	// Region refers to switch's region
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	Region *RegionSpec `json:"region,omitempty"`
+	// AddressFamily refers to the AF of subnet
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=IPv4;IPv6
+	AddressFamily *string `json:"addressFamily,omitempty"`
 }
 
 // RegionSpec defines region info
 // +kubebuilder:object:generate=true
 type RegionSpec struct {
 	// Name refers to the switch's region
-	//+kubebuilder:validation:Pattern=^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
-	//+kubebuilder:validation:Required
-	Name string `json:"name"`
+	// +kubebuilder:validation:Pattern=^[a-z0-9]([-./a-z0-9]*[a-z0-9])?$
+	// +kubebuilder:validation:Required
+	Name *string `json:"name"`
 	// AvailabilityZone refers to the switch's availability zone
-	//+kubebuilder:validation:Required
-	AvailabilityZone string `json:"availabilityZone"`
+	// +kubebuilder:validation:Required
+	AvailabilityZone *string `json:"availabilityZone"`
 }
 
 // IPAddressSpec defines interface's ip address info
 // +kubebuilder:object:generate=true
 type IPAddressSpec struct {
 	// Contains information to locate the referenced object
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	*ObjectReference `json:",inline"`
 	// Address refers to the ip address value
-	//+kubebuilder:validation:Optional
-	Address string `json:"address,omitempty"`
+	// +kubebuilder:validation:Optional
+	Address *string `json:"address,omitempty"`
 	// ExtraAddress is a flag defining whether address was added as additional by user
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:default=false
-	ExtraAddress bool `json:"extraAddress,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	ExtraAddress *bool `json:"extraAddress,omitempty"`
+	// AddressFamily refers to the AF of IP address
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=IPv4;IPv6
+	AddressFamily *string `json:"addressFamily,omitempty"`
 }
 
-// SwitchStateSpec contains current Switch object state.
-type SwitchStateSpec struct {
-	// State is the current state of corresponding object or process
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=initial;processing;ready;invalid
-	State *string `json:"state,omitempty"`
-	// Message contains a brief description of the current state
-	//+kubebuilder:validation:Optional
-	Message *string `json:"message,omitempty"`
-}
-
-// ConfigAgentStateSpec contains current configuration agent's state
+// ConditionSpec contains current condition of port parameters
 // +kubebuilder:object:generate=true
-type ConfigAgentStateSpec struct {
-	// State is the current state of corresponding object or process
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:validation:Enum=active;failed
-	State *string `json:"state,omitempty"`
-	// Message contains a brief description of the current state
-	//+kubebuilder:validation:Optional
+type ConditionSpec struct {
+	// Name reflects the name of the condition
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=Initialized;InterfacesOK;ConfigRefOK;PortParametersOK;NeighborsOK;LayerAndRoleOK;LoopbacksOK;AsnOK;SubnetsOK;IPAddressesOK
+	Name *string `json:"name,omitempty"`
+	// State reflects the state of the condition
+	// +kubebuilder:validation:Optional
+	State *bool `json:"state,omitempty"`
+	// LastUpdateTimestamp reflects the last timestamp when condition was updated
+	// +kubebuilder:validation:Optional
+	LastUpdateTimestamp *string `json:"lastUpdateTimestamp"`
+	// LastTransitionTimestamp reflects the last timestamp when condition changed state from one to another
+	// +kubebuilder:validation:Optional
+	LastTransitionTimestamp *string `json:"lastTransitionTimestamp"`
+	// Reason reflects the reason of condition state
+	// +kubebuilder:validation:Optional
+	Reason *string `json:"reason,omitempty"`
+	// Message reflects the verbose message about the reason
+	// +kubebuilder:validation:Optional
 	Message *string `json:"message,omitempty"`
-	// LastCheck refers to the last timestamp when configuration was applied
-	//+kubebuilder:validation:Optional
-	LastCheck *string `json:"lastCheck,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:shortName=sw
-//+kubebuilder:storageversion
-//+kubebuilder:printcolumn:name="Ports",type=integer,JSONPath=`.status.switchPorts`,description="Total amount of non-management network interfaces"
-//+kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.status.role`,description="switch's role"
-//+kubebuilder:printcolumn:name="Connection Level",type=integer,JSONPath=`.status.connectionLevel`,description="Vertical level of switch connection"
-//+kubebuilder:printcolumn:name="Switch State",type=string,JSONPath=`.status.switch.state`,description="Switch state"
-//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.switch.message`,description="Switch state message. Reports about any issues duiring reconciliation process"
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=sw
+// +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="ASN",type=integer,JSONPath=`.status.asn`,description="Switch ASN"
+// +kubebuilder:printcolumn:name="Ports",type=integer,JSONPath=`.status.switchPorts`,description="Number of switch ports"
+// +kubebuilder:printcolumn:name="Role",type=string,JSONPath=`.status.role`,description="Switch's role"
+// +kubebuilder:printcolumn:name="Layer",type=integer,JSONPath=`.status.layer`,description="Vertical level in switches' connections hierarchy"
+// +kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Switch state"
+// +kubebuilder:printcolumn:name="Message",priority=1,type=string,JSONPath=`.status.message`,description="Switch state message reports about any issues during processing"
 
 // Switch is the Schema for switches API.
 type Switch struct {
@@ -294,7 +287,7 @@ type Switch struct {
 	Status SwitchStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // SwitchList contains a list of Switch.
 type SwitchList struct {
@@ -307,877 +300,841 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
-// GetNamespacedName returns object's name and namespace as types.NamespacedName.
-func (in *Switch) GetNamespacedName() types.NamespacedName {
-	return types.NamespacedName{
-		Namespace: in.Namespace,
-		Name:      in.Name,
+// NamespacedName returns types.NamespacedName built from
+// object's metadata.name and metadata.namespace.
+func (in *Switch) NamespacedName() types.NamespacedName {
+	return types.NamespacedName{Namespace: in.Namespace, Name: in.Name}
+}
+
+// ----------------------------------------
+// SwitchSpec getters
+// ----------------------------------------
+
+// GetInventoryRef returns value of spec.inventoryRef.name field if
+// inventoryRef is not nil, otherwise empty string.
+func (in *Switch) GetInventoryRef() string {
+	if in.Spec.InventoryRef == nil {
+		return ""
+	}
+	return in.Spec.InventoryRef.Name
+}
+
+// GetManaged returns value of spec.managed field if it is not nil,
+// otherwise false.
+func (in *Switch) GetManaged() bool {
+	return pointer.BoolDeref(in.Spec.Managed, false)
+}
+
+// GetCordon returns value of spec.cordon field if it is not nil,
+// otherwise false.
+func (in *Switch) GetCordon() bool {
+	return pointer.BoolDeref(in.Spec.Cordon, false)
+}
+
+// GetTopSpine returns value of spec.topSpine field if it is not nil,
+// otherwise false.
+func (in *Switch) GetTopSpine() bool {
+	return pointer.BoolDeref(in.Spec.TopSpine, false)
+}
+
+// GetScanPorts returns value of spec.topSpine field if it is not nil,
+// otherwise false.
+func (in *Switch) GetScanPorts() bool {
+	return pointer.BoolDeref(in.Spec.ScanPorts, false)
+}
+
+// GetConfigSelector returns LabelSelector if it is not nil and
+// matching criteria are defined, otherwise nil.
+func (in *Switch) GetConfigSelector() *metav1.LabelSelector {
+	if in.Spec.ConfigSelector == nil {
+		return nil
+	}
+	if len(in.Spec.ConfigSelector.MatchLabels) == 0 && len(in.Spec.ConfigSelector.MatchExpressions) == 0 {
+		return nil
+	}
+	return in.Spec.ConfigSelector
+}
+
+// ----------------------------------------
+// SwitchStatus getters
+// ----------------------------------------
+
+// GetConfigRef returns value of status.configRef.name field if
+// configRef is not nil, otherwise empty string.
+func (in *Switch) GetConfigRef() string {
+	if in.Status.ConfigRef == nil {
+		return ""
+	}
+	return in.Status.ConfigRef.Name
+}
+
+// GetASN returns value of status.asn field if it is not nil,
+// otherwise 0.
+func (in *Switch) GetASN() uint32 {
+	return pointer.Uint32Deref(in.Status.ASN, 0)
+}
+
+// GetLayer returns value of status.layer field if it is not nil,
+// otherwise 255.
+func (in *Switch) GetLayer() uint32 {
+	return pointer.Uint32Deref(in.Status.Layer, 255)
+}
+
+// GetRole returns value of status.role field if it is not nil,
+// otherwise empty string.
+func (in *Switch) GetRole() string {
+	return pointer.StringDeref(in.Status.Role, "")
+}
+
+// GetTotalPorts returns value of status.totalPorts field if it is not nil,
+// otherwise 0.
+func (in *Switch) GetTotalPorts() uint32 {
+	return pointer.Uint32Deref(in.Status.TotalPorts, 0)
+}
+
+// GetSwitchPorts returns value of status.switchPorts field if it is not nil,
+// otherwise 0.
+func (in *Switch) GetSwitchPorts() uint32 {
+	return pointer.Uint32Deref(in.Status.SwitchPorts, 0)
+}
+
+// GetState returns value of status.state field if it is not nil,
+// otherwise empty string.
+func (in *Switch) GetState() string {
+	return pointer.StringDeref(in.Status.State, "")
+}
+
+// GetMessage returns value of status.message field if it is not nil,
+// otherwise empty string.
+func (in *Switch) GetMessage() string {
+	return pointer.StringDeref(in.Status.Message, "")
+}
+
+// ----------------------------------------
+// SwitchSpec setters
+// ----------------------------------------
+
+// SetInventoryRef sets passed argument as a value of
+// spec.inventoryRef.name field.
+func (in *Switch) SetInventoryRef(value string) {
+	in.Spec.InventoryRef = &v1.LocalObjectReference{Name: value}
+}
+
+// SetManaged sets passed argument as a value of
+// spec.managed field.
+func (in *Switch) SetManaged(value bool) {
+	in.Spec.Managed = pointer.Bool(value)
+}
+
+// SetCordon sets passed argument as a value of
+// spec.cordon field.
+func (in *Switch) SetCordon(value bool) {
+	in.Spec.Cordon = pointer.Bool(value)
+}
+
+// SetTopSpine sets passed argument as a value of
+// spec.topSpine field.
+func (in *Switch) SetTopSpine(value bool) {
+	in.Spec.TopSpine = pointer.Bool(value)
+}
+
+// SetScanPorts sets passed argument as a value of
+// spec.scanPorts field.
+func (in *Switch) SetScanPorts(value bool) {
+	in.Spec.ScanPorts = pointer.Bool(value)
+}
+
+// ----------------------------------------
+// SwitchStatus setters
+// ----------------------------------------
+
+// SetConfigRef sets passed argument as a value of
+// status.configRef.name field.
+func (in *Switch) SetConfigRef(value string) {
+	if value == constants.EmptyString {
+		in.Status.ConfigRef = nil
+	} else {
+		in.Status.ConfigRef = &v1.LocalObjectReference{Name: value}
 	}
 }
 
-func (in *Switch) SetState(state string) {
-	in.Status.SwitchState.State = MetalAPIString(state)
+// SetASN sets passed argument as a value of
+// status.asn field.
+func (in *Switch) SetASN(value uint32) {
+	in.Status.ASN = pointer.Uint32(value)
 }
 
-func (in *Switch) SetRole() {
-	in.Status.Role = MetalAPIString(CSwitchRoleSpine)
-	for _, data := range in.Status.Interfaces {
-		if data.Peer == nil {
-			continue
-		}
-		if data.Peer.Type == CPeerTypeMachine {
-			in.Status.Role = MetalAPIString(CSwitchRoleLeaf)
-			break
-		}
-	}
+// SetLayer sets passed argument as a value of
+// status.layer field.
+func (in *Switch) SetLayer(value uint32) {
+	in.Status.Layer = pointer.Uint32(value)
 }
 
-func (in *Switch) StateEqualsTo(state string) bool {
-	return GoString(in.Status.SwitchState.State) == state
-}
-
-func (in *Switch) SetInitialStatus(inv *inventoryv1alpha1.Inventory) {
-	in.Status = SwitchStatus{
-		TotalPorts:  uint16(len(inv.Spec.NICs)),
-		SwitchPorts: 0,
-		Role:        nil,
-		ConnectionLevel: func() uint8 {
-			if in.Spec.TopSpine {
-				return 0
-			}
-			return 255
-		}(),
-		Interfaces:        nil,
-		Subnets:           nil,
-		LoopbackAddresses: nil,
-		SwitchState: &SwitchStateSpec{
-			State:   MetalAPIString(CSwitchStateInitial),
-			Message: nil,
-		},
-		ConfigAgent: nil,
-	}
-	in.Status.Interfaces = interfacesFromInventory(inv)
-	in.Status.SwitchPorts = uint16(len(in.Status.Interfaces))
-}
-
-func (in *Switch) UpdateInterfacesParameters(conf *SwitchConfig) {
-	var (
-		resultFEC, resultState *string
-		resultLanes            *uint8
-		resultMTU              *uint16
-	)
-
-	if conf != nil {
-		if conf.Spec.PortsDefaults != nil {
-			if conf.Spec.PortsDefaults.State != nil {
-				resultState = conf.Spec.PortsDefaults.State
-			}
-			if conf.Spec.PortsDefaults.FEC != nil {
-				resultFEC = conf.Spec.PortsDefaults.FEC
-			}
-			if conf.Spec.PortsDefaults.MTU != nil {
-				resultMTU = conf.Spec.PortsDefaults.MTU
-			}
-			if conf.Spec.PortsDefaults.Lanes != nil {
-				resultLanes = conf.Spec.PortsDefaults.Lanes
-			}
-		}
-	}
-	if in.Spec.Interfaces != nil {
-		if in.Spec.Interfaces.Defaults != nil {
-			if in.Spec.Interfaces.Defaults.State != nil {
-				resultState = in.Spec.Interfaces.Defaults.State
-			}
-			if in.Spec.Interfaces.Defaults.FEC != nil {
-				resultFEC = in.Spec.Interfaces.Defaults.FEC
-			}
-			if in.Spec.Interfaces.Defaults.MTU != nil {
-				resultMTU = in.Spec.Interfaces.Defaults.MTU
-			}
-			if in.Spec.Interfaces.Defaults.Lanes != nil {
-				resultLanes = in.Spec.Interfaces.Defaults.Lanes
-			}
-		}
-	}
-	overridden := map[string]struct{}{}
-	if in.Spec.Interfaces != nil {
-		if in.Spec.Interfaces.Overrides != nil {
-			for _, nic := range in.Spec.Interfaces.Overrides {
-				stored, ok := in.Status.Interfaces[nic.Name]
-				if !ok {
-					continue
-				}
-				overridden[nic.Name] = struct{}{}
-				if nic.State != nil {
-					stored.State = GoString(nic.State)
-				}
-				if nic.FEC != nil {
-					stored.FEC = GoString(nic.FEC)
-				}
-				if nic.MTU != nil {
-					stored.MTU = GoUint16(nic.MTU)
-				}
-				if nic.Lanes != nil {
-					stored.Lanes = GoUint8(nic.Lanes)
-				}
-			}
-		}
-	}
-	for nic, params := range in.Status.Interfaces {
-		if _, ok := overridden[nic]; ok {
-			continue
-		}
-		if resultState != nil {
-			params.State = GoString(resultState)
-		}
-		if resultFEC != nil {
-			params.FEC = GoString(resultFEC)
-		}
-		if resultMTU != nil {
-			params.MTU = GoUint16(resultMTU)
-		}
-		if resultLanes != nil {
-			params.Lanes = GoUint8(resultLanes)
-		}
+// SetRole sets passed argument as a value of
+// status.role field. Possible values:
+//   - spine
+//   - leaf
+//   - edge-leaf
+func (in *Switch) SetRole(value string) {
+	switch value {
+	case "":
+		in.Status.Role = nil
+	default:
+		in.Status.Role = pointer.String(value)
 	}
 }
 
-func (in *Switch) InterfacesMatchInventory(inv *inventoryv1alpha1.Inventory) bool {
-	interfaces := interfacesFromInventory(inv)
-	if len(interfaces) != len(in.Status.Interfaces) {
-		return false
-	}
-	for name := range interfaces {
-		_, ok := in.Status.Interfaces[name]
-		if !ok {
-			return false
-		}
-	}
-	for name := range in.Status.Interfaces {
-		_, ok := interfaces[name]
-		if !ok {
-			return false
-		}
-	}
-	return true
+// SetTotalPorts sets passed argument as a value of
+// status.totalPorts field.
+func (in *Switch) SetTotalPorts(value uint32) {
+	in.Status.TotalPorts = pointer.Uint32(value)
 }
 
-func interfacesFromInventory(inv *inventoryv1alpha1.Inventory) map[string]*InterfaceSpec {
-	interfaces := make(map[string]*InterfaceSpec)
-	for _, nic := range inv.Spec.NICs {
-		if !strings.HasPrefix(nic.Name, CSwitchPortPrefix) {
-			continue
-		}
-		inf := &InterfaceSpec{
-			MACAddress: nic.MACAddress,
-			FEC:        nic.ActiveFEC,
-			MTU:        nic.MTU,
-			Speed:      nic.Speed,
-			Lanes:      nic.Lanes,
-			State:      CNICUp,
-			IP:         nil,
-			Direction:  CDirectionSouth,
-			Peer:       nil,
-		}
-		for _, data := range nic.LLDPs {
-			var emptyLLDP inventoryv1alpha1.LLDPSpec
-			if reflect.DeepEqual(data, emptyLLDP) {
-				continue
-			}
-			inf.Peer = &PeerSpec{
-				nil,
-				&PeerInfoSpec{
-					ChassisID:       data.ChassisID,
-					SystemName:      data.SystemName,
-					PortID:          data.PortID,
-					PortDescription: data.PortDescription,
-					Type: func() string {
-						if len(data.Capabilities) == 0 {
-							return CPeerTypeMachine
-						}
-						for _, c := range data.Capabilities {
-							if c == CStationCapability {
-								return CPeerTypeMachine
-							}
-						}
-						return CPeerTypeSwitch
-					}(),
-				},
-			}
-			break
-		}
-		interfaces[nic.Name] = inf
-	}
-	return interfaces
+// SetSwitchPorts sets passed argument as a value of
+// status.switchPorts field.
+func (in *Switch) SetSwitchPorts(value uint32) {
+	in.Status.SwitchPorts = pointer.Uint32(value)
 }
 
-func (in *Switch) ConnectionsOK(list *SwitchList) bool {
-	return in.peersOK(list) && in.connectionLevelOK(list)
-}
-
-func (in *Switch) peersOK(list *SwitchList) bool {
-	for _, item := range list.Items {
-		if item.Name == in.Name {
-			continue
-		}
-		for _, nicData := range item.Status.Interfaces {
-			if item.Status.ConnectionLevel == 0 && nicData.Direction == CDirectionNorth {
-				return false
-			}
-			if nicData.Peer == nil {
-				continue
-			}
-			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
-				continue
-			}
-			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") != in.Annotations[CHardwareChassisIDAnnotation] {
-				continue
-			}
-			if nicData.Peer.PeerInfoSpec.PortDescription == "" {
-				continue
-			}
-			nic, ok := in.Status.Interfaces[nicData.Peer.PeerInfoSpec.PortDescription]
-			if !ok {
-				nic, ok = in.Status.Interfaces[nicData.Peer.PeerInfoSpec.PortID]
-				if !ok {
-					return false
-				}
-			}
-			if nic.Peer == nil {
-				return false
-			}
-			if reflect.DeepEqual(nic.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
-				return false
-			}
-			if strings.ReplaceAll(nic.Peer.PeerInfoSpec.ChassisID, ":", "") != item.Annotations[CHardwareChassisIDAnnotation] {
-				return false
-			}
-			if nic.Peer.ObjectReference == nil {
-				return false
-			}
-			if !(nic.Peer.ObjectReference.Name == item.Name) || !(nic.Peer.ObjectReference.Namespace == item.Namespace) {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func (in *Switch) connectionLevelOK(list *SwitchList) bool {
-	if in.Status.ConnectionLevel == 255 {
-		return false
-	}
-	if in.Spec.TopSpine && in.Status.ConnectionLevel != 0 {
-		return false
-	}
-	if !in.Spec.TopSpine && in.Status.ConnectionLevel == 0 {
-		return false
-	}
-	for _, item := range list.Items {
-		for _, nicData := range in.Status.Interfaces {
-			if in.Status.ConnectionLevel == 0 && nicData.Direction == CDirectionNorth {
-				return false
-			}
-			if nicData.Peer == nil {
-				continue
-			}
-			if nicData.Peer.ObjectReference == nil {
-				continue
-			}
-			if nicData.Peer.ObjectReference.Name != item.Name {
-				continue
-			}
-			if nicData.Direction == CDirectionNorth && in.Status.ConnectionLevel != item.Status.ConnectionLevel+1 {
-				return false
-			}
-			if nicData.Direction == CDirectionSouth && in.Status.ConnectionLevel != item.Status.ConnectionLevel-1 {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func (in *Switch) SetConnections(list *SwitchList) {
-	in.fillPeersInfo(list)
-	in.computeConnectionLevel(list)
-}
-
-func (in *Switch) fillPeersInfo(list *SwitchList) {
-	for _, item := range list.Items {
-		for _, nicData := range in.Status.Interfaces {
-			if nicData.Peer == nil {
-				continue
-			}
-			if nicData.Peer.PeerInfoSpec == nil {
-				continue
-			}
-			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
-				continue
-			}
-			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") != item.Annotations[CHardwareChassisIDAnnotation] {
-				continue
-			}
-			nicData.Peer.ObjectReference = &ObjectReference{
-				Name:      item.Name,
-				Namespace: item.Namespace,
-			}
-		}
+// SetState sets passed argument as a value of
+// status.state field. If passed argument is equal
+// to empty string, then nil will be set as field
+// value. Possible not empty values:
+//   - Initial
+//   - Processing
+//   - Ready
+//   - Invalid
+//   - Pending
+func (in *Switch) SetState(value string) {
+	switch value {
+	case "":
+		in.Status.State = nil
+	default:
+		in.Status.State = pointer.String(value)
 	}
 }
 
-func (in *Switch) computeConnectionLevel(list *SwitchList) {
-	connectionsMap, keys := list.buildConnectionMap()
-	if _, ok := connectionsMap[0]; !ok {
-		return
-	}
-
-	switch in.Spec.TopSpine {
-	case true:
-		in.Status.ConnectionLevel = 0
-		for _, nicData := range in.Status.Interfaces {
-			nicData.Direction = CDirectionSouth
-		}
-		return
-	case false:
-		if in.Status.ConnectionLevel != 0 {
-			break
-		}
-		in.Status.ConnectionLevel = 255
-		return
-	}
-
-	for _, connectionLevel := range keys {
-		if connectionLevel == 255 {
-			continue
-		}
-		if connectionLevel >= in.Status.ConnectionLevel {
-			continue
-		}
-		switches := connectionsMap[connectionLevel]
-		northPeers := in.getPeers(switches)
-		if len(northPeers.Items) == 0 {
-			continue
-		}
-		in.Status.ConnectionLevel = connectionLevel + 1
-		in.setNICsDirections(list)
+// SetMessage sets passed argument as a value of
+// status.message field. If passed argument is equal
+// to empty string, then nil will be set as field
+// value.
+func (in *Switch) SetMessage(value string) {
+	switch value {
+	case "":
+		in.Status.Message = nil
+	default:
+		in.Status.Message = pointer.String(value)
 	}
 }
 
-func (in *SwitchList) buildConnectionMap() (map[uint8]*SwitchList, []uint8) {
-	connectionsMap := make(map[uint8]*SwitchList)
-	keys := make([]uint8, 0)
-	for _, item := range in.Items {
-		if item.Status.SwitchState == nil {
-			continue
-		}
-		list, ok := connectionsMap[item.Status.ConnectionLevel]
-		if !ok {
-			list = &SwitchList{}
-			list.Items = append(list.Items, item)
-			connectionsMap[item.Status.ConnectionLevel] = list
-			keys = append(keys, item.Status.ConnectionLevel)
-			continue
-		}
-		list.Items = append(list.Items, item)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	return connectionsMap, keys
-}
+// ----------------------------------------
+// ConditionSpec getters
+// ----------------------------------------
 
-func (in *Switch) getPeers(list *SwitchList) *SwitchList {
-	result := &SwitchList{Items: make([]Switch, 0)}
-	for _, item := range list.Items {
-		for _, nicData := range in.Status.Interfaces {
-			if nicData.Peer == nil {
-				continue
-			}
-			if nicData.Peer.PeerInfoSpec == nil {
-				continue
-			}
-			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
-				continue
-			}
-			if strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") == item.Annotations[CHardwareChassisIDAnnotation] {
-				result.Items = append(result.Items, item)
-			}
+// GetCondition returns the pointer to ConditionSpec if it is
+// stored in the list of switch's conditions, otherwise nil.
+func (in *Switch) GetCondition(name string) *ConditionSpec {
+	for _, item := range in.Status.Conditions {
+		if pointer.StringDeref(item.Name, "") == name {
+			return item
 		}
-	}
-	return result
-}
-
-func (in *Switch) setNICsDirections(list *SwitchList) {
-	if in.Status.ConnectionLevel == 0 {
-		for _, nicData := range in.Status.Interfaces {
-			nicData.Direction = CDirectionSouth
-		}
-		return
-	}
-	for _, item := range list.Items {
-		for _, nicData := range in.Status.Interfaces {
-			if nicData.Peer == nil {
-				nicData.Direction = CDirectionSouth
-				continue
-			}
-			if nicData.Peer.ObjectReference == nil {
-				nicData.Direction = CDirectionSouth
-				continue
-			}
-			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &PeerInfoSpec{}) {
-				nicData.Direction = CDirectionSouth
-				continue
-			}
-			peerFound := strings.ReplaceAll(nicData.Peer.PeerInfoSpec.ChassisID, ":", "") == item.Annotations[CHardwareChassisIDAnnotation]
-			peerIsNorth := in.Status.ConnectionLevel > item.Status.ConnectionLevel
-			peerIsSouth := in.Status.ConnectionLevel < item.Status.ConnectionLevel
-			if peerFound && peerIsNorth {
-				nicData.Direction = CDirectionNorth
-			}
-			if peerFound && peerIsSouth {
-				nicData.Direction = CDirectionSouth
-			}
-		}
-	}
-}
-
-func (in *Switch) SubnetSelectorsExist() bool {
-	if in.Spec.IPAM == nil {
-		return false
-	}
-	if in.Spec.IPAM.SouthSubnets == nil {
-		return false
-	}
-	if in.Spec.IPAM.SouthSubnets.LabelSelector == nil && in.Spec.IPAM.SouthSubnets.FieldSelector == nil {
-		return false
-	}
-	return true
-}
-
-func (in *Switch) LoopbackSelectorsExist() bool {
-	if in.Spec.IPAM == nil {
-		return false
-	}
-	if in.Spec.IPAM.LoopbackAddresses == nil {
-		return false
-	}
-	if in.Spec.IPAM.LoopbackAddresses.LabelSelector == nil && in.Spec.IPAM.LoopbackAddresses.FieldSelector == nil {
-		return false
-	}
-	return true
-}
-
-func (in *Switch) GetAddressesCount(bits uint8, af ipamv1alpha1.SubnetAddressType) int64 {
-	var addressesCount int64
-	addressesPerPort := int64(math.Pow(float64(2), float64(CIPv4MaskLengthBits-bits)))
-	if af == ipamv1alpha1.CIPv6SubnetType {
-		addressesPerPort = int64(math.Pow(float64(2), float64(CIPv6PrefixBits-bits)))
-	}
-	for _, nic := range in.Status.Interfaces {
-		addressesCount += addressesPerPort * int64(nic.Lanes)
-	}
-	return addressesCount
-}
-
-func (in *Switch) SouthSubnetsAFUsage(cfg *SwitchConfig) (v4used bool, v6used bool) {
-	if in.Spec.IPAM == nil {
-		if cfg == nil {
-			return
-		}
-		if cfg.Spec.IPAM.SouthSubnets == nil {
-			return true, true
-		}
-		if cfg.Spec.IPAM.SouthSubnets.AddressFamilies == nil {
-			return true, true
-		}
-		v4used = cfg.Spec.IPAM.SouthSubnets.AddressFamilies.IPv4
-		v6used = cfg.Spec.IPAM.SouthSubnets.AddressFamilies.IPv6
-		return
-	}
-	if in.Spec.IPAM.SouthSubnets == nil {
-		return true, true
-	}
-	if in.Spec.IPAM.SouthSubnets.AddressFamilies == nil {
-		return true, true
-	}
-	v4used = in.Spec.IPAM.SouthSubnets.AddressFamilies.IPv4
-	v6used = in.Spec.IPAM.SouthSubnets.AddressFamilies.IPv6
-	return
-}
-
-func (in *Switch) LoopbacksAFUsage(cfg *SwitchConfig) (v4used bool, v6used bool) {
-	if in.Spec.IPAM == nil {
-		if cfg == nil {
-			return
-		}
-		if cfg.Spec.IPAM.LoopbackAddresses == nil {
-			return true, true
-		}
-		if cfg.Spec.IPAM.LoopbackAddresses.AddressFamilies == nil {
-			return true, true
-		}
-		v4used = cfg.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv4
-		v6used = cfg.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv6
-		return
-	}
-	if in.Spec.IPAM.LoopbackAddresses == nil {
-		return true, true
-	}
-	if in.Spec.IPAM.LoopbackAddresses.AddressFamilies == nil {
-		return true, true
-	}
-	v4used = in.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv4
-	v6used = in.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv6
-	return
-}
-
-func (in *Switch) ResultingIPAMConfig(cfg *SwitchConfig) error {
-	//todo: looks ugly from my perspective. Need to rethink and rewrite
-	ipamSelectorsResult := &IPAMSpec{}
-	portDefaultsResult := &PortParametersSpec{}
-	if cfg != nil {
-		ipamSelectorsResult = &IPAMSpec{
-			SouthSubnets: &IPAMSelectionSpec{
-				AddressFamilies: &AddressFamiliesMap{
-					IPv4: cfg.Spec.IPAM.SouthSubnets.AddressFamilies.IPv4,
-					IPv6: cfg.Spec.IPAM.SouthSubnets.AddressFamilies.IPv6,
-				},
-				LabelSelector: cfg.Spec.IPAM.SouthSubnets.LabelSelector.DeepCopy(),
-			},
-			LoopbackAddresses: &IPAMSelectionSpec{
-				AddressFamilies: &AddressFamiliesMap{
-					IPv4: cfg.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv4,
-					IPv6: cfg.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv6,
-				},
-				LabelSelector: cfg.Spec.IPAM.LoopbackAddresses.LabelSelector.DeepCopy(),
-			},
-		}
-		southSubnetLabelFromFiledRef, err := LabelFromFieldRef(*in, cfg.Spec.IPAM.SouthSubnets.FieldSelector)
-		if err != nil {
-			return err
-		}
-		for k, v := range southSubnetLabelFromFiledRef {
-			ipamSelectorsResult.SouthSubnets.LabelSelector.MatchLabels[k] = v
-		}
-		loopbacksLabelFromFieldRef, err := LabelFromFieldRef(*in, cfg.Spec.IPAM.LoopbackAddresses.FieldSelector)
-		if err != nil {
-			return err
-		}
-		for k, v := range loopbacksLabelFromFieldRef {
-			ipamSelectorsResult.LoopbackAddresses.LabelSelector.MatchLabels[k] = v
-		}
-		portDefaultsResult = cfg.Spec.PortsDefaults.DeepCopy()
-	}
-
-	if in.Spec.IPAM == nil {
-		in.Spec.IPAM = ipamSelectorsResult.DeepCopy()
-	}
-	if in.Spec.IPAM.SouthSubnets == nil {
-		in.Spec.IPAM.SouthSubnets = ipamSelectorsResult.SouthSubnets
-	}
-	if in.Spec.IPAM.LoopbackAddresses == nil {
-		in.Spec.IPAM.LoopbackAddresses = ipamSelectorsResult.LoopbackAddresses
-	}
-
-	if in.Spec.Interfaces == nil {
-		in.Spec.Interfaces = &InterfacesSpec{
-			Defaults: portDefaultsResult.DeepCopy(),
-		}
-	}
-	if in.Spec.Interfaces.Defaults.IPv4MaskLength == nil {
-		in.Spec.Interfaces.Defaults.IPv4MaskLength = portDefaultsResult.IPv4MaskLength
-	}
-	if in.Spec.Interfaces.Defaults.IPv6Prefix == nil {
-		in.Spec.Interfaces.Defaults.IPv6Prefix = portDefaultsResult.IPv6Prefix
 	}
 	return nil
 }
 
-func (in *Switch) LoopbackIPsMatchStoredIPs(list *ipamv1alpha1.IPList) bool {
-	v4used := in.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv4
-	v6used := in.Spec.IPAM.LoopbackAddresses.AddressFamilies.IPv6
-
-receivedAddressesLoop:
-	for _, item := range list.Items {
-		if item.Status.State != ipamv1alpha1.CFinishedIPState {
-			continue
-		}
-		if !v4used && item.Status.Reserved.Net.Is4() {
-			continue
-		}
-		if !v6used && item.Status.Reserved.Net.Is6() {
-			continue
-		}
-		for _, lo := range in.Status.LoopbackAddresses {
-			if item.Status.Reserved.String() == lo.Address {
-				continue receivedAddressesLoop
-			}
-		}
-		return false
-	}
-
-storedAddressesLoop:
-	for _, lo := range in.Status.LoopbackAddresses {
-		for _, item := range list.Items {
-			if item.Status.Reserved.String() == lo.Address {
-				continue storedAddressesLoop
-			}
-		}
-		return false
-	}
-
-	return true
+// GetState returns value of ConditionSpec.State if it is not nil,
+// otherwise false.
+func (in *ConditionSpec) GetState() bool {
+	return pointer.BoolDeref(in.State, false)
 }
 
-func (in *Switch) SubnetsMatchStored(list *ipamv1alpha1.SubnetList) bool {
-	v4used := in.Spec.IPAM.SouthSubnets.AddressFamilies.IPv4
-	v6used := in.Spec.IPAM.SouthSubnets.AddressFamilies.IPv6
-
-receivedSubnetsLoop:
-	for _, item := range list.Items {
-		if item.Status.State != ipamv1alpha1.CFinishedSubnetState {
-			continue
-		}
-		if !v4used && item.Status.Reserved.IsIPv4() {
-			continue
-		}
-		if !v6used && item.Status.Reserved.IsIPv6() {
-			continue
-		}
-		for _, sn := range in.Status.Subnets {
-			if item.Status.Reserved.String() == sn.CIDR {
-				continue receivedSubnetsLoop
-			}
-		}
-		return false
-	}
-
-storedSubnetsLoop:
-	for _, sn := range in.Status.Subnets {
-		for _, item := range list.Items {
-			if item.Status.Reserved.String() == sn.CIDR {
-				continue storedSubnetsLoop
-			}
-		}
-		return false
-	}
-	return true
+// GetName returns value of ConditionSpec.Name if it is not nil,
+// otherwise empty string.
+func (in *ConditionSpec) GetName() string {
+	return pointer.StringDeref(in.Name, "")
 }
 
-func (in *Switch) IPaddressesOK(list *SwitchList) bool {
-	return in.ipsMatchSubnets() && in.ipsMatchPeers(list) && in.ipsMatchOverrides()
+// GetLastTransitionTimestamp returns value of ConditionSpec.LastTransitionTimestamp
+// if it is not nil, otherwise empty string.
+func (in *ConditionSpec) GetLastTransitionTimestamp() string {
+	return pointer.StringDeref(in.LastTransitionTimestamp, "")
 }
 
-func (in *Switch) ipsMatchSubnets() bool {
-	for _, nic := range in.Status.Interfaces {
-		if nic.Direction == CDirectionNorth {
-			continue
-		}
-		if len(in.Status.Subnets) != 0 && len(nic.IP) == 0 {
-			return false
-		}
-	ipsLoop:
-		for _, ip := range nic.IP {
-			if ip.ExtraAddress {
-				continue
-			}
-			for _, subnet := range in.Status.Subnets {
-				_, cidr, _ := net.ParseCIDR(subnet.CIDR)
-				addr, _, _ := net.ParseCIDR(ip.Address)
-				if cidr.Contains(addr) {
-					continue ipsLoop
-				}
-			}
-			return false
-		}
-	}
-	return true
+// GetLastUpdateTimestamp returns value of ConditionSpec.LastUpdateTimestamp
+// if it is not nil, otherwise empty string.
+func (in *ConditionSpec) GetLastUpdateTimestamp() string {
+	return pointer.StringDeref(in.LastUpdateTimestamp, "")
 }
 
-func (in *Switch) ipsMatchPeers(list *SwitchList) bool {
-	for nic, nicData := range in.Status.Interfaces {
-		if !strings.HasPrefix(nic, CSwitchPortPrefix) {
-			continue
-		}
-		if nicData.Direction == CDirectionSouth {
-			continue
-		}
-		for _, item := range list.Items {
-			if nicData.Peer.Name != item.Name {
-				continue
-			}
-		peerSubnetsLoop:
-			for _, subnet := range item.Status.Subnets {
-				for _, ip := range nicData.IP {
-					_, cidr, _ := net.ParseCIDR(subnet.CIDR)
-					addr, _, _ := net.ParseCIDR(ip.Address)
-					if cidr.Contains(addr) {
-						continue peerSubnetsLoop
-					}
-				}
-				return false
-			}
-		}
-	}
-	return true
+// GetReason returns value of ConditionSpec.Reason if it is not nil,
+// otherwise empty string.
+func (in *ConditionSpec) GetReason() string {
+	return pointer.StringDeref(in.Reason, "")
 }
 
-func (in *Switch) ipsMatchOverrides() bool {
-	if in.Spec.Interfaces == nil {
-		return true
-	}
-	if in.Spec.Interfaces.Overrides == nil {
-		return true
-	}
-overriddenNICsLoop:
-	for _, override := range in.Spec.Interfaces.Overrides {
-		if override.IP == nil {
-			continue
-		}
-	extraIPsLoop:
-		for _, ip := range override.IP {
-			stored, ok := in.Status.Interfaces[override.Name]
-			if !ok {
-				continue overriddenNICsLoop
-			}
-			for _, storedIP := range stored.IP {
-				if storedIP.Address == ip.Address {
-					continue extraIPsLoop
-				}
-			}
-			return false
-		}
-	}
-	return true
+// GetMessage returns value of ConditionSpec.Message if it is not nil,
+// otherwise empty string.
+func (in *ConditionSpec) GetMessage() string {
+	return pointer.StringDeref(in.Message, "")
 }
 
-func (in *Switch) GetExtraNICsIPs() map[string][]*IPAddressSpec {
-	ipsToApply := make(map[string][]*IPAddressSpec)
-	if in.Spec.Interfaces != nil && in.Spec.Interfaces.Overrides != nil {
-		for _, nic := range in.Spec.Interfaces.Overrides {
-			_, ok := in.Status.Interfaces[nic.Name]
-			if !ok {
-				continue
-			}
-			nicIPs := make([]*IPAddressSpec, 0)
-			for _, ip := range nic.IP {
-				nicIPs = append(nicIPs, &IPAddressSpec{
-					Address:      ip.Address,
-					ExtraAddress: true,
-				})
-			}
-			ipsToApply[nic.Name] = nicIPs
+// ----------------------------------------
+// ConditionSpec setters
+// ----------------------------------------
+
+// SetCondition updates the switch object's status.conditions list.
+// Using passed "name" argument, it looks up for existing condition
+// with provided name. In case condition was found, it will be
+// updated with new state and lastUpdateTimestamp, it's "reason" and
+// "message" fields will be flushed, it's "lastTransitionTimestamp"
+// will be also updated if it's equal to nil or if passed state not
+// equal to stored state. In case condition was not found, then new
+// ConditionSpec object will be created and added to the list.
+func (in *Switch) SetCondition(name string, state bool) *ConditionSpec {
+	ts := time.Now()
+	if c := in.GetCondition(name); c != nil {
+		if c.LastTransitionTimestamp == nil || state != c.GetState() {
+			return c.SetLastTransitionTimestamp(ts.String()).
+				SetLastUpdateTimestamp(ts.String()).
+				SetState(state).
+				FlushReason().
+				FlushMessage()
 		}
+		return c.SetLastUpdateTimestamp(ts.String()).
+			FlushReason().
+			FlushMessage()
 	}
-	return ipsToApply
+	c := &ConditionSpec{Name: pointer.String(name)}
+	c.SetState(state).
+		SetLastUpdateTimestamp(ts.String()).
+		SetLastTransitionTimestamp(ts.String())
+	in.Status.Conditions = append(in.Status.Conditions, c)
+	return c
 }
 
-func (in *Switch) GetSouthNICsIP() (map[string][]*IPAddressSpec, error) {
-	ipsToApply := make(map[string][]*IPAddressSpec)
-	for nic, nicData := range in.Status.Interfaces {
-		if !strings.HasPrefix(nic, CSwitchPortPrefix) {
-			continue
-		}
-		if nicData.Direction == CDirectionNorth {
-			continue
-		}
-		nicIPs := make([]*IPAddressSpec, 0)
-		for _, subnet := range in.Status.Subnets {
-			cidr, _ := ipamv1alpha1.CIDRFromString(subnet.CIDR)
-			mask := GoUint8(in.Spec.Interfaces.Defaults.IPv4MaskLength)
-			addrIndex := 1
-			if cidr.IsIPv6() {
-				mask = GoUint8(in.Spec.Interfaces.Defaults.IPv6Prefix)
-				addrIndex = 0
-			}
-			nicSubnet := getInterfaceSubnet(nic, CSwitchPortPrefix, cidr.Net.IPNet(), mask)
-			nicAddr, err := gocidr.Host(nicSubnet, addrIndex)
-			if err != nil {
-				return nil, err
-			}
-			nicIPs = append(nicIPs, &IPAddressSpec{
-				Address:      fmt.Sprintf("%s/%d", nicAddr.String(), mask),
-				ExtraAddress: false,
-			})
-		}
-		ipsToApply[nic] = nicIPs
-	}
-	return ipsToApply, nil
+// SetState sets passed argument as a value of
+// condition.state field.
+func (in *ConditionSpec) SetState(value bool) *ConditionSpec {
+	in.State = pointer.Bool(value)
+	return in
 }
 
-func (in *Switch) GetNorthNICsIP(list *SwitchList) map[string][]*IPAddressSpec {
-	ipsToApply := make(map[string][]*IPAddressSpec)
-	for nic, nicData := range in.Status.Interfaces {
-		if !strings.HasPrefix(nic, CSwitchPortPrefix) {
-			continue
-		}
-		if nicData.Direction == CDirectionSouth {
-			continue
-		}
-		nicIPs := make([]*IPAddressSpec, 0)
-		for _, item := range list.Items {
-			if nicData.Peer.Name != item.Name {
-				continue
-			}
-			peerNICdata, ok := item.Status.Interfaces[nicData.Peer.PortDescription]
-			if !ok {
-				peerNICdata, ok = item.Status.Interfaces[nicData.Peer.PortID]
-				if !ok {
-					continue
-				}
-			}
-			nicIPs = append(nicIPs, func() []*IPAddressSpec {
-				requestedAddresses := make([]*IPAddressSpec, 0)
-				for _, ip := range peerNICdata.RequestAddress() {
-					requestedAddresses = append(requestedAddresses, &IPAddressSpec{
-						Address:      ip.String(),
-						ExtraAddress: false,
-					})
-				}
-				return requestedAddresses
-			}()...)
-		}
-		ipsToApply[nic] = nicIPs
-	}
-	return ipsToApply
+// SetLastUpdateTimestamp sets passed argument as a value of
+// condition.lastUpdateTimestamp field.
+func (in *ConditionSpec) SetLastUpdateTimestamp(value string) *ConditionSpec {
+	in.LastUpdateTimestamp = pointer.String(value)
+	return in
 }
 
-func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, mask uint8) *net.IPNet {
-	index, _ := strconv.Atoi(strings.ReplaceAll(name, namePrefix, CEmptyString))
-	prefix, _ := network.Mask.Size()
-	ifaceNet, _ := gocidr.Subnet(network, int(mask)-prefix, index)
-	return ifaceNet
+// SetLastTransitionTimestamp sets passed argument as a value of
+// condition.lastTransitionTimestamp field.
+func (in *ConditionSpec) SetLastTransitionTimestamp(value string) *ConditionSpec {
+	in.LastTransitionTimestamp = pointer.String(value)
+	return in
 }
 
-func (in *InterfaceSpec) RequestAddress() (ips []net.IPNet) {
-	ips = make([]net.IPNet, 0)
-	for _, addr := range in.IP {
-		_, cidr, _ := net.ParseCIDR(addr.Address)
-		ip, _ := gocidr.Host(cidr, 1)
-		ips = append(ips, net.IPNet{IP: ip, Mask: cidr.Mask})
-	}
-	return
+// SetReason sets passed argument as a value of
+// condition.reason field.
+func (in *ConditionSpec) SetReason(value string) *ConditionSpec {
+	in.Reason = pointer.String(value)
+	return in
 }
 
-func (in *Switch) LabelsOK() bool {
-	if in.Labels == nil {
-		return false
+// FlushReason sets nil value of condition.reason field.
+func (in *ConditionSpec) FlushReason() *ConditionSpec {
+	in.Reason = nil
+	return in
+}
+
+// SetMessage sets passed argument as a value of
+// condition.message field.
+func (in *ConditionSpec) SetMessage(value string) *ConditionSpec {
+	in.Message = pointer.String(value)
+	return in
+}
+
+// FlushMessage sets nil value of condition.message field.
+func (in *ConditionSpec) FlushMessage() *ConditionSpec {
+	in.Message = nil
+	return in
+}
+
+// ----------------------------------------
+// InterfaceSpec getters
+// ----------------------------------------
+
+// GetMACAddress returns value of macAddress field of
+// given InterfaceSpec object if it is not nil, otherwise
+// empty string.
+func (in *InterfaceSpec) GetMACAddress() string {
+	return pointer.StringDeref(in.MACAddress, "")
+}
+
+// GetSpeed returns value of speed field of given
+// InterfaceSpec object if it is not nil, otherwise 0.
+func (in *InterfaceSpec) GetSpeed() uint32 {
+	return pointer.Uint32Deref(in.Speed, 0)
+}
+
+// GetDirection returns value of direction field of
+// given InterfaceSpec object if it is not nil, otherwise
+// empty string.
+func (in *InterfaceSpec) GetDirection() string {
+	return pointer.StringDeref(in.Direction, "")
+}
+
+// ----------------------------------------
+// InterfaceSpec setters
+// ----------------------------------------
+
+// SetMACAddress sets passed argument as a value of
+// macAddress field for given InterfaceSpec object.
+func (in *InterfaceSpec) SetMACAddress(value string) {
+	in.MACAddress = pointer.String(value)
+}
+
+// SetSpeed sets passed argument as a value of
+// speed field for given InterfaceSpec object.
+func (in *InterfaceSpec) SetSpeed(value uint32) {
+	in.Speed = pointer.Uint32(value)
+}
+
+// SetDirection sets passed argument as a value of
+// direction field for given InterfaceSpec object.
+// Possible values:
+//   - north
+//   - south
+func (in *InterfaceSpec) SetDirection(value string) {
+	in.Direction = pointer.String(value)
+}
+
+// SetIPEmpty empties the list of assigned IP addresses
+// for given InterfaceSpec object.
+func (in *InterfaceSpec) SetIPEmpty() {
+	in.IP = make([]*IPAddressSpec, 0)
+}
+
+// SetPortParametersEmpty resets portParameters field
+// for given InterfaceSpec object by assigning the empty
+// PortParametersSpec struct as a value of this field.
+func (in *InterfaceSpec) SetPortParametersEmpty() {
+	in.PortParametersSpec = &PortParametersSpec{}
+}
+
+// ----------------------------------------
+// PortParametersSpec getters
+// ----------------------------------------
+
+// GetLanes returns value of lanes field of given
+// PortParametersSpec object if it is not nil,
+// otherwise 0.
+func (in *PortParametersSpec) GetLanes() uint32 {
+	return pointer.Uint32Deref(in.Lanes, 0)
+}
+
+// GetMTU returns value of mtu field of given
+// PortParametersSpec object if it is not nil,
+// otherwise 0.
+func (in *PortParametersSpec) GetMTU() uint32 {
+	return pointer.Uint32Deref(in.MTU, 0)
+}
+
+// GetIPv4MaskLength returns value of ipv4MaskLength
+// field of given PortParametersSpec object if it is not nil,
+// otherwise 0.
+func (in *PortParametersSpec) GetIPv4MaskLength() uint32 {
+	return pointer.Uint32Deref(in.IPv4MaskLength, 0)
+}
+
+// GetIPv6Prefix returns value of ipv6Prefix field of given
+// PortParametersSpec object if it is not nil, otherwise 0.
+func (in *PortParametersSpec) GetIPv6Prefix() uint32 {
+	return pointer.Uint32Deref(in.IPv6Prefix, 0)
+}
+
+// GetFEC returns value of fec field of given
+// PortParametersSpec object if it is not nil,
+// otherwise empty string.
+func (in *PortParametersSpec) GetFEC() string {
+	return pointer.StringDeref(in.FEC, "")
+}
+
+// GetState returns value of state field of given
+// PortParametersSpec object if it is not nil,
+// otherwise empty string.
+func (in *PortParametersSpec) GetState() string {
+	return pointer.StringDeref(in.State, "")
+}
+
+// ----------------------------------------
+// PortParametersSpec setters
+// ----------------------------------------
+
+// SetLanes sets passed argument as value of lanes field
+// for given PortParametersSpec object.
+func (in *PortParametersSpec) SetLanes(value uint32) {
+	in.Lanes = pointer.Uint32(value)
+}
+
+// SetMTU sets passed argument as value of mtu field
+// for given PortParametersSpec object.
+func (in *PortParametersSpec) SetMTU(value uint32) {
+	in.MTU = pointer.Uint32(value)
+}
+
+// SetIPv4MaskLength sets passed argument as value of
+// ipv4MaskLength for given PortParametersSpec object.
+func (in *PortParametersSpec) SetIPv4MaskLength(value uint32) {
+	in.IPv4MaskLength = pointer.Uint32(value)
+}
+
+// SetIPv6Prefix sets passed argument as value of
+// ipv6Prefix field for given PortParametersSpec object.
+func (in *PortParametersSpec) SetIPv6Prefix(value uint32) {
+	in.IPv6Prefix = pointer.Uint32(value)
+}
+
+// SetFEC sets passed argument as value of fec field
+// for given PortParametersSpec object. Possible values:
+//   - rs
+//   - none
+func (in *PortParametersSpec) SetFEC(value string) {
+	in.FEC = pointer.String(value)
+}
+
+// SetState sets passed argument as value of state field
+// for given PortParametersSpec object. Possible values:
+//   - up
+//   - down
+func (in *PortParametersSpec) SetState(value string) {
+	in.State = pointer.String(value)
+}
+
+// ----------------------------------------
+// IPAddressSpec getters
+// ----------------------------------------
+
+// GetAddress returns value of address field of given
+// IPAddressSpec object if it is not nil, otherwise empty string.
+func (in *IPAddressSpec) GetAddress() string {
+	return pointer.StringDeref(in.Address, "")
+}
+
+// GetAddressFamily returns value of addressFamily field of given
+// IPAddressSpec object if it is not nil, otherwise empty string.
+func (in *IPAddressSpec) GetAddressFamily() string {
+	return pointer.StringDeref(in.AddressFamily, "")
+}
+
+// GetExtraAddress returns value of extraAddress field of given
+// IPAddressSpec object if it is not nil, otherwise false.
+func (in *IPAddressSpec) GetExtraAddress() bool {
+	return pointer.BoolDeref(in.ExtraAddress, false)
+}
+
+// GetObjectReferenceName returns value of objectReference.name field
+// of given IPAddressSpec object if objectReference is not nil,
+// otherwise empty string.
+func (in *IPAddressSpec) GetObjectReferenceName() string {
+	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+		return ""
 	}
-	if _, ok := in.Labels[InventoriedLabel]; !ok {
-		return false
+	return pointer.StringDeref(in.ObjectReference.Name, "")
+}
+
+// GetObjectReferenceNamespace returns value of objectReference.namespace
+// field of given IPAddressSpec object if objectReference is not nil,
+// otherwise empty string.
+func (in *IPAddressSpec) GetObjectReferenceNamespace() string {
+	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+		return ""
 	}
-	if _, ok := in.Labels[InventoryRefLabel]; !ok {
-		return false
+	return pointer.StringDeref(in.ObjectReference.Namespace, "")
+}
+
+// ----------------------------------------
+// IPAddressSpec setters
+// ----------------------------------------
+
+// SetAddress sets passed argument as value of address
+// field for given IPAddressSpec object.
+func (in *IPAddressSpec) SetAddress(value string) {
+	in.Address = pointer.String(value)
+}
+
+// SetAddressFamily sets passed argument as value of
+// addressFamily field for given IPAddressSpec object.
+// Possible values:
+//   - IPv4
+//   - IPv6
+func (in *IPAddressSpec) SetAddressFamily(value string) {
+	in.AddressFamily = pointer.String(value)
+}
+
+// SetExtraAddress sets passed argument as value of
+// extraAddress field for given IPAddressSpec object.
+func (in *IPAddressSpec) SetExtraAddress(value bool) {
+	in.ExtraAddress = pointer.Bool(value)
+}
+
+// SetObjectReference updates value of objectReference field of
+// given IPAddressSpec object with new ObjectReference object
+// where Name and Namespace fields are assigned with passed arguments.
+func (in *IPAddressSpec) SetObjectReference(name, namespace string) {
+	in.ObjectReference = &ObjectReference{
+		Name:      pointer.String(name),
+		Namespace: pointer.String(namespace),
 	}
-	return true
+}
+
+// ----------------------------------------
+// PeerSpec getters
+// ----------------------------------------
+
+// GetObjectReferenceName returns value of objectReference.name field
+// of given PeerSpec object if objectReference is not nil,
+// otherwise empty string.
+func (in *PeerSpec) GetObjectReferenceName() string {
+	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+		return ""
+	}
+	return pointer.StringDeref(in.ObjectReference.Name, "")
+}
+
+// GetObjectReferenceNamespace returns value of objectReference.namespace
+// field of given PeerSpec object if objectReference is not nil,
+// otherwise empty string.
+func (in *PeerSpec) GetObjectReferenceNamespace() string {
+	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+		return ""
+	}
+	return pointer.StringDeref(in.ObjectReference.Namespace, "")
+}
+
+// ----------------------------------------
+// PeerSpec setters
+// ----------------------------------------
+
+// SetObjectReference updates value of objectReference field of
+// given PeerSpec object with new ObjectReference object where
+// Name and Namespace fields are assigned with passed arguments.
+func (in *PeerSpec) SetObjectReference(name, namespace string) {
+	in.ObjectReference = &ObjectReference{
+		Name:      pointer.String(name),
+		Namespace: pointer.String(namespace),
+	}
+}
+
+// ----------------------------------------
+// PeerInfoSpec getters
+// ----------------------------------------
+
+// GetChassisID returns value of chassisID field of
+// given PeerInfoSpec object if it is not nil, otherwise
+// empty string.
+func (in *PeerInfoSpec) GetChassisID() string {
+	return pointer.StringDeref(in.ChassisID, "")
+}
+
+// GetSystemName returns value of systemName field
+// of given PeerInfoSpec object if it is not nil,
+// otherwise empty string.
+func (in *PeerInfoSpec) GetSystemName() string {
+	return pointer.StringDeref(in.SystemName, "")
+}
+
+// GetPortID returns value of portID field of given
+// PeerInfoSpec object if it is not nil, otherwise
+// empty string.
+func (in *PeerInfoSpec) GetPortID() string {
+	return pointer.StringDeref(in.PortID, "")
+}
+
+// GetPortDescription returns value of portDescription
+// field of given PeerInfoSpec object if it is not nil,
+// otherwise empty string.
+func (in *PeerInfoSpec) GetPortDescription() string {
+	return pointer.StringDeref(in.PortDescription, "")
+}
+
+// GetType returns value of type field of given
+// PeerInfoSpec object if it is not nil, otherwise
+// empty string.
+func (in *PeerInfoSpec) GetType() string {
+	return pointer.StringDeref(in.Type, "")
+}
+
+// ----------------------------------------
+// PeerInfoSpec setters
+// ----------------------------------------
+
+// SetChassisID sets passed argument as value of chassisID
+// field for given PeerInfoSpec object.
+func (in *PeerInfoSpec) SetChassisID(value string) {
+	in.ChassisID = pointer.String(value)
+}
+
+// SetSystemName sets passed argument as value of systemName
+// field for given PeerInfoSpec object.
+func (in *PeerInfoSpec) SetSystemName(value string) {
+	in.SystemName = pointer.String(value)
+}
+
+// SetPortID sets passed argument as value of portID field
+// for given PeerSpecInfo object.
+func (in *PeerInfoSpec) SetPortID(value string) {
+	in.PortID = pointer.String(value)
+}
+
+// SetPortDescription sets passed arguments as value of
+// portDescription field for given PeerInfoSpec object.
+func (in *PeerInfoSpec) SetPortDescription(value string) {
+	in.PortDescription = pointer.String(value)
+}
+
+// SetType sets passed argument as value of type field
+// for given PeerInfoSpec object. Possible values:
+//   - machine
+//   - switch
+//   - router (for future use)
+//   - undefined
+func (in *PeerInfoSpec) SetType(value string) {
+	in.Type = pointer.String(value)
+}
+
+// ----------------------------------------
+// SubnetSpec getters
+// ----------------------------------------
+
+// GetObjectReferenceName returns value of objectReference.name field
+// of given SubnetSpec object if objectReference is not nil,
+// otherwise empty string.
+func (in *SubnetSpec) GetObjectReferenceName() string {
+	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+		return ""
+	}
+	return pointer.StringDeref(in.ObjectReference.Name, "")
+}
+
+// GetObjectReferenceNamespace returns value of objectReference.namespace
+// field of given SubnetSpec object if objectReference is not nil,
+// otherwise empty string.
+func (in *SubnetSpec) GetObjectReferenceNamespace() string {
+	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+		return ""
+	}
+	return pointer.StringDeref(in.ObjectReference.Namespace, "")
+}
+
+// GetCIDR returns value of cidr field of given SubnetSpec object
+// if it is not nil, otherwise empty string.
+func (in *SubnetSpec) GetCIDR() string {
+	return pointer.StringDeref(in.CIDR, "")
+}
+
+// GetAddressFamily returns value of addressFamily field of given
+// SubnetSpec object if it is not nil, otherwise empty string.
+func (in *SubnetSpec) GetAddressFamily() string {
+	return pointer.StringDeref(in.AddressFamily, "")
+}
+
+// ----------------------------------------
+// SubnetSpec setters
+// ----------------------------------------
+
+// SetObjectReference updates value of objectReference field of
+// given SubnetSpec object with new ObjectReference object where
+// Name and Namespace fields are assigned with passed arguments.
+func (in *SubnetSpec) SetObjectReference(name, namespace string) {
+	in.ObjectReference = &ObjectReference{
+		Name:      pointer.String(name),
+		Namespace: pointer.String(namespace),
+	}
+}
+
+// SetCIDR sets passed argument as value of cidr field of
+// given SubnetSpec object.
+func (in *SubnetSpec) SetCIDR(value string) {
+	in.CIDR = pointer.String(value)
+}
+
+// SetAddressFamily sets passed argument as value of
+// addressFamily field for given SubnetSpec object.
+// Possible values:
+//   - IPv4
+//   - IPv6
+func (in *SubnetSpec) SetAddressFamily(value string) {
+	in.AddressFamily = pointer.String(value)
+}
+
+// ----------------------------------------
+// InterfaceOverridesSpec getters
+// ----------------------------------------
+
+// GetName returns value of name field of given
+// InterfaceOverridesSpec object if it is not nil,
+// otherwise empty string.
+func (in *InterfaceOverridesSpec) GetName() string {
+	return pointer.StringDeref(in.Name, "")
+}
+
+// ----------------------------------------
+// InterfaceOverridesSpec setters
+// ----------------------------------------
+
+// SetName sets passed argument as value of name field
+// of given InterfaceOverridesSpec object.
+func (in *InterfaceOverridesSpec) SetName(value string) {
+	in.Name = pointer.String(value)
+}
+
+// GetAddress returns value of address field of given
+// AdditionalIPSpec object if it is not nil, otherwise empty string.
+func (in *AdditionalIPSpec) GetAddress() string {
+	return pointer.StringDeref(in.Address, "")
+}
+
+// GetIPv4 returns value of ipv4 field of given AddressFamilyMap
+// object if it is not nil, otherwise false.
+func (in *AddressFamiliesMap) GetIPv4() bool {
+	return pointer.BoolDeref(in.IPv4, false)
+}
+
+// GetIPv6 returns value of ipv6 field of given AddressFamilyMap
+// object if it is not nil, otherwise false.
+func (in *AddressFamiliesMap) GetIPv6() bool {
+	return pointer.BoolDeref(in.IPv6, false)
+}
+
+// GetLabelKey returns value of labelKey field of given
+// FieldSelectorSpec object if it is not nil, otherwise
+// empty string.
+func (in *FieldSelectorSpec) GetLabelKey() string {
+	return pointer.StringDeref(in.LabelKey, "")
+}
+
+// GetLoopbacksSelection helps to get the loopback addresses selection spec
+// in safely manner with handling the case when whole IPAMSpec spec equals to nil.
+func (in *IPAMSpec) GetLoopbacksSelection() *IPAMSelectionSpec {
+	if in == nil {
+		return nil
+	}
+	return in.LoopbackAddresses
+}
+
+// GetSubnetsSelection helps to get the south subnets selection spec
+// in safely manner with handling the case when whole IPAMSpec spec equals to nil.
+func (in *IPAMSpec) GetSubnetsSelection() *IPAMSelectionSpec {
+	if in == nil {
+		return nil
+	}
+	return in.SouthSubnets
 }
 
 func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
 	appliedLabels := map[string]string{
-		InventoriedLabel:  "true",
-		InventoryRefLabel: inv.Name,
-		LabelChassisID: strings.ReplaceAll(
+		constants.InventoriedLabel: "true",
+		constants.LabelChassisID: strings.ReplaceAll(
 			func() string {
 				var chassisID string
 				for _, nic := range inv.Spec.NICs {
@@ -1198,24 +1155,24 @@ func (in *Switch) UpdateSwitchLabels(inv *inventoryv1alpha1.Inventory) {
 }
 
 func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
-	hardwareAnnotations := make(map[string]string)
-	softwareAnnotations := make(map[string]string)
+	hardwareAnnotations := make(map[string]string, 3)
+	softwareAnnotations := make(map[string]string, 5)
 	if inv.Spec.System != nil {
-		hardwareAnnotations[CHardwareSerialAnnotation] = inv.Spec.System.SerialNumber
-		hardwareAnnotations[CHardwareManufacturerAnnotation] = inv.Spec.System.Manufacturer
-		hardwareAnnotations[CHardwareSkuAnnotation] = inv.Spec.System.ProductSKU
+		hardwareAnnotations[constants.HardwareSerialAnnotation] = inv.Spec.System.SerialNumber
+		hardwareAnnotations[constants.HardwareManufacturerAnnotation] = inv.Spec.System.Manufacturer
+		hardwareAnnotations[constants.HardwareSkuAnnotation] = inv.Spec.System.ProductSKU
 	}
 	if inv.Spec.Distro != nil {
-		softwareAnnotations[CSoftwareOnieAnnotation] = "false"
-		softwareAnnotations[CSoftwareAsicAnnotation] = inv.Spec.Distro.AsicType
-		softwareAnnotations[CSoftwareVersionAnnotation] = inv.Spec.Distro.CommitID
-		softwareAnnotations[CSoftwareOSAnnotation] = "sonic"
-		softwareAnnotations[CSoftwareHostnameAnnotation] = inv.Spec.Host.Name
+		softwareAnnotations[constants.SoftwareOnieAnnotation] = "false"
+		softwareAnnotations[constants.SoftwareAsicAnnotation] = inv.Spec.Distro.AsicType
+		softwareAnnotations[constants.SoftwareVersionAnnotation] = inv.Spec.Distro.CommitID
+		softwareAnnotations[constants.SoftwareOSAnnotation] = "sonic"
+		softwareAnnotations[constants.SoftwareHostnameAnnotation] = inv.Spec.Host.Name
 	}
 	if in.Annotations == nil {
 		in.Annotations = make(map[string]string)
 	}
-	in.Annotations[CHardwareChassisIDAnnotation] = strings.ReplaceAll(
+	in.Annotations[constants.HardwareChassisIDAnnotation] = strings.ReplaceAll(
 		func() string {
 			var chassisID string
 			for _, nic := range inv.Spec.NICs {
@@ -1232,4 +1189,39 @@ func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
 	for k, v := range softwareAnnotations {
 		in.Annotations[k] = v
 	}
+}
+
+// StateReady checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateReady() bool {
+	return in.GetState() == constants.SwitchStateReady
+}
+
+// StatePending checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StatePending() bool {
+	return in.GetState() == constants.SwitchStatePending
+}
+
+// StateInvalid checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateInvalid() bool {
+	return in.GetState() == constants.SwitchStateInvalid
+}
+
+// StateInitial checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateInitial() bool {
+	return in.GetState() == constants.SwitchStateInitial
+}
+
+// StateProcessing checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateProcessing() bool {
+	return in.GetState() == constants.SwitchStateProcessing
+}
+
+// Uninitialized checks whether the .status.state field is empty.
+func (in *Switch) Uninitialized() bool {
+	return in.GetState() == constants.EmptyString
 }

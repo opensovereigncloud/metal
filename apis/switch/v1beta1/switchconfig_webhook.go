@@ -20,9 +20,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 // log is for logging in this package.
@@ -34,7 +37,7 @@ func (in *SwitchConfig) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-switch-onmetal-de-v1beta1-switchconfig,mutating=true,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switchconfigs,verbs=create;update,versions=v1beta1,name=mswitchconfig.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/mutate-switch-onmetal-de-v1beta1-switchconfig,mutating=true,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switchconfigs,verbs=create;update,versions=v1beta1,name=mswitchconfig.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &SwitchConfig{}
 
@@ -45,19 +48,19 @@ func (in *SwitchConfig) Default() {
 	in.setDefaultPortParams()
 }
 
-//+kubebuilder:webhook:path=/validate-switch-onmetal-de-v1beta1-switchconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switchconfigs,verbs=create;update,versions=v1beta1,name=vswitchconfig.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
+// +kubebuilder:webhook:path=/validate-switch-onmetal-de-v1beta1-switchconfig,mutating=false,failurePolicy=fail,sideEffects=None,groups=switch.onmetal.de,resources=switchconfigs,verbs=create;update,versions=v1beta1,name=vswitchconfig.v1beta1.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &SwitchConfig{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (in *SwitchConfig) ValidateCreate() error {
-	//todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
+	// todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *SwitchConfig) ValidateUpdate(old runtime.Object) error {
-	//todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
+func (in *SwitchConfig) ValidateUpdate(_ runtime.Object) error {
+	// todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
 	return nil
 }
 
@@ -70,10 +73,6 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	// defaulting south subnet selectors
 	if in.Spec.IPAM.SouthSubnets == nil {
 		in.Spec.IPAM.SouthSubnets = &IPAMSelectionSpec{
-			AddressFamilies: &AddressFamiliesMap{
-				IPv4: true,
-				IPv6: true,
-			},
 			LabelSelector: nil,
 			FieldSelector: nil,
 		}
@@ -81,16 +80,16 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	if in.Spec.IPAM.SouthSubnets.LabelSelector == nil {
 		in.Spec.IPAM.SouthSubnets.LabelSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				IPAMObjectPurposeLabel: CIPAMPurposeSouthSubnet,
+				constants.IPAMObjectPurposeLabel: constants.IPAMSouthSubnetPurpose,
 			},
 		}
 	}
 	if in.Spec.IPAM.SouthSubnets.FieldSelector == nil {
 		in.Spec.IPAM.SouthSubnets.FieldSelector = &FieldSelectorSpec{
-			LabelKey: IPAMObjectOwnerLabel,
+			LabelKey: pointer.String(constants.IPAMObjectOwnerLabel),
 			FieldRef: &v1.ObjectFieldSelector{
-				APIVersion: CAPIVersion,
-				FieldPath:  CDefaultIPAMFieldRef,
+				APIVersion: constants.APIVersion,
+				FieldPath:  constants.DefaultIPAMFieldRef,
 			},
 		}
 	}
@@ -98,10 +97,6 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	// defaulting loopbacks selectors
 	if in.Spec.IPAM.LoopbackAddresses == nil {
 		in.Spec.IPAM.LoopbackAddresses = &IPAMSelectionSpec{
-			AddressFamilies: &AddressFamiliesMap{
-				IPv4: true,
-				IPv6: true,
-			},
 			LabelSelector: nil,
 			FieldSelector: nil,
 		}
@@ -109,38 +104,46 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	if in.Spec.IPAM.LoopbackAddresses.LabelSelector == nil {
 		in.Spec.IPAM.LoopbackAddresses.LabelSelector = &metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				IPAMObjectPurposeLabel: CIPAMPurposeLoopback,
+				constants.IPAMObjectPurposeLabel: constants.IPAMLoopbackPurpose,
 			},
 		}
 	}
 	if in.Spec.IPAM.LoopbackAddresses.FieldSelector == nil {
 		in.Spec.IPAM.LoopbackAddresses.FieldSelector = &FieldSelectorSpec{
-			LabelKey: IPAMObjectOwnerLabel,
+			LabelKey: pointer.String(constants.IPAMObjectOwnerLabel),
 			FieldRef: &v1.ObjectFieldSelector{
-				APIVersion: CAPIVersion,
-				FieldPath:  CDefaultIPAMFieldRef,
+				APIVersion: constants.APIVersion,
+				FieldPath:  constants.DefaultIPAMFieldRef,
 			},
+		}
+	}
+
+	// defaulting address families
+	if in.Spec.IPAM.AddressFamily == nil {
+		in.Spec.IPAM.AddressFamily = &AddressFamiliesMap{
+			IPv4: pointer.Bool(true),
+			IPv6: pointer.Bool(false),
 		}
 	}
 }
 
 func (in *SwitchConfig) setDefaultPortParams() {
 	if in.Spec.PortsDefaults.Lanes == nil {
-		in.Spec.PortsDefaults.Lanes = MetalAPIUint8(4)
+		in.Spec.PortsDefaults.SetLanes(4)
 	}
 	if in.Spec.PortsDefaults.MTU == nil {
-		in.Spec.PortsDefaults.MTU = MetalAPIUint16(9100)
+		in.Spec.PortsDefaults.SetMTU(9100)
 	}
 	if in.Spec.PortsDefaults.IPv4MaskLength == nil {
-		in.Spec.PortsDefaults.IPv4MaskLength = MetalAPIUint8(30)
+		in.Spec.PortsDefaults.SetIPv4MaskLength(30)
 	}
 	if in.Spec.PortsDefaults.IPv6Prefix == nil {
-		in.Spec.PortsDefaults.IPv6Prefix = MetalAPIUint8(127)
+		in.Spec.PortsDefaults.SetIPv6Prefix(127)
 	}
 	if in.Spec.PortsDefaults.FEC == nil {
-		in.Spec.PortsDefaults.FEC = MetalAPIString(CFECNone)
+		in.Spec.PortsDefaults.SetFEC(constants.FECNone)
 	}
 	if in.Spec.PortsDefaults.State == nil {
-		in.Spec.PortsDefaults.State = MetalAPIString(CNICUp)
+		in.Spec.PortsDefaults.SetState(constants.NICUp)
 	}
 }

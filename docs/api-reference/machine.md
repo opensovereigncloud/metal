@@ -61,7 +61,7 @@ string
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.NetworkInterfaces">NetworkInterfaces</a>)
 </p>
 <div>
-<p>IP is an IP address.</p>
+<p>IPAddress is an IP address.</p>
 </div>
 <table>
 <thead>
@@ -526,15 +526,13 @@ covered by Tolerations will be considered to run the Machine.</p>
 </tr>
 <tr>
 <td>
-<code>machineClass</code><br/>
+<code>machineSize</code><br/>
 <em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
-Kubernetes core/v1.LocalObjectReference
-</a>
+string
 </em>
 </td>
 <td>
-<p>MachineClass is a reference to the machine class/flavor of the machine.</p>
+<p>MachineSize is a name for the machine class/flavor.</p>
 </td>
 </tr>
 <tr>
@@ -650,15 +648,13 @@ covered by Tolerations will be considered to run the Machine.</p>
 </tr>
 <tr>
 <td>
-<code>machineClass</code><br/>
+<code>machineSize</code><br/>
 <em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
-Kubernetes core/v1.LocalObjectReference
-</a>
+string
 </em>
 </td>
 <td>
-<p>MachineClass is a reference to the machine class/flavor of the machine.</p>
+<p>MachineSize is a name for the machine class/flavor.</p>
 </td>
 </tr>
 <tr>
@@ -755,7 +751,7 @@ string
 </tr>
 <tr>
 <td>
-<code>machineRef</code><br/>
+<code>metalComputeRef</code><br/>
 <em>
 <a href="#machine.onmetal.de/v1alpha2.ResourceReference">
 ResourceReference
@@ -767,7 +763,7 @@ ResourceReference
 </tr>
 <tr>
 <td>
-<code>computeMachineRef</code><br/>
+<code>onmetalComputeRef</code><br/>
 <em>
 <a href="#machine.onmetal.de/v1alpha2.ResourceReference">
 ResourceReference
@@ -1070,7 +1066,7 @@ int
 (<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha2.MachineAssignmentSpec">MachineAssignmentSpec</a>)
 </p>
 <div>
-<p>Interface is the definition of a single interface.</p>
+<p>NetworkInterfaces is the definition of a single interface.</p>
 </div>
 <table>
 <thead>
@@ -1728,5 +1724,5 @@ VolumeClaimSource
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>99a336f</code>.
+on git commit <code>1a7d81b</code>.
 </em></p>
