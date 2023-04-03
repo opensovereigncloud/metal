@@ -63,6 +63,7 @@ const (
 
 	machinePoolReconcilers        = "machine-pool-reconcilers"
 	machineReservationReconcilers = "machine-reservation-reconcilers"
+	ipxeReconcilers               = "ipxe-reconcilers"
 )
 
 // nolint
@@ -86,13 +87,31 @@ func TestMachinePoolController(t *testing.T) {
 	reconcilersMap[machineReservationReconcilers] = func(k8sManager manager.Manager, log logr.Logger) {
 		err := (&MachineReservationReconciler{
 			Client: k8sManager.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
+			Log:    ctrl.Log.WithName("controllers").WithName("machine-reservation"),
 			Scheme: k8sManager.GetScheme(),
 		}).SetupWithManager(k8sManager)
 		Expect(err).ToNot(HaveOccurred())
 	}
 
-	RunSpecs(t, "MachinePool Controller Suite")
+	reconcilersMap[ipxeReconcilers] = func(k8sManager manager.Manager, log logr.Logger) {
+		var err error
+
+		err = (&MachineReservationReconciler{
+			Client: k8sManager.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("machine-reservation"),
+			Scheme: k8sManager.GetScheme(),
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = (&IpxeReconciler{
+			Client: k8sManager.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("ipxe"),
+			Scheme: k8sManager.GetScheme(),
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	RunSpecs(t, "Compute machine suite")
 }
 
 var _ = BeforeSuite(func() {
