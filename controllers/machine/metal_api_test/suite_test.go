@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	controllers "github.com/onmetal/metal-api/controllers/machine"
+
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
@@ -99,7 +101,7 @@ var _ = BeforeSuite(func() {
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&MachinePowerReconciler{
+	err = (&controllers.MachinePowerReconciler{
 		Client: k8sManager.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("machine-power"),
 	}).SetupWithManager(k8sManager)
