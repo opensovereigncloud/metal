@@ -7,6 +7,10 @@ CRD_OPTIONS ?= "crd"
 IMAGE=metal-api/documentation
 # Kubebuilder assets version used to run testing environment
 KUBE_VERSION ?= 1.26.0
+# Controller tools version
+CONTROLLER_TOOLS_VERSION ?= v0.11.3
+
+GOPRIVATE ?= "github.com/onmetal/*"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -141,7 +145,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION))
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 .PHONY: kustomize
