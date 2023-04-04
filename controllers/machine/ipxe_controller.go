@@ -92,6 +92,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 
 		log.Info("deleting configmap", "name", "ipxe-"+data["name"])
+
 		//configMap, err := r.createConfigMap(data, &req)
 		//if err != nil {
 		//	return ctrl.Result{}, err
@@ -111,11 +112,25 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	configMap := r.createConfigMap(machine.Name, data, &req)
-	log.Info("applying ipxe configuration", "ipxe", client.ObjectKeyFromObject(configMap))
-	if err := r.Create(ctx, configMap); err != nil {
-		log.Error(err, "couldn't create config map", "resource", req.Name, "namespace", req.Namespace)
+
+	err = r.Client.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)
+	if apierrors.IsNotFound(err) {
+		log.Info("config map for machine not found, create new ipxe configuration", "ipxe", client.ObjectKeyFromObject(configMap))
+
+		if err := r.Create(ctx, configMap); err != nil {
+			log.Error(err, "couldn't create config map")
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	if err != nil {
+		log.Error(err, "could not get config map")
 		return ctrl.Result{}, err
 	}
+
+	// @TODO update CM
 
 	log.Info("reconciliation finished")
 	return ctrl.Result{}, nil
