@@ -20,10 +20,6 @@ jobs:
       - uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.BOT_PRIVATE_KEY }}
-      - run: |
-          ./hack/setup-git-redirect.sh
-          mkdir -p ~/.ssh
-          ssh-keygen -R github.com
-          curl -L https://api.github.com/meta | jq -r '.ssh_keys | .[]' | sed -e 's/^/github.com /' >> ~/.ssh/known_hosts
+      - run: ./hack/setup-git-redirect.sh
       - run: make build
       - run: make test
