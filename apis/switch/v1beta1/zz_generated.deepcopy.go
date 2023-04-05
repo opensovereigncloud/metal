@@ -845,6 +845,11 @@ func (in *SwitchStatus) DeepCopyInto(out *SwitchStatus) {
 		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
+	if in.RoutingConfigTemplate != nil {
+		in, out := &in.RoutingConfigTemplate, &out.RoutingConfigTemplate
+		*out = new(corev1.LocalObjectReference)
+		**out = **in
+	}
 	if in.ASN != nil {
 		in, out := &in.ASN, &out.ASN
 		*out = new(uint32)

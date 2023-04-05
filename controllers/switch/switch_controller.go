@@ -346,6 +346,9 @@ func (s *SwitchClient) updateConfigRef(obj *switchv1beta1.Switch) stateproc.Stat
 	switchConfig, err := s.getSwitchConfig(obj)
 	if err == nil {
 		obj.SetConfigRef(switchConfig.Name)
+		if !switchConfig.RoutingConfigTemplateIsEmpty() {
+			obj.SetRoutingConfigTemplate(switchConfig.GetRoutingConfigTemplate())
+		}
 		obj.SetCondition(constants.ConditionConfigRefOK, true)
 		switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 		return result

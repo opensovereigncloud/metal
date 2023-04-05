@@ -707,6 +707,16 @@ spec:
                 - leaf
                 - edge-leaf
                 type: string
+              routingConfigTemplate:
+                description: RoutingConfigTemplate contains the reference to the ConfigMap
+                  object which contains go-template for FRR config. This field reflects
+                  the corresponding field of the related SwitchConfig object.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
               state:
                 description: State is the current state of corresponding object or
                   process
