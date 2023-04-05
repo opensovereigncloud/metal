@@ -405,6 +405,7 @@ func (s *SwitchClient) updatePortParameters(obj *switchv1beta1.Switch) stateproc
 	}
 	switchespkg.ApplyInterfaceParams(obj, config)
 	switchespkg.InheritInterfaceParams(obj, switches)
+	switchespkg.AlignInterfacesWithParams(obj)
 	obj.SetCondition(constants.ConditionPortParametersOK, true)
 	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result

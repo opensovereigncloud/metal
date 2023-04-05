@@ -1,0 +1,427 @@
+apiVersion: switch.onmetal.de/v1beta1
+kind: Switch
+metadata:
+  name: sample-3
+  namespace: sample
+spec:
+  cordon: false
+  managed: true
+  scanPorts: true
+  topSpine: false
+status:
+  interfaces:
+    Ethernet0:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 40000
+      state: up
+    Ethernet4:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 10000
+      state: up
+    Ethernet5:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 10000
+      state: up
+    Ethernet6:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 10000
+      state: up
+    Ethernet7:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 10000
+      state: up
+    Ethernet8:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet12:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet16:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet20:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet24:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet28:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet32:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet36:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet40:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet44:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet48:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet52:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet56:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet60:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet64:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet68:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet72:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet76:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet80:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet84:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet88:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet92:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet93:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet94:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet95:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet96:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet97:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet98:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet99:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 25000
+      state: up
+    Ethernet100:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet104:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet108:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet112:
+      direction: north
+      fec: rs
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 4
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet116:
+      direction: north
+      fec: rs
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 4
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet120:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+    Ethernet124:
+      direction: south
+      fec: none
+      ipv4MaskLength: 30
+      ipv6Prefix: 112
+      lanes: 1
+      macAddress: 90:3c:b3:33:81:fb
+      mtu: 9100
+      speed: 100000
+      state: up
+  layer: 1
+  role: leaf
+  state: Ready
+  switchPorts: 41
+  totalPorts: 44

@@ -140,6 +140,123 @@ func ApplyInterfaceParams(obj *switchv1beta1.Switch, config *switchv1beta1.Switc
 	}
 }
 
+func AlignInterfacesWithParams(obj *switchv1beta1.Switch) {
+	// Since the source of truth for switch configuration is the parameters defined in SwitchConfig and Switch specs,
+	// it might occur that data from Inventory does not match these parameters. For instance, there might be no
+	// breakout into lanes configured on physical switch yet, hence Inventory will store some interface with, say, 4
+	// lanes. However, in the same time it might be defined in SwitchConfig (or Switch overrides) that every interface
+	// should have 1 line, so we want to configure breakout for interfaces. This will lead to the discrepancy between
+	// interfaces entries and the total number of used lanes. Which in turn will lead to incorrect calculation of
+	// the number of IP addresses required for south subnet.
+	//
+	// The idea how to handle this issue is the following: after interfaces' entries are created from Inventory and
+	// computed port parameters are applied to them, loop through interfaces and in case the interface index does not
+	// match the number of lanes, either add missing entries or remove extra ones.
+	//
+	// In general if index of the interface
+	//  - divisible by 4 without a remainder, then this is, lets say, baseline interface. Number of lanes can be 4, 2, 1;
+	//  - divisible by 2 without a remainder, but not by 4, then number of lanes can be 2 and 1;
+	//  - not divisible by 2 or 4 without remainder, then number of lanes can be only 1;
+	//
+	// In example:
+	//  - interface Ethernet4, number of lanes 4 - match in case there are no interfaces Ethernet[5,6,7], otherwise they
+	//    should be deleted;
+	//  - interface Ethernet6, number of lanes 1 - match in case there are interfaces Ethernet[4,5,7], otherwise they
+	//    should be added;
+	//  - interface Ethernet6, number of lines 2 - match in case there is interface Ethernet4, otherwise it should be
+	//    added;
+
+	toAddTotal := make(map[string]*switchv1beta1.InterfaceSpec)
+	toRemoveTotal := make(map[string]struct{})
+	for name, data := range obj.Status.Interfaces {
+		ok, index := indexDivisibleWithoutRemainder(name, 2)
+		if ok {
+			toAdd, toRemove := processEvenInterface(obj, index)
+			for k, v := range toAdd {
+				toAddTotal[k] = v
+			}
+			for k, v := range toRemove {
+				toRemoveTotal[k] = v
+			}
+			continue
+		}
+		if data.GetLanes() != 1 {
+			toRemoveTotal[name] = struct{}{}
+		}
+	}
+	for name := range toRemoveTotal {
+		delete(obj.Status.Interfaces, name)
+	}
+	for k, v := range toAddTotal {
+		obj.Status.Interfaces[k] = v
+	}
+	nonSwitchPortsNumber := obj.GetTotalPorts() - obj.GetSwitchPorts()
+	obj.SetSwitchPorts(uint32(len(obj.Status.Interfaces)))
+	obj.SetTotalPorts(obj.GetSwitchPorts() + nonSwitchPortsNumber)
+}
+
+func indexDivisibleWithoutRemainder(name string, divider int) (bool, int) {
+	indexAsString := strings.ReplaceAll(name, constants.SwitchPortNamePrefix, "")
+	index, _ := strconv.Atoi(indexAsString)
+	return index%divider == 0, index
+}
+
+func processEvenInterface(obj *switchv1beta1.Switch, index int) (map[string]*switchv1beta1.InterfaceSpec, map[string]struct{}) {
+	toAdd := make(map[string]*switchv1beta1.InterfaceSpec)
+	toRemove := make(map[string]struct{})
+
+	nic := buildInterfaceName(index)
+	if ok, _ := indexDivisibleWithoutRemainder(nic, 4); ok {
+		return processBaselineInterface(obj, index)
+	}
+	return toAdd, toRemove
+}
+
+func processBaselineInterface(obj *switchv1beta1.Switch, index int) (map[string]*switchv1beta1.InterfaceSpec, map[string]struct{}) {
+	var (
+		ok      bool
+		nicData *switchv1beta1.InterfaceSpec
+	)
+
+	toAdd := make(map[string]*switchv1beta1.InterfaceSpec)
+	toRemove := make(map[string]struct{})
+
+	nic := buildInterfaceName(index)
+	nicData = obj.Status.Interfaces[nic]
+	switch nicData.GetLanes() {
+	case 4:
+		for i := index + 1; i < index+4; i++ {
+			name := buildInterfaceName(i)
+			if _, ok = obj.Status.Interfaces[name]; ok {
+				toRemove[name] = struct{}{}
+			}
+		}
+	case 2:
+		for i := range []int{index + 1, index + 3} {
+			name := buildInterfaceName(i)
+			if _, ok = obj.Status.Interfaces[name]; ok {
+				toRemove[name] = struct{}{}
+			}
+		}
+		name := buildInterfaceName(index + 2)
+		if _, ok = obj.Status.Interfaces[name]; !ok {
+			toAdd[name] = nicData.DeepCopy()
+		}
+	case 1:
+		for i := index + 1; i < index+4; i++ {
+			name := buildInterfaceName(i)
+			if _, ok = obj.Status.Interfaces[name]; !ok {
+				toAdd[name] = nicData.DeepCopy()
+			}
+		}
+	}
+	return toAdd, toRemove
+}
+
+func buildInterfaceName(index int) string {
+	return strings.Join([]string{constants.SwitchPortNamePrefix, strconv.Itoa(index)}, "")
+}
+
 func ComputeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
 	connectionsMap, keys := buildConnectionMap(list)
 	if _, ok := connectionsMap[0]; !ok {

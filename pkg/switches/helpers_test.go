@@ -17,12 +17,16 @@ limitations under the License.
 package switches
 
 import (
+	"bytes"
 	"go/build"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/pkg/constants"
@@ -306,4 +310,39 @@ func TestUpdateSwitchConfigSelector(t *testing.T) {
 		MatchLabels: map[string]string{constants.SwitchConfigLayerLabel: "2"},
 	}
 	assert.Equal(t, finalSelector, testingState.Spec.ConfigSelector)
+}
+
+func TestGetTotalAddressesCount(t *testing.T) {
+	t.Parallel()
+	var (
+		q           *resource.Quantity
+		addresses   int64
+		samplesPath = filepath.Join("./", "test_samples")
+	)
+	var (
+		actualV4addresses int64 = 512
+		actualV6addresses int64 = 8388608
+	)
+	samples, err := GetTestSamples(samplesPath)
+	assert.Nil(t, err)
+	sampleObjects := make([]*switchv1beta1.Switch, 0)
+	for _, f := range samples {
+		raw, err := os.ReadFile(f)
+		assert.Nil(t, err)
+		sampleYaml := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
+		obj := &switchv1beta1.Switch{}
+		err = sampleYaml.Decode(obj)
+		assert.Nil(t, err)
+		sampleObjects = append(sampleObjects, obj)
+	}
+
+	for _, item := range sampleObjects {
+		AlignInterfacesWithParams(item)
+		q = GetTotalAddressesCount(item.Status.Interfaces, ipamv1alpha1.CIPv4SubnetType)
+		addresses, _ = q.AsInt64()
+		assert.Equal(t, addresses, actualV4addresses)
+		q = GetTotalAddressesCount(item.Status.Interfaces, ipamv1alpha1.CIPv6SubnetType)
+		addresses, _ = q.AsInt64()
+		assert.Equal(t, addresses, actualV6addresses)
+	}
 }
