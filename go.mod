@@ -17,7 +17,7 @@ require (
 	github.com/onsi/gomega v1.27.6
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/mod v0.9.0
+	golang.org/x/mod v0.10.0
 	gopkg.in/inf.v0 v0.9.1
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
 	k8s.io/api v0.26.3
