@@ -21,10 +21,15 @@ import (
 	"context"
 	"text/template"
 
+	"github.com/onmetal/onmetal-image/oci/image"
+	"github.com/onmetal/onmetal-image/oci/imageutil"
+	"github.com/onmetal/onmetal-image/oci/remote"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	onmetalimage "github.com/onmetal/onmetal-image"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,13 +44,18 @@ type IpxeReconciler struct {
 
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+
+	registry image.Source
 }
 
 type MachineWrapper struct {
 	Machine *v1alpha2.Machine `json:"machine"`
 }
 
-const IpxeDefaultTemplateName = "ipxe-default"
+const (
+	IpxeDefaultTemplateName = "ipxe-default"
+	OnmetalImage            = "ghcr.io/onmetal/onmetal-image/gardenlinux:1099"
+)
 
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
@@ -55,6 +65,22 @@ const IpxeDefaultTemplateName = "ipxe-default"
 
 func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName).V(1)
+
+	if err := r.initRegistry(log); err != nil {
+		log.Error(err, "could not init registry")
+		return ctrl.Result{}, err
+	}
+
+	onmetalImage, err := r.getOnmetalImage(log)
+	if err != nil {
+		log.Error(err, "could not get onmetal image")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.parseImage(log, onmetalImage); err != nil {
+		log.Error(err, "could not parse image")
+		return ctrl.Result{}, err
+	}
 
 	log.Info("fetching template configmaps")
 	ipxeDefaultCM := &corev1.ConfigMap{
@@ -140,6 +166,71 @@ func (r *IpxeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha2.Machine{}).
 		Complete(r)
+}
+
+func (r *IpxeReconciler) initRegistry(log logr.Logger) error {
+	if r.registry != nil {
+		return nil
+	}
+
+	log.Info("init registry")
+	registry, err := remote.DockerRegistry(nil)
+	if err != nil {
+		log.Error(err, "docker registry setting up failed")
+		return err
+	}
+	r.registry = registry
+
+	log.Info("registry initialized")
+	return nil
+}
+
+func (r *IpxeReconciler) getOnmetalImage(log logr.Logger) (*onmetalimage.Image, error) {
+	ociImage, err := r.registry.Resolve(context.Background(), OnmetalImage)
+	if err != nil {
+		log.Error(err, "registry resolving failed")
+		return nil, err
+	}
+	log.Info("oci image resolved")
+
+	onmetalImage, err := onmetalimage.ResolveImage(context.Background(), ociImage)
+	if err != nil {
+		log.Error(err, "image resolving failed")
+		return nil, err
+	}
+	log.Info("onmetal image resolved")
+
+	return onmetalImage, nil
+}
+
+func (r *IpxeReconciler) parseImage(log logr.Logger, onmetalImage *onmetalimage.Image) error {
+	ctx := context.Background()
+
+	log.Info("parse RootFS layer")
+	rootFSBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.RootFS)
+	if err != nil {
+		log.Error(err, "could not read rootFS layer from image")
+		return err
+	}
+	log.Info("rootFS", "data", string(rootFSBytes))
+
+	log.Info("parse kernel layer")
+	kernelBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.Kernel)
+	if err != nil {
+		log.Error(err, "could not read kernel layer from image")
+		return err
+	}
+	log.Info("kernel", "data", string(kernelBytes))
+
+	log.Info("parse InitRAMFs layer")
+	initRAMFsBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.InitRAMFs)
+	if err != nil {
+		log.Error(err, "could not read initRAMFs layer from image")
+		return err
+	}
+	log.Info("InitRAMFs", "data", string(initRAMFsBytes))
+
+	return nil
 }
 
 func parseTemplate(temp map[string]string, machine *v1alpha2.Machine) (map[string]string, error) {
