@@ -4,7 +4,7 @@ metadata:
   name: leafs-config
   namespace: onmetal
   labels:
-    switch.onmetal.de/type-leaf: "true"
+    switch.onmetal.de/type: "leaf"
 spec:
   switches:
     matchLabels:

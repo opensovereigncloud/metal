@@ -340,7 +340,7 @@ FieldSelectorSpec
 <td>
 <p>FieldSelector contains label key and field path where to get label value for search.
 If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will
-reference to the field path in related object. If FieldSelector is used as part of IPAM
+reference to the field path in related Switch object. If FieldSelector is used as part of IPAM
 configuration in Switch object, it will reference to the field path in the same object</p>
 </td>
 </tr>
@@ -1057,6 +1057,22 @@ Empty InventoryRef means that there is no corresponding Inventory object</p>
 </tr>
 <tr>
 <td>
+<code>configSelector</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#labelselector-v1-meta">
+Kubernetes meta/v1.LabelSelector
+</a>
+</em>
+</td>
+<td>
+<p>ConfigSelector contains selector to filter out corresponding SwitchConfig.
+If the selector is not defined, it will be populated by defaulting webhook
+with MatchLabels item, containing &lsquo;switch.onmetal.de/layer&rsquo; key with value
+equals to object&rsquo;s .status.layer.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>managed</code><br/>
 <em>
 bool
@@ -1363,6 +1379,22 @@ Empty InventoryRef means that there is no corresponding Inventory object</p>
 </tr>
 <tr>
 <td>
+<code>configSelector</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#labelselector-v1-meta">
+Kubernetes meta/v1.LabelSelector
+</a>
+</em>
+</td>
+<td>
+<p>ConfigSelector contains selector to filter out corresponding SwitchConfig.
+If the selector is not defined, it will be populated by defaulting webhook
+with MatchLabels item, containing &lsquo;switch.onmetal.de/layer&rsquo; key with value
+equals to object&rsquo;s .status.layer.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>managed</code><br/>
 <em>
 bool
@@ -1597,5 +1629,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>1aa370a</code>.
+on git commit <code>1a7d81b</code>.
 </em></p>

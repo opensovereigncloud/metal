@@ -40,6 +40,7 @@ const (
 	LabelChassisID              string = "metalapi.onmetal.de/chassis-id"
 	SwitchTypeLabel             string = "switch.onmetal.de/type"
 	SwitchConfigTypeLabelPrefix string = "switch.onmetal.de/type-"
+	SwitchConfigLayerLabel      string = "switch.onmetal.de/layer"
 
 	IPAMObjectPurposeLabel string = "ipam.onmetal.de/object-purpose"
 	IPAMObjectOwnerLabel   string = "ipam.onmetal.de/object-owner"

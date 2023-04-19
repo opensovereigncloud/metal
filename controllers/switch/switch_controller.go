@@ -220,10 +220,10 @@ func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Swi
 		cl.preprocessingCheck,
 		cl.initialize,
 		cl.updateInterfaces,
-		cl.updateConfigRef,
-		cl.updatePortParameters,
 		cl.updateNeighbors,
 		cl.updateLayerAndRole,
+		cl.updateConfigRef,
+		cl.updatePortParameters,
 		cl.updateLoopbacks,
 		cl.updateASN,
 		cl.updateSubnets,
@@ -232,44 +232,54 @@ func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Swi
 	})
 
 	err := proc.Compute(obj)
+	updateSpec := false
 	if errors.IsMissingRequirements(err) {
 		return ctrl.Result{}, err
 	}
-	return r.patch(ctx, obj)
+	if errors.IsInvalidConfigSelector(err) {
+		switchespkg.UpdateSwitchConfigSelector(obj)
+		updateSpec = true
+	}
+	return r.patch(ctx, obj, updateSpec)
 }
 
-func (r *SwitchReconciler) patch(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *SwitchReconciler) patch(ctx context.Context, obj *switchv1beta1.Switch, updateSpec bool) (ctrl.Result, error) {
 	obj.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
+	if updateSpec {
+		err := r.Patch(ctx, obj, client.Apply, switchespkg.PatchOpts)
+		if err != nil {
+			r.Log.Info("failed to update switch configuration", "name", obj.NamespacedName(), "error", err)
+		}
+		return ctrl.Result{}, err
+	}
 	if err := r.Status().Patch(ctx, obj, client.Apply, switchespkg.PatchOpts); err != nil {
 		r.Log.Info("failed to update switch configuration", "name", obj.NamespacedName(), "error", err)
 		return ctrl.Result{}, err
 	}
-	switch obj.GetState() {
-	case constants.SwitchStateReady:
+	if obj.StateReady() {
 		return ctrl.Result{}, nil
-	default:
-		return ctrl.Result{Requeue: true}, nil
 	}
+	return ctrl.Result{Requeue: true}, nil
 }
 
 func (s *SwitchClient) preprocessingCheck(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
 	var result stateproc.StateFuncResult
-	if obj.GetState() != constants.SwitchStatePending {
+	if !obj.StatePending() {
 		return result
-	}
-	if _, ok := obj.Labels[constants.SwitchTypeLabel]; !ok {
-		result.Break = true
-		result.Err = errors.NewSwitchError(errors.ErrorReasonMissingRequirements, errors.MessageMissingTypeLabel, nil)
 	}
 	if obj.GetInventoryRef() == constants.EmptyString {
 		result.Break = true
 		result.Err = errors.NewSwitchError(errors.ErrorReasonMissingRequirements, errors.MessageMissingInventoryRef, nil)
 	}
+	if switchespkg.SwitchConfigSelectorInvalid(obj) {
+		result.Break = true
+		result.Err = errors.NewSwitchError(errors.ErrorReasonInvalidConfigSelector, errors.MessageInvalidConfigSelector, nil)
+	}
 	return result
 }
 
 func (s *SwitchClient) initialize(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
-	if obj.GetState() == constants.EmptyString {
+	if obj.Uninitialized() {
 		obj.Status = switchv1beta1.SwitchStatus{
 			ConfigRef:         nil,
 			ASN:               nil,
@@ -306,79 +316,57 @@ func (s *SwitchClient) updateInterfaces(obj *switchv1beta1.Switch) stateproc.Sta
 		return result
 	}
 	inventory := &inventoryv1alpha1.Inventory{}
-	if err := s.Get(s.ctx, types.NamespacedName{
+	err := s.Get(s.ctx, types.NamespacedName{
 		Namespace: obj.Namespace,
 		Name:      obj.Spec.InventoryRef.Name,
-	}, inventory); err != nil {
-		reason := errors.ErrorReasonRequestFailed
-		message := errors.MessageRequestFailedWithKind("Inventory")
-		if apierrors.IsNotFound(err) {
-			reason = errors.ErrorReasonObjectNotExist
-			message = errors.MessageObjectNotExistWithKind("Inventory")
-		}
-		obj.SetCondition(constants.ConditionInterfacesOK, false).
-			SetReason(reason.String()).
-			SetMessage(message)
-		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
-		result.Break = true
-		result.Err = errors.NewSwitchError(reason, message, err)
+	}, inventory)
+	if err == nil {
+		switchespkg.ApplyInterfacesFromInventory(obj, inventory)
+		obj.SetCondition(constants.ConditionInterfacesOK, true)
+		switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 		return result
 	}
-	switchespkg.ApplyInterfacesFromInventory(obj, inventory)
-	obj.SetCondition(constants.ConditionInterfacesOK, true)
-	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	reason := errors.ErrorReasonRequestFailed
+	message := errors.MessageRequestFailedWithKind("Inventory")
+	if apierrors.IsNotFound(err) {
+		reason = errors.ErrorReasonObjectNotExist
+		message = errors.MessageObjectNotExistWithKind("Inventory")
+	}
+	obj.SetCondition(constants.ConditionInterfacesOK, false).
+		SetReason(reason.String()).
+		SetMessage(message)
+	switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
+	result.Break = true
+	result.Err = errors.NewSwitchError(reason, message, err)
 	return result
 }
 
 func (s *SwitchClient) updateConfigRef(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
 	result := stateproc.StateFuncResult{}
-	switchConfigs := &switchv1beta1.SwitchConfigList{}
-	switchType, ok := obj.Labels[constants.SwitchTypeLabel]
-	if !ok {
-		obj.SetCondition(constants.ConditionConfigRefOK, false).
-			SetReason(errors.ErrorReasonMissingRequirements.String()).
-			SetMessage(errors.MessageMissingTypeLabel)
-		switchespkg.SetState(obj, constants.SwitchStatePending, errors.StateMessageMissingRequirements)
-		result.Break = true
-		result.Err = errors.NewSwitchError(errors.ErrorReasonMissingTypeLabel, errors.MessageMissingTypeLabel, nil)
+	switchConfig, err := s.getSwitchConfig(obj)
+	if err == nil {
+		obj.SetConfigRef(switchConfig.Name)
+		obj.SetCondition(constants.ConditionConfigRefOK, true)
+		switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 		return result
 	}
-	requirements, _ := labels.NewRequirement(constants.SwitchConfigTypeLabelPrefix+switchType, selection.Exists, []string{})
-	selector := labels.NewSelector().Add(*requirements)
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Namespace:     obj.Namespace,
-		Limit:         100,
+	reason := errors.ErrorReasonRequestFailed
+	message := errors.MessageRequestFailedWithKind("SwitchConfig")
+	if err.Error() == errors.MessageObjectNotExistWithKind("SwitchConfig") {
+		reason = errors.ErrorReasonObjectNotExist
+		message = errors.MessageFailedToDiscoverConfig
 	}
-	if err := s.List(s.ctx, switchConfigs, opts); err != nil {
-		obj.SetCondition(constants.ConditionConfigRefOK, false).
-			SetReason(errors.ErrorReasonRequestFailed.String()).
-			SetMessage(errors.MessageRequestFailedWithKind("SwitchConfigList"))
-		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
-		result.Break = true
-		result.Err = errors.NewSwitchError(
-			errors.ErrorReasonRequestFailed,
-			errors.MessageRequestFailedWithKind("SwitchConfigList"),
-			err,
-		)
-		return result
+	if err.Error() == errors.MessageToManyCandidatesFoundWithKind("SwitchConfig") {
+		reason = errors.ErrorReasonTooManyCandidates
+		message = errors.MessageFailedToDiscoverConfig
 	}
-	if len(switchConfigs.Items) == 0 {
-		obj.SetCondition(constants.ConditionConfigRefOK, false).
-			SetReason(errors.ErrorReasonObjectNotExist.String()).
-			SetMessage(errors.MessageObjectNotExistWithKind("SwitchConfig"))
-		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageMissingRequirements)
-		result.Break = true
-		result.Err = errors.NewSwitchError(
-			errors.ErrorReasonObjectNotExist,
-			errors.MessageObjectNotExistWithKind("SwitchConfig"),
-			nil,
-		)
-		return result
-	}
-	obj.SetConfigRef(switchConfigs.Items[0].Name)
-	obj.SetCondition(constants.ConditionConfigRefOK, true)
-	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
+	obj.SetCondition(constants.ConditionConfigRefOK, false).
+		SetReason(reason.String()).
+		SetMessage(message)
+	obj.SetConfigRef(constants.EmptyString)
+	switchespkg.SetState(obj, constants.SwitchStatePending, message)
+	result.Break = true
+	result.Err = errors.NewSwitchError(reason, message, err)
 	return result
 }
 
@@ -401,7 +389,22 @@ func (s *SwitchClient) updatePortParameters(obj *switchv1beta1.Switch) stateproc
 		)
 		return result
 	}
+	switches, err := s.getSwitches(obj.Namespace)
+	if err != nil {
+		obj.SetCondition(constants.ConditionPortParametersOK, false).
+			SetReason(errors.ErrorReasonRequestFailed.String()).
+			SetMessage(errors.MessageRequestFailedWithKind("SwitchList"))
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRequestRelatedObjectsFailed)
+		result.Break = true
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonRequestFailed,
+			errors.MessageRequestFailedWithKind("SwitchList"),
+			err,
+		)
+		return result
+	}
 	switchespkg.ApplyInterfaceParams(obj, config)
+	switchespkg.InheritInterfaceParams(obj, switches)
 	obj.SetCondition(constants.ConditionPortParametersOK, true)
 	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
 	return result
@@ -463,6 +466,19 @@ func (s *SwitchClient) updateLayerAndRole(obj *switchv1beta1.Switch) stateproc.S
 		return result
 	}
 	switchespkg.ComputeLayer(obj, switches)
+	if obj.GetLayer() == 255 {
+		obj.SetCondition(constants.ConditionLayerAndRoleOK, false).
+			SetReason(errors.ErrorReasonFailedToComputeLayer.String()).
+			SetMessage(errors.MessageFailedToComputeLayer)
+		switchespkg.SetState(obj, constants.SwitchStateInvalid, errors.StateMessageRelatedObjectsStateInvalid)
+		result.Break = true
+		result.Err = errors.NewSwitchError(
+			errors.ErrorReasonFailedToComputeLayer,
+			errors.StateMessageRelatedObjectsStateInvalid,
+			nil,
+		)
+		return result
+	}
 	switchespkg.SetRole(obj)
 	obj.SetCondition(constants.ConditionLayerAndRoleOK, true)
 	switchespkg.SetState(obj, constants.SwitchStateProcessing, constants.EmptyString)
@@ -733,20 +749,42 @@ func (s *SwitchClient) setStateReady(obj *switchv1beta1.Switch) stateproc.StateF
 	return stateproc.StateFuncResult{}
 }
 
-func (s *SwitchClient) getSwitches(ns string) (*switchv1beta1.SwitchList, error) {
+func (s *SwitchClient) getSwitches(namespace string) (*switchv1beta1.SwitchList, error) {
 	switches := &switchv1beta1.SwitchList{}
 	inventoriedLabelReq, _ := labels.NewRequirement(constants.InventoriedLabel, selection.Exists, []string{})
-	typedLabelReq, _ := labels.NewRequirement(constants.SwitchTypeLabel, selection.Exists, []string{})
-	selector := labels.NewSelector().Add(*inventoriedLabelReq).Add(*typedLabelReq)
+	selector := labels.NewSelector().Add(*inventoriedLabelReq)
 	opts := &client.ListOptions{
 		LabelSelector: selector,
-		Namespace:     ns,
+		Namespace:     namespace,
 		Limit:         100,
 	}
 	if err := s.List(s.ctx, switches, opts); err != nil {
 		return nil, err
 	}
 	return switches, nil
+}
+
+func (s *SwitchClient) getSwitchConfig(obj *switchv1beta1.Switch) (*switchv1beta1.SwitchConfig, error) {
+	switchConfigs := &switchv1beta1.SwitchConfigList{}
+	selector, err := metav1.LabelSelectorAsSelector(obj.GetConfigSelector())
+	if err != nil {
+		return nil, err
+	}
+	opts := &client.ListOptions{
+		LabelSelector: selector,
+		Namespace:     obj.Namespace,
+		Limit:         100,
+	}
+	if err = s.List(s.ctx, switchConfigs, opts); err != nil {
+		return nil, err
+	}
+	if len(switchConfigs.Items) == 0 {
+		return nil, switchespkg.NewProcessingError(errors.MessageObjectNotExistWithKind("SwitchConfig"))
+	}
+	if len(switchConfigs.Items) > 1 {
+		return nil, switchespkg.NewProcessingError(errors.MessageToManyCandidatesFoundWithKind("SwitchConfig"))
+	}
+	return &switchConfigs.Items[0], nil
 }
 
 // ----------------------------------------

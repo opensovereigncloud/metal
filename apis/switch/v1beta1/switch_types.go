@@ -36,6 +36,12 @@ type SwitchSpec struct {
 	// Empty InventoryRef means that there is no corresponding Inventory object
 	// +kubebuilder:validation:Optional
 	InventoryRef *v1.LocalObjectReference `json:"inventoryRef,omitempty"`
+	// ConfigSelector contains selector to filter out corresponding SwitchConfig.
+	// If the selector is not defined, it will be populated by defaulting webhook
+	// with MatchLabels item, containing 'switch.onmetal.de/layer' key with value
+	// equals to object's .status.layer.
+	// +kubebuilder:validation:Optional
+	ConfigSelector *metav1.LabelSelector `json:"configSelector,omitempty"`
 	// Managed is a flag defining whether Switch object would be processed during reconciliation
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=true
@@ -337,6 +343,18 @@ func (in *Switch) GetScanPorts() bool {
 	return pointer.BoolDeref(in.Spec.ScanPorts, false)
 }
 
+// GetConfigSelector returns LabelSelector if it is not nil and
+// matching criteria are defined, otherwise nil.
+func (in *Switch) GetConfigSelector() *metav1.LabelSelector {
+	if in.Spec.ConfigSelector == nil {
+		return nil
+	}
+	if len(in.Spec.ConfigSelector.MatchLabels) == 0 && len(in.Spec.ConfigSelector.MatchExpressions) == 0 {
+		return nil
+	}
+	return in.Spec.ConfigSelector
+}
+
 // ----------------------------------------
 // SwitchStatus getters
 // ----------------------------------------
@@ -433,7 +451,11 @@ func (in *Switch) SetScanPorts(value bool) {
 // SetConfigRef sets passed argument as a value of
 // status.configRef.name field.
 func (in *Switch) SetConfigRef(value string) {
-	in.Status.ConfigRef = &v1.LocalObjectReference{Name: value}
+	if value == constants.EmptyString {
+		in.Status.ConfigRef = nil
+	} else {
+		in.Status.ConfigRef = &v1.LocalObjectReference{Name: value}
+	}
 }
 
 // SetASN sets passed argument as a value of
@@ -1167,4 +1189,39 @@ func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
 	for k, v := range softwareAnnotations {
 		in.Annotations[k] = v
 	}
+}
+
+// StateReady checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateReady() bool {
+	return in.GetState() == constants.SwitchStateReady
+}
+
+// StatePending checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StatePending() bool {
+	return in.GetState() == constants.SwitchStatePending
+}
+
+// StateInvalid checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateInvalid() bool {
+	return in.GetState() == constants.SwitchStateInvalid
+}
+
+// StateInitial checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateInitial() bool {
+	return in.GetState() == constants.SwitchStateInitial
+}
+
+// StateProcessing checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateProcessing() bool {
+	return in.GetState() == constants.SwitchStateProcessing
+}
+
+// Uninitialized checks whether the .status.state field is empty.
+func (in *Switch) Uninitialized() bool {
+	return in.GetState() == constants.EmptyString
 }

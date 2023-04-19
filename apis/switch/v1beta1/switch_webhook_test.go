@@ -24,8 +24,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 func createSwitchFromSampleFile() (switchObject *Switch, err error) {
@@ -231,6 +234,33 @@ var _ = Describe("Switch Webhook", func() {
 			switchObject.Labels[inventoried] = "false"
 			switchObject.Labels[inventoryRef] = "e0e223f5-032a-48d7-8481-a828c3cd868a"
 			Expect(k8sClient.Update(ctx, switchObject)).To(Succeed())
+		})
+
+		It("Should mutate config selector if it is not set", func() {
+			switchObject, err := createSwitchFromSampleFile()
+			Expect(err).To(Succeed())
+			switchObject.Namespace = SwitchNamespace
+			Expect(k8sClient.Create(ctx, switchObject)).To(Succeed())
+			Expect(switchObject.GetConfigSelector()).NotTo(BeNil())
+			Expect(switchObject.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(Equal("0"))
+			switchObject.Spec.ConfigSelector.MatchLabels[constants.SwitchTypeLabel] = "spine"
+			Expect(k8sClient.Update(ctx, switchObject)).To(Succeed())
+			Expect(switchObject.GetConfigSelector()).NotTo(BeNil())
+			Expect(switchObject.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(BeEmpty())
+			Expect(len(switchObject.GetConfigSelector().MatchLabels)).To(Equal(1))
+		})
+
+		It("Should bypass config selector mutating in case it is populated", func() {
+			switchObject, err := createSwitchFromSampleFile()
+			Expect(err).To(Succeed())
+			switchObject.Namespace = SwitchNamespace
+			switchObject.Spec.ConfigSelector = &metav1.LabelSelector{
+				MatchLabels: map[string]string{constants.SwitchTypeLabel: "spine"},
+			}
+			Expect(k8sClient.Create(ctx, switchObject)).To(Succeed())
+			Expect(switchObject.GetConfigSelector()).NotTo(BeNil())
+			Expect(len(switchObject.GetConfigSelector().MatchLabels)).To(Equal(1))
+			Expect(switchObject.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(BeEmpty())
 		})
 	})
 })

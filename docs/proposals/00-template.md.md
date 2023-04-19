@@ -1,14 +1,18 @@
 ---
-title: GEP Title
-gep-number: NNNN
-creation-date: 20XX-XX-XX
-status: implementable|implemented
+title: GEP Title  
+gep-number: NNNN  
+creation-date: 20XX-XX-XX  
+status: implementable|implemented  
 authors:
+
 - "@you"
 - "@maybe-another-author"
+
 reviewers:
+
 - "@main-reviewer-1"
 - "@main-reviewer-2"
+
 ---
 
 # GEP-NNNN: Your short, descriptive title

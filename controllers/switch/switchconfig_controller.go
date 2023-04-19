@@ -26,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,39 +87,25 @@ func checkSwitchConfigUpdate(e event.UpdateEvent) bool {
 	if !okOld || !okNew {
 		return false
 	}
-	if !reflect.DeepEqual(objOld.Spec.IPAM, objNew.Spec.IPAM) {
-		return true
-	}
-	if !reflect.DeepEqual(objOld.Spec.PortsDefaults, objNew.Spec.PortsDefaults) {
-		return true
-	}
-	return false
+	ipamConfigChanged := !reflect.DeepEqual(objOld.Spec.IPAM, objNew.Spec.IPAM)
+	portConfigChanged := !reflect.DeepEqual(objOld.Spec.PortsDefaults, objNew.Spec.PortsDefaults)
+	labelsChanged := !reflect.DeepEqual(objOld.GetLabels(), objNew.GetLabels())
+	return ipamConfigChanged || portConfigChanged || labelsChanged
 }
 
 func (r *SwConfigReconciler) updateSwitches(ctx context.Context, obj *switchv1beta1.SwitchConfig) (ctrl.Result, error) {
 	result := ctrl.Result{}
 	relatedSwitches := &switchv1beta1.SwitchList{}
-	selector := labels.NewSelector()
-	for key, value := range obj.Spec.Switches.MatchLabels {
-		req, _ := labels.NewRequirement(key, selection.In, []string{value})
-		selector = selector.Add(*req)
-	}
-	if len(obj.Spec.Switches.MatchExpressions) > 0 {
-		for _, item := range obj.Spec.Switches.MatchExpressions {
-			req, _ := labels.NewRequirement(item.Key, selection.Operator(item.Operator), item.Values)
-			selector = selector.Add(*req)
-		}
-	}
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Namespace:     obj.Namespace,
-		Limit:         100,
-	}
-	if err := r.List(ctx, relatedSwitches, opts); err != nil {
-		result.RequeueAfter = time.Millisecond * 500
+	if err := r.List(ctx, relatedSwitches); err != nil {
+		result.Requeue = true
 		return result, err
 	}
+	labelsSet := labels.Set(obj.Labels)
 	for _, item := range relatedSwitches.Items {
+		selector, _ := metav1.LabelSelectorAsSelector(item.Spec.ConfigSelector)
+		if !selector.Matches(labelsSet) {
+			continue
+		}
 		item.SetCondition(constants.ConditionPortParametersOK, false).
 			SetReason(errors.ErrorReasonDataOutdated.String())
 		item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)

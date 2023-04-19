@@ -61,7 +61,7 @@ Here is an example of `Size` object:
       name: spines-config
       namespace: onmetal
       labels:
-        switch.onmetal.de/type-spine: "true"
+        switch.onmetal.de/layer: "0"
     spec:
       switches:
         matchLabels:
@@ -103,7 +103,7 @@ Here is an example of `Size` object:
               fieldPath: "metadata.name"
     ```
 
-> :heavy_exclamation_mark: Pay attention to the label set in the manifest: `switch.onmetal.de/type-spine: "true"`. To map `Switch` object to this `SwitchConfig` object, switch have to be labeled with `switch.onmetal.de/type: "spine"` label.
+> :heavy_exclamation_mark: Details about how to set up mapping between `Switch` and `Switchconfig` objects can be found in [concepts](../concepts/switch.md#mapping-between-switch-and-switchconfig-objects)
 
 - `Network`: it is a mandatory object which `Subnet` objects have to reference to;
 - `Subnet`: these objects are required to be assigned to switches as their subnets. Switch ports' IP addresses are reserved in these subnets;

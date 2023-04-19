@@ -4,7 +4,7 @@ metadata:
   name: spines-config
   namespace: onmetal
   labels:
-    switch.onmetal.de/type-spine: "true"
+    switch.onmetal.de/type: "spine"
 spec:
   switches:
     matchLabels:

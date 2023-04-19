@@ -76,7 +76,7 @@ type IPAMSelectionSpec struct {
 	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
 	// FieldSelector contains label key and field path where to get label value for search.
 	// If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will
-	// reference to the field path in related object. If FieldSelector is used as part of IPAM
+	// reference to the field path in related Switch object. If FieldSelector is used as part of IPAM
 	// configuration in Switch object, it will reference to the field path in the same object
 	// +kubebuilder:validation:Optional
 	FieldSelector *FieldSelectorSpec `json:"fieldSelector,omitempty"`
