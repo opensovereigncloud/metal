@@ -98,6 +98,10 @@ type SwitchStatus struct {
 	// Empty ConfigRef means that there is no corresponding SwitchConfig object
 	// +kubebuilder:validation:Optional
 	ConfigRef *v1.LocalObjectReference `json:"configRef,omitempty"`
+	// RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config.
+	// This field reflects the corresponding field of the related SwitchConfig object.
+	// +kubebuilder:validation:Optional
+	RoutingConfigTemplate *v1.LocalObjectReference `json:"routingConfigTemplate,omitempty"`
 	// ASN contains current autonomous system number defined for switch
 	// +kubebuilder:validation:Optional
 	ASN *uint32 `json:"asn,omitempty"`
@@ -368,6 +372,21 @@ func (in *Switch) GetConfigRef() string {
 	return in.Status.ConfigRef.Name
 }
 
+// GetRoutingConfigTemplate returns value of status.routingConfigTemplate.name field if
+// routingConfigTemplate is not nil, otherwise empty string.
+func (in *Switch) GetRoutingConfigTemplate() string {
+	if in.Status.RoutingConfigTemplate == nil {
+		return ""
+	}
+	return in.Status.RoutingConfigTemplate.Name
+}
+
+// RoutingConfigTemplateIsEmpty checks whether the status.routingConfigTemplate contains
+// value or not.
+func (in *Switch) RoutingConfigTemplateIsEmpty() bool {
+	return in.GetRoutingConfigTemplate() == constants.EmptyString
+}
+
 // GetASN returns value of status.asn field if it is not nil,
 // otherwise 0.
 func (in *Switch) GetASN() uint32 {
@@ -455,6 +474,16 @@ func (in *Switch) SetConfigRef(value string) {
 		in.Status.ConfigRef = nil
 	} else {
 		in.Status.ConfigRef = &v1.LocalObjectReference{Name: value}
+	}
+}
+
+// SetRoutingConfigTemplate sets passed argument as a value of
+// status.routingConfigTemplate.name field.
+func (in *Switch) SetRoutingConfigTemplate(value string) {
+	if value == constants.EmptyString {
+		in.Status.RoutingConfigTemplate = nil
+	} else {
+		in.Status.RoutingConfigTemplate = &v1.LocalObjectReference{Name: value}
 	}
 }
 

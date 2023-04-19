@@ -17,23 +17,15 @@ limitations under the License.
 package controllers
 
 import (
-	"bytes"
 	"context"
-	"text/template"
-
 	"github.com/onmetal/onmetal-image/oci/image"
 	"github.com/onmetal/onmetal-image/oci/imageutil"
 	"github.com/onmetal/onmetal-image/oci/remote"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	onmetalimage "github.com/onmetal/onmetal-image"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -53,8 +45,8 @@ type MachineWrapper struct {
 }
 
 const (
-	IpxeDefaultTemplateName = "ipxe-default"
-	OnmetalImage            = "ghcr.io/onmetal/onmetal-image/gardenlinux:1099"
+	//IpxeDefaultTemplateName = "ipxe-default"
+	OnmetalImage = "ghcr.io/onmetal/onmetal-image/gardenlinux:1099"
 )
 
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
@@ -82,79 +74,79 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	log.Info("fetching template configmaps")
-	ipxeDefaultCM := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IpxeDefaultTemplateName,
-			Namespace: req.Namespace,
-		},
-	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(ipxeDefaultCM), ipxeDefaultCM); err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Info("could not get config map, not found")
-			return ctrl.Result{}, client.IgnoreNotFound(err)
-		}
-
-		log.Error(err, "could not get config map")
-		return ctrl.Result{}, err
-	}
-
-	machine := &v1alpha2.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      req.Name,
-			Namespace: req.Namespace,
-		},
-	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine); err != nil {
-		log.Error(err, "could not get machine")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if machine.Status.Reservation.Reference == nil { // @TODO is it the case for deletion?
-		data, err := parseTemplate(ipxeDefaultCM.Data, machine)
-		if err != nil {
-			log.Error(err, "couldn't parse template")
-			return ctrl.Result{}, err
-		}
-
-		log.Info("deleting configmap", "name", "ipxe-"+data["name"])
-
-		//configMap, err := r.createConfigMap(data, &req)
-		//if err != nil {
-		//	return ctrl.Result{}, err
-		//}
-		//
-		//if err := r.Delete(ctx, configMap); err != nil {
-		//	log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
-		//}
-
-		return ctrl.Result{}, nil
-	}
-
-	data, err := parseTemplate(ipxeDefaultCM.Data, machine)
-	if err != nil {
-		log.Error(err, "couldn't parse template")
-		return ctrl.Result{}, err
-	}
-
-	configMap := r.createConfigMap(machine.Name, data, &req)
-
-	err = r.Client.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)
-	if apierrors.IsNotFound(err) {
-		log.Info("config map for machine not found, create new ipxe configuration", "ipxe", client.ObjectKeyFromObject(configMap))
-
-		if err := r.Create(ctx, configMap); err != nil {
-			log.Error(err, "couldn't create config map")
-			return ctrl.Result{}, err
-		}
-
-		return ctrl.Result{}, nil
-	}
-
-	if err != nil {
-		log.Error(err, "could not get config map")
-		return ctrl.Result{}, err
-	}
+	//log.Info("fetching template configmaps")
+	//ipxeDefaultCM := &corev1.ConfigMap{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:      IpxeDefaultTemplateName,
+	//		Namespace: req.Namespace,
+	//	},
+	//}
+	//if err := r.Client.Get(ctx, client.ObjectKeyFromObject(ipxeDefaultCM), ipxeDefaultCM); err != nil {
+	//	if apierrors.IsNotFound(err) {
+	//		log.Info("could not get config map, not found")
+	//		return ctrl.Result{}, client.IgnoreNotFound(err)
+	//	}
+	//
+	//	log.Error(err, "could not get config map")
+	//	return ctrl.Result{}, err
+	//}
+	//
+	//machine := &v1alpha2.Machine{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:      req.Name,
+	//		Namespace: req.Namespace,
+	//	},
+	//}
+	//if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine); err != nil {
+	//	log.Error(err, "could not get machine")
+	//	return ctrl.Result{}, client.IgnoreNotFound(err)
+	//}
+	//
+	//if machine.Status.Reservation.Reference == nil { // @TODO is it the case for deletion?
+	//	data, err := parseTemplate(ipxeDefaultCM.Data, machine)
+	//	if err != nil {
+	//		log.Error(err, "couldn't parse template")
+	//		return ctrl.Result{}, err
+	//	}
+	//
+	//	log.Info("deleting configmap", "name", "ipxe-"+data["name"])
+	//
+	//	//configMap, err := r.createConfigMap(data, &req)
+	//	//if err != nil {
+	//	//	return ctrl.Result{}, err
+	//	//}
+	//	//
+	//	//if err := r.Delete(ctx, configMap); err != nil {
+	//	//	log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
+	//	//}
+	//
+	//	return ctrl.Result{}, nil
+	//}
+	//
+	//data, err := parseTemplate(ipxeDefaultCM.Data, machine)
+	//if err != nil {
+	//	log.Error(err, "couldn't parse template")
+	//	return ctrl.Result{}, err
+	//}
+	//
+	//configMap := r.createConfigMap(machine.Name, data, &req)
+	//
+	//err = r.Client.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)
+	//if apierrors.IsNotFound(err) {
+	//	log.Info("config map for machine not found, create new ipxe configuration", "ipxe", client.ObjectKeyFromObject(configMap))
+	//
+	//	if err := r.Create(ctx, configMap); err != nil {
+	//		log.Error(err, "couldn't create config map")
+	//		return ctrl.Result{}, err
+	//	}
+	//
+	//	return ctrl.Result{}, nil
+	//}
+	//
+	//if err != nil {
+	//	log.Error(err, "could not get config map")
+	//	return ctrl.Result{}, err
+	//}
 
 	// @TODO update CM
 
@@ -233,43 +225,43 @@ func (r *IpxeReconciler) parseImage(log logr.Logger, onmetalImage *onmetalimage.
 	return nil
 }
 
-func parseTemplate(temp map[string]string, machine *v1alpha2.Machine) (map[string]string, error) {
-	var tempStr = ""
-	for tempKey, tempVal := range temp {
-		tempStr += tempKey + ": |\n  " + tempVal + "\n"
-	}
-
-	t, err := template.New("temporaryTemplate").Parse(tempStr)
-	if err != nil {
-		return nil, err
-	}
-
-	wrapper := MachineWrapper{
-		Machine: machine,
-	}
-
-	var b bytes.Buffer
-	err = t.Execute(&b, wrapper)
-	if err != nil {
-		return nil, err
-	}
-
-	var tempMap = make(map[string]string)
-	if err = yaml.Unmarshal(b.Bytes(), &tempMap); err != nil {
-		return nil, err
-	}
-
-	return tempMap, nil
-}
-
-func (r *IpxeReconciler) createConfigMap(name string, temp map[string]string, req *ctrl.Request) *corev1.ConfigMap {
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ipxe-" + name,
-			Namespace: req.Namespace,
-		},
-		Data: temp,
-	}
-
-	return configMap
-}
+//func parseTemplate(temp map[string]string, machine *v1alpha2.Machine) (map[string]string, error) {
+//	var tempStr = ""
+//	for tempKey, tempVal := range temp {
+//		tempStr += tempKey + ": |\n  " + tempVal + "\n"
+//	}
+//
+//	t, err := template.New("temporaryTemplate").Parse(tempStr)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	wrapper := MachineWrapper{
+//		Machine: machine,
+//	}
+//
+//	var b bytes.Buffer
+//	err = t.Execute(&b, wrapper)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	var tempMap = make(map[string]string)
+//	if err = yaml.Unmarshal(b.Bytes(), &tempMap); err != nil {
+//		return nil, err
+//	}
+//
+//	return tempMap, nil
+//}
+//
+//func (r *IpxeReconciler) createConfigMap(name string, temp map[string]string, req *ctrl.Request) *corev1.ConfigMap {
+//	configMap := &corev1.ConfigMap{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      "ipxe-" + name,
+//			Namespace: req.Namespace,
+//		},
+//		Data: temp,
+//	}
+//
+//	return configMap
+//}

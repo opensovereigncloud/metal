@@ -19,6 +19,8 @@ package v1beta1
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 // SwitchConfigSpec contains desired configuration for selected switches.
@@ -90,4 +92,19 @@ type SwitchConfigList struct {
 
 func init() {
 	SchemeBuilder.Register(&SwitchConfig{}, &SwitchConfigList{})
+}
+
+// GetRoutingConfigTemplate returns value of spec.routingConfigTemplate.name field if
+// routingConfigTemplate is not nil, otherwise empty string.
+func (in *SwitchConfig) GetRoutingConfigTemplate() string {
+	if in.Spec.RoutingConfigTemplate == nil {
+		return constants.EmptyString
+	}
+	return in.Spec.RoutingConfigTemplate.Name
+}
+
+// RoutingConfigTemplateIsEmpty checks whether the spec.routingConfigTemplate contains
+// value or not.
+func (in *SwitchConfig) RoutingConfigTemplateIsEmpty() bool {
+	return in.GetRoutingConfigTemplate() == constants.EmptyString
 }
