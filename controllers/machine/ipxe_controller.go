@@ -21,7 +21,6 @@ import (
 	"context"
 	"text/template"
 
-	"github.com/onmetal/onmetal-image/oci/imageutil"
 	"github.com/onmetal/onmetal-image/oci/remote"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -174,37 +173,38 @@ func (r *IpxeReconciler) getOnmetalImage(log logr.Logger) (*onmetalimage.Image, 
 }
 
 func (r *IpxeReconciler) parseImage(log logr.Logger) error {
-	ctx := context.Background()
+	//ctx := context.Background()
 
 	onmetalImage, err := r.getOnmetalImage(log)
 	if err != nil {
 		log.Error(err, "could not get onmetal image")
 		return err
 	}
+	_ = onmetalImage.Config
 
-	log.Info("parse RootFS layer")
-	rootFSBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.RootFS)
-	if err != nil {
-		log.Error(err, "could not read rootFS layer from image")
-		return err
-	}
-	log.Info("rootFS", "data", string(rootFSBytes))
-
-	log.Info("parse kernel layer")
-	kernelBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.Kernel)
-	if err != nil {
-		log.Error(err, "could not read kernel layer from image")
-		return err
-	}
-	log.Info("kernel", "data", string(kernelBytes))
-
-	log.Info("parse InitRAMFs layer")
-	initRAMFsBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.InitRAMFs)
-	if err != nil {
-		log.Error(err, "could not read initRAMFs layer from image")
-		return err
-	}
-	log.Info("InitRAMFs", "data", string(initRAMFsBytes))
+	//log.Info("parse RootFS layer")
+	//rootFSBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.RootFS)
+	//if err != nil {
+	//	log.Error(err, "could not read rootFS layer from image")
+	//	return err
+	//}
+	//log.Info("rootFS", "data", string(rootFSBytes))
+	//
+	//log.Info("parse kernel layer")
+	//kernelBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.Kernel)
+	//if err != nil {
+	//	log.Error(err, "could not read kernel layer from image")
+	//	return err
+	//}
+	//log.Info("kernel", "data", string(kernelBytes))
+	//
+	//log.Info("parse InitRAMFs layer")
+	//initRAMFsBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.InitRAMFs)
+	//if err != nil {
+	//	log.Error(err, "could not read initRAMFs layer from image")
+	//	return err
+	//}
+	//log.Info("InitRAMFs", "data", string(initRAMFsBytes))
 
 	return nil
 }
