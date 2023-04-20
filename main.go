@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/onmetal/onmetal-image/oci/remote"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -233,10 +234,17 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-Power")
 		os.Exit(1)
 	}
+
+	registry, err := remote.DockerRegistry(nil)
+	if err != nil {
+		setupLog.Error(err, "unable to create registry")
+		os.Exit(1)
+	}
 	if err = (&controllers.IpxeReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Ipxe"),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Ipxe"),
+		Registry: registry,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Ipxe")
 		os.Exit(1)

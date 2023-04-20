@@ -17,10 +17,15 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
-	"github.com/onmetal/onmetal-image/oci/image"
+	"text/template"
+
 	"github.com/onmetal/onmetal-image/oci/imageutil"
 	"github.com/onmetal/onmetal-image/oci/remote"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
@@ -34,10 +39,9 @@ import (
 type IpxeReconciler struct {
 	client.Client
 
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-
-	registry image.Source
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Registry *remote.Registry
 }
 
 type MachineWrapper struct {
@@ -60,21 +64,10 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	log.Info("reconcile started")
 
-	//if err := r.initRegistry(log); err != nil {
-	//	log.Error(err, "could not init registry")
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//onmetalImage, err := r.getOnmetalImage(log)
-	//if err != nil {
-	//	log.Error(err, "could not get onmetal image")
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//if err := r.parseImage(log, onmetalImage); err != nil {
-	//	log.Error(err, "could not parse image")
-	//	return ctrl.Result{}, err
-	//}
+	if err := r.parseImage(log); err != nil {
+		log.Error(err, "could not parse image")
+		return ctrl.Result{}, err
+	}
 
 	//log.Info("fetching template configmaps")
 	//ipxeDefaultCM := &corev1.ConfigMap{
@@ -162,25 +155,8 @@ func (r *IpxeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *IpxeReconciler) initRegistry(log logr.Logger) error {
-	if r.registry != nil {
-		return nil
-	}
-
-	log.Info("init registry")
-	registry, err := remote.DockerRegistry(nil)
-	if err != nil {
-		log.Error(err, "docker registry setting up failed")
-		return err
-	}
-	r.registry = registry
-
-	log.Info("registry initialized")
-	return nil
-}
-
 func (r *IpxeReconciler) getOnmetalImage(log logr.Logger) (*onmetalimage.Image, error) {
-	ociImage, err := r.registry.Resolve(context.Background(), OnmetalImage)
+	ociImage, err := r.Registry.Resolve(context.Background(), OnmetalImage)
 	if err != nil {
 		log.Error(err, "registry resolving failed")
 		return nil, err
@@ -197,8 +173,14 @@ func (r *IpxeReconciler) getOnmetalImage(log logr.Logger) (*onmetalimage.Image, 
 	return onmetalImage, nil
 }
 
-func (r *IpxeReconciler) parseImage(log logr.Logger, onmetalImage *onmetalimage.Image) error {
+func (r *IpxeReconciler) parseImage(log logr.Logger) error {
 	ctx := context.Background()
+
+	onmetalImage, err := r.getOnmetalImage(log)
+	if err != nil {
+		log.Error(err, "could not get onmetal image")
+		return err
+	}
 
 	log.Info("parse RootFS layer")
 	rootFSBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.RootFS)
@@ -227,43 +209,43 @@ func (r *IpxeReconciler) parseImage(log logr.Logger, onmetalImage *onmetalimage.
 	return nil
 }
 
-//func parseTemplate(temp map[string]string, machine *v1alpha2.Machine) (map[string]string, error) {
-//	var tempStr = ""
-//	for tempKey, tempVal := range temp {
-//		tempStr += tempKey + ": |\n  " + tempVal + "\n"
-//	}
-//
-//	t, err := template.New("temporaryTemplate").Parse(tempStr)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	wrapper := MachineWrapper{
-//		Machine: machine,
-//	}
-//
-//	var b bytes.Buffer
-//	err = t.Execute(&b, wrapper)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	var tempMap = make(map[string]string)
-//	if err = yaml.Unmarshal(b.Bytes(), &tempMap); err != nil {
-//		return nil, err
-//	}
-//
-//	return tempMap, nil
-//}
-//
-//func (r *IpxeReconciler) createConfigMap(name string, temp map[string]string, req *ctrl.Request) *corev1.ConfigMap {
-//	configMap := &corev1.ConfigMap{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name:      "ipxe-" + name,
-//			Namespace: req.Namespace,
-//		},
-//		Data: temp,
-//	}
-//
-//	return configMap
-//}
+func parseTemplate(temp map[string]string, machine *v1alpha2.Machine) (map[string]string, error) {
+	var tempStr = ""
+	for tempKey, tempVal := range temp {
+		tempStr += tempKey + ": |\n  " + tempVal + "\n"
+	}
+
+	t, err := template.New("temporaryTemplate").Parse(tempStr)
+	if err != nil {
+		return nil, err
+	}
+
+	wrapper := MachineWrapper{
+		Machine: machine,
+	}
+
+	var b bytes.Buffer
+	err = t.Execute(&b, wrapper)
+	if err != nil {
+		return nil, err
+	}
+
+	var tempMap = make(map[string]string)
+	if err = yaml.Unmarshal(b.Bytes(), &tempMap); err != nil {
+		return nil, err
+	}
+
+	return tempMap, nil
+}
+
+func (r *IpxeReconciler) createConfigMap(name string, temp map[string]string, req *ctrl.Request) *corev1.ConfigMap {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ipxe-" + name,
+			Namespace: req.Namespace,
+		},
+		Data: temp,
+	}
+
+	return configMap
+}
