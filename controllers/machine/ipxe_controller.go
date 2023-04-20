@@ -58,21 +58,23 @@ const (
 func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName).V(1)
 
-	if err := r.initRegistry(log); err != nil {
-		log.Error(err, "could not init registry")
-		return ctrl.Result{}, err
-	}
+	log.Info("reconcile started")
 
-	onmetalImage, err := r.getOnmetalImage(log)
-	if err != nil {
-		log.Error(err, "could not get onmetal image")
-		return ctrl.Result{}, err
-	}
-
-	if err := r.parseImage(log, onmetalImage); err != nil {
-		log.Error(err, "could not parse image")
-		return ctrl.Result{}, err
-	}
+	//if err := r.initRegistry(log); err != nil {
+	//	log.Error(err, "could not init registry")
+	//	return ctrl.Result{}, err
+	//}
+	//
+	//onmetalImage, err := r.getOnmetalImage(log)
+	//if err != nil {
+	//	log.Error(err, "could not get onmetal image")
+	//	return ctrl.Result{}, err
+	//}
+	//
+	//if err := r.parseImage(log, onmetalImage); err != nil {
+	//	log.Error(err, "could not parse image")
+	//	return ctrl.Result{}, err
+	//}
 
 	//log.Info("fetching template configmaps")
 	//ipxeDefaultCM := &corev1.ConfigMap{
