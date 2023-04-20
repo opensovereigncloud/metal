@@ -59,7 +59,7 @@ const (
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("namespace", req.NamespacedName).V(1)
+	log := r.Log.WithValues("namespace", req.NamespacedName).V(0)
 
 	log.Info("reconcile started")
 
@@ -180,16 +180,12 @@ func (r *IpxeReconciler) parseImage(log logr.Logger) error {
 		log.Error(err, "could not get onmetal image")
 		return err
 	}
-	_ = onmetalImage.Config
 
-	//log.Info("parse RootFS layer")
-	//rootFSBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.RootFS)
-	//if err != nil {
-	//	log.Error(err, "could not read rootFS layer from image")
-	//	return err
-	//}
-	//log.Info("rootFS", "data", string(rootFSBytes))
-	//
+	log.Info("parse RootFS layer")
+	for k, v := range onmetalImage.RootFS.Descriptor().Annotations {
+		log.Info("RootFS annotation", k, v)
+	}
+
 	//log.Info("parse kernel layer")
 	//kernelBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.Kernel)
 	//if err != nil {
