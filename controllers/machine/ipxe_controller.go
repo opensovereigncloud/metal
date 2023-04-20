@@ -182,8 +182,8 @@ func (r *IpxeReconciler) parseImage(log logr.Logger) error {
 	}
 
 	log.Info("parse RootFS layer")
-	for k, v := range onmetalImage.RootFS.Descriptor().Annotations {
-		log.Info("RootFS annotation", k, v)
+	for _, v := range onmetalImage.RootFS.Descriptor().URLs {
+		log.Info("RootFS annotation", "url", v)
 	}
 
 	//log.Info("parse kernel layer")
