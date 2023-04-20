@@ -64,10 +64,10 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	log.Info("reconcile started")
 
-	if err := r.parseImage(log); err != nil {
-		log.Error(err, "could not parse image")
-		return ctrl.Result{}, err
-	}
+	//if err := r.parseImage(log); err != nil {
+	//	log.Error(err, "could not parse image")
+	//	return ctrl.Result{}, err
+	//}
 
 	//log.Info("fetching template configmaps")
 	//ipxeDefaultCM := &corev1.ConfigMap{
