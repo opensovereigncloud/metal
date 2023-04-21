@@ -12,10 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rules
+package usecase
 
-import "github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
+import (
+	"fmt"
 
-type ServerMustBeEnabledOnFirstTime interface {
-	Execute(request dto.Request) error
+	"github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
+)
+
+type ServerValidationUseCase interface {
+	Execute(request dto.Request) bool
+}
+
+func ServerNotValidated(name string) error {
+	return &OnboardingError{
+		Reason:  notValidated,
+		Message: fmt.Sprintf("Server Validation failed: %s", name),
+	}
 }

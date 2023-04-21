@@ -29,12 +29,17 @@ import (
 type InventoryOnboardingReconciler struct {
 	log               logr.Logger
 	onboardingUseCase usecase.OnboardingUseCase
+	validateServer    usecase.ServerValidationUseCase
 }
 
 func NewInventoryOnboardingReconciler(
 	log logr.Logger,
-	onboardingUseCase usecase.OnboardingUseCase) *InventoryOnboardingReconciler {
-	return &InventoryOnboardingReconciler{log: log, onboardingUseCase: onboardingUseCase}
+	onboardingUseCase usecase.OnboardingUseCase,
+	validateServer usecase.ServerValidationUseCase) *InventoryOnboardingReconciler {
+	return &InventoryOnboardingReconciler{
+		log:               log,
+		onboardingUseCase: onboardingUseCase,
+		validateServer:    validateServer}
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -51,6 +56,10 @@ func (r *InventoryOnboardingReconciler) Reconcile(_ context.Context, req ctrl.Re
 	request := dto.Request{
 		Name:      req.Name,
 		Namespace: req.Namespace,
+	}
+	if !r.validateServer.Execute(request) {
+		reqLogger.Info("server validation failed. no power capabilities or uuid found")
+		return ctrl.Result{}, nil
 	}
 	err := r.onboardingUseCase.Execute(request)
 	if usecase.IsAlreadyOnboarded(err) {

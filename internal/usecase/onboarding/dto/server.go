@@ -12,10 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rules
+package dto
 
-import "github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
+type Server struct {
+	UUID              string
+	PowerCapabilities []string
+}
 
-type ServerMustBeEnabledOnFirstTime interface {
-	Execute(request dto.Request) error
+func (s *Server) HasPowerCapabilities() bool {
+	for c := range s.PowerCapabilities {
+		if s.PowerCapabilities[c] != "power" {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
+func (s *Server) HasUUID() bool {
+	return s.UUID != ""
 }

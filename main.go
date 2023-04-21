@@ -281,6 +281,7 @@ func addHandlers(mgr ctrl.Manager, profiling bool) {
 
 func inventoryOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.InventoryOnboardingReconciler {
 	inventoryRepository := persistence.NewInventoryRepository(mgr.GetClient())
+	serverRepository := persistence.NewServerRepository(mgr.GetClient())
 	executor := persistence.NewFakeServerExecutor(mgr.GetLogger())
 	rule := rules.NewServerMustBeEnabledOnFirstTimeRule(executor, mgr.GetLogger())
 
@@ -288,10 +289,14 @@ func inventoryOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.Inven
 		inventoryRepository,
 		rule,
 	)
+	serverValidationUseCase := scenarios.NewServerValidationUseCase(
+		serverRepository,
+	)
 
 	return onboardingcontroller.NewInventoryOnboardingReconciler(
 		ctrl.Log.WithName("controllers").WithName("Inventory-onboarding"),
 		inventoryOnboardingUseCase,
+		serverValidationUseCase,
 	)
 }
 
