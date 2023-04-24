@@ -19,6 +19,8 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"github.com/onmetal/onmetal-image/oci/image"
 	"text/template"
 
 	"github.com/onmetal/onmetal-image/oci/remote"
@@ -181,10 +183,10 @@ func (r *IpxeReconciler) parseImage(log logr.Logger) error {
 		return err
 	}
 
-	log.Info("parse RootFS layer")
-	for _, v := range onmetalImage.RootFS.Descriptor().URLs {
-		log.Info("RootFS annotation", "url", v)
-	}
+	r.parseLayer("RootFS", onmetalImage.RootFS, log)
+	r.parseLayer("InitRAMFs", onmetalImage.InitRAMFs, log)
+	r.parseLayer("Kernel", onmetalImage.Kernel, log)
+	log.Info("image config", "CommandLine", onmetalImage.Config.CommandLine)
 
 	//log.Info("parse kernel layer")
 	//kernelBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.Kernel)
@@ -244,4 +246,23 @@ func (r *IpxeReconciler) createConfigMap(name string, temp map[string]string, re
 	}
 
 	return configMap
+}
+
+func (r *IpxeReconciler) parseLayer(layerName string, layer image.Layer, log logr.Logger) {
+	logMsg := "%s descriptor"
+
+	log.Info(fmt.Sprintf("parse %s layer", layerName))
+	log.Info(fmt.Sprintf(logMsg, layerName), "MediaType", layer.Descriptor().MediaType)
+	log.Info(fmt.Sprintf(logMsg, layerName), "ArtifactType", layer.Descriptor().ArtifactType)
+	log.Info(fmt.Sprintf(logMsg, layerName), "Size", layer.Descriptor().Size)
+	log.Info(fmt.Sprintf(logMsg, layerName), "Digest", layer.Descriptor().Digest.String())
+	log.Info(fmt.Sprintf(logMsg, layerName), "Platform", layer.Descriptor().Platform)
+
+	for _, v := range layer.Descriptor().URLs {
+		log.Info(fmt.Sprintf("%s urls", layerName), "url", v)
+	}
+
+	for k, v := range layer.Descriptor().Annotations {
+		log.Info(fmt.Sprintf("%s annotations", layerName), k, v)
+	}
 }
