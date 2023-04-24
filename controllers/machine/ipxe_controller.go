@@ -19,9 +19,10 @@ package controllers
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"github.com/onmetal/onmetal-image/oci/image"
+	"strings"
 	"text/template"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/onmetal/onmetal-image/oci/remote"
 	corev1 "k8s.io/api/core/v1"
@@ -40,9 +41,9 @@ import (
 type IpxeReconciler struct {
 	client.Client
 
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Registry *remote.Registry
+	Log         logr.Logger
+	Scheme      *runtime.Scheme
+	ImageParser ImageParser
 }
 
 type MachineWrapper struct {
@@ -50,8 +51,8 @@ type MachineWrapper struct {
 }
 
 const (
-	//IpxeDefaultTemplateName = "ipxe-default"
-	OnmetalImage = "ghcr.io/onmetal/onmetal-image/gardenlinux:1099"
+	IpxeDefaultTemplateName = "ipxe-default"
+	OnmetalImage            = "ghcr.io/onmetal/onmetal-image/gardenlinux:1099"
 )
 
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
@@ -65,84 +66,85 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	log.Info("reconcile started")
 
-	if err := r.parseImage(log); err != nil {
-		log.Error(err, "could not parse image")
+	_, err := r.ImageParser.GetDescription()
+	if err != nil {
+		log.Error(err, "could not get image description")
 		return ctrl.Result{}, err
 	}
 
-	//log.Info("fetching template configmaps")
-	//ipxeDefaultCM := &corev1.ConfigMap{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      IpxeDefaultTemplateName,
-	//		Namespace: req.Namespace,
-	//	},
-	//}
-	//if err := r.Client.Get(ctx, client.ObjectKeyFromObject(ipxeDefaultCM), ipxeDefaultCM); err != nil {
-	//	if apierrors.IsNotFound(err) {
-	//		log.Info("could not get config map, not found")
-	//		return ctrl.Result{}, client.IgnoreNotFound(err)
-	//	}
-	//
-	//	log.Error(err, "could not get config map")
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//machine := &v1alpha2.Machine{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      req.Name,
-	//		Namespace: req.Namespace,
-	//	},
-	//}
-	//if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine); err != nil {
-	//	log.Error(err, "could not get machine")
-	//	return ctrl.Result{}, client.IgnoreNotFound(err)
-	//}
-	//
-	//if machine.Status.Reservation.Reference == nil { // @TODO is it the case for deletion?
-	//	data, err := parseTemplate(ipxeDefaultCM.Data, machine)
-	//	if err != nil {
-	//		log.Error(err, "couldn't parse template")
-	//		return ctrl.Result{}, err
-	//	}
-	//
-	//	log.Info("deleting configmap", "name", "ipxe-"+data["name"])
-	//
-	//	//configMap, err := r.createConfigMap(data, &req)
-	//	//if err != nil {
-	//	//	return ctrl.Result{}, err
-	//	//}
-	//	//
-	//	//if err := r.Delete(ctx, configMap); err != nil {
-	//	//	log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
-	//	//}
-	//
-	//	return ctrl.Result{}, nil
-	//}
-	//
-	//data, err := parseTemplate(ipxeDefaultCM.Data, machine)
-	//if err != nil {
-	//	log.Error(err, "couldn't parse template")
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//configMap := r.createConfigMap(machine.Name, data, &req)
-	//
-	//err = r.Client.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)
-	//if apierrors.IsNotFound(err) {
-	//	log.Info("config map for machine not found, create new ipxe configuration", "ipxe", client.ObjectKeyFromObject(configMap))
-	//
-	//	if err := r.Create(ctx, configMap); err != nil {
-	//		log.Error(err, "couldn't create config map")
-	//		return ctrl.Result{}, err
-	//	}
-	//
-	//	return ctrl.Result{}, nil
-	//}
-	//
-	//if err != nil {
-	//	log.Error(err, "could not get config map")
-	//	return ctrl.Result{}, err
-	//}
+	log.Info("fetching template configmaps")
+	ipxeDefaultCM := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      IpxeDefaultTemplateName,
+			Namespace: req.Namespace,
+		},
+	}
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(ipxeDefaultCM), ipxeDefaultCM); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Info("could not get config map, not found")
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+
+		log.Error(err, "could not get config map")
+		return ctrl.Result{}, err
+	}
+
+	machine := &v1alpha2.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      req.Name,
+			Namespace: req.Namespace,
+		},
+	}
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine); err != nil {
+		log.Error(err, "could not get machine")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if machine.Status.Reservation.Reference == nil { // @TODO is it the case for deletion?
+		data, err := parseTemplate(ipxeDefaultCM.Data, machine)
+		if err != nil {
+			log.Error(err, "couldn't parse template")
+			return ctrl.Result{}, err
+		}
+
+		log.Info("deleting configmap", "name", "ipxe-"+data["name"])
+
+		//configMap, err := r.createConfigMap(data, &req)
+		//if err != nil {
+		//	return ctrl.Result{}, err
+		//}
+		//
+		//if err := r.Delete(ctx, configMap); err != nil {
+		//	log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
+		//}
+
+		return ctrl.Result{}, nil
+	}
+
+	data, err := parseTemplate(ipxeDefaultCM.Data, machine)
+	if err != nil {
+		log.Error(err, "couldn't parse template")
+		return ctrl.Result{}, err
+	}
+
+	configMap := r.createConfigMap(machine.Name, data, &req)
+
+	err = r.Client.Get(ctx, client.ObjectKeyFromObject(configMap), configMap)
+	if apierrors.IsNotFound(err) {
+		log.Info("config map for machine not found, create new ipxe configuration", "ipxe", client.ObjectKeyFromObject(configMap))
+
+		if err := r.Create(ctx, configMap); err != nil {
+			log.Error(err, "couldn't create config map")
+			return ctrl.Result{}, err
+		}
+
+		return ctrl.Result{}, nil
+	}
+
+	if err != nil {
+		log.Error(err, "could not get config map")
+		return ctrl.Result{}, err
+	}
 
 	// @TODO update CM
 
@@ -154,57 +156,6 @@ func (r *IpxeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha2.Machine{}).
 		Complete(r)
-}
-
-func (r *IpxeReconciler) getOnmetalImage(log logr.Logger) (*onmetalimage.Image, error) {
-	ociImage, err := r.Registry.Resolve(context.Background(), OnmetalImage)
-	if err != nil {
-		log.Error(err, "registry resolving failed")
-		return nil, err
-	}
-	log.Info("oci image resolved")
-
-	onmetalImage, err := onmetalimage.ResolveImage(context.Background(), ociImage)
-	if err != nil {
-		log.Error(err, "image resolving failed")
-		return nil, err
-	}
-	log.Info("onmetal image resolved")
-
-	return onmetalImage, nil
-}
-
-func (r *IpxeReconciler) parseImage(log logr.Logger) error {
-	//ctx := context.Background()
-
-	onmetalImage, err := r.getOnmetalImage(log)
-	if err != nil {
-		log.Error(err, "could not get onmetal image")
-		return err
-	}
-
-	r.parseLayer("RootFS", onmetalImage.RootFS, log)
-	r.parseLayer("InitRAMFs", onmetalImage.InitRAMFs, log)
-	r.parseLayer("Kernel", onmetalImage.Kernel, log)
-	log.Info("image config", "CommandLine", onmetalImage.Config.CommandLine)
-
-	//log.Info("parse kernel layer")
-	//kernelBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.Kernel)
-	//if err != nil {
-	//	log.Error(err, "could not read kernel layer from image")
-	//	return err
-	//}
-	//log.Info("kernel", "data", string(kernelBytes))
-	//
-	//log.Info("parse InitRAMFs layer")
-	//initRAMFsBytes, err := imageutil.ReadLayerContent(ctx, onmetalImage.InitRAMFs)
-	//if err != nil {
-	//	log.Error(err, "could not read initRAMFs layer from image")
-	//	return err
-	//}
-	//log.Info("InitRAMFs", "data", string(initRAMFsBytes))
-
-	return nil
 }
 
 func parseTemplate(temp map[string]string, machine *v1alpha2.Machine) (map[string]string, error) {
@@ -248,21 +199,83 @@ func (r *IpxeReconciler) createConfigMap(name string, temp map[string]string, re
 	return configMap
 }
 
-func (r *IpxeReconciler) parseLayer(layerName string, layer image.Layer, log logr.Logger) {
-	logMsg := "%s descriptor"
+type ImageParser interface {
+	GetDescription() (ImageDescription, error)
+}
 
-	log.Info(fmt.Sprintf("parse %s layer", layerName))
-	log.Info(fmt.Sprintf(logMsg, layerName), "MediaType", layer.Descriptor().MediaType)
-	log.Info(fmt.Sprintf(logMsg, layerName), "ArtifactType", layer.Descriptor().ArtifactType)
-	log.Info(fmt.Sprintf(logMsg, layerName), "Size", layer.Descriptor().Size)
-	log.Info(fmt.Sprintf(logMsg, layerName), "Digest", layer.Descriptor().Digest.String())
-	log.Info(fmt.Sprintf(logMsg, layerName), "Platform", layer.Descriptor().Platform)
+type ImageDescription struct {
+	KernelDigest    string
+	InitRAMFsDigest string
+	RootFSDigest    string
+	CommandLine     string
+}
 
-	for _, v := range layer.Descriptor().URLs {
-		log.Info(fmt.Sprintf("%s urls", layerName), "url", v)
+type OnmetalImageParser struct {
+	Log      logr.Logger
+	Registry *remote.Registry
+}
+
+func (p *OnmetalImageParser) GetDescription() (ImageDescription, error) {
+	var imageDescription ImageDescription
+
+	imageDescription, err := p.describeImage()
+	if err != nil {
+		p.Log.Error(err, "could not describe image")
+		return imageDescription, err
 	}
 
-	for k, v := range layer.Descriptor().Annotations {
-		log.Info(fmt.Sprintf("%s annotations", layerName), k, v)
+	return imageDescription, nil
+}
+
+func (p *OnmetalImageParser) describeImage() (ImageDescription, error) {
+	var imageDescription ImageDescription
+
+	onmetalImage, err := p.getOnmetalImage()
+	if err != nil {
+		p.Log.Error(err, "could not get onmetal image")
+		return imageDescription, err
 	}
+
+	if onmetalImage.Kernel != nil {
+		imageDescription.KernelDigest = p.formatDigest(string(onmetalImage.Kernel.Descriptor().Digest))
+	}
+
+	if onmetalImage.InitRAMFs != nil {
+		imageDescription.InitRAMFsDigest = p.formatDigest(string(onmetalImage.InitRAMFs.Descriptor().Digest))
+	}
+
+	if onmetalImage.RootFS != nil {
+		imageDescription.RootFSDigest = p.formatDigest(string(onmetalImage.RootFS.Descriptor().Digest))
+	}
+
+	imageDescription.CommandLine = onmetalImage.Config.CommandLine
+
+	return imageDescription, nil
+}
+
+func (p *OnmetalImageParser) getOnmetalImage() (*onmetalimage.Image, error) {
+	ociImage, err := p.Registry.Resolve(context.Background(), OnmetalImage)
+	if err != nil {
+		p.Log.Error(err, "registry resolving failed")
+		return nil, err
+	}
+
+	onmetalImage, err := onmetalimage.ResolveImage(context.Background(), ociImage)
+	if err != nil {
+		p.Log.Error(err, "image resolving failed")
+		return nil, err
+	}
+
+	return onmetalImage, nil
+}
+
+// remove sha256 prefix.
+func (p *OnmetalImageParser) formatDigest(digest string) string {
+	separatedStrings := strings.Split(digest, ":")
+
+	if len(separatedStrings) > 1 {
+		return separatedStrings[1]
+	}
+
+	return ""
 }

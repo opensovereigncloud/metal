@@ -106,9 +106,10 @@ func TestMachinePoolController(t *testing.T) {
 		Expect(err).ToNot(HaveOccurred())
 
 		err = (&controllers.IpxeReconciler{
-			Client: k8sManager.GetClient(),
-			Log:    ctrl.Log.WithName("controllers").WithName("ipxe"),
-			Scheme: k8sManager.GetScheme(),
+			Client:      k8sManager.GetClient(),
+			Log:         ctrl.Log.WithName("controllers").WithName("ipxe"),
+			Scheme:      k8sManager.GetScheme(),
+			ImageParser: &OnmetalImageParserFake{},
 		}).SetupWithManager(k8sManager)
 		Expect(err).ToNot(HaveOccurred())
 	}

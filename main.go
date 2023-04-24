@@ -18,11 +18,12 @@ package main
 
 import (
 	"flag"
-	"github.com/onmetal/onmetal-image/oci/remote"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"strconv"
+
+	"github.com/onmetal/onmetal-image/oci/remote"
 
 	controllers "github.com/onmetal/metal-api/controllers/machine"
 
@@ -241,10 +242,13 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		os.Exit(1)
 	}
 	if err = (&controllers.IpxeReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Ipxe"),
-		Registry: registry,
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Ipxe"),
+		ImageParser: &controllers.OnmetalImageParser{
+			Registry: registry,
+			Log:      ctrl.Log.WithName("controllers").WithName("Ipxe").WithName("Image-Parser"),
+		},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Ipxe")
 		os.Exit(1)
