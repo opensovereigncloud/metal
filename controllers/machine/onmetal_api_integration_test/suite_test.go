@@ -110,6 +110,7 @@ func TestMachinePoolController(t *testing.T) {
 			Log:         ctrl.Log.WithName("controllers").WithName("ipxe"),
 			Scheme:      k8sManager.GetScheme(),
 			ImageParser: &OnmetalImageParserFake{},
+			Templater:   &controllers.IpxeTemplater{},
 		}).SetupWithManager(k8sManager)
 		Expect(err).ToNot(HaveOccurred())
 	}

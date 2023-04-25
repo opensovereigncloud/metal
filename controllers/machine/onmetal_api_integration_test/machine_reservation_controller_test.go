@@ -184,7 +184,10 @@ func prepareTestComputeMachine(name, namespace string, machineClass *computev1al
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: computev1alpha1.MachineSpec{MachineClassRef: corev1.LocalObjectReference{Name: machineClass.Name}},
+		Spec: computev1alpha1.MachineSpec{
+			MachineClassRef: corev1.LocalObjectReference{Name: machineClass.Name},
+			Image:           "test-url",
+		},
 	}
 }
 

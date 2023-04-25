@@ -249,6 +249,7 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 			Registry: registry,
 			Log:      ctrl.Log.WithName("controllers").WithName("Ipxe").WithName("Image-Parser"),
 		},
+		Templater: &controllers.IpxeTemplater{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Ipxe")
 		os.Exit(1)
