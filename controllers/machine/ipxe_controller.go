@@ -75,21 +75,19 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if machine.Status.Reservation.Reference == nil { // @TODO is it the case for deletion?
+	if machine.Status.Reservation.Reference == nil {
 		log.Info("deleting configmap", "name", "ipxe-"+machine.Name)
 
-		// @TODO make deletion
+		configMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "ipxe-" + machine.Name,
+				Namespace: req.Namespace,
+			},
+		}
 
-		//configMap := &corev1.ConfigMap{
-		//	ObjectMeta: metav1.ObjectMeta{
-		//		Name:      "ipxe-" + machine.Name,
-		//		Namespace: req.Namespace,
-		//	},
-		//}
-
-		//if err := r.Delete(ctx, configMap); err != nil {
-		//	log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
-		//}
+		if err := r.Delete(ctx, configMap); err != nil {
+			log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
+		}
 
 		return ctrl.Result{}, nil
 	}
@@ -147,7 +145,10 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	// @TODO update CM
+	if err := r.Client.Update(ctx, configMap); err != nil {
+		log.Error(err, "could not update config map")
+		return ctrl.Result{}, err
+	}
 
 	log.Info("reconciliation finished")
 	return ctrl.Result{}, nil
@@ -160,7 +161,6 @@ func (r *IpxeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *IpxeReconciler) parseTemplate(imageDescription ImageDescription) (map[string]string, error) {
-	// @TODO add external IP of ipxe service
 	t, err := r.Templater.GetTemplate(IpxeTemplate)
 	if err != nil {
 		return nil, err
