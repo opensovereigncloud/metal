@@ -20,7 +20,7 @@ package fake
 import (
 	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machine "github.com/onmetal/metal-api/apis/machine/v1alpha2"
-	oob "github.com/onmetal/oob-operator/api/v1alpha1"
+	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
@@ -66,7 +66,7 @@ func getScheme() (*k8sRuntime.Scheme, error) {
 	if err := inventories.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
-	if err := oob.AddToScheme(scheme); err != nil {
+	if err := oobv1.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 	if err := corev1.AddToScheme(scheme); err != nil {
@@ -101,6 +101,31 @@ func InventoryObject(name, namespace string) *inventories.Inventory {
 			InventoryStatuses: inventories.InventoryStatuses{
 				RequestsCount: 1,
 			},
+		},
+	}
+}
+
+func OOBObject(name, namespace string) *oobv1.OOB {
+	return &oobv1.OOB{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Status: oobv1.OOBStatus{
+			UUID:         name,
+			Capabilities: []string{"power"},
+		},
+	}
+}
+
+func OOBObjectWithoutPowerCaps(name, namespace string) *oobv1.OOB {
+	return &oobv1.OOB{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Status: oobv1.OOBStatus{
+			UUID: name,
 		},
 	}
 }

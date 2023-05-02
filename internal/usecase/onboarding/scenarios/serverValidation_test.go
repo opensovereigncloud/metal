@@ -17,63 +17,53 @@ package scenarios_test
 import (
 	"testing"
 
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	persistence "github.com/onmetal/metal-api/internal/kubernetes/onboarding"
 	"github.com/onmetal/metal-api/internal/kubernetes/onboarding/fake"
 	usecase "github.com/onmetal/metal-api/internal/usecase/onboarding"
 	"github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
 	"github.com/onmetal/metal-api/internal/usecase/onboarding/scenarios"
 	"github.com/stretchr/testify/assert"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func addMachineUseCase(a *assert.Assertions) usecase.AddMachineUseCase {
-	fakeClient, err := fake.NewFakeClient()
+func newServerValidationUseCase(a *assert.Assertions, objs ...ctrlclient.Object) usecase.ServerValidationUseCase {
+	fakeClient, err := fake.NewFakeWithObjects(objs...)
 	a.Nil(err, "must create client")
-	repository := persistence.NewMachineRepository(fakeClient)
 
-	return scenarios.NewAddMachineUseCase(repository)
+	serverRepository := persistence.NewServerRepository(fakeClient)
+
+	return scenarios.NewServerValidationUseCase(
+		serverRepository)
 }
 
-func TestAddMachineUseCaseExecuteSuccess(t *testing.T) {
+func TestNewServerValidationUseCaseTrue(t *testing.T) {
 	t.Parallel()
 
 	a := assert.New(t)
 
-	testInventory := inventory("test", "default")
+	name, namespace := "exist", "default"
 
-	err := addMachineUseCase(a).Execute(testInventory)
-	a.Nil(err, "must create without error")
-}
-
-func TestAddMachineUseCaseExecuteFailed(t *testing.T) {
-	t.Parallel()
-
-	a := assert.New(t)
-
-	testInventory := inventory("", "")
-
-	err := addMachineUseCase(a).Execute(testInventory)
-	a.NotNil(err, "must not create")
-}
-
-func inventory(uuid, namespace string) dto.Inventory {
-	return dto.Inventory{
-		UUID:         uuid,
-		Namespace:    namespace,
-		ProductSKU:   "1",
-		SerialNumber: "1",
-		Sizes: map[string]string{
-			"machine.onmetal.de/size-m5.metal": "true",
-			"machine.onmetal.de/size-machine":  "true",
-		},
-		NICs: []inventories.NICSpec{
-			{
-				Name:       "test",
-				MACAddress: "123",
-				MTU:        1500,
-				LLDPs:      nil,
-				NDPs:       nil,
-			},
-		},
+	object := fake.OOBObject(name, namespace)
+	serverValidationUseCase := newServerValidationUseCase(a, object)
+	request := dto.Request{
+		Name:      name,
+		Namespace: namespace,
 	}
+	a.True(serverValidationUseCase.Execute(request))
+}
+
+func TestNewServerValidationUseCaseFalse(t *testing.T) {
+	t.Parallel()
+
+	a := assert.New(t)
+
+	name, namespace := "exist", "default"
+
+	object := fake.OOBObjectWithoutPowerCaps(name, namespace)
+	serverValidationUseCase := newServerValidationUseCase(a, object)
+	request := dto.Request{
+		Name:      name,
+		Namespace: namespace,
+	}
+	a.False(serverValidationUseCase.Execute(request))
 }

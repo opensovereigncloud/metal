@@ -1,4 +1,5 @@
-// Copyright 2023 OnMetal authors
+// /*
+// Copyright (c) 2021 T-Systems International GmbH, SAP SE or an SAP affiliate company. All right reserved
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,27 +12,31 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// */
 
-package rules
+package scenarios
 
 import (
-	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/internal/usecase/onboarding/access"
 	"github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
 )
 
-type ServerMustBeEnabledOnFirstTimeRule struct {
-	serverExecutor access.ServerExecutor
-	log            logr.Logger
+type ServerValidationUseCase struct {
+	serverRepository access.ServerRepository
 }
 
-func NewServerMustBeEnabledOnFirstTimeRule(
-	serverExecutor access.ServerExecutor,
-	log logr.Logger) *ServerMustBeEnabledOnFirstTimeRule {
-	return &ServerMustBeEnabledOnFirstTimeRule{
-		serverExecutor: serverExecutor, log: log}
+func NewServerValidationUseCase(serverRepository access.ServerRepository) *ServerValidationUseCase {
+	return &ServerValidationUseCase{serverRepository: serverRepository}
 }
 
-func (s *ServerMustBeEnabledOnFirstTimeRule) Execute(request dto.Request) error {
-	return s.serverExecutor.Enable(request)
+func (o *ServerValidationUseCase) Execute(request dto.Request) bool {
+	server, err := o.serverRepository.Get(request)
+	if err != nil {
+		return false
+	}
+	if !server.HasPowerCapabilities() ||
+		!server.HasUUID() {
+		return false
+	}
+	return true
 }
