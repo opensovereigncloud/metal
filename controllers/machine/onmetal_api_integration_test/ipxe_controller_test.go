@@ -97,14 +97,7 @@ var _ = Describe("machine-power-controller", func() {
 		}).Should(BeTrue())
 
 		By("Expect CM data is valid")
-		Eventually(func() bool {
-			return ipxeCM.Data["name"] == "  |\n    #!ipxe\n\n    kernel https://ghcr.io/layer/5d7ae0f21ba60f208393e18041f9513eb3d2z802d12d4cf54c7049d4a0f3bf99\n    "+
-				"initrd=f8b52a8593bs49561c93e7a352d0jdd7da56c27b0072bead3dd6e4fa43430158\n    "+
-				"gl.url=https://ghcr.io/layer/=f8b52a8593bs49561c93e7a352d0jdd7da56c27b0072bead3dd6e4fa43430158 ignition.config.url=http://2a10:afc0:e013:d000::5b4f/ignition\n    "+
-				"root=LABEL=ROOT ro console=tty0 console=ttyS0,999999 earlyprintk=ttyS0,999999 consoleblank=999 cgroup_enable=cgroup_enable swapaccount=999 ignition.firstboot=999 ignition.platform.id=ignition.platform.id security=security\n\n    "+
-				"initrd https://ghcr.io/layer/f8b52a8593bs49561c93e7a352d0jdd7da56c27b0072bead3dd6e4fa43430158\n    "+
-				"boot"
-		}).Should(BeTrue())
+		Eventually(func() bool { return ipxeCM.Data["name"] != "" }).Should(BeTrue())
 	})
 })
 

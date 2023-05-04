@@ -293,9 +293,16 @@ func (r *MachinePoolReconciler) resolveSizes(wCtx *machinePoolReconcileWrappedCt
 		machineClassNames[machineClassItem.Name] = struct{}{}
 	}
 
+	appendedSizes := make(map[string]struct{})
 	for _, sizeListItem := range sizeList.Items {
+		// avoid duplicates in sizes.
+		if _, ok := appendedSizes[sizeListItem.Name]; ok {
+			continue
+		}
+
 		if _, ok := machineClassNames[sizeListItem.Name]; ok {
 			sizes = append(sizes, sizeListItem.Name)
+			appendedSizes[sizeListItem.Name] = struct{}{}
 		}
 	}
 

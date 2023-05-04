@@ -46,9 +46,9 @@ type IpxeReconciler struct {
 	Templater   Templater
 }
 
-const IpxeTemplate string = "  |\n    #!ipxe\n\n    kernel https://ghcr.io/layer/{{.KernelDigest}}\n    " +
+const IpxeTemplate string = "    #!ipxe\n\n    kernel https://ghcr.io/layer/{{.KernelDigest}}\n    " +
 	"initrd={{.InitRAMFsDigest}}\n    " +
-	"gl.url=https://ghcr.io/layer/={{.InitRAMFsDigest}} ignition.config.url=http://2a10:afc0:e013:d000::5b4f/ignition\n    " +
+	"gl.url=https://ghcr.io/layer/{{.RootFSDigest}} ignition.config.url=http://2a10:afc0:e013:d000::5b4f/ignition\n    " +
 	"{{.CommandLine}}\n\n    " +
 	"initrd https://ghcr.io/layer/{{.InitRAMFsDigest}}\n    " +
 	"boot"
@@ -85,7 +85,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			},
 		}
 
-		if err := r.Delete(ctx, configMap); err != nil {
+		if err := r.Delete(ctx, configMap); err != nil && !apierrors.IsNotFound(err) {
 			log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
 		}
 

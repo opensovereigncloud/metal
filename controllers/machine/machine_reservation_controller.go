@@ -108,6 +108,7 @@ func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.R
 		Name:       computeMachine.Name,
 		Namespace:  computeMachine.Namespace,
 	}
+	metalMachine.Status.Reservation.Status = machinev1alpha2.ReservationStatusReserved
 
 	if err := r.Client.Status().Update(ctx, metalMachine); err != nil {
 		log.Error(err, "could not update metal machine status")
@@ -144,6 +145,7 @@ func (r *MachineReservationReconciler) handleComputeMachineDeletion(e event.Dele
 	}
 
 	metalMachine.Status.Reservation.Reference = nil
+	metalMachine.Status.Reservation.Status = machinev1alpha2.ReservationStatusAvailable
 
 	if err := r.Client.Status().Update(ctx, metalMachine); err != nil {
 		r.Log.Error(err, "could not update metal machine status")

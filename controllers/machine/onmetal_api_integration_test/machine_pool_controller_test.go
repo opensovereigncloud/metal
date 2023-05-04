@@ -20,6 +20,7 @@ import (
 	"context"
 
 	controllers "github.com/onmetal/metal-api/controllers/machine"
+	corev1 "k8s.io/api/core/v1"
 
 	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -132,7 +133,7 @@ var _ = Describe("MachinePool-Controller", func() {
 		}).Should(BeTrue())
 
 		By("Expect successful machine status update to Running")
-		machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusRunning)
+		machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusReserved)
 		Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
 		By("Expect there is machine in running reservation status")
@@ -141,7 +142,7 @@ var _ = Describe("MachinePool-Controller", func() {
 				return false
 			}
 
-			return machine.Status.Reservation.Status == "Running"
+			return machine.Status.Reservation.Status == "Reserved"
 		}).Should(BeTrue())
 
 		// refresh MachinePool
@@ -254,10 +255,25 @@ func createSizes(ctx context.Context, namespace string) {
 		},
 	}
 
+	oobNS := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "oob-",
+		},
+	}
+	Expect(k8sClient.Create(ctx, oobNS)).To(Succeed(), "failed to create oob namespace")
+
+	size2cpuDuplicate := inventoryv1alpha1.Size{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "m5-metal-2cpu",
+			Namespace: oobNS.Name,
+		},
+	}
+
 	testSizes := []inventoryv1alpha1.Size{
 		size6cpu,
 		size4cpu,
 		size2cpu,
+		size2cpuDuplicate,
 	}
 
 	for _, size := range testSizes {

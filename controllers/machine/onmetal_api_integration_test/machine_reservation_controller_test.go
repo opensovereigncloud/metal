@@ -98,7 +98,8 @@ var _ = Describe("MachineReservation-Controller", func() {
 
 			return metalMachine.Status.Reservation.Reference != nil &&
 				metalMachine.Status.Reservation.Reference.Name == computeMachine.Name &&
-				metalMachine.Status.Reservation.Reference.Namespace == computeMachine.Namespace
+				metalMachine.Status.Reservation.Reference.Namespace == computeMachine.Namespace &&
+				metalMachine.Status.Reservation.Status == "Reserved"
 		}).Should(BeTrue())
 
 		By("Compute machine is deleted")
@@ -110,7 +111,7 @@ var _ = Describe("MachineReservation-Controller", func() {
 				return false
 			}
 
-			return metalMachine.Status.Reservation.Reference == nil
+			return metalMachine.Status.Reservation.Reference == nil && metalMachine.Status.Reservation.Status == "Available"
 		}).Should(BeTrue())
 	})
 })
