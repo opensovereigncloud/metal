@@ -102,7 +102,7 @@ ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 .PHONY: test
 test: manifests generate fmt vet ## Run tests.
 	source $(shell pwd)/hack/setup-envtest.sh; VERSION=${KUBE_VERSION} fetch_envtest_tools; VERSION=${KUBE_VERSION} setup_envtest_env; \
-	KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=600s KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT=600s go test ./controllers/machine/onmetal_api_integration_test -coverprofile cover.out
+	KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=600s KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT=600s go test ./... -coverprofile cover.out
 
 ##@ Build
 
