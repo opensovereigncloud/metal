@@ -179,6 +179,42 @@ func TestRequestIPs(t *testing.T) {
 	}
 	requestedIPs := RequestIPs(nicSample)
 	assert.ElementsMatch(t, expectedIPs, requestedIPs)
+
+	nicSample = &switchv1beta1.InterfaceSpec{
+		IP: []*switchv1beta1.IPAddressSpec{
+			{
+				Address:       pointer.String("100.64.0.1/30"),
+				AddressFamily: pointer.String(constants.IPv4AF),
+			},
+			{
+				Address:       pointer.String("fd00:afc0:e013:1003:ffff::1/112"),
+				AddressFamily: pointer.String(constants.IPv6AF),
+				ObjectReference: &switchv1beta1.ObjectReference{
+					Name:      pointer.String("sample"),
+					Namespace: pointer.String("default"),
+				},
+			},
+		},
+	}
+	expectedIPs = []*switchv1beta1.IPAddressSpec{
+		{
+			ObjectReference: nil,
+			Address:         pointer.String("100.64.0.2/30"),
+			AddressFamily:   pointer.String(constants.IPv4AF),
+			ExtraAddress:    pointer.Bool(false),
+		},
+		{
+			ObjectReference: &switchv1beta1.ObjectReference{
+				Name:      pointer.String("sample"),
+				Namespace: pointer.String("default"),
+			},
+			Address:       pointer.String("fd00:afc0:e013:1003:ffff::2/112"),
+			AddressFamily: pointer.String(constants.IPv6AF),
+			ExtraAddress:  pointer.Bool(false),
+		},
+	}
+	requestedIPs = RequestIPs(nicSample)
+	assert.ElementsMatch(t, expectedIPs, requestedIPs)
 }
 
 func TestGetCrdPath(t *testing.T) {

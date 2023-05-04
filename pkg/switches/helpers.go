@@ -627,7 +627,9 @@ func GetComputedIPs(
 		af := constants.IPv4AF
 		if cidr.IsIPv6() {
 			mask = data.GetIPv6Prefix()
-			addrIndex = BaseIPv6AddressIndex
+			if mask == 127 {
+				addrIndex = BaseIPv6AddressIndex
+			}
 			af = constants.IPv6AF
 		}
 		nicSubnet := getInterfaceSubnet(name, constants.SwitchPortNamePrefix, cidr.Net.IPNet(), mask)
@@ -669,7 +671,11 @@ func RequestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAdd
 		_, cidr, _ := net.ParseCIDR(addr.GetAddress())
 		addressIndex := BaseIPv4AddressIndex + 1
 		if addr.GetAddressFamily() == constants.IPv6AF {
-			addressIndex = BaseIPv6AddressIndex + 1
+			if ones, _ := cidr.Mask.Size(); ones == 127 {
+				addressIndex = BaseIPv6AddressIndex + 1
+			} else {
+				addressIndex = BaseIPv6AddressIndex + 2
+			}
 		}
 		ip, _ := gocidr.Host(cidr, addressIndex)
 		res := net.IPNet{IP: ip, Mask: cidr.Mask}
