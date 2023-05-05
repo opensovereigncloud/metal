@@ -80,7 +80,7 @@ func TestInventoryServiceAccount(t *testing.T) {
 	inventoryServiceAccount := reconciler.InventoryServiceAccount(inventory)
 
 	a.Equal(inventoryServiceAccount.Name, controllers.InventoryServiceAccountPrefix+inventory.Name)
-	a.Equal(inventoryServiceAccount.Namespace, reconciler.TargetNamespace)
+	a.Equal(inventoryServiceAccount.Namespace, inventoryNamespace)
 	a.NotEmpty(inventoryServiceAccount)
 }
 
@@ -101,6 +101,7 @@ func TestKubeconfigForServer(t *testing.T) {
 		context.Background(),
 		inventoryTokenSecret,
 		"fake",
+		"default",
 	)
 	a.Nil(err, "must create kubeconfig for server")
 	a.NotEmpty(secret.Clusters[reconciler.ClusterName()], "cluster info must exist")
