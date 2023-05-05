@@ -62,7 +62,6 @@ type AccessReconciler struct {
 	ctrlclient.Client
 
 	BootstrapAPIServer string
-	TargetNamespace    string
 	Log                logr.Logger
 	Scheme             *k8sruntime.Scheme
 }
@@ -93,6 +92,7 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrlruntime.Reques
 		inventoryServiceAccount,
 		inventory)
 	if err != nil {
+		log.Info("unable to create service account for cluster access", "error", err)
 		return ctrlruntime.Result{}, err
 	}
 
@@ -101,8 +101,9 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrlruntime.Reques
 		inventory,
 		clusterAccessSecret,
 		inventoryServiceAccount.Name,
-		r.TargetNamespace)
+		inventory.Namespace)
 	if err != nil {
+		log.Info("unable get client kubeconfig secret", "error", err)
 		return ctrlruntime.Result{}, err
 	}
 
@@ -126,6 +127,7 @@ func (r *AccessReconciler) Reconcile(ctx context.Context, req ctrlruntime.Reques
 			ctx,
 			currentKubeconfigSecret,
 			newKubeconfigSecret); err != nil {
+			log.Info("unable update existing kubeconfig for cluster access", "error", err)
 			return ctrlruntime.Result{}, err
 		}
 	}
@@ -163,7 +165,7 @@ func (r *AccessReconciler) CreateAccountForServerToClusterAccess(
 	}
 
 	serviceAccountSecretToken := r.InventoryServiceAccountSecretToken(
-		r.TargetNamespace,
+		inventory.Namespace,
 		machineInventoryServiceAccount.Name,
 		inventory)
 
@@ -180,7 +182,7 @@ func (r *AccessReconciler) CreateAccountForServerToClusterAccess(
 	if err = r.BindInventoryAccountWithPermissions(
 		ctx,
 		machineInventoryServiceAccount,
-		r.TargetNamespace,
+		inventory.Namespace,
 		inventory); err != nil {
 		return nil, err
 	}
@@ -363,7 +365,8 @@ func (r *AccessReconciler) ClientKubeconfigSecret(
 	kubeconfig, err := r.KubeconfigForServer(
 		ctx,
 		clusterAccessSecret,
-		inventoryServiceAccountName)
+		inventoryServiceAccountName,
+		inventory.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -399,17 +402,23 @@ func (r *AccessReconciler) ClientKubeconfigSecret(
 func (r *AccessReconciler) KubeconfigForServer(
 	ctx context.Context,
 	inventoryTokenSecret *corev1.Secret,
-	inventoryServiceAccountName string) (clientcmdapi.Config, error) {
+	inventoryServiceAccountName string,
+	targetNamespace string) (clientcmdapi.Config, error) {
 	apiServerEndpoint, err := r.APIServerEndpoint(ctx)
 	if err != nil {
 		return clientcmdapi.Config{}, err
 	}
-	return r.kubernetesClientConfig(inventoryTokenSecret, inventoryServiceAccountName, apiServerEndpoint), nil
+	return r.kubernetesClientConfig(
+		inventoryTokenSecret,
+		inventoryServiceAccountName,
+		targetNamespace,
+		apiServerEndpoint), nil
 }
 
 func (r *AccessReconciler) kubernetesClientConfig(
 	inventoryTokenSecret *corev1.Secret,
 	inventoryServiceAccountName string,
+	targetNamespace string,
 	apiServerEndpoint string) clientcmdapi.Config {
 	return clientcmdapi.Config{
 		Kind:       "Config",
@@ -429,7 +438,7 @@ func (r *AccessReconciler) kubernetesClientConfig(
 			inventoryServiceAccountName + "@" + r.ClusterName(): {
 				Cluster:   r.ClusterName(),
 				AuthInfo:  inventoryServiceAccountName,
-				Namespace: r.TargetNamespace,
+				Namespace: targetNamespace,
 			},
 		},
 		CurrentContext: inventoryServiceAccountName + "@" + r.ClusterName(),
@@ -552,7 +561,7 @@ func (r *AccessReconciler) InventoryServiceAccount(
 	machineInventoryServiceAccountName := InventoryServiceAccountPrefix + inventory.Name
 	return &corev1.ServiceAccount{
 		ObjectMeta: ctrlruntime.ObjectMeta{
-			Namespace: r.TargetNamespace,
+			Namespace: inventory.Namespace,
 			Name:      machineInventoryServiceAccountName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -693,13 +702,6 @@ func (r *AccessReconciler) RetrieveServerAddressAndPortFromCluster(ctx context.C
 		Address: kubernetesAPIAddress,
 		Port:    kubernetesAPIPort,
 	}, nil
-}
-
-func (r *AccessReconciler) TargetNamespaceForAccessObjects() string {
-	if r.TargetNamespace != "" {
-		return r.TargetNamespace
-	}
-	return "metal-api-system"
 }
 
 func KubernetesAPIAddressFromEndpoint(subset corev1.EndpointSubset) string {
