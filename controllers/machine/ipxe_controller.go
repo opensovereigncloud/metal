@@ -87,6 +87,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 		if err := r.Delete(ctx, configMap); err != nil && !apierrors.IsNotFound(err) {
 			log.Error(err, "couldn't delete config map", "resource", req.Name, "namespace", req.Namespace)
+			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{}, nil
