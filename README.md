@@ -1,9 +1,9 @@
 <img src="./docs/assets/logo.png" alt="Logo of the project" align="right">
 
 # Metal-API
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) [![GitHub license](https://img.shields.io/badge/license-APACHE-red.svg?style=flat-square)](https://github.com/onmetal/metal-api/blob/master/LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) [![GitHub license](https://img.shields.io/badge/license-APACHE-red.svg?style=flat-square)](https://github.com/onmetal/metal-api/blob/main/LICENSE)
 
-Stack of applications to work with baremetal servers and providing them to the onmetal-api customer.
+Stack of applications to work with baremetal servers and providing them to the metal-api customer.
 
 ## Start using or developing metal-api locally
 
