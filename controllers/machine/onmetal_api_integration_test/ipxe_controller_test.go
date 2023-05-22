@@ -87,7 +87,7 @@ var _ = Describe("machine-power-controller", func() {
 			return computeMachine.Spec.MachinePoolRef != nil
 		}).Should(BeTrue())
 
-		By("Waiting for default ipxe configmap to be created")
+		By("Expect ipxe configmap was created")
 		Eventually(func() bool {
 			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: "ipxe-" + metalMachine.Name}, ipxeCM); err != nil {
 				return false

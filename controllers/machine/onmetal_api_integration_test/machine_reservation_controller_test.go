@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/google/uuid"
 	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
@@ -40,6 +42,7 @@ var _ = Describe("MachineReservation-Controller", func() {
 		machinePool := &computev1alpha1.MachinePool{}
 		metalMachine := &machinev1alpha2.Machine{}
 		computeMachine := &computev1alpha1.Machine{}
+		ipxeCM := &corev1.ConfigMap{}
 
 		u, err := uuid.NewUUID()
 		Expect(err).ToNot(HaveOccurred())
@@ -49,16 +52,47 @@ var _ = Describe("MachineReservation-Controller", func() {
 		)
 
 		// prepare test data
-		By("Create healthy running machine")
-		createHealthyRunningMachine(ctx, name, namespace, metalMachine)
+		By("Sizes list created")
+		createSizes(ctx, namespace)
+
+		By("Machine classes list created")
+		createMachineClasses(ctx, namespace)
+
+		By("Available machine created")
+		createAvailableMachine(ctx, name, namespace, metalMachine)
 
 		By("Create compute machine with machine class")
 		createComputeMachine(ctx, name, namespace, computeMachine)
 
-		By("Create machine pool")
-		createMachinePool(ctx, name, namespace, machinePool)
-
 		// testing
+		By("MachinePool created")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
+				return false
+			}
+
+			return true
+		}).Should(BeTrue())
+
+		By("The MachinePool has available machine classes")
+		Expect(len(machinePool.Status.AvailableMachineClasses)).Should(Equal(2))
+
+		By("Available machine classes matched with size labels")
+		Expect(func() bool {
+			var availableSizeLabels = map[string]string{
+				"m5-metal-4cpu": "true",
+				"m5-metal-2cpu": "true",
+			}
+
+			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
+				if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
+					return false
+				}
+			}
+
+			return true
+		}()).Should(BeTrue())
+
 		By("Expect metal machine has no reservation")
 		Eventually(func() bool {
 			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, metalMachine); err != nil {
@@ -90,6 +124,18 @@ var _ = Describe("MachineReservation-Controller", func() {
 			return computeMachine.Spec.MachinePoolRef != nil
 		}).Should(BeTrue())
 
+		By("Expect ipxe configmap was created")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: "ipxe-" + metalMachine.Name}, ipxeCM); err != nil {
+				return false
+			}
+
+			return true
+		}).Should(BeTrue())
+
+		By("Expect CM data is valid")
+		Eventually(func() bool { return ipxeCM.Data["name"] != "" }).Should(BeTrue())
+
 		By("Expect metal machine has reservation by compute machine")
 		Eventually(func() bool {
 			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, metalMachine); err != nil {
@@ -102,6 +148,15 @@ var _ = Describe("MachineReservation-Controller", func() {
 				metalMachine.Status.Reservation.Status == "Reserved"
 		}).Should(BeTrue())
 
+		By("Expect machine pool does not provide any available machine class after machine reservation")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
+				return false
+			}
+
+			return len(machinePool.Status.AvailableMachineClasses) == 0
+		}).Should(BeTrue())
+
 		By("Compute machine is deleted")
 		Expect(k8sClient.Delete(ctx, computeMachine)).Should(Succeed())
 
@@ -112,6 +167,38 @@ var _ = Describe("MachineReservation-Controller", func() {
 			}
 
 			return metalMachine.Status.Reservation.Reference == nil && metalMachine.Status.Reservation.Status == "Available"
+		}).Should(BeTrue())
+
+		By("Expect machine pool provides available machine classes after machine becomes Available")
+		Eventually(func() bool {
+			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
+				return false
+			}
+
+			return len(machinePool.Status.AvailableMachineClasses) == 2
+		}).Should(BeTrue())
+
+		By("Available machine classes matched with size labels")
+		Expect(func() bool {
+			var availableSizeLabels = map[string]string{
+				"m5-metal-4cpu": "true",
+				"m5-metal-2cpu": "true",
+			}
+
+			for _, availableMachineClass := range machinePool.Status.AvailableMachineClasses {
+				if _, ok := availableSizeLabels[availableMachineClass.Name]; !ok {
+					return false
+				}
+			}
+
+			return true
+		}()).Should(BeTrue())
+
+		By("Expect ipxe was deleted after compute machine deletion")
+		Eventually(func() bool {
+			return errors.IsNotFound(
+				k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: "ipxe-" + metalMachine.Name}, ipxeCM),
+			)
 		}).Should(BeTrue())
 	})
 })

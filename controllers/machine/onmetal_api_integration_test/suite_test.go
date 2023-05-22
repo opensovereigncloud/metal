@@ -93,6 +93,22 @@ func TestMachinePoolController(t *testing.T) {
 			Scheme: k8sManager.GetScheme(),
 		}).SetupWithManager(k8sManager)
 		Expect(err).ToNot(HaveOccurred())
+
+		err = (&controllers.MachinePoolReconciler{
+			Client: k8sManager.GetClient(),
+			Log:    ctrl.Log.WithName("controllers").WithName("machine-pool"),
+			Scheme: k8sManager.GetScheme(),
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = (&controllers.IpxeReconciler{
+			Client:      k8sManager.GetClient(),
+			Log:         ctrl.Log.WithName("controllers").WithName("ipxe"),
+			Scheme:      k8sManager.GetScheme(),
+			ImageParser: &OnmetalImageParserFake{},
+			Templater:   &controllers.IpxeTemplater{},
+		}).SetupWithManager(k8sManager)
+		Expect(err).ToNot(HaveOccurred())
 	}
 
 	reconcilersMap[ipxeReconcilers] = func(k8sManager manager.Manager, log logr.Logger) {
@@ -201,6 +217,7 @@ func SetupTest(ctx context.Context, reconcilers string) *corev1.Namespace {
 		cancel()
 		Expect(k8sClient.Delete(ctx, ns)).To(Succeed(), "failed to delete test namespace")
 		Expect(k8sClient.DeleteAllOf(ctx, &computev1alpha1.MachinePool{})).To(Succeed())
+		Expect(k8sClient.DeleteAllOf(ctx, &computev1alpha1.MachineClass{})).To(Succeed())
 	})
 
 	return ns
