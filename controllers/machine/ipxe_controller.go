@@ -22,6 +22,8 @@ import (
 	"strings"
 	"text/template"
 
+	"k8s.io/utils/pointer"
+
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -46,12 +48,16 @@ type IpxeReconciler struct {
 	Templater   Templater
 }
 
-const IpxeTemplate string = "    #!ipxe\n\n    kernel https://ghcr.io/layer/{{.KernelDigest}}\n    " +
-	"initrd={{.InitRAMFsDigest}}\n    " +
-	"gl.url=https://ghcr.io/layer/{{.RootFSDigest}} ignition.config.url=http://2a10:afc0:e013:d000::5b4f/ignition\n    " +
-	"{{.CommandLine}}\n\n    " +
-	"initrd https://ghcr.io/layer/{{.InitRAMFsDigest}}\n    " +
-	"boot"
+const (
+	machineKind = "Machine"
+
+	IpxeTemplate string = "    #!ipxe\n\n    kernel https://ghcr.io/layer/{{.KernelDigest}}\n    " +
+		"initrd={{.InitRAMFsDigest}}\n    " +
+		"gl.url=https://ghcr.io/layer/{{.RootFSDigest}} ignition.config.url=http://2a10:afc0:e013:d000::5b4f/ignition\n    " +
+		"{{.CommandLine}}\n\n    " +
+		"initrd https://ghcr.io/layer/{{.InitRAMFsDigest}}\n    " +
+		"boot"
+)
 
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
@@ -125,6 +131,16 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ipxe-" + machine.Name,
 			Namespace: req.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         v1alpha2.GroupVersion.Version,
+					Kind:               machineKind,
+					Name:               machine.Name,
+					UID:                machine.UID,
+					Controller:         pointer.Bool(true),
+					BlockOwnerDeletion: pointer.Bool(true),
+				},
+			},
 		},
 		Data: data,
 	}
