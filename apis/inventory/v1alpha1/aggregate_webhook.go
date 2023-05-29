@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -43,20 +44,26 @@ func (in *Aggregate) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &Aggregate{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Aggregate) ValidateCreate() error {
+func (in *Aggregate) ValidateCreate() (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	aggregatelog.Info("validate create", "name", in.Name)
-	return in.validate()
+	return warnings, in.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Aggregate) ValidateUpdate(old runtime.Object) error {
+func (in *Aggregate) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	aggregatelog.Info("validate update", "name", in.Name)
-	return in.validate()
+	return warnings, in.validate()
 }
 
-func (in *Aggregate) ValidateDelete() error {
+func (in *Aggregate) ValidateDelete() (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	aggregatelog.Info("validate delete", "name", in.Name)
-	return nil
+	return warnings, nil
 }
 
 func (in *Aggregate) validate() error {

@@ -25,6 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 const (
@@ -46,15 +47,19 @@ func (in *Size) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &Size{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Size) ValidateCreate() error {
+func (in *Size) ValidateCreate() (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	sizelog.Info("validate create", "name", in.Name)
-	return in.validate()
+	return warnings, in.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Size) ValidateUpdate(old runtime.Object) error {
+func (in *Size) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	sizelog.Info("validate update", "name", in.Name)
-	return in.validate()
+	return warnings, in.validate()
 }
 
 var CDummyInventorySpec = getDummyInventoryForValidation()
@@ -194,7 +199,9 @@ func (in *ConstraintSpec) wrongInterval() bool {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Size) ValidateDelete() error {
+func (in *Size) ValidateDelete() (admission.Warnings, error) {
+	var warnings admission.Warnings
+
 	sizelog.Info("validate delete", "name", in.Name)
-	return nil
+	return warnings, nil
 }

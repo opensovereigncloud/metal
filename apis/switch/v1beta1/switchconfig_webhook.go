@@ -24,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/onmetal/metal-api/pkg/constants"
 )
@@ -53,20 +54,20 @@ func (in *SwitchConfig) Default() {
 var _ webhook.Validator = &SwitchConfig{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *SwitchConfig) ValidateCreate() error {
+func (in *SwitchConfig) ValidateCreate() (warnings admission.Warnings, err error) {
 	// todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
-	return nil
+	return
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *SwitchConfig) ValidateUpdate(_ runtime.Object) error {
+func (in *SwitchConfig) ValidateUpdate(_ runtime.Object) (warnings admission.Warnings, err error) {
 	// todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
-	return nil
+	return
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *SwitchConfig) ValidateDelete() error {
-	return nil
+func (in *SwitchConfig) ValidateDelete() (warnings admission.Warnings, err error) {
+	return
 }
 
 func (in *SwitchConfig) setDefaultIPAMSelectors() {

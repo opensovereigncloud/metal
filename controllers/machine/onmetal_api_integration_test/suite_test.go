@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -167,13 +168,17 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient).NotTo(BeNil())
 
 	apiSrv, err := apiserver.New(cfg, apiserver.Options{
-		MainPath:     "github.com/onmetal/onmetal-api/cmd/onmetal-apiserver",
-		BuildOptions: []buildutils.BuildOption{buildutils.ModModeMod},
-		ETCDServers:  []string{testEnv.ControlPlane.Etcd.URL.String()},
-		Host:         testEnvExt.APIServiceInstallOptions.LocalServingHost,
-		Port:         testEnvExt.APIServiceInstallOptions.LocalServingPort,
-		CertDir:      testEnvExt.APIServiceInstallOptions.LocalServingCertDir,
-		AttachOutput: true,
+		MainPath:      "github.com/onmetal/onmetal-api/cmd/onmetal-apiserver",
+		BuildOptions:  []buildutils.BuildOption{buildutils.ModModeMod},
+		ETCDServers:   []string{testEnv.ControlPlane.Etcd.URL.String()},
+		Host:          testEnvExt.APIServiceInstallOptions.LocalServingHost,
+		Port:          testEnvExt.APIServiceInstallOptions.LocalServingPort,
+		CertDir:       testEnvExt.APIServiceInstallOptions.LocalServingCertDir,
+		Stderr:        os.Stdout,
+		Stdout:        os.Stdout,
+		HealthTimeout: 120 * time.Second,
+		WaitTimeout:   120 * time.Second,
+		AttachOutput:  false,
 	})
 	Expect(err).NotTo(HaveOccurred())
 

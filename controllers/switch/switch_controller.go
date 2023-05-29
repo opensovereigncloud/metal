@@ -25,6 +25,12 @@ import (
 
 	"github.com/go-logr/logr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/pkg/constants"
+	"github.com/onmetal/metal-api/pkg/errors"
+	"github.com/onmetal/metal-api/pkg/stateproc"
+	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 	"inet.af/netaddr"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,14 +50,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
-	"github.com/onmetal/metal-api/pkg/errors"
-	"github.com/onmetal/metal-api/pkg/stateproc"
-	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 )
 
 // SwitchReconciler reconciles Switch object corresponding
@@ -139,7 +137,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			RecoverPanic: pointer.Bool(true),
 		}).
 		WithEventFilter(predicate.And(labelSelectorPredicate, discoverObjectChangesPredicate)).
-		Watches(&source.Kind{Type: &switchv1beta1.Switch{}}, &handler.Funcs{
+		Watches(&switchv1beta1.Switch{}, &handler.Funcs{
 			UpdateFunc: r.handleSwitchUpdateEvent,
 			DeleteFunc: r.handleSwitchDeleteEvent,
 		}).
@@ -155,7 +153,7 @@ func detectChangesPredicate(e event.UpdateEvent) bool {
 	return switchespkg.ReconciliationRequired(objOld, objNew)
 }
 
-func (r *SwitchReconciler) handleSwitchUpdateEvent(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func (r *SwitchReconciler) handleSwitchUpdateEvent(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	objOld, okOld := e.ObjectOld.(*switchv1beta1.Switch)
 	objNew, okNew := e.ObjectNew.(*switchv1beta1.Switch)
 	if !okOld || !okNew {
@@ -187,7 +185,7 @@ func (r *SwitchReconciler) handleSwitchUpdateEvent(e event.UpdateEvent, q workqu
 	}
 }
 
-func (r *SwitchReconciler) handleSwitchDeleteEvent(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+func (r *SwitchReconciler) handleSwitchDeleteEvent(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	obj, ok := e.Object.(*switchv1beta1.Switch)
 	if !ok {
 		return

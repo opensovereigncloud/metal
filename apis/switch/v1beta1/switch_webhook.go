@@ -30,6 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/onmetal/metal-api/pkg/constants"
 )
@@ -178,7 +179,7 @@ func (in *Switch) setDefaultConfigSelector() {
 var _ webhook.Validator = &Switch{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Switch) ValidateCreate() (err error) {
+func (in *Switch) ValidateCreate() (warnings admission.Warnings, err error) {
 	switchlog.Info("validate create", "name", in.Name)
 
 	err = validateInventoryLabels(in)
@@ -186,7 +187,7 @@ func (in *Switch) ValidateCreate() (err error) {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (in *Switch) ValidateUpdate(old runtime.Object) (err error) {
+func (in *Switch) ValidateUpdate(old runtime.Object) (warnings admission.Warnings, err error) {
 	switchlog.Info("validate update", "name", in.Name)
 
 	err = validateInventoryLabels(in)
@@ -221,7 +222,7 @@ func (in *Switch) ValidateUpdate(old runtime.Object) (err error) {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (in *Switch) ValidateDelete() (err error) {
+func (in *Switch) ValidateDelete() (warnings admission.Warnings, err error) {
 	switchlog.Info("validate delete", "name", in.Name)
 	return
 }

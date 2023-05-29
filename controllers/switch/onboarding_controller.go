@@ -22,6 +22,11 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/pkg/constants"
+	"github.com/onmetal/metal-api/pkg/errors"
+	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,13 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
-	"github.com/onmetal/metal-api/pkg/errors"
-	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 )
 
 // OnboardingReconciler reconciles Switch object corresponding
@@ -89,7 +87,7 @@ func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			RecoverPanic: pointer.Bool(true),
 		}).
 		WithEventFilter(setupPredicates()).
-		Watches(&source.Kind{Type: &switchv1beta1.Switch{}}, handler.Funcs{
+		Watches(&switchv1beta1.Switch{}, handler.Funcs{
 			CreateFunc: switchCreateEventHandler,
 			UpdateFunc: switchUpdateEventHandler,
 		}).
@@ -146,7 +144,7 @@ func checkObjectMetadata(obj client.Object) bool {
 	}
 }
 
-func switchCreateEventHandler(e event.CreateEvent, q workqueue.RateLimitingInterface) {
+func switchCreateEventHandler(_ context.Context, e event.CreateEvent, q workqueue.RateLimitingInterface) {
 	obj, ok := e.Object.(*switchv1beta1.Switch)
 	if !ok {
 		return
@@ -154,7 +152,7 @@ func switchCreateEventHandler(e event.CreateEvent, q workqueue.RateLimitingInter
 	enqueue(obj, q)
 }
 
-func switchUpdateEventHandler(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func switchUpdateEventHandler(_ context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	obj, ok := e.ObjectNew.(*switchv1beta1.Switch)
 	if !ok {
 		return
