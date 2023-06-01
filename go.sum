@@ -193,8 +193,8 @@ github.com/onmetal/onmetal-image v0.1.1 h1:sGnK2a1OH2iHZSbOrFJEdP7UvFLXb+o9OhJM4
 github.com/onmetal/onmetal-image v0.1.1/go.mod h1:+9CdnZneHl3seFnhJN+nGlJ1Npmd7Qs4VV3CHO86f1U=
 github.com/onmetal/oob-operator v0.3.0 h1:jRmNSCkSCPtFwxVO5PMbrBPy0Yw+xWUqldnEhd/4Pqs=
 github.com/onmetal/oob-operator v0.3.0/go.mod h1:XhIDDCI5/d2WJNTp03rt2TPPa7hUM58EDkHmeWVeIqQ=
-github.com/onsi/ginkgo/v2 v2.9.5 h1:+6Hr4uxzP4XIUyAkg61dWBw8lb/gc4/X5luuxN/EC+Q=
-github.com/onsi/ginkgo/v2 v2.9.5/go.mod h1:tvAoo1QUJwNEU2ITftXTpR7R1RbCzoZUOs3RonqW57k=
+github.com/onsi/ginkgo/v2 v2.9.7 h1:06xGQy5www2oN160RtEZoTvnP2sPhEfePYmCDc2szss=
+github.com/onsi/ginkgo/v2 v2.9.7/go.mod h1:cxrmXWykAwTwhQsJOPfdIDiJ+l2RYq7U8hFU+M/1uw0=
 github.com/onsi/gomega v1.27.7 h1:fVih9JD6ogIiHUN6ePK7HJidyEDpWGVB5mzM7cWNXoU=
 github.com/onsi/gomega v1.27.7/go.mod h1:1p8OOlwo2iUUDsHnOrjE5UKYJ+e3W8eQ3qSlRahPmr4=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
