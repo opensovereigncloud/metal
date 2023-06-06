@@ -40,6 +40,12 @@ type MachineReservationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+var (
+	ErrMetalMachineNotMatchedWithComputeMachines = errors.New("metal machine not matched with compute machines")
+	ErrMetalMachineListEmpty                     = errors.New("metal machine list is empty")
+	ErrMetalMachineListNotFound                  = errors.New("metal machine list not found")
+)
+
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
@@ -66,35 +72,10 @@ func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	metalMachinesList := &machinev1alpha2.MachineList{}
-	err := r.List(ctx, metalMachinesList)
-	switch {
-	case err == nil:
-		log.Info("metal machines list was found")
-		if len(metalMachinesList.Items) == 0 {
-			log.Info("unable to create machine reservation. metal machines list is empty")
-			return ctrl.Result{}, nil
-		}
-	case apierrors.IsNotFound(err):
-		log.Info("metal machines list not found")
-		return ctrl.Result{}, nil
-	default:
-		log.Error(err, "could not get metal machines list")
+	metalMachine, err := r.getMetalMachine(ctx, log, computeMachine)
+	if err != nil {
+		log.Error(err, "could not get metal machine")
 		return ctrl.Result{}, err
-	}
-
-	var metalMachine *machinev1alpha2.Machine
-	for _, item := range metalMachinesList.Items {
-		if item.Name == computeMachine.Spec.MachinePoolRef.Name {
-			log.Info("metal machine matched with machine pool name")
-			metalMachine = &item
-			break
-		}
-	}
-
-	if metalMachine == nil {
-		log.Info("could not find metal machine")
-		return ctrl.Result{}, nil
 	}
 
 	if metalMachine.Status.Health != machinev1alpha2.MachineStateHealthy {
@@ -133,13 +114,8 @@ func (r *MachineReservationReconciler) handleComputeMachineDeletion(e event.Dele
 		return false
 	}
 
-	metalMachine := &machinev1alpha2.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      computeMachine.Name,
-			Namespace: computeMachine.Namespace,
-		},
-	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(metalMachine), metalMachine); err != nil {
+	metalMachine, err := r.getMetalMachine(ctx, r.Log, computeMachine)
+	if err != nil {
 		r.Log.Error(err, "could not get metal machine")
 		return false
 	}
@@ -159,4 +135,32 @@ func (r *MachineReservationReconciler) constructPredicates() predicate.Predicate
 	return predicate.Funcs{
 		DeleteFunc: r.handleComputeMachineDeletion,
 	}
+}
+
+func (r *MachineReservationReconciler) getMetalMachine(ctx context.Context, log logr.Logger, computeMachine *computev1alpha1.Machine) (*machinev1alpha2.Machine, error) {
+	metalMachinesList := &machinev1alpha2.MachineList{}
+	err := r.List(ctx, metalMachinesList)
+	switch {
+	case err == nil:
+		log.Info("metal machines list was found")
+		if len(metalMachinesList.Items) == 0 {
+			log.Info("unable to create machine reservation. metal machines list is empty")
+			return nil, ErrMetalMachineListEmpty
+		}
+	case apierrors.IsNotFound(err):
+		log.Info("metal machines list not found")
+		return nil, ErrMetalMachineListNotFound
+	default:
+		log.Error(err, "could not get metal machines list")
+		return nil, err
+	}
+
+	for _, metalMachine := range metalMachinesList.Items {
+		if metalMachine.Name == computeMachine.Spec.MachinePoolRef.Name {
+			log.Info("metal machine matched with machine pool name")
+			return &metalMachine, nil
+		}
+	}
+
+	return nil, ErrMetalMachineNotMatchedWithComputeMachines
 }
