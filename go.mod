@@ -15,7 +15,7 @@ require (
 	github.com/onmetal/onmetal-image v0.1.1
 	github.com/onmetal/oob-operator v0.3.0
 	github.com/onsi/ginkgo/v2 v2.9.7
-	github.com/onsi/gomega v1.27.7
+	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/mod v0.10.0
