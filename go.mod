@@ -23,7 +23,7 @@ require (
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
 	k8s.io/api v0.27.2
 	k8s.io/apiextensions-apiserver v0.27.2
-	k8s.io/apimachinery v0.27.2
+	k8s.io/apimachinery v0.27.3
 	k8s.io/client-go v0.27.2
 	k8s.io/kube-aggregator v0.27.2
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491
