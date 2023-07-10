@@ -13,7 +13,7 @@ require (
 	github.com/onmetal/ipam v0.0.23
 	github.com/onmetal/onmetal-api v0.1.2-0.20230526072114-00086ac5b053
 	github.com/onmetal/onmetal-image v0.1.1
-	github.com/onmetal/oob-operator v0.3.0
+	github.com/onmetal/oob-operator v0.3.1
 	github.com/onsi/ginkgo/v2 v2.10.0
 	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
