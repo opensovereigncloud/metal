@@ -197,6 +197,7 @@ func (r *OnboardingReconciler) onboarding(ctx context.Context, inv *inventoryv1a
 	return result, err
 }
 
+// nolint:unparam
 func (r *OnboardingReconciler) onboardNewSwitch(ctx context.Context, inv *inventoryv1alpha1.Inventory) (ctrl.Result, error) {
 	key := client.ObjectKeyFromObject(inv)
 	r.Log.Info("prepare switch object to create", "name", key)

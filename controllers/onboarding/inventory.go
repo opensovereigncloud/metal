@@ -20,9 +20,9 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	usecase "github.com/onmetal/metal-api/internal/usecase/onboarding"
-	"github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
-	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
+	usecase "github.com/onmetal/metal-api/usecase/onboarding"
+	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	oob "github.com/onmetal/oob-operator/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -46,7 +46,7 @@ func NewInventoryOnboardingReconciler(
 func (r *InventoryOnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.log.Info("reconciler started")
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&oobv1.OOB{}).
+		For(&oob.OOB{}).
 		Complete(r)
 }
 

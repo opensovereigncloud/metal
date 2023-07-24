@@ -22,7 +22,9 @@ COPY main.go main.go
 COPY apis/ apis/
 COPY controllers/ controllers/
 COPY pkg/ pkg/
-COPY internal/ internal/
+COPY domain/ domain/
+COPY usecase/ usecase/
+COPY persistence-kubernetes/ persistence-kubernetes/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o manager main.go

@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	usecase "github.com/onmetal/metal-api/internal/usecase/onboarding"
-	"github.com/onmetal/metal-api/internal/usecase/onboarding/dto"
+	usecase "github.com/onmetal/metal-api/usecase/onboarding"
+	"github.com/onmetal/metal-api/usecase/onboarding/dto"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

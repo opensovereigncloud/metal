@@ -23,10 +23,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/onmetal/onmetal-image/oci/remote"
-
-	controllers "github.com/onmetal/metal-api/controllers/machine"
-
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
@@ -34,12 +30,14 @@ import (
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
+	machinecontrollers "github.com/onmetal/metal-api/controllers/machine"
 	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switch"
-	persistence "github.com/onmetal/metal-api/internal/kubernetes/onboarding"
-	"github.com/onmetal/metal-api/internal/usecase/onboarding/rules"
-	"github.com/onmetal/metal-api/internal/usecase/onboarding/scenarios"
+	onboardingpersistence "github.com/onmetal/metal-api/persistence-kubernetes/onboarding"
+	"github.com/onmetal/metal-api/usecase/onboarding/rules"
+	onboardingscenarios "github.com/onmetal/metal-api/usecase/onboarding/scenarios"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	"github.com/onmetal/onmetal-image/oci/remote"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -211,7 +209,7 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.MachinePoolReconciler{
+	if err = (&machinecontrollers.MachinePoolReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Pool"),
@@ -219,7 +217,7 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-Pool")
 		os.Exit(1)
 	}
-	if err = (&controllers.MachineReservationReconciler{
+	if err = (&machinecontrollers.MachineReservationReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Reservation"),
@@ -227,7 +225,7 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-Reservation")
 		os.Exit(1)
 	}
-	if err = (&controllers.MachinePowerReconciler{
+	if err = (&machinecontrollers.MachinePowerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Machine-Power"),
@@ -241,15 +239,15 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create registry")
 		os.Exit(1)
 	}
-	if err = (&controllers.IpxeReconciler{
+	if err = (&machinecontrollers.IpxeReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Ipxe"),
-		ImageParser: &controllers.OnmetalImageParser{
+		ImageParser: &machinecontrollers.OnmetalImageParser{
 			Registry: registry,
 			Log:      ctrl.Log.WithName("controllers").WithName("Ipxe").WithName("Image-Parser"),
 		},
-		Templater: &controllers.IpxeTemplater{},
+		Templater: &machinecontrollers.IpxeTemplater{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Ipxe")
 		os.Exit(1)
@@ -300,16 +298,16 @@ func addHandlers(mgr ctrl.Manager, profiling bool) {
 }
 
 func inventoryOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.InventoryOnboardingReconciler {
-	inventoryRepository := persistence.NewInventoryRepository(mgr.GetClient())
-	serverRepository := persistence.NewServerRepository(mgr.GetClient())
-	executor := persistence.NewFakeServerExecutor(mgr.GetLogger())
+	inventoryRepository := onboardingpersistence.NewInventoryRepository(mgr.GetClient())
+	serverRepository := onboardingpersistence.NewServerRepository(mgr.GetClient())
+	executor := onboardingpersistence.NewFakeServerExecutor(mgr.GetLogger())
 	rule := rules.NewServerMustBeEnabledOnFirstTimeRule(executor, mgr.GetLogger())
 
-	inventoryOnboardingUseCase := scenarios.NewInventoryOnboardingUseCase(
+	inventoryOnboardingUseCase := onboardingscenarios.NewInventoryOnboardingUseCase(
 		inventoryRepository,
 		rule,
 	)
-	serverValidationUseCase := scenarios.NewServerValidationUseCase(
+	serverValidationUseCase := onboardingscenarios.NewServerValidationUseCase(
 		serverRepository,
 	)
 
@@ -321,18 +319,18 @@ func inventoryOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.Inven
 }
 
 func machineOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.OnboardingMachineReconciler {
-	machineRepository := persistence.NewMachineRepository(mgr.GetClient())
-	machineNetwork := persistence.NewMachineInterfaces(mgr.GetClient())
+	machineRepository := onboardingpersistence.NewMachineRepository(mgr.GetClient())
+	machineNetwork := onboardingpersistence.NewMachineInterfaces(mgr.GetClient())
 
-	inventoryRepository := persistence.NewInventoryRepository(mgr.GetClient())
+	inventoryRepository := onboardingpersistence.NewInventoryRepository(mgr.GetClient())
 
-	machineUseCase := scenarios.NewGetMachineUseCase(machineRepository)
+	machineUseCase := onboardingscenarios.NewGetMachineUseCase(machineRepository)
 
-	getInventoryUseCase := scenarios.NewGetInventoryUseCase(inventoryRepository)
+	getInventoryUseCase := onboardingscenarios.NewGetInventoryUseCase(inventoryRepository)
 
-	addMachineUseCase := scenarios.NewAddMachineUseCase(machineRepository)
+	addMachineUseCase := onboardingscenarios.NewAddMachineUseCase(machineRepository)
 
-	machineOnboardUseCase := scenarios.NewMachineOnboardingUseCase(
+	machineOnboardUseCase := onboardingscenarios.NewMachineOnboardingUseCase(
 		machineNetwork,
 		machineRepository)
 
