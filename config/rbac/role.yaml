@@ -159,6 +159,8 @@ rules:
   - ips
   verbs:
   - create
+  - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -175,6 +177,8 @@ rules:
   - subnets
   verbs:
   - create
+  - delete
+  - deletecollection
   - get
   - list
   - patch

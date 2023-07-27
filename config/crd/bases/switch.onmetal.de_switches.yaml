@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: switches.switch.onmetal.de
 spec:
@@ -110,6 +110,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               cordon:
                 default: false
                 description: Cordon is a flag defining whether Switch object is taken
@@ -238,6 +239,7 @@ spec:
                                       The requirements are ANDed.
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                             type: object
                           type: array
                         ipv4MaskLength:
@@ -290,6 +292,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               ipam:
                 description: IPAM refers to selectors for subnets which will be used
                   for Switch object
@@ -322,6 +325,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -372,6 +376,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   southSubnets:
                     description: SouthSubnets defines selector for subnet object which
@@ -401,6 +406,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -451,6 +457,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                 type: object
               managed:
@@ -531,6 +538,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               interfaces:
                 additionalProperties:
                   description: InterfaceSpec defines the state of switch's interface
@@ -717,6 +725,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               state:
                 description: State is the current state of corresponding object or
                   process
@@ -741,13 +750,17 @@ spec:
                     cidr:
                       description: CIDR refers to subnet CIDR validation pattern
                       type: string
-                    name:
-                      description: Name contains name of the referenced object
-                      type: string
-                    namespace:
-                      description: Namespace contains namespace of the referenced
-                        object
-                      type: string
+                    network:
+                      description: Contains information to locate the referenced object
+                      properties:
+                        name:
+                          description: Name contains name of the referenced object
+                          type: string
+                        namespace:
+                          description: Namespace contains namespace of the referenced
+                            object
+                          type: string
+                      type: object
                     region:
                       description: Region refers to switch's region
                       properties:
@@ -762,6 +775,17 @@ spec:
                       required:
                       - availabilityZone
                       - name
+                      type: object
+                    subnet:
+                      description: Contains information to locate the referenced object
+                      properties:
+                        name:
+                          description: Name contains name of the referenced object
+                          type: string
+                        namespace:
+                          description: Namespace contains namespace of the referenced
+                            object
+                          type: string
                       type: object
                   type: object
                 type: array
@@ -782,9 +806,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

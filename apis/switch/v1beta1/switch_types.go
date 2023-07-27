@@ -20,13 +20,12 @@ import (
 	"strings"
 	"time"
 
+	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	"github.com/onmetal/metal-api/pkg/constants"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
-
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/pkg/constants"
 )
 
 // SwitchSpec contains desired state of resulting Switch configuration
@@ -202,7 +201,10 @@ type PeerInfoSpec struct {
 type SubnetSpec struct {
 	// Contains information to locate the referenced object
 	// +kubebuilder:validation:Optional
-	*ObjectReference `json:",inline"`
+	Subnet *ObjectReference `json:"subnet"`
+	// Contains information to locate the referenced object
+	// +kubebuilder:validation:Optional
+	Network *ObjectReference `json:"network"`
 	// CIDR refers to subnet CIDR
 	// +kubebuilder:validation:Optional
 	// validation pattern
@@ -1035,24 +1037,44 @@ func (in *PeerInfoSpec) SetType(value string) {
 // SubnetSpec getters
 // ----------------------------------------
 
-// GetObjectReferenceName returns value of objectReference.name field
-// of given SubnetSpec object if objectReference is not nil,
+// GetSubnetObjectRefName returns value of Subnet.name field
+// of given SubnetSpec object if Subnet is not nil,
 // otherwise empty string.
-func (in *SubnetSpec) GetObjectReferenceName() string {
-	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+func (in *SubnetSpec) GetSubnetObjectRefName() string {
+	if pointer.AllPtrFieldsNil(in.Subnet) {
 		return ""
 	}
-	return pointer.StringDeref(in.ObjectReference.Name, "")
+	return pointer.StringDeref(in.Subnet.Name, "")
 }
 
-// GetObjectReferenceNamespace returns value of objectReference.namespace
-// field of given SubnetSpec object if objectReference is not nil,
+// GetSubnetObjectRefNamespace returns value of Subnet.namespace
+// field of given SubnetSpec object if Subnet is not nil,
 // otherwise empty string.
-func (in *SubnetSpec) GetObjectReferenceNamespace() string {
-	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+func (in *SubnetSpec) GetSubnetObjectRefNamespace() string {
+	if pointer.AllPtrFieldsNil(in.Subnet) {
 		return ""
 	}
-	return pointer.StringDeref(in.ObjectReference.Namespace, "")
+	return pointer.StringDeref(in.Subnet.Namespace, "")
+}
+
+// GetNetworkObjectRefName returns value of Network.name field
+// of given SubnetSpec object if Network is not nil,
+// otherwise empty string.
+func (in *SubnetSpec) GetNetworkObjectRefName() string {
+	if pointer.AllPtrFieldsNil(in.Network) {
+		return ""
+	}
+	return pointer.StringDeref(in.Network.Name, "")
+}
+
+// GetNetworkObjectRefNamespace returns value of Network.namespace
+// field of given SubnetSpec object if Network is not nil,
+// otherwise empty string.
+func (in *SubnetSpec) GetNetworkObjectRefNamespace() string {
+	if pointer.AllPtrFieldsNil(in.Network) {
+		return ""
+	}
+	return pointer.StringDeref(in.Network.Namespace, "")
 }
 
 // GetCIDR returns value of cidr field of given SubnetSpec object
@@ -1071,11 +1093,21 @@ func (in *SubnetSpec) GetAddressFamily() string {
 // SubnetSpec setters
 // ----------------------------------------
 
-// SetObjectReference updates value of objectReference field of
+// SetSubnetObjectRef updates value of Subnet field of
 // given SubnetSpec object with new ObjectReference object where
 // Name and Namespace fields are assigned with passed arguments.
-func (in *SubnetSpec) SetObjectReference(name, namespace string) {
-	in.ObjectReference = &ObjectReference{
+func (in *SubnetSpec) SetSubnetObjectRef(name, namespace string) {
+	in.Subnet = &ObjectReference{
+		Name:      pointer.String(name),
+		Namespace: pointer.String(namespace),
+	}
+}
+
+// SetNetworkObjectRef updates value of Network field of
+// given SubnetSpec object with new ObjectReference object where
+// Name and Namespace fields are assigned with passed arguments.
+func (in *SubnetSpec) SetNetworkObjectRef(name, namespace string) {
+	in.Network = &ObjectReference{
 		Name:      pointer.String(name),
 		Namespace: pointer.String(namespace),
 	}
@@ -1224,6 +1256,12 @@ func (in *Switch) UpdateSwitchAnnotations(inv *inventoryv1alpha1.Inventory) {
 // returns boolean value whether it matches corresponding constant.
 func (in *Switch) StateReady() bool {
 	return in.GetState() == constants.SwitchStateReady
+}
+
+// StateNotReady checks actual value of .status.state field and
+// returns boolean value whether it matches corresponding constant.
+func (in *Switch) StateNotReady() bool {
+	return in.GetState() != constants.SwitchStateReady
 }
 
 // StatePending checks actual value of .status.state field and

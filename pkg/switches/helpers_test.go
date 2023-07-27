@@ -219,7 +219,7 @@ func TestRequestIPs(t *testing.T) {
 
 func TestGetCrdPath(t *testing.T) {
 	t.Parallel()
-	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.23/config/crd/bases")
+	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.24-0.20230717064031-71b4f3716011/config/crd/bases")
 	computed, err := GetCrdPath(ipamv1alpha1.Subnet{})
 	assert.Nil(t, err)
 	assert.Equal(t, expected, computed)
@@ -227,7 +227,7 @@ func TestGetCrdPath(t *testing.T) {
 
 func TestGetWebhookPath(t *testing.T) {
 	t.Parallel()
-	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.23/config/webhook")
+	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.24-0.20230717064031-71b4f3716011/config/webhook")
 	computed, err := GetWebhookPath(ipamv1alpha1.Subnet{})
 	assert.Nil(t, err)
 	assert.Equal(t, expected, computed)

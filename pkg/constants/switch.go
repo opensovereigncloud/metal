@@ -49,6 +49,8 @@ const (
 	LocationHUAnnotation   string = "location/hu"
 )
 
+const SwitchFinalizer string = "switch.onmetal.de/finalizer"
+
 const (
 	InventoriedLabel            string = "switch.onmetal.de/inventoried"
 	LabelChassisID              string = "metalapi.onmetal.de/chassis-id"

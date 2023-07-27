@@ -18,10 +18,10 @@ package v1beta1
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/go-logr/logr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
@@ -46,6 +46,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -64,13 +65,17 @@ type SwitchReconciler struct {
 
 type SwitchClient struct {
 	client.Client
+	logr.Logger
 
-	ctx context.Context
+	ctx                context.Context
+	updateSpec         bool
+	initialObjectState *switchv1beta1.Switch
 }
 
 func (r *SwitchReconciler) newSwitchClient(ctx context.Context) *SwitchClient {
 	return &SwitchClient{
 		Client: r.Client,
+		Logger: r.Log,
 		ctx:    ctx,
 	}
 }
@@ -81,9 +86,9 @@ func (r *SwitchReconciler) newSwitchClient(ctx context.Context) *SwitchClient {
 // +kubebuilder:rbac:groups=switch.onmetal.de,resources=switchconfigs,verbs=get;list;watch
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets/status,verbs=get
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;create;update;patch
+// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips/status,verbs=get
 
 func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -100,7 +105,28 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	result, err := r.reconcile(nestedCtx, obj)
+
+	if !obj.GetDeletionTimestamp().IsZero() {
+		if !controllerutil.ContainsFinalizer(obj, constants.SwitchFinalizer) {
+			return ctrl.Result{}, nil
+		}
+		err := r.finalize(ctx, obj)
+		if err != nil {
+			return ctrl.Result{Requeue: true}, err
+		}
+		controllerutil.RemoveFinalizer(obj, constants.SwitchFinalizer)
+		err = r.Update(ctx, obj)
+		return ctrl.Result{}, err
+	}
+	if !controllerutil.ContainsFinalizer(obj, constants.SwitchFinalizer) {
+		controllerutil.AddFinalizer(obj, constants.SwitchFinalizer)
+		err := r.Update(ctx, obj)
+		return ctrl.Result{}, err
+	}
+
+	cl := r.newSwitchClient(ctx)
+	cl.initialObjectState = obj.DeepCopy()
+	result, err := cl.reconcile(nestedCtx, obj)
 	return result, err
 }
 
@@ -133,7 +159,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1beta1.Switch{}).
 		WithOptions(controller.Options{
-			RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute*5),
+			//RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute),
 			RecoverPanic: pointer.Bool(true),
 		}).
 		WithEventFilter(predicate.And(labelSelectorPredicate, discoverObjectChangesPredicate)).
@@ -150,10 +176,10 @@ func detectChangesPredicate(e event.UpdateEvent) bool {
 	if !okOld || !okNew {
 		return false
 	}
-	return switchespkg.ReconciliationRequired(objOld, objNew)
+	return switchespkg.ObjectChanged(objOld, objNew)
 }
 
-func (r *SwitchReconciler) handleSwitchUpdateEvent(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+func (r *SwitchReconciler) handleSwitchUpdateEvent(_ context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	objOld, okOld := e.ObjectOld.(*switchv1beta1.Switch)
 	objNew, okNew := e.ObjectNew.(*switchv1beta1.Switch)
 	if !okOld || !okNew {
@@ -161,7 +187,7 @@ func (r *SwitchReconciler) handleSwitchUpdateEvent(ctx context.Context, e event.
 	}
 	// if switch object has no changes, which affect neighbors, then there is no need to
 	// enqueue it's neighbors for reconciliation.
-	if !switchespkg.ReconciliationRequired(objOld, objNew) {
+	if !switchespkg.ObjectChanged(objOld, objNew) {
 		return
 	}
 	switchesQueue := make(map[string]struct{})
@@ -185,7 +211,7 @@ func (r *SwitchReconciler) handleSwitchUpdateEvent(ctx context.Context, e event.
 	}
 }
 
-func (r *SwitchReconciler) handleSwitchDeleteEvent(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+func (r *SwitchReconciler) handleSwitchDeleteEvent(_ context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	obj, ok := e.Object.(*switchv1beta1.Switch)
 	if !ok {
 		return
@@ -205,59 +231,65 @@ func (r *SwitchReconciler) handleSwitchDeleteEvent(ctx context.Context, e event.
 	}
 }
 
-func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
-	if !obj.GetDeletionTimestamp().IsZero() {
-		return ctrl.Result{}, nil
-	}
+func (s *SwitchClient) reconcile(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
 	if !obj.GetManaged() {
 		return ctrl.Result{}, nil
 	}
-	cl := r.newSwitchClient(ctx)
-	proc := stateproc.NewGenericStateProcessor[*switchv1beta1.Switch](cl, r.Log)
-	proc.SetFunctions([]func(*switchv1beta1.Switch) stateproc.StateFuncResult{
-		cl.preprocessingCheck,
-		cl.initialize,
-		cl.updateInterfaces,
-		cl.updateNeighbors,
-		cl.updateLayerAndRole,
-		cl.updateConfigRef,
-		cl.updatePortParameters,
-		cl.updateLoopbacks,
-		cl.updateASN,
-		cl.updateSubnets,
-		cl.updateIPAddresses,
-		cl.setStateReady,
-	})
+	proc := stateproc.NewGenericStateProcessor[*switchv1beta1.Switch](s, s.Logger).
+		RegisterHandler(s.preprocessingCheck).
+		RegisterHandler(s.initialize).
+		RegisterHandler(s.updateInterfaces).
+		RegisterHandler(s.updateNeighbors).
+		RegisterHandler(s.updateLayerAndRole).
+		RegisterHandler(s.updateConfigRef).
+		RegisterHandler(s.updatePortParameters).
+		RegisterHandler(s.updateLoopbacks).
+		RegisterHandler(s.updateASN).
+		RegisterHandler(s.updateSubnets).
+		RegisterHandler(s.updateIPAddresses).
+		RegisterHandler(s.setStateReady)
 
 	err := proc.Compute(obj)
-	updateSpec := false
 	if errors.IsMissingRequirements(err) {
 		return ctrl.Result{}, err
 	}
 	if errors.IsInvalidConfigSelector(err) {
 		switchespkg.UpdateSwitchConfigSelector(obj)
-		updateSpec = true
+		s.updateSpec = true
 	}
-	return r.patch(ctx, obj, updateSpec)
+	return s.patch(ctx, obj)
 }
 
-func (r *SwitchReconciler) patch(ctx context.Context, obj *switchv1beta1.Switch, updateSpec bool) (ctrl.Result, error) {
+func (s *SwitchClient) patch(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
 	obj.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
-	if updateSpec {
-		err := r.Patch(ctx, obj, client.Apply, switchespkg.PatchOpts)
+	if s.updateSpec {
+		err := s.Patch(ctx, obj, client.Apply, switchespkg.PatchOpts)
 		if err != nil {
-			r.Log.Info("failed to update switch configuration", "name", obj.NamespacedName(), "error", err)
+			s.Info("failed to update switch configuration", "name", obj.NamespacedName(), "error", err)
 		}
 		return ctrl.Result{}, err
 	}
-	if err := r.Status().Patch(ctx, obj, client.Apply, switchespkg.PatchOpts); err != nil {
-		r.Log.Info("failed to update switch configuration", "name", obj.NamespacedName(), "error", err)
+	if err := s.Status().Patch(ctx, obj, client.Apply, switchespkg.PatchOpts); err != nil {
+		s.Info("failed to update switch configuration", "name", obj.NamespacedName(), "error", err)
 		return ctrl.Result{}, err
 	}
-	if obj.StateReady() {
-		return ctrl.Result{}, nil
+	return ctrl.Result{Requeue: obj.StateNotReady()}, nil
+}
+
+func (r *SwitchReconciler) finalize(ctx context.Context, obj *switchv1beta1.Switch) error {
+	selector := labels.NewSelector()
+	purposeReq, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMSwitchPortPurpose})
+	ownerReq, _ := labels.NewRequirement(constants.IPAMObjectOwnerLabel, selection.In, []string{obj.Name})
+	selector = selector.Add(*purposeReq).Add(*ownerReq)
+	opts := client.ListOptions{
+		LabelSelector: selector,
+		Namespace:     obj.Namespace,
 	}
-	return ctrl.Result{Requeue: true}, nil
+	delOpts := &client.DeleteAllOfOptions{
+		ListOptions: opts,
+	}
+	err := r.DeleteAllOf(ctx, &ipamv1alpha1.Subnet{}, delOpts, client.InNamespace(obj.Namespace))
+	return err
 }
 
 func (s *SwitchClient) preprocessingCheck(obj *switchv1beta1.Switch) stateproc.StateFuncResult {
@@ -640,12 +672,16 @@ func processSubnets(
 			continue
 		}
 		requiredCapacity := switchespkg.GetTotalAddressesCount(obj.Status.Interfaces, item.Status.Type)
-		if requiredCapacity.Cmp(item.Status.CapacityLeft) > 0 {
+		// Have to change condition: replace CapacityLeft to Capacity.
+		// After creation of child subnet objects for switch ports, value of
+		// the CapacityLeft field becomes reduced, thus the check is always failed.
+		if requiredCapacity.Cmp(item.Status.Capacity) > 0 {
 			continue
 		}
 		addressFamiliesMap[item.Status.Type] = pointer.Bool(true)
 		subnet := &switchv1beta1.SubnetSpec{}
-		subnet.SetObjectReference(item.Name, item.Namespace)
+		subnet.SetSubnetObjectRef(item.Name, item.Namespace)
+		subnet.SetNetworkObjectRef(item.Spec.Network.Name, item.Namespace)
 		subnet.SetCIDR(item.Status.Reserved.Net.String())
 		subnet.SetAddressFamily(string(item.Status.Type))
 		subnetsToApply = append(subnetsToApply, subnet)
@@ -733,7 +769,7 @@ func (s *SwitchClient) updateSouthIPs(
 		return err
 	}
 	ipsToApply = append(ipsToApply, extraIPs...)
-	computedIPs, err := switchespkg.GetComputedIPs(obj, nic, data)
+	computedIPs, subnetsToCreate, err := switchespkg.GetComputedIPs(obj, nic, data)
 	if err != nil {
 		return err
 	}
@@ -743,6 +779,7 @@ func (s *SwitchClient) updateSouthIPs(
 	// if err := s.createIPs(obj, nic, computedIPs); err != nil {
 	// 	return err
 	// }
+	_ = s.createSwitchPortsSubnets(obj, nic, subnetsToCreate)
 	return nil
 }
 
@@ -1078,6 +1115,41 @@ func (s *SwitchClient) createIPs(obj *switchv1beta1.Switch, nic string, ips []*s
 			},
 		}
 		if err := s.Create(s.ctx, ip); err != nil {
+			if !apierrors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (s *SwitchClient) createSwitchPortsSubnets(
+	obj *switchv1beta1.Switch,
+	nic string,
+	subnets []*ipamv1alpha1.SubnetSpec,
+) error {
+	gvk := obj.GroupVersionKind()
+	for _, item := range subnets {
+		cidr := item.CIDR.String()
+		hash := md5.Sum([]byte(cidr))
+		item.Consumer = &ipamv1alpha1.ResourceReference{
+			APIVersion: gvk.GroupVersion().String(),
+			Kind:       gvk.Kind,
+			Name:       obj.Name,
+		}
+		subnet := &ipamv1alpha1.Subnet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%s-%x", obj.Name, strings.ToLower(nic), hash[:4]),
+				Namespace: obj.Namespace,
+				Labels: map[string]string{
+					constants.IPAMObjectPurposeLabel: constants.IPAMSwitchPortPurpose,
+					constants.IPAMObjectOwnerLabel:   obj.Name,
+					constants.IPAMObjectNICNameLabel: nic,
+				},
+			},
+			Spec: *item,
+		}
+		if err := s.Create(s.ctx, subnet); err != nil {
 			if !apierrors.IsAlreadyExists(err) {
 				return err
 			}

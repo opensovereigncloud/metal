@@ -252,8 +252,10 @@ func TestPeerInfoSpecSetters(t *testing.T) {
 func TestSubnetSpecGetters(t *testing.T) {
 	t.Parallel()
 	obj := &SubnetSpec{}
-	assert.Equal(t, "", obj.GetObjectReferenceName())
-	assert.Equal(t, "", obj.GetObjectReferenceNamespace())
+	assert.Equal(t, "", obj.GetSubnetObjectRefName())
+	assert.Equal(t, "", obj.GetSubnetObjectRefNamespace())
+	assert.Equal(t, "", obj.GetNetworkObjectRefName())
+	assert.Equal(t, "", obj.GetNetworkObjectRefNamespace())
 	assert.Equal(t, "", obj.GetCIDR())
 	assert.Equal(t, "", obj.GetAddressFamily())
 }
@@ -261,11 +263,14 @@ func TestSubnetSpecGetters(t *testing.T) {
 func TestSubnetSpecSetters(t *testing.T) {
 	t.Parallel()
 	obj := &SubnetSpec{}
-	obj.SetObjectReference("sample", "default")
+	obj.SetSubnetObjectRef("sample", "default")
+	obj.SetNetworkObjectRef("sample", "default")
 	obj.SetCIDR("100.64.0.0/24")
 	obj.SetAddressFamily("IPv4")
-	assert.Equal(t, "sample", obj.GetObjectReferenceName())
-	assert.Equal(t, "default", obj.GetObjectReferenceNamespace())
+	assert.Equal(t, "sample", obj.GetSubnetObjectRefName())
+	assert.Equal(t, "default", obj.GetSubnetObjectRefNamespace())
+	assert.Equal(t, "sample", obj.GetNetworkObjectRefName())
+	assert.Equal(t, "default", obj.GetNetworkObjectRefNamespace())
 	assert.Equal(t, "100.64.0.0/24", obj.GetCIDR())
 	assert.Equal(t, "IPv4", obj.GetAddressFamily())
 }

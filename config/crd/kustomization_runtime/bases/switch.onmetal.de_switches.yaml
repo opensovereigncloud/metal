@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   name: switches.switch.onmetal.de
 spec:
   group: switch.onmetal.de
@@ -62,6 +62,54 @@ spec:
           spec:
             description: SwitchSpec contains desired state of resulting Switch configuration
             properties:
+              configSelector:
+                description: ConfigSelector contains selector to filter out corresponding
+                  SwitchConfig. If the selector is not defined, it will be populated
+                  by defaulting webhook with MatchLabels item, containing 'switch.onmetal.de/layer'
+                  key with value equals to object's .status.layer.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
               cordon:
                 default: false
                 description: Cordon is a flag defining whether Switch object is taken
@@ -190,6 +238,7 @@ spec:
                                       The requirements are ANDed.
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                             type: object
                           type: array
                         ipv4MaskLength:
@@ -242,6 +291,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               ipam:
                 description: IPAM refers to selectors for subnets which will be used
                   for Switch object
@@ -254,10 +304,10 @@ spec:
                         description: FieldSelector contains label key and field path
                           where to get label value for search. If FieldSelector is
                           used as part of IPAM configuration in SwitchConfig object
-                          it will reference to the field path in related object. If
-                          FieldSelector is used as part of IPAM configuration in Switch
-                          object, it will reference to the field path in the same
-                          object
+                          it will reference to the field path in related Switch object.
+                          If FieldSelector is used as part of IPAM configuration in
+                          Switch object, it will reference to the field path in the
+                          same object
                         properties:
                           fieldRef:
                             description: FieldRef contains reference to the field
@@ -274,6 +324,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -324,6 +375,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   southSubnets:
                     description: SouthSubnets defines selector for subnet object which
@@ -333,10 +385,10 @@ spec:
                         description: FieldSelector contains label key and field path
                           where to get label value for search. If FieldSelector is
                           used as part of IPAM configuration in SwitchConfig object
-                          it will reference to the field path in related object. If
-                          FieldSelector is used as part of IPAM configuration in Switch
-                          object, it will reference to the field path in the same
-                          object
+                          it will reference to the field path in related Switch object.
+                          If FieldSelector is used as part of IPAM configuration in
+                          Switch object, it will reference to the field path in the
+                          same object
                         properties:
                           fieldRef:
                             description: FieldRef contains reference to the field
@@ -353,6 +405,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -403,6 +456,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                 type: object
               managed:
@@ -483,6 +537,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               interfaces:
                 additionalProperties:
                   description: InterfaceSpec defines the state of switch's interface
@@ -659,6 +714,17 @@ spec:
                 - leaf
                 - edge-leaf
                 type: string
+              routingConfigTemplate:
+                description: RoutingConfigTemplate contains the reference to the ConfigMap
+                  object which contains go-template for FRR config. This field reflects
+                  the corresponding field of the related SwitchConfig object.
+                properties:
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               state:
                 description: State is the current state of corresponding object or
                   process
@@ -683,13 +749,17 @@ spec:
                     cidr:
                       description: CIDR refers to subnet CIDR validation pattern
                       type: string
-                    name:
-                      description: Name contains name of the referenced object
-                      type: string
-                    namespace:
-                      description: Namespace contains namespace of the referenced
-                        object
-                      type: string
+                    network:
+                      description: Contains information to locate the referenced object
+                      properties:
+                        name:
+                          description: Name contains name of the referenced object
+                          type: string
+                        namespace:
+                          description: Namespace contains namespace of the referenced
+                            object
+                          type: string
+                      type: object
                     region:
                       description: Region refers to switch's region
                       properties:
@@ -704,6 +774,17 @@ spec:
                       required:
                       - availabilityZone
                       - name
+                      type: object
+                    subnet:
+                      description: Contains information to locate the referenced object
+                      properties:
+                        name:
+                          description: Name contains name of the referenced object
+                          type: string
+                        namespace:
+                          description: Namespace contains namespace of the referenced
+                            object
+                          type: string
                       type: object
                   type: object
                 type: array
@@ -724,9 +805,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

@@ -19,7 +19,6 @@ package v1beta1
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/go-logr/logr"
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
@@ -83,7 +82,7 @@ func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&inventoryv1alpha1.Inventory{}).
 		WithOptions(controller.Options{
-			RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute),
+			//RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute),
 			RecoverPanic: pointer.Bool(true),
 		}).
 		WithEventFilter(setupPredicates()).

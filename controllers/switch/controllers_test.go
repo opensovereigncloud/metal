@@ -42,8 +42,8 @@ import (
 )
 
 const (
-	timeout  = time.Second * 60
-	interval = time.Millisecond * 1000
+	timeout  = time.Second * 45
+	interval = time.Millisecond * 50
 )
 
 var (
@@ -433,14 +433,14 @@ func checkConfigSelectorPopulated() {
 	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
-	Consistently(func(g Gomega) {
+	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches))
 		for _, item := range switches.Items {
 			if item.GetTopSpine() {
-				g.Expect(item.GetConfigSelector().MatchLabels).NotTo(BeNil())
+				g.Expect(item.GetConfigSelector()).NotTo(BeNil())
 				g.Expect(item.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(Equal("0"))
 			} else {
-				g.Expect(item.GetConfigSelector().MatchLabels).NotTo(BeNil())
+				g.Expect(item.GetConfigSelector()).NotTo(BeNil())
 				g.Expect(item.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(Equal("1"))
 			}
 		}

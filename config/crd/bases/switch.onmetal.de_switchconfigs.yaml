@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: switchconfigs.switch.onmetal.de
 spec:
@@ -85,6 +85,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -135,6 +136,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   loopbackAddresses:
                     description: LoopbackAddresses defines selector for IP objects
@@ -164,6 +166,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -214,6 +217,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   loopbackSubnets:
                     description: LoopbackSubnets contains label selector for Subnet
@@ -243,6 +247,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -293,6 +298,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   southSubnets:
                     description: SouthSubnets defines selector for subnets object
@@ -322,6 +328,7 @@ spec:
                             required:
                             - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           labelKey:
                             description: LabelKey contains label key
                             type: string
@@ -372,6 +379,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                 required:
                 - addressFamily
@@ -433,6 +441,7 @@ spec:
                       TODO: Add other useful fields. apiVersion, kind, uid?'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
               switches:
                 description: Switches contains label selector to pick up Switch objects
                 properties:
@@ -477,6 +486,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
             required:
             - ipam
             - portsDefaults
@@ -489,9 +499,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

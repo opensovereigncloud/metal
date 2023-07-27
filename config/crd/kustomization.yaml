@@ -8,7 +8,6 @@ resources:
   - bases/machine.onmetal.de_machines.yaml
   - bases/benchmark.onmetal.de_machines.yaml
   - bases/switch.onmetal.de_switches.yaml
-  # - bases/switch.onmetal.de_switchassignments.yaml
   - bases/switch.onmetal.de_switchconfigs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
@@ -27,7 +26,6 @@ patchesStrategicMerge:
   #- patches/webhook_in_inventories.yaml
   #- patches/webhook_in_aggregates.yaml
   - patches/webhook_in_switches.yaml
-  #- patches/webhook_in_switchassignments.yaml
   - patches/webhook_in_switchconfigs.yaml
   # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
@@ -37,7 +35,6 @@ patchesStrategicMerge:
   - patches/cainjection_in_aggregates.yaml
   - patches/cainjection_in_sizes.yaml
   - patches/cainjection_in_switches.yaml
-  #- patches/cainjection_in_switchassignments.yaml
   - patches/cainjection_in_switchconfigs.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 

@@ -41,8 +41,9 @@ func NewGenericStateProcessor[T client.Object](
 	}
 }
 
-func (gsp *GenericStateProcessor[T]) SetFunctions(list []func(T) StateFuncResult) {
-	gsp.Functions = append(gsp.Functions, list...)
+func (gsp *GenericStateProcessor[T]) RegisterHandler(handler func(T) StateFuncResult) *GenericStateProcessor[T] {
+	gsp.Functions = append(gsp.Functions, handler)
+	return gsp
 }
 
 func (gsp *GenericStateProcessor[T]) Compute(obj T) errors.StateProcError {

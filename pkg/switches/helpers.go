@@ -19,6 +19,7 @@ package switches
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"go/build"
@@ -36,6 +37,7 @@ import (
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	"golang.org/x/mod/modfile"
 	"inet.af/netaddr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -612,15 +614,19 @@ func getAddressFamily(address string) (string, error) {
 }
 
 func GetComputedIPs(
-	obj *switchv1beta1.Switch, name string, data *switchv1beta1.InterfaceSpec) ([]*switchv1beta1.IPAddressSpec, error) {
+	obj *switchv1beta1.Switch,
+	name string,
+	data *switchv1beta1.InterfaceSpec,
+) ([]*switchv1beta1.IPAddressSpec, []*ipamv1alpha1.SubnetSpec, error) {
 	ips := make([]*switchv1beta1.IPAddressSpec, 0)
+	subnetSpecs := make([]*ipamv1alpha1.SubnetSpec, 0)
 	for _, subnet := range obj.Status.Subnets {
 		cidr, err := ipamv1alpha1.CIDRFromString(subnet.GetCIDR())
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if cidr == nil {
-			return nil, NewProcessingError("%s: %s", errors.MessageParseCIDRFailed, subnet.GetCIDR())
+			return nil, nil, NewProcessingError("%s: %s", errors.MessageParseCIDRFailed, subnet.GetCIDR())
 		}
 		mask := data.GetIPv4MaskLength()
 		addrIndex := BaseIPv4AddressIndex
@@ -633,18 +639,31 @@ func GetComputedIPs(
 			af = constants.IPv6AF
 		}
 		nicSubnet := getInterfaceSubnet(name, constants.SwitchPortNamePrefix, cidr.Net.IPNet(), mask)
+		subnetSpec, err := buildSubnetObject(
+			subnet.GetSubnetObjectRefName(),
+			subnet.GetNetworkObjectRefName(),
+			nicSubnet,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		subnetSpecs = append(subnetSpecs, subnetSpec)
 		nicAddr, err := gocidr.Host(nicSubnet, addrIndex)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		ip := &switchv1beta1.IPAddressSpec{}
-		ip.SetObjectReference(subnet.GetObjectReferenceName(), subnet.GetObjectReferenceNamespace())
+		hash := md5.Sum([]byte(subnetSpec.CIDR.String()))
+		ip.SetObjectReference(
+			fmt.Sprintf("%s-%s-%x", obj.Name, strings.ToLower(name), hash[:4]),
+			subnet.GetSubnetObjectRefNamespace(),
+		)
 		ip.SetAddress(fmt.Sprintf("%s/%d", nicAddr.String(), mask))
 		ip.SetExtraAddress(false)
 		ip.SetAddressFamily(af)
 		ips = append(ips, ip)
 	}
-	return ips, nil
+	return ips, subnetSpecs, nil
 }
 
 func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, mask uint32) *net.IPNet {
@@ -652,6 +671,20 @@ func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, mask
 	prefix, _ := network.Mask.Size()
 	ifaceNet, _ := gocidr.Subnet(network, int(mask)-prefix, index)
 	return ifaceNet
+}
+
+func buildSubnetObject(parentSubnet, network string, subnet *net.IPNet) (*ipamv1alpha1.SubnetSpec, error) {
+	netaddrRepr, ok := netaddr.FromStdIPNet(subnet)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert subnet representation")
+	}
+	nicSubnetSpec := &ipamv1alpha1.SubnetSpec{
+		CIDR:         ipamv1alpha1.CIDRFromNet(netaddrRepr),
+		ParentSubnet: corev1.LocalObjectReference{Name: parentSubnet},
+		Network:      corev1.LocalObjectReference{Name: network},
+		Consumer:     nil,
+	}
+	return nicSubnetSpec, nil
 }
 
 func GetPeerData(
@@ -739,10 +772,11 @@ func NeighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
 	return true
 }
 
-func ReconciliationRequired(objOld, objNew *switchv1beta1.Switch) bool {
+func ObjectChanged(objOld, objNew *switchv1beta1.Switch) bool {
 	labelsChanged := !reflect.DeepEqual(objOld.GetLabels(), objNew.GetLabels())
 	annotationsChanged := !reflect.DeepEqual(objOld.GetAnnotations(), objNew.GetAnnotations())
-	metadataChanged := labelsChanged || annotationsChanged
+	finalizersChanged := !reflect.DeepEqual(objOld.GetFinalizers(), objNew.GetFinalizers())
+	metadataChanged := labelsChanged || annotationsChanged || finalizersChanged
 	specChanged := !reflect.DeepEqual(objOld.Spec, objNew.Spec)
 	conditionsChanged := conditionsUpdated(objOld.Status.Conditions, objNew.Status.Conditions)
 	objOld.Status.Conditions = nil
