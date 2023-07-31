@@ -360,12 +360,16 @@ func (in *Switch) SetInitialStatus(inv *inventoryv1alpha1.Inventory) {
 	in.Status.SwitchPorts = uint16(len(in.Status.Interfaces))
 }
 
-func (in *Switch) UpdateInterfacesParameters(conf *SwitchConfig) {
+func (in *Switch) UpdateInterfacesParameters(conf *SwitchConfig, list *SwitchList) {
 	var (
 		resultFEC, resultState *string
 		resultLanes            *uint8
 		resultMTU              *uint16
 	)
+	switchesMap := make(map[string]SwitchStatus)
+	for _, item := range list.Items {
+		switchesMap[item.Name] = item.Status
+	}
 
 	if conf != nil {
 		if conf.Spec.PortsDefaults != nil {
@@ -427,6 +431,17 @@ func (in *Switch) UpdateInterfacesParameters(conf *SwitchConfig) {
 		if _, ok := overridden[nic]; ok {
 			continue
 		}
+		if params.Direction == CDirectionNorth {
+			peerNICs, ok := switchesMap[params.Peer.Name]
+			if !ok {
+				continue
+			}
+			peerNIC, ok := peerNICs.Interfaces[params.Peer.PortDescription]
+			params.FEC = peerNIC.FEC
+			params.MTU = peerNIC.MTU
+			params.Lanes = peerNIC.Lanes
+			continue
+		}
 		if resultState != nil {
 			params.State = GoString(resultState)
 		}
@@ -460,6 +475,14 @@ func (in *Switch) InterfacesMatchInventory(inv *inventoryv1alpha1.Inventory) boo
 		}
 	}
 	return true
+}
+
+func (in *Switch) UpdatePeers(inv *inventoryv1alpha1.Inventory) {
+	interfaces := interfacesFromInventory(inv)
+	for nic, nicData := range interfaces {
+		switchPort := in.Status.Interfaces[nic]
+		switchPort.Peer = nicData.Peer.DeepCopy()
+	}
 }
 
 func interfacesFromInventory(inv *inventoryv1alpha1.Inventory) map[string]*InterfaceSpec {

@@ -157,27 +157,7 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			return
 		}
 	}
-
-	var relatedConfig *switchv1beta1.SwitchConfig
-	switchConfigs := &switchv1beta1.SwitchConfigList{}
-	typeLabel, ok := obj.Labels[switchv1beta1.SwitchTypeLabel]
-	if !ok {
-		typeLabel = "all"
-	}
-	labelsReq, _ := switchv1beta1.GetLabelSelector(switchv1beta1.SwitchConfigTypeLabel+typeLabel, selection.Exists, []string{})
-	selector := labels.NewSelector().Add(*labelsReq)
-	opts := &client.ListOptions{
-		LabelSelector: selector,
-		Limit:         100,
-	}
-	if err = r.List(ctx, switchConfigs, opts); err != nil {
-		log.Error(err, "failed to list resources", "kind", "SwitchConfigList")
-		return
-	}
-	if len(switchConfigs.Items) > 0 {
-		relatedConfig = &switchConfigs.Items[0]
-	}
-	obj.UpdateInterfacesParameters(relatedConfig)
+	obj.UpdatePeers(relatedInventory)
 
 	relatedSwitches := &switchv1beta1.SwitchList{}
 	if err = r.List(ctx, relatedSwitches); err != nil {
@@ -198,6 +178,27 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		}
 		return
 	}
+
+	var relatedConfig *switchv1beta1.SwitchConfig
+	switchConfigs := &switchv1beta1.SwitchConfigList{}
+	typeLabel, ok := obj.Labels[switchv1beta1.SwitchTypeLabel]
+	if !ok {
+		typeLabel = "all"
+	}
+	labelsReq, _ := switchv1beta1.GetLabelSelector(switchv1beta1.SwitchConfigTypeLabel+typeLabel, selection.Exists, []string{})
+	selector := labels.NewSelector().Add(*labelsReq)
+	opts := &client.ListOptions{
+		LabelSelector: selector,
+		Limit:         100,
+	}
+	if err = r.List(ctx, switchConfigs, opts); err != nil {
+		log.Error(err, "failed to list resources", "kind", "SwitchConfigList")
+		return
+	}
+	if len(switchConfigs.Items) > 0 {
+		relatedConfig = &switchConfigs.Items[0]
+	}
+	obj.UpdateInterfacesParameters(relatedConfig, relatedSwitches)
 
 	if !obj.StateEqualsTo(switchv1beta1.CSwitchStateReady) {
 		obj.SetRole()
