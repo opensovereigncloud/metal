@@ -437,6 +437,9 @@ func (in *Switch) UpdateInterfacesParameters(conf *SwitchConfig, list *SwitchLis
 				continue
 			}
 			peerNIC, ok := peerNICs.Interfaces[params.Peer.PortDescription]
+			if !ok {
+				continue
+			}
 			params.FEC = peerNIC.FEC
 			params.MTU = peerNIC.MTU
 			params.Lanes = peerNIC.Lanes

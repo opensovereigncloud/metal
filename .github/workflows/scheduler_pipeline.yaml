@@ -77,7 +77,6 @@ jobs:
           silent: 'false'
 
   docker-build:
-    needs: [ kustomize-test, go-lint, go-test ]
     runs-on: [ self-hosted, Linux, X64 ]
     steps:
       - name: Checkout
