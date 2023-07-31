@@ -480,11 +480,26 @@ func (in *Switch) InterfacesMatchInventory(inv *inventoryv1alpha1.Inventory) boo
 	return true
 }
 
-func (in *Switch) UpdatePeers(inv *inventoryv1alpha1.Inventory) {
+func (in *Switch) UpdatePeers(inv *inventoryv1alpha1.Inventory, list *SwitchList) {
 	interfaces := interfacesFromInventory(inv)
+	peers := make(map[string]Switch)
+	for _, item := range list.Items {
+		peers[item.Name] = item
+	}
 	for nic, nicData := range interfaces {
 		switchPort := in.Status.Interfaces[nic]
-		switchPort.Peer = nicData.Peer.DeepCopy()
+		if switchPort.Peer.Name == "" {
+			switchPort.Peer = nicData.Peer.DeepCopy()
+			continue
+		}
+		if switchPort.Peer.Type != CPeerTypeSwitch {
+			continue
+		}
+		_, ok := peers[switchPort.Peer.Name]
+		if !ok {
+			switchPort.Peer = nicData.Peer.DeepCopy()
+			continue
+		}
 	}
 }
 
