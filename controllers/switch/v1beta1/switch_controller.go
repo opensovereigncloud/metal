@@ -157,13 +157,13 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 			return
 		}
 	}
-	obj.UpdatePeers(relatedInventory)
 
 	relatedSwitches := &switchv1beta1.SwitchList{}
 	if err = r.List(ctx, relatedSwitches); err != nil {
 		log.Error(err, "failed to list resources", "kind", "SwitchList")
 		return
 	}
+	obj.UpdatePeers(relatedInventory, relatedSwitches)
 	if !obj.ConnectionsOK(relatedSwitches) {
 		obj.SetState(switchv1beta1.CSwitchStateProcessing)
 		obj.SetConnections(relatedSwitches)
