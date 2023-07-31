@@ -488,7 +488,9 @@ func (in *Switch) UpdatePeers(inv *inventoryv1alpha1.Inventory, list *SwitchList
 	}
 	for nic, nicData := range interfaces {
 		switchPort := in.Status.Interfaces[nic]
-		if switchPort.Peer.Name == "" {
+		if switchPort.Peer == nil ||
+			switchPort.Peer.ObjectReference == nil ||
+			switchPort.Peer.Name == "" {
 			switchPort.Peer = nicData.Peer.DeepCopy()
 			continue
 		}
