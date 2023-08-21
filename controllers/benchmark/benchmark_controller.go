@@ -53,11 +53,11 @@ func (r *Reconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
-//+kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines/finalizers,verbs=update
 
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(_ context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 

@@ -20,6 +20,7 @@ import (
 	"context"
 
 	controllers "github.com/onmetal/metal-api/controllers/machine"
+	domain "github.com/onmetal/metal-api/domain/reservation"
 	corev1 "k8s.io/api/core/v1"
 
 	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
@@ -27,7 +28,7 @@ import (
 
 	"github.com/google/uuid"
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
 	. "github.com/onsi/ginkgo/v2"
@@ -43,7 +44,7 @@ var _ = Describe("MachinePool-Controller", func() {
 	ns := SetupTest(ctx, machinePoolReconcilers)
 
 	It("Should watch machine objects and maintain the machinePool", func() {
-		machine := &machinev1alpha2.Machine{}
+		machine := &machinev1alpha3.Machine{}
 		machinePool := &poolv1alpha1.MachinePool{}
 
 		u, err := uuid.NewUUID()
@@ -133,7 +134,7 @@ var _ = Describe("MachinePool-Controller", func() {
 		}).Should(BeTrue())
 
 		By("Expect successful machine status update to Running")
-		machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusReserved)
+		machine.Status = prepareMachineStatus(domain.ReservationStatusReserved)
 		Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
 		By("Expect there is machine in running reservation status")
@@ -176,7 +177,7 @@ var _ = Describe("MachinePool-Controller", func() {
 })
 
 // nolint reason:temp
-func createAvailableMachine(ctx context.Context, name, namespace string, machine *machinev1alpha2.Machine) {
+func createAvailableMachine(ctx context.Context, name, namespace string, machine *machinev1alpha3.Machine) {
 	By("Expect successful machine creation")
 	Expect(k8sClient.Create(ctx, prepareTestMachineWithSizeLabels(name, namespace))).Should(Succeed())
 
@@ -190,7 +191,7 @@ func createAvailableMachine(ctx context.Context, name, namespace string, machine
 	}).Should(BeTrue())
 
 	By("Expect successful machine status update")
-	machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusAvailable)
+	machine.Status = prepareMachineStatus(domain.ReservationStatusAvailable)
 	Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
 	By("Expect there is machine in available reservation status")
@@ -204,8 +205,8 @@ func createAvailableMachine(ctx context.Context, name, namespace string, machine
 }
 
 // nolint reason:temp
-func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha2.Machine {
-	return &machinev1alpha2.Machine{
+func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha3.Machine {
+	return &machinev1alpha3.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -214,21 +215,23 @@ func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha2.M
 				"machine.onmetal.de/size-m5-metal-2cpu": "true",
 			},
 		},
-		Spec: machinev1alpha2.MachineSpec{
+		Spec: machinev1alpha3.MachineSpec{
 			InventoryRequested: true,
 		},
 	}
 }
 
 // nolint reason:temp
-func prepareMachineStatus(status string) machinev1alpha2.MachineStatus {
-	return machinev1alpha2.MachineStatus{
-		Health: machinev1alpha2.MachineStateHealthy,
-		Interfaces: []machinev1alpha2.Interface{
-			{Name: "test"},
-			{Name: "test2"},
+func prepareMachineStatus(status string) machinev1alpha3.MachineStatus {
+	return machinev1alpha3.MachineStatus{
+		Health: machinev1alpha3.MachineStateHealthy,
+		Network: machinev1alpha3.Network{
+			Interfaces: []machinev1alpha3.Interface{
+				{Name: "test"},
+				{Name: "test2"},
+			},
 		},
-		Reservation: machinev1alpha2.Reservation{Status: status},
+		Reservation: machinev1alpha3.Reservation{Status: status},
 	}
 }
 

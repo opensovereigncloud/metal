@@ -27,42 +27,71 @@ import (
 )
 
 type InventoryOnboardingReconciler struct {
-	log               logr.Logger
-	onboardingUseCase usecase.OnboardingUseCase
-	validateServer    usecase.ServerValidationUseCase
+	log             logr.Logger
+	createInventory usecase.CreateInventory
+	getServer       usecase.GetServer
 }
 
 func NewInventoryOnboardingReconciler(
 	log logr.Logger,
-	onboardingUseCase usecase.OnboardingUseCase,
-	validateServer usecase.ServerValidationUseCase) *InventoryOnboardingReconciler {
+	onboardingUseCase usecase.CreateInventory,
+	getServer usecase.GetServer,
+) *InventoryOnboardingReconciler {
 	return &InventoryOnboardingReconciler{
-		log:               log,
-		onboardingUseCase: onboardingUseCase,
-		validateServer:    validateServer}
+		log:             log,
+		createInventory: onboardingUseCase,
+		getServer:       getServer,
+	}
 }
 
+// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets/status,verbs=get
+
 // SetupWithManager sets up the controller with the Manager.
-func (r *InventoryOnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *InventoryOnboardingReconciler) SetupWithManager(
+	mgr ctrl.Manager,
+) error {
 	r.log.Info("reconciler started")
+	if err := mgr.
+		GetFieldIndexer().
+		IndexField(
+			context.Background(),
+			&oob.OOB{},
+			"metadata.name",
+			oobIndex,
+		); err != nil {
+		r.log.Error(err, "unable to setup oob index field")
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&oob.OOB{}).
 		Complete(r)
 }
 
-func (r *InventoryOnboardingReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *InventoryOnboardingReconciler) Reconcile(
+	_ context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	reqLogger := r.log.WithValues("namespace", req.NamespacedName)
 
-	request := dto.Request{
-		Name:      req.Name,
-		Namespace: req.Namespace,
-	}
-	if !r.validateServer.Execute(request) {
-		reqLogger.Info("server validation failed. no power capabilities or uuid found")
+	server, err := r.getServer.Execute(req.Name)
+	if err != nil {
+		reqLogger.Info("get server failed", "error", err)
 		return ctrl.Result{}, nil
 	}
-	err := r.onboardingUseCase.Execute(request)
-	if usecase.IsAlreadyOnboarded(err) {
+	if !server.HasPowerCapabilities() {
+		reqLogger.Info("no power caps", "server", server.UUID)
+		return ctrl.Result{}, nil
+	}
+
+	inventoryInfo := dto.InventoryInfo{
+		UUID:      server.UUID,
+		Namespace: server.Namespace,
+	}
+	err = r.createInventory.Execute(inventoryInfo)
+	if usecase.IsAlreadyCreated(err) {
 		return ctrl.Result{}, nil
 	}
 	if err != nil {

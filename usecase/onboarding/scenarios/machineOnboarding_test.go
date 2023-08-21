@@ -15,30 +15,44 @@
 package scenarios_test
 
 import (
+	"net/netip"
 	"testing"
 
+	switches "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	"github.com/onmetal/metal-api/common/types/common"
+	invdomain "github.com/onmetal/metal-api/domain/inventory"
 	domain "github.com/onmetal/metal-api/domain/machine"
-	persistence "github.com/onmetal/metal-api/persistence-kubernetes/onboarding"
-	"github.com/onmetal/metal-api/persistence-kubernetes/onboarding/fake"
 	usecase "github.com/onmetal/metal-api/usecase/onboarding"
 	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 	"github.com/onmetal/metal-api/usecase/onboarding/scenarios"
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-func newMachineOnboardingUseCase(a *assert.Assertions,
-	fakeInventory dto.Inventory) usecase.MachineOnboardingUseCase {
-	fakeClient, err := fake.NewFakeClient()
-	a.Nil(err, "must create client")
+var (
+	log = zap.New()
+)
 
-	machineNetwork := persistence.NewMachineInterfaces(fakeClient)
+func newMachineOnboardingUseCase(
+	a *assert.Assertions,
+	fakeInventory invdomain.Inventory,
+) usecase.MachineOnboarding {
+	loopbackRepository := &fakeLoopbackRepository{
+		address: netip.MustParsePrefix("0.0.0.1/32"),
+		err:     nil,
+	}
 	machineRepository := &fakeMachineRepository{
 		test:      a,
 		inventory: fakeInventory,
 	}
+	swutchExtractor := &fakeSwitchRepository{}
 	return scenarios.NewMachineOnboardingUseCase(
-		machineNetwork,
-		machineRepository)
+		machineRepository,
+		machineRepository,
+		swutchExtractor,
+		loopbackRepository,
+		log)
 }
 
 func TestMachineOnboardingUseCaseExecuteSuccess(t *testing.T) {
@@ -47,27 +61,34 @@ func TestMachineOnboardingUseCaseExecuteSuccess(t *testing.T) {
 	a := assert.New(t)
 
 	testInventory := inventory("test", "default")
-	err := newMachineOnboardingUseCase(a, testInventory).Execute(machine(), testInventory)
+	err := newMachineOnboardingUseCase(a, testInventory).Execute(newMachine(), testInventory)
 	a.Nil(err, "must onboard machine without error")
 }
 
-func machine() domain.Machine {
-	return domain.Machine{
-		UUID:         "test",
-		Namespace:    "default",
-		SKU:          "",
-		SerialNumber: "",
-		Interfaces:   nil,
-		Size:         nil,
-	}
+func newMachine() domain.Machine {
+	return domain.NewMachine(
+		domain.NewMachineID("test"),
+		"test",
+		"",
+		65535,
+		"sju",
+		"serialNumber",
+		nil,
+		domain.Loopbacks{},
+		map[string]string{"machine": "true"},
+	)
 }
 
 type fakeMachineRepository struct {
 	test      *assert.Assertions
-	inventory dto.Inventory
+	inventory invdomain.Inventory
 }
 
-func (f *fakeMachineRepository) Create(inventory dto.Inventory) error {
+func (f *fakeMachineRepository) Save(machine domain.Machine) error {
+	return f.Update(machine)
+}
+
+func (f *fakeMachineRepository) Create(_ domain.Machine) error {
 	return nil
 }
 
@@ -79,6 +100,35 @@ func (f *fakeMachineRepository) Update(machine domain.Machine) error {
 	return nil
 }
 
-func (f *fakeMachineRepository) Get(request dto.Request) (domain.Machine, error) {
+func (f *fakeMachineRepository) ByUUID(_ string) (domain.Machine, error) {
 	return domain.Machine{}, nil
+}
+
+func (f *fakeMachineRepository) ByID(_ domain.MachineID) (domain.Machine, error) {
+	return domain.Machine{}, nil
+}
+
+type fakeLoopbackRepository struct {
+	address netip.Prefix
+	err     error
+}
+
+func (f *fakeLoopbackRepository) Try(_ int) providers.LoopbackExtractor {
+	return f
+}
+func (f *fakeLoopbackRepository) IPv4ByMachineUUID(uuid string) (common.Address, error) {
+	return common.Address{Prefix: f.address}, f.err
+}
+
+type fakeSwitchRepository struct {
+}
+
+func (f *fakeSwitchRepository) ByChassisID(id string) (dto.SwitchInfo, error) {
+	return dto.SwitchInfo{
+		Name:  "test",
+		Lanes: 1,
+		Interfaces: &switches.InterfaceSpec{
+			IP: nil,
+		},
+	}, nil
 }

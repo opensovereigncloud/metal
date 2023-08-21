@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"github.com/google/uuid"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	controllers "github.com/onmetal/metal-api/controllers/machine"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
@@ -34,7 +34,7 @@ var _ = Describe("machine-power-controller", func() {
 
 	It("should create ipxe configmap", func() {
 		machinePool := &computev1alpha1.MachinePool{}
-		metalMachine := &machinev1alpha2.Machine{}
+		metalMachine := &machinev1alpha3.Machine{}
 		computeMachine := &computev1alpha1.Machine{}
 		ipxeCM := &corev1.ConfigMap{}
 

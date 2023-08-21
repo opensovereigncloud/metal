@@ -19,12 +19,14 @@ RUN --mount=type=ssh --mount=type=secret,id=github_pat GITHUB_PAT_PATH=/run/secr
 
 # Copy the go source
 COPY main.go main.go
+COPY publisher/ publisher/
 COPY apis/ apis/
 COPY controllers/ controllers/
 COPY pkg/ pkg/
+COPY common/ common/
 COPY domain/ domain/
 COPY usecase/ usecase/
-COPY persistence-kubernetes/ persistence-kubernetes/
+COPY providers-kubernetes/ providers-kubernetes/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o manager main.go

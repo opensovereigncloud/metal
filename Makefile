@@ -8,7 +8,7 @@ IMAGE=metal-api/documentation
 # Kubebuilder assets version used to run testing environment
 KUBE_VERSION ?= 1.26.0
 # Controller tools version
-CONTROLLER_TOOLS_VERSION ?= v0.11.3
+CONTROLLER_TOOLS_VERSION ?= v0.12.1
 
 GOPRIVATE ?= "github.com/onmetal/*"
 

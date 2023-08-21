@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// A toleration operator is the set of operators that can be used in a toleration.
+// TolerationOperator - is the set of operators that can be used in a toleration.
 type TolerationOperator string
 
 const (
@@ -90,7 +90,7 @@ type Taint struct {
 	// +required
 	Key string `json:"key"`
 	// Value - corresponding to the taint key.
-	//+optional
+	// +optional
 	Value string `json:"value,omitempty"`
 	// Effect - defines taint effect on the Machine.
 	// Valid effects are NotAvailable and Suspended.
@@ -124,7 +124,7 @@ type Toleration struct {
 // Identity - defines hardware information about machine.
 type Identity struct {
 	// SKU - stock keeping unit. The label allows vendors automatically track the movement of inventory
-	//+optional
+	// +optional
 	SKU string `json:"sku,omitempty"`
 	// SerialNumber - unique machine number
 	// +optional
@@ -205,10 +205,10 @@ type IPAddressSpec struct {
 type Peer struct {
 	// LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol
 	// layer 2 neighbor discovery protocol
-	//+optional
+	// +optional
 	LLDPSystemName string `json:"lldp_system_name,omitempty"`
 	// LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol
-	//+optional
+	// +optional
 	LLDPChassisID string `json:"lldp_chassi_id,omitempty"`
 	// LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol
 	// +optional
@@ -273,6 +273,7 @@ type ResourceReference struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Healthy",type=string,JSONPath=`.status.health`
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
 // +kubebuilder:printcolumn:name="Reservation Status",type=string,JSONPath=`.status.reservation.status`

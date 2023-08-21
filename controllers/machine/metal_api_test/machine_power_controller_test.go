@@ -20,8 +20,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	domain "github.com/onmetal/metal-api/domain/reservation"
 
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,7 +32,7 @@ import (
 
 var _ = Describe("machine-power-controller", func() {
 	It("Should watch machine objects and turn it on if reservation exists", func() {
-		machine := &machinev1alpha2.Machine{}
+		machine := &machinev1alpha3.Machine{}
 		oob := &oobv1.OOB{}
 
 		u, err := uuid.NewUUID()
@@ -65,9 +66,9 @@ var _ = Describe("machine-power-controller", func() {
 		}).Should(BeTrue())
 
 		By("Expect machine status reservation updated successfully")
-		machine.Status.Reservation = machinev1alpha2.Reservation{
+		machine.Status.Reservation = machinev1alpha3.Reservation{
 			Status: machine.Status.Reservation.Status,
-			Reference: &machinev1alpha2.ResourceReference{
+			Reference: &machinev1alpha3.ResourceReference{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -112,7 +113,7 @@ func createOOB(ctx context.Context, name, namespace string, oob *oobv1.OOB) {
 }
 
 // nolint reason:temp
-func createHealthyRunningMachine(ctx context.Context, name, namespace string, machine *machinev1alpha2.Machine) {
+func createHealthyRunningMachine(ctx context.Context, name, namespace string, machine *machinev1alpha3.Machine) {
 	By("Expect successful machine creation")
 	Expect(k8sClient.Create(ctx, prepareTestMachineWithSizeLabels(name, namespace))).Should(Succeed())
 
@@ -126,7 +127,7 @@ func createHealthyRunningMachine(ctx context.Context, name, namespace string, ma
 	}).Should(BeTrue())
 
 	By("Expect successful machine status update")
-	machine.Status = prepareMachineStatus(machinev1alpha2.ReservationStatusRunning)
+	machine.Status = prepareMachineStatus(domain.ReservationStatusRunning)
 	Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
 	By("Expect there is a healthy machine in running reservation status")
@@ -140,8 +141,8 @@ func createHealthyRunningMachine(ctx context.Context, name, namespace string, ma
 }
 
 // nolint reason:temp
-func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha2.Machine {
-	return &machinev1alpha2.Machine{
+func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha3.Machine {
+	return &machinev1alpha3.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -150,21 +151,23 @@ func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha2.M
 				"machine.onmetal.de/size-m5-metal-2cpu": "true",
 			},
 		},
-		Spec: machinev1alpha2.MachineSpec{
+		Spec: machinev1alpha3.MachineSpec{
 			InventoryRequested: true,
 		},
 	}
 }
 
 // nolint reason:temp
-func prepareMachineStatus(status string) machinev1alpha2.MachineStatus {
-	return machinev1alpha2.MachineStatus{
-		Health: machinev1alpha2.MachineStateHealthy,
-		Interfaces: []machinev1alpha2.Interface{
-			{Name: "test"},
-			{Name: "test2"},
+func prepareMachineStatus(status string) machinev1alpha3.MachineStatus {
+	return machinev1alpha3.MachineStatus{
+		Health: machinev1alpha3.MachineStateHealthy,
+		Network: machinev1alpha3.Network{
+			Interfaces: []machinev1alpha3.Interface{
+				{Name: "test"},
+				{Name: "test2"},
+			},
 		},
-		Reservation: machinev1alpha2.Reservation{Status: status},
+		Reservation: machinev1alpha3.Reservation{Status: status},
 	}
 }
 

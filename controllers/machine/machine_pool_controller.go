@@ -22,7 +22,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	domain "github.com/onmetal/metal-api/domain/reservation"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -74,7 +75,7 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log: r.Log.WithValues("namespace", req.NamespacedName),
 	}
 
-	machine := &machinev1alpha2.Machine{
+	machine := &machine.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
@@ -127,13 +128,13 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 func (r *MachinePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&machinev1alpha2.Machine{}).
+		For(&machine.Machine{}).
 		Complete(r)
 }
 
 func (r *MachinePoolReconciler) handleMachineDeletion(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machinev1alpha2.Machine,
+	machine *machine.Machine,
 ) (ctrl.Result, error) {
 	if controllerutil.ContainsFinalizer(machine, MachineFinalizer) {
 		result, err := r.deleteMachinePool(wCtx, machine)
@@ -152,7 +153,7 @@ func (r *MachinePoolReconciler) handleMachineDeletion(
 
 func (r *MachinePoolReconciler) createMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machinev1alpha2.Machine,
+	machine *machine.Machine,
 	sizes []string,
 ) (ctrl.Result, error) {
 	wCtx.log.Info("creating machine_pool")
@@ -185,14 +186,14 @@ func (r *MachinePoolReconciler) createMachinePool(
 
 func (r *MachinePoolReconciler) updateMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machinev1alpha2.Machine,
+	machine *machine.Machine,
 	machinePool *poolv1alpha1.MachinePool,
 	sizes []string,
 ) (ctrl.Result, error) {
 	wCtx.log.Info("updating machine_pool")
 
 	// if machine is booked, remove available classes
-	if machine.Status.Reservation.Status != machinev1alpha2.ReservationStatusAvailable {
+	if machine.Status.Reservation.Status != domain.ReservationStatusAvailable {
 		machinePool.Status.AvailableMachineClasses = make([]corev1.LocalObjectReference, 0)
 
 		if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
@@ -216,7 +217,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 // nolint:unparam
 func (r *MachinePoolReconciler) deleteMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machinev1alpha2.Machine,
+	machine *machine.Machine,
 ) (ctrl.Result, error) {
 	wCtx.log.Info("deleting machine_pool")
 
@@ -236,7 +237,7 @@ func (r *MachinePoolReconciler) deleteMachinePool(
 }
 
 func (r *MachinePoolReconciler) getAvailableMachineClasses(
-	machine *machinev1alpha2.Machine,
+	machine *machine.Machine,
 	sizes []string,
 ) []corev1.LocalObjectReference {
 	var availableMachineClasses []corev1.LocalObjectReference

@@ -20,7 +20,10 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	machinev1lpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	domain "github.com/onmetal/metal-api/domain/inventory"
 	usecase "github.com/onmetal/metal-api/usecase/onboarding"
 	"github.com/onmetal/metal-api/usecase/onboarding/dto"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,43 +32,78 @@ import (
 
 type OnboardingMachineReconciler struct {
 	log                   logr.Logger
-	getMachineUseCase     usecase.GetMachineUseCase
-	getInventoryUseCase   usecase.GetInventoryUseCase
-	addMachineUseCase     usecase.AddMachineUseCase
-	machineOnboardUseCase usecase.MachineOnboardingUseCase
+	getMachineUseCase     usecase.GetMachine
+	getInventoryUseCase   usecase.GetInventory
+	createMachine         usecase.CreateMachine
+	machineOnboardUseCase usecase.MachineOnboarding
 }
 
 func NewOnboardingMachineReconciler(
 	log logr.Logger,
-	getMachineUseCase usecase.GetMachineUseCase,
-	getInventoryUseCase usecase.GetInventoryUseCase,
-	addMachineUseCase usecase.AddMachineUseCase,
-	machineOnboardUseCase usecase.MachineOnboardingUseCase) *OnboardingMachineReconciler {
+	getMachineUseCase usecase.GetMachine,
+	getInventoryUseCase usecase.GetInventory,
+	addMachineUseCase usecase.CreateMachine,
+	machineOnboardUseCase usecase.MachineOnboarding,
+) *OnboardingMachineReconciler {
 	return &OnboardingMachineReconciler{
 		log:                   log,
 		getMachineUseCase:     getMachineUseCase,
 		getInventoryUseCase:   getInventoryUseCase,
-		addMachineUseCase:     addMachineUseCase,
+		createMachine:         addMachineUseCase,
 		machineOnboardUseCase: machineOnboardUseCase}
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *OnboardingMachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *OnboardingMachineReconciler) SetupWithManager(
+	mgr ctrl.Manager,
+) error {
 	r.log.Info("reconciler started")
+	if err := mgr.
+		GetFieldIndexer().
+		IndexField(
+			context.Background(),
+			&machinev1lpha3.Machine{},
+			"metadata.name",
+			machineIndex,
+		); err != nil {
+		r.log.Error(err, "unable to setup machine index field")
+		return err
+	}
+	if err := mgr.
+		GetFieldIndexer().
+		IndexField(
+			context.Background(),
+			&inventories.Inventory{},
+			"metadata.name",
+			inventoryIndex,
+		); err != nil {
+		r.log.Error(err, "unable to setup inventory index field")
+		return err
+	}
+
+	if err := mgr.
+		GetFieldIndexer().
+		IndexField(
+			context.Background(),
+			&ipamv1alpha1.IP{},
+			"metadata.name",
+			ipIndex,
+		); err != nil {
+		r.log.Error(err, "unable to setup oob index field")
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&inventories.Inventory{}).
 		Complete(r)
 }
 
-func (r *OnboardingMachineReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *OnboardingMachineReconciler) Reconcile(
+	_ context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	reqLogger := r.log.WithValues("namespace", req.NamespacedName)
 
-	request := dto.Request{
-		Name:      req.Name,
-		Namespace: req.Namespace,
-	}
-
-	inventory, err := r.getInventoryUseCase.Execute(request)
+	inventory, err := r.getInventoryUseCase.Execute(req.Name)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -73,12 +111,9 @@ func (r *OnboardingMachineReconciler) Reconcile(_ context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	machine, err := r.getMachineUseCase.Execute(request)
+	machine, err := r.getMachineUseCase.Execute(inventory.UUID)
 	if usecase.IsNotFound(err) {
-		if err := r.AddMachineWhenNotExist(inventory); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{Requeue: true}, r.CreateMachine(inventory)
 	}
 	if err != nil {
 		return ctrl.Result{}, err
@@ -93,7 +128,8 @@ func (r *OnboardingMachineReconciler) Reconcile(_ context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func (r *OnboardingMachineReconciler) AddMachineWhenNotExist(
-	inventory dto.Inventory) error {
-	return r.addMachineUseCase.Execute(inventory)
+func (r *OnboardingMachineReconciler) CreateMachine(inventory domain.Inventory) error {
+	machineInfo := dto.NewMachineInfoFromInventory(inventory)
+	_, err := r.createMachine.Execute(machineInfo)
+	return err
 }

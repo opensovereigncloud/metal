@@ -6,13 +6,13 @@ projectName: metal-api
 repo: github.com/onmetal/metal-api
 resources:
   - api:
-      crdVersion: v1
+      crdVersion: v1alpha3
       namespaced: true
     controller: true
     group: machine
     kind: Machine
-    path: github.com/onmetal/metal-api/apis/machine/v1alpha2
-    version: v1alpha2
+    path: github.com/onmetal/metal-api/apis/machine/v1alpha3
+    version: v1alpha3
   - api:
       crdVersion: v1
       namespaced: true

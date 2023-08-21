@@ -26,14 +26,16 @@ import (
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1lpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machinev1lpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
 	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
 	machinecontrollers "github.com/onmetal/metal-api/controllers/machine"
 	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
 	switchcontroller "github.com/onmetal/metal-api/controllers/switch"
-	onboardingpersistence "github.com/onmetal/metal-api/persistence-kubernetes/onboarding"
+	onboardingprovider "github.com/onmetal/metal-api/providers-kubernetes/onboarding"
+	"github.com/onmetal/metal-api/publisher"
+	"github.com/onmetal/metal-api/usecase/onboarding/invariants"
 	"github.com/onmetal/metal-api/usecase/onboarding/rules"
 	onboardingscenarios "github.com/onmetal/metal-api/usecase/onboarding/scenarios"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
@@ -46,12 +48,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
+
+func addToScheme() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(benchv1alpha3.AddToScheme(scheme))
+	utilruntime.Must(machinev1lpha3.AddToScheme(scheme))
+	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(oobv1.AddToScheme(scheme))
+	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(switchv1beta1.AddToScheme(scheme))
+	utilruntime.Must(poolv1alpha1.AddToScheme(scheme))
+	// +kubebuilder:scaffold:scheme
+}
 
 func main() {
 	addToScheme()
@@ -61,12 +76,16 @@ func main() {
 		webhookPort = 9443
 	}
 
-	var metricsAddr, probeAddr, namespace, bootstrapAPIServer string
+	var metricsAddr, probeAddr, namespace, bootstrapAPIServer, loopbackSubnetLabelValue string
 	var enableLeaderElection, profiling bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.StringVar(&namespace, "namespace", "default", "Namespace name for object creation")
 	flag.StringVar(&bootstrapAPIServer, "bootstrap-api-server", "", "Endpoint of the the k8s api server to join to like https://1.2.3.4:6443")
+	flag.StringVar(
+		&loopbackSubnetLabelValue,
+		"loopback_subnet_value_name",
+		"loopback", "Loopback subnet label value name")
 	flag.IntVar(&webhookPort, "webhook-bind-address", webhookPort, "The address the webhook endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -83,12 +102,12 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
-		Port:                   webhookPort,
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookPort}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "064f77d7.machine.onmetal.de",
 		ClientDisableCacheFor: []client.Object{
-			&machinev1lpha2.Machine{},
+			&machinev1lpha3.Machine{},
 		},
 	})
 	if err != nil {
@@ -101,7 +120,7 @@ func main() {
 		namespace = os.Getenv("NAMESPACE")
 	}
 
-	startReconcilers(mgr, bootstrapAPIServer)
+	startReconcilers(mgr, bootstrapAPIServer, loopbackSubnetLabelValue)
 	addHandlers(mgr, profiling)
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -110,19 +129,11 @@ func main() {
 	}
 }
 
-func addToScheme() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(benchv1alpha3.AddToScheme(scheme))
-	utilruntime.Must(machinev1lpha2.AddToScheme(scheme))
-	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(oobv1.AddToScheme(scheme))
-	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(switchv1beta1.AddToScheme(scheme))
-	utilruntime.Must(poolv1alpha1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
-}
-
-func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
+func startReconcilers(
+	mgr ctrl.Manager,
+	bootstrapAPIServer string,
+	loopbackSubnetLabelValue string,
+) {
 	var err error
 
 	if err = (&benchmarkcontroller.Reconciler{
@@ -199,12 +210,18 @@ func startReconcilers(mgr ctrl.Manager, bootstrapAPIServer string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Access")
 		os.Exit(1)
 	}
-	if err = inventoryOnboardingReconciler(mgr).SetupWithManager(mgr); err != nil {
+	eventPublisher := publisher.NewDomainEventPublisher(mgr.GetLogger())
+
+	if err = inventoryOnboardingReconciler(mgr, eventPublisher).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Inventory-onboarding")
 		os.Exit(1)
 	}
 
-	if err := machineOnboardingReconciler(mgr).SetupWithManager(mgr); err != nil {
+	if err := machineOnboardingReconciler(
+		mgr,
+		eventPublisher,
+		loopbackSubnetLabelValue,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Machine-onboarding")
 		os.Exit(1)
 	}
@@ -297,48 +314,80 @@ func addHandlers(mgr ctrl.Manager, profiling bool) {
 	}
 }
 
-func inventoryOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.InventoryOnboardingReconciler {
-	inventoryRepository := onboardingpersistence.NewInventoryRepository(mgr.GetClient())
-	serverRepository := onboardingpersistence.NewServerRepository(mgr.GetClient())
-	executor := onboardingpersistence.NewFakeServerExecutor(mgr.GetLogger())
-	rule := rules.NewServerMustBeEnabledOnFirstTimeRule(executor, mgr.GetLogger())
+func inventoryOnboardingReconciler(
+	mgr ctrl.Manager,
+	eventPublisher *publisher.DomainEventPublisher,
+) *onboardingcontroller.InventoryOnboardingReconciler {
+	inventoryRepository := onboardingprovider.NewInventoryRepository(mgr.GetClient(), eventPublisher)
+	inventoryIDGenerator := onboardingprovider.NewKubernetesInventoryIDGenerator()
+	inventoryAlreadyExist := invariants.NewInventoryAlreadyExist(inventoryRepository)
+	serverRepository := onboardingprovider.NewServerRepository(mgr.GetClient())
+	serverExecutor := onboardingprovider.NewFakeServerExecutor(mgr.GetLogger())
 
-	inventoryOnboardingUseCase := onboardingscenarios.NewInventoryOnboardingUseCase(
+	enableServerAfterInventoryCreationRule := rules.NewServerMustBeEnabledOnFirstTimeRule(
+		serverExecutor,
 		inventoryRepository,
-		rule,
+		mgr.GetLogger(),
 	)
-	serverValidationUseCase := onboardingscenarios.NewServerValidationUseCase(
-		serverRepository,
+	eventPublisher.RegisterListeners(enableServerAfterInventoryCreationRule)
+
+	inventoryOnboardingUseCase := onboardingscenarios.NewCreateInventoryUseCase(
+		inventoryAlreadyExist,
+		inventoryIDGenerator,
+		inventoryRepository,
 	)
+	getServerUseCase := onboardingscenarios.NewGetServerUseCase(serverRepository)
 
 	return onboardingcontroller.NewInventoryOnboardingReconciler(
 		ctrl.Log.WithName("controllers").WithName("Inventory-onboarding"),
 		inventoryOnboardingUseCase,
-		serverValidationUseCase,
+		getServerUseCase,
 	)
 }
 
-func machineOnboardingReconciler(mgr ctrl.Manager) *onboardingcontroller.OnboardingMachineReconciler {
-	machineRepository := onboardingpersistence.NewMachineRepository(mgr.GetClient())
-	machineNetwork := onboardingpersistence.NewMachineInterfaces(mgr.GetClient())
+func machineOnboardingReconciler(
+	mgr ctrl.Manager,
+	eventPublisher *publisher.DomainEventPublisher,
+	loopbackSubnetLabelValue string,
+) *onboardingcontroller.OnboardingMachineReconciler {
+	machineRepository := onboardingprovider.NewMachineRepository(mgr.GetClient(), eventPublisher)
+	switchExtractor := onboardingprovider.NewSwitchRepository(mgr.GetClient())
+	subnetExtractor := onboardingprovider.NewSubnetRepository(mgr.GetClient(), loopbackSubnetLabelValue)
+	loopbackRepository := onboardingprovider.NewLoopbackRepository(mgr.GetClient())
+	machineAlreadyExist := invariants.NewMachineAlreadyExist(machineRepository)
+	machineIDGenerator := onboardingprovider.NewKubernetesMachineIDGenerator()
+	inventoryRepository := onboardingprovider.NewInventoryRepository(mgr.GetClient(), eventPublisher)
 
-	inventoryRepository := onboardingpersistence.NewInventoryRepository(mgr.GetClient())
+	createLoopbackForMachineRule := rules.NewCreateLoopbackForMachineRule(
+		subnetExtractor,
+		loopbackRepository,
+		machineRepository,
+		mgr.GetLogger(),
+	)
+	eventPublisher.RegisterListeners(createLoopbackForMachineRule)
 
 	machineUseCase := onboardingscenarios.NewGetMachineUseCase(machineRepository)
 
 	getInventoryUseCase := onboardingscenarios.NewGetInventoryUseCase(inventoryRepository)
 
-	addMachineUseCase := onboardingscenarios.NewAddMachineUseCase(machineRepository)
+	createMachineUseCase := onboardingscenarios.NewCreateMachineUseCase(
+		machineRepository,
+		machineIDGenerator,
+		machineAlreadyExist,
+	)
 
 	machineOnboardUseCase := onboardingscenarios.NewMachineOnboardingUseCase(
-		machineNetwork,
-		machineRepository)
+		machineRepository,
+		machineRepository,
+		switchExtractor,
+		loopbackRepository,
+		mgr.GetLogger())
 
 	return onboardingcontroller.NewOnboardingMachineReconciler(
 		ctrl.Log.WithName("controllers").WithName("Machine-onboarding"),
 		machineUseCase,
 		getInventoryUseCase,
-		addMachineUseCase,
+		createMachineUseCase,
 		machineOnboardUseCase,
 	)
 }

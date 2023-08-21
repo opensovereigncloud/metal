@@ -15,18 +15,27 @@
 package scenarios
 
 import (
-	"github.com/onmetal/metal-api/usecase/onboarding/access"
-	dto2 "github.com/onmetal/metal-api/usecase/onboarding/dto"
+	domain "github.com/onmetal/metal-api/domain/inventory"
+	usecase "github.com/onmetal/metal-api/usecase/onboarding"
+	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 )
 
 type GetInventoryUseCase struct {
-	inventoryRepository access.InventoryRepository
+	extractor providers.InventoryExtractor
 }
 
-func NewGetInventoryUseCase(inventoryRepository access.InventoryRepository) *GetInventoryUseCase {
-	return &GetInventoryUseCase{inventoryRepository: inventoryRepository}
+func NewGetInventoryUseCase(
+	inventoryExtractor providers.InventoryExtractor,
+) *GetInventoryUseCase {
+	return &GetInventoryUseCase{extractor: inventoryExtractor}
 }
 
-func (g *GetInventoryUseCase) Execute(request dto2.Request) (dto2.Inventory, error) {
-	return g.inventoryRepository.Get(request)
+func (g *GetInventoryUseCase) Execute(
+	inventoryUUID string,
+) (domain.Inventory, error) {
+	inventory, err := g.extractor.ByUUID(inventoryUUID)
+	if err != nil {
+		return inventory, usecase.InventoryNotFound(err)
+	}
+	return inventory, nil
 }

@@ -16,22 +16,41 @@ package rules
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/usecase/onboarding/access"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	"github.com/onmetal/metal-api/common/types/base"
+	infradomain "github.com/onmetal/metal-api/domain/infrastructure"
+	domain "github.com/onmetal/metal-api/domain/inventory"
+	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 )
 
 type ServerMustBeEnabledOnFirstTimeRule struct {
-	serverExecutor access.ServerExecutor
-	log            logr.Logger
+	inventoryExtractor providers.InventoryExtractor
+	serverExecutor     providers.ServerExecutor
+	log                logr.Logger
 }
 
 func NewServerMustBeEnabledOnFirstTimeRule(
-	serverExecutor access.ServerExecutor,
-	log logr.Logger) *ServerMustBeEnabledOnFirstTimeRule {
+	serverExecutor providers.ServerExecutor,
+	inventoryExtractor providers.InventoryExtractor,
+	log logr.Logger,
+) *ServerMustBeEnabledOnFirstTimeRule {
 	return &ServerMustBeEnabledOnFirstTimeRule{
-		serverExecutor: serverExecutor, log: log}
+		inventoryExtractor: inventoryExtractor,
+		serverExecutor:     serverExecutor,
+		log:                log,
+	}
 }
 
-func (s *ServerMustBeEnabledOnFirstTimeRule) Execute(request dto.Request) error {
-	return s.serverExecutor.Enable(request)
+func (c *ServerMustBeEnabledOnFirstTimeRule) EventType() base.DomainEvent {
+	return &domain.InventoryCreatedDomainEvent{}
+}
+
+func (c *ServerMustBeEnabledOnFirstTimeRule) Handle(event base.DomainEvent) {
+	inv, err := c.inventoryExtractor.ByID(event.ID())
+	if err != nil {
+		c.log.Info("")
+	}
+	serverInfo := infradomain.Server{UUID: inv.UUID}
+	if err = c.serverExecutor.Enable(serverInfo); err != nil {
+		c.log.Info("")
+	}
 }

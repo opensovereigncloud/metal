@@ -17,31 +17,94 @@
 package scenarios
 
 import (
+	"strings"
+
+	"github.com/go-logr/logr"
+	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	invdomain "github.com/onmetal/metal-api/domain/inventory"
 	domain "github.com/onmetal/metal-api/domain/machine"
-	"github.com/onmetal/metal-api/usecase/onboarding/access"
+	"github.com/onmetal/metal-api/pkg/network/bgp"
 	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 )
 
 type MachineOnboardingUseCase struct {
-	machineNetwork    access.MachineNetwork
-	machineRepository access.MachineRepository
+	machinePersister   providers.MachinePersister
+	machineExtractor   providers.MachineExtractor
+	switchExtractor    providers.SwitchExtractor
+	loopbackRepository providers.LoopbackExtractor
+	log                logr.Logger
 }
 
 func NewMachineOnboardingUseCase(
-	machineNetwork access.MachineNetwork,
-	machineRepository access.MachineRepository) *MachineOnboardingUseCase {
+	machinePersister providers.MachinePersister,
+	machineExtractor providers.MachineExtractor,
+	switchExtractor providers.SwitchExtractor,
+	loopbackRepository providers.LoopbackExtractor,
+	log logr.Logger,
+) *MachineOnboardingUseCase {
+	log = log.WithName("MachineOnboardingUseCase")
 	return &MachineOnboardingUseCase{
-		machineNetwork:    machineNetwork,
-		machineRepository: machineRepository}
+		machinePersister:   machinePersister,
+		machineExtractor:   machineExtractor,
+		switchExtractor:    switchExtractor,
+		loopbackRepository: loopbackRepository,
+		log:                log,
+	}
 }
 
-func (o *MachineOnboardingUseCase) Execute(machine domain.Machine, inventory dto.Inventory) error {
-	machine.Interfaces = o.machineNetwork.InterfacesFromInventory(inventory)
+func (m *MachineOnboardingUseCase) Execute(machine domain.Machine, inventory invdomain.Inventory) error {
+	machine.Interfaces = m.MachineInterfacesWithSwitchInfo(inventory)
+	loopbacks, err := m.LoopbackAddress(machine)
+	if err != nil {
+		m.log.Info("can't get loopback addresses", "error", err)
+	}
+	machine.Loopbacks = loopbacks
+	machine.SetMachineSizes(inventory.Sizes)
 
-	machine.MachineSizes(inventory.Sizes)
-
+	machine.ASN = bgp.CalculateAutonomousSystemNumberFromAddress(loopbacks.IPv4.Prefix.Addr())
 	machine.SKU = inventory.ProductSKU
 	machine.SerialNumber = inventory.SerialNumber
 
-	return o.machineRepository.Update(machine)
+	return m.machinePersister.Save(machine)
+}
+
+func (m *MachineOnboardingUseCase) MachineInterfacesWithSwitchInfo(
+	inventory invdomain.Inventory,
+) []machine.Interface {
+	interfaces := dto.ToMachineInterfaces(inventory.NICs)
+	for i := range interfaces {
+		updatedInterfaceInfo, err := m.FindSwitchAndAddInfo(interfaces[i])
+		if err != nil {
+			continue
+		}
+		interfaces[i] = updatedInterfaceInfo
+	}
+	return interfaces
+}
+
+func (m *MachineOnboardingUseCase) FindSwitchAndAddInfo(
+	machineInterface machine.Interface,
+) (machine.Interface, error) {
+	chassisID := strings.ReplaceAll(machineInterface.Peer.LLDPChassisID, ":", "-")
+	sw, err := m.switchExtractor.ByChassisID(chassisID)
+	if err != nil {
+		m.log.Info(
+			"unable to extract switch info",
+			"chassis-id", chassisID,
+			"error", err,
+		)
+		return machine.Interface{}, err
+	}
+	return sw.AddSwitchInfoToMachineInterfaces(machineInterface), nil
+}
+
+func (m *MachineOnboardingUseCase) LoopbackAddress(machine domain.Machine) (domain.Loopbacks, error) {
+	ipv4LoopbackAddress, err := m.loopbackRepository.Try(3).IPv4ByMachineUUID(machine.UUID)
+	if err != nil {
+		return domain.Loopbacks{}, err
+	}
+	return domain.Loopbacks{
+		IPv4: ipv4LoopbackAddress,
+	}, nil
 }

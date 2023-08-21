@@ -20,7 +20,8 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	domain "github.com/onmetal/metal-api/domain/reservation"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,12 +47,12 @@ var (
 	ErrMetalMachineListNotFound                  = errors.New("metal machine list not found")
 )
 
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
-//+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/finalizers,verbs=update
 
 func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName)
@@ -78,18 +79,18 @@ func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	if metalMachine.Status.Health != machinev1alpha2.MachineStateHealthy {
+	if metalMachine.Status.Health != machine.MachineStateHealthy {
 		log.Info("could not update reservation. metal machine is unhealthy")
 		return ctrl.Result{}, nil
 	}
 
-	metalMachine.Status.Reservation.Reference = &machinev1alpha2.ResourceReference{
+	metalMachine.Status.Reservation.Reference = &machine.ResourceReference{
 		APIVersion: computeMachine.APIVersion,
 		Kind:       computeMachine.Kind,
 		Name:       computeMachine.Name,
 		Namespace:  computeMachine.Namespace,
 	}
-	metalMachine.Status.Reservation.Status = machinev1alpha2.ReservationStatusReserved
+	metalMachine.Status.Reservation.Status = domain.ReservationStatusReserved
 
 	if err := r.Client.Status().Update(ctx, metalMachine); err != nil {
 		log.Error(err, "could not update metal machine status")
@@ -121,7 +122,7 @@ func (r *MachineReservationReconciler) handleComputeMachineDeletion(e event.Dele
 	}
 
 	metalMachine.Status.Reservation.Reference = nil
-	metalMachine.Status.Reservation.Status = machinev1alpha2.ReservationStatusAvailable
+	metalMachine.Status.Reservation.Status = domain.ReservationStatusAvailable
 
 	if err := r.Client.Status().Update(ctx, metalMachine); err != nil {
 		r.Log.Error(err, "could not update metal machine status")
@@ -137,8 +138,12 @@ func (r *MachineReservationReconciler) constructPredicates() predicate.Predicate
 	}
 }
 
-func (r *MachineReservationReconciler) getMetalMachine(ctx context.Context, log logr.Logger, computeMachine *computev1alpha1.Machine) (*machinev1alpha2.Machine, error) {
-	metalMachinesList := &machinev1alpha2.MachineList{}
+func (r *MachineReservationReconciler) getMetalMachine(
+	ctx context.Context,
+	log logr.Logger,
+	computeMachine *computev1alpha1.Machine,
+) (*machine.Machine, error) {
+	metalMachinesList := &machine.MachineList{}
 	err := r.List(ctx, metalMachinesList)
 	switch {
 	case err == nil:

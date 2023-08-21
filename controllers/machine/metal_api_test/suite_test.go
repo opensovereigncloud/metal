@@ -21,11 +21,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	controllers "github.com/onmetal/metal-api/controllers/machine"
 
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
 
@@ -78,7 +78,7 @@ var _ = BeforeSuite(func() {
 	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
 	switchv1beta1.SchemeBuilder.Register(&switchv1beta1.Switch{}, &switchv1beta1.SwitchList{})
 	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})
-	machinev1alpha2.SchemeBuilder.Register(&machinev1alpha2.Machine{}, &machinev1alpha2.MachineList{})
+	machinev1alpha3.SchemeBuilder.Register(&machinev1alpha3.Machine{}, &machinev1alpha3.MachineList{})
 
 	var err error
 	cfg, err = testEnv.Start()
@@ -90,7 +90,7 @@ var _ = BeforeSuite(func() {
 	Expect(switchv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(machinev1alpha2.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(machinev1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
 

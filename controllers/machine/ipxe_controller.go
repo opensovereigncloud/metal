@@ -22,13 +22,13 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	"k8s.io/utils/pointer"
 
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/apis/machine/v1alpha2"
 	onmetalimage "github.com/onmetal/onmetal-image"
 	"github.com/onmetal/onmetal-image/oci/remote"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// IpxeReconciler reconciles a Ignition object.
+// IpxeReconciler reconciles an Ignition object.
 type IpxeReconciler struct {
 	client.Client
 
@@ -59,18 +59,18 @@ const (
 		"boot"
 )
 
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName).V(0)
 
 	log.Info("reconcile started")
 
-	machine := &v1alpha2.Machine{
+	machine := &v1alpha3.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
@@ -133,7 +133,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			Namespace: req.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         v1alpha2.GroupVersion.Version,
+					APIVersion:         v1alpha3.GroupVersion.Version,
 					Kind:               machineKind,
 					Name:               machine.Name,
 					UID:                machine.UID,
@@ -173,7 +173,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 func (r *IpxeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha2.Machine{}).
+		For(&v1alpha3.Machine{}).
 		Complete(r)
 }
 

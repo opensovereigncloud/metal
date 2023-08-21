@@ -25,7 +25,7 @@ import (
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 
 	"github.com/go-logr/logr"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,23 +40,23 @@ type MachinePowerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
-//+kubebuilder:rbac:groups=onmetal.de,resources=oobs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=onmetal.de,resources=oobs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=onmetal.de,resources=oobs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=onmetal.de,resources=oobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=onmetal.de,resources=oobs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=onmetal.de,resources=oobs/finalizers,verbs=update
 
 func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName)
 
-	machine := &machinev1alpha2.Machine{
+	machineObj := &machine.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
 		},
 	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine); err != nil {
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machineObj), machineObj); err != nil {
 		log.Error(err, "could not get machine")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -72,7 +72,7 @@ func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if machine.Status.Reservation.Reference == nil {
+	if machineObj.Status.Reservation.Reference == nil {
 		log.Info("machine has no reservation, turn off OOB if it's turned on")
 
 		if oob.Spec.Power == "Off" {
@@ -96,7 +96,7 @@ func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 func (r *MachinePowerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&machinev1alpha2.Machine{}).
+		For(&machine.Machine{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
@@ -109,7 +109,7 @@ func (r *MachinePowerReconciler) constructPredicates() predicate.Predicate {
 
 func (r *MachinePowerReconciler) handleMachineDeletion(e event.DeleteEvent) bool {
 	ctx := context.Background()
-	machine, ok := e.Object.(*machinev1alpha2.Machine)
+	machineObj, ok := e.Object.(*machine.Machine)
 	if !ok {
 		r.Log.Info("machine cast failed")
 		return false
@@ -117,8 +117,8 @@ func (r *MachinePowerReconciler) handleMachineDeletion(e event.DeleteEvent) bool
 
 	oob := &oobv1.OOB{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      machine.Name,
-			Namespace: machine.Namespace,
+			Name:      machineObj.Name,
+			Namespace: machineObj.Namespace,
 		},
 	}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(oob), oob); err != nil {

@@ -16,18 +16,26 @@ package scenarios
 
 import (
 	domain "github.com/onmetal/metal-api/domain/machine"
-	"github.com/onmetal/metal-api/usecase/onboarding/access"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	usecase "github.com/onmetal/metal-api/usecase/onboarding"
+	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 )
 
 type GetMachineUseCase struct {
-	machineRepository access.MachineRepository
+	extractor providers.MachineExtractor
 }
 
-func NewGetMachineUseCase(machineRepository access.MachineRepository) *GetMachineUseCase {
-	return &GetMachineUseCase{machineRepository: machineRepository}
+func NewGetMachineUseCase(
+	machineExtractor providers.MachineExtractor,
+) *GetMachineUseCase {
+	return &GetMachineUseCase{extractor: machineExtractor}
 }
 
-func (g *GetMachineUseCase) Execute(request dto.Request) (domain.Machine, error) {
-	return g.machineRepository.Get(request)
+func (g *GetMachineUseCase) Execute(
+	machineUUID string,
+) (domain.Machine, error) {
+	machine, err := g.extractor.ByUUID(machineUUID)
+	if err != nil {
+		return domain.Machine{}, usecase.MachineNotFound(err)
+	}
+	return machine, nil
 }

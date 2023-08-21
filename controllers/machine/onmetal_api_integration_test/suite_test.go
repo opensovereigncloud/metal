@@ -31,7 +31,7 @@ import (
 	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha2 "github.com/onmetal/metal-api/apis/machine/v1alpha2"
+	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
 	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
@@ -157,11 +157,11 @@ var _ = BeforeSuite(func() {
 
 	Expect(inventoriesv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(machinev1alpha2.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(machinev1alpha3.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(computev1alpha1.AddToScheme(scheme.Scheme)).To(Succeed())
 	Expect(apiregistrationv1.AddToScheme(scheme.Scheme)).To(Succeed())
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
