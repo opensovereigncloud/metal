@@ -10,7 +10,7 @@ require (
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.3.0
 	github.com/onmetal/controller-utils v0.8.0
-	github.com/onmetal/ipam v0.0.24
+	github.com/onmetal/ipam v0.0.25
 	github.com/onmetal/onmetal-api v0.1.2-0.20230816135533-6e1562703753
 	github.com/onmetal/onmetal-image v0.1.1
 	github.com/onmetal/oob-operator v0.3.1
@@ -18,6 +18,7 @@ require (
 	github.com/onsi/gomega v1.27.10
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
+	go4.org/netipx v0.0.0-20230728184502-ec4c8b891b28
 	golang.org/x/mod v0.12.0
 	gopkg.in/inf.v0 v0.9.1
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
@@ -94,7 +95,6 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	go4.org/intern v0.0.0-20220301175310-a089fc204883 // indirect
-	go4.org/netipx v0.0.0-20230728184502-ec4c8b891b28 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20230525183740-e7c30c78aeb2 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect

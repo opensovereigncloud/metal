@@ -18,6 +18,8 @@
 package fake
 
 import (
+	"net/netip"
+
 	ipam "github.com/onmetal/ipam/api/v1alpha1"
 	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
@@ -25,7 +27,6 @@ import (
 	domain "github.com/onmetal/metal-api/domain/infrastructure"
 	"github.com/onmetal/metal-api/pkg/constants"
 	oob "github.com/onmetal/oob-operator/api/v1alpha1"
-	"inet.af/netaddr"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
@@ -168,7 +169,7 @@ func IPIPAMObject(name, namespace string) *ipam.IP {
 		},
 		Status: ipam.IPStatus{
 			Reserved: &ipam.IPAddr{
-				Net: netaddr.MustParseIP("192.168.1.1"),
+				Net: netip.MustParseAddr("192.168.1.1"),
 			},
 		},
 	}

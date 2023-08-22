@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"strings"
 
@@ -31,7 +32,6 @@ import (
 	"github.com/onmetal/metal-api/pkg/errors"
 	"github.com/onmetal/metal-api/pkg/stateproc"
 	switchespkg "github.com/onmetal/metal-api/pkg/switches"
-	"inet.af/netaddr"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -159,7 +159,7 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&switchv1beta1.Switch{}).
 		WithOptions(controller.Options{
-			//RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute),
+			// RateLimiter:  workqueue.NewItemExponentialFailureRateLimiter(time.Millisecond*500, time.Minute),
 			RecoverPanic: pointer.Bool(true),
 		}).
 		WithEventFilter(predicate.And(labelSelectorPredicate, discoverObjectChangesPredicate)).
@@ -912,7 +912,7 @@ func (s *SwitchClient) buildIPObject(
 	if err != nil {
 		return nil, err
 	}
-	ip := proposedCIDR.Net.IP()
+	ip := proposedCIDR.Net.Addr()
 	ok, err := s.checkIPAvailable(ip, obj.Namespace)
 	if err != nil {
 		return nil, err
@@ -941,7 +941,7 @@ func (s *SwitchClient) buildIPObject(
 	return ipObject, nil
 }
 
-func (s *SwitchClient) checkIPAvailable(ip netaddr.IP, ns string) (bool, error) {
+func (s *SwitchClient) checkIPAvailable(ip netip.Addr, ns string) (bool, error) {
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMLoopbackPurpose})
 	selector = selector.Add(*req)
@@ -1087,8 +1087,8 @@ func (s *SwitchClient) listIPAMObjects(
 //nolint:unused
 func (s *SwitchClient) createIPs(obj *switchv1beta1.Switch, nic string, ips []*switchv1beta1.IPAddressSpec) error {
 	for _, item := range ips {
-		prefix, _ := netaddr.ParseIPPrefix(item.GetAddress())
-		addr := prefix.IP()
+		prefix, _ := netip.ParsePrefix(item.GetAddress())
+		addr := prefix.Addr()
 		ip := &ipamv1alpha1.IP{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("%s-%s-%s",

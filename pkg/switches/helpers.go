@@ -26,6 +26,7 @@ import (
 	"io/fs"
 	"math"
 	"net"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -35,6 +36,7 @@ import (
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	"go4.org/netipx"
 	"golang.org/x/mod/modfile"
 	"inet.af/netaddr"
 	corev1 "k8s.io/api/core/v1"
@@ -638,7 +640,7 @@ func GetComputedIPs(
 			}
 			af = constants.IPv6AF
 		}
-		nicSubnet := getInterfaceSubnet(name, constants.SwitchPortNamePrefix, cidr.Net.IPNet(), mask)
+		nicSubnet := getInterfaceSubnet(name, constants.SwitchPortNamePrefix, cidr.Net, mask)
 		subnetSpec, err := buildSubnetObject(
 			subnet.GetSubnetObjectRefName(),
 			subnet.GetNetworkObjectRefName(),
@@ -666,15 +668,16 @@ func GetComputedIPs(
 	return ips, subnetSpecs, nil
 }
 
-func getInterfaceSubnet(name string, namePrefix string, network *net.IPNet, mask uint32) *net.IPNet {
+func getInterfaceSubnet(name string, namePrefix string, network netip.Prefix, mask uint32) *net.IPNet {
 	index, _ := strconv.Atoi(strings.ReplaceAll(name, namePrefix, ""))
-	prefix, _ := network.Mask.Size()
-	ifaceNet, _ := gocidr.Subnet(network, int(mask)-prefix, index)
+	prefix := network.Bits()
+	ipNet := netipx.PrefixIPNet(network)
+	ifaceNet, _ := gocidr.Subnet(ipNet, int(mask)-prefix, index)
 	return ifaceNet
 }
 
 func buildSubnetObject(parentSubnet, network string, subnet *net.IPNet) (*ipamv1alpha1.SubnetSpec, error) {
-	netaddrRepr, ok := netaddr.FromStdIPNet(subnet)
+	netaddrRepr, ok := netipx.FromStdIPNet(subnet)
 	if !ok {
 		return nil, fmt.Errorf("failed to convert subnet representation")
 	}
