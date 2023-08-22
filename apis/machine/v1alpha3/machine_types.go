@@ -93,7 +93,7 @@ type Peer struct {
 	LLDPSystemName string `json:"lldp_system_name,omitempty"`
 	// LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol
 	// +optional
-	LLDPChassisID string `json:"lldp_chassi_id,omitempty"`
+	LLDPChassisID string `json:"lldp_chassis_id,omitempty"`
 	// LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol
 	// +optional
 	LLDPPortID string `json:"lldp_port_id,omitempty"`
@@ -196,7 +196,7 @@ type ResourceReference struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="ASN",type=string,JSONPath=`.spec.asn`
+// +kubebuilder:printcolumn:name="ASN",type=string,JSONPath=`.status.network.asn`
 // +kubebuilder:printcolumn:name="Healthy",type=string,JSONPath=`.status.health`
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
 // +kubebuilder:printcolumn:name="Reservation Status",type=string,JSONPath=`.status.reservation.status`

@@ -15,7 +15,7 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.asn
+    - jsonPath: .status.network.asn
       name: ASN
       type: string
     - jsonPath: .status.health
@@ -134,7 +134,7 @@ spec:
                         peer:
                           description: Peer - defines lldp peer info.
                           properties:
-                            lldp_chassi_id:
+                            lldp_chassis_id:
                               description: LLDPChassisID - defines switch ID for chassis
                                 obtained from Link Layer Discovery Protocol
                               type: string
