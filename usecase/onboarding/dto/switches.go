@@ -46,8 +46,8 @@ func (s *SwitchInfo) AddSwitchInfoToMachineInterfaces(
 func CalculateMachineAddressFromSwitchInterface(
 	switchNIC Interface,
 ) machine.Addresses {
-	addresses4 := FilterAndGenerateAddresses(switchNIC, IsIPv4, IsMinimumIPv4MachineSubnetSize)
-	addresses6 := FilterAndGenerateAddresses(switchNIC, IsIPv6, IsMinimumIPv6MachineSubnetSize)
+	addresses4 := FilterAndGenerateAddresses(switchNIC, IsIPv4)
+	addresses6 := FilterAndGenerateAddresses(switchNIC, IsIPv6)
 	return machine.Addresses{
 		IPv4: addresses4,
 		IPv6: addresses6,
@@ -57,24 +57,15 @@ func CalculateMachineAddressFromSwitchInterface(
 func FilterAndGenerateAddresses(
 	switchInterface Interface,
 	ipTypeFunc func(addr netip.Addr) bool,
-	isSizeFunc func(size int) bool,
 ) []machine.IPAddressSpec {
 	var addresses []machine.IPAddressSpec
 	for _, ip := range switchInterface.IP {
-		if size := ip.Bits(); isSizeFunc(size) || !ipTypeFunc(ip.Addr()) {
+		if !ipTypeFunc(ip.Addr()) {
 			continue
 		}
 		addresses = appendNewAddress(addresses, ip.Addr().Next(), ip.Addr().BitLen())
 	}
 	return addresses
-}
-
-func IsMinimumIPv4MachineSubnetSize(size int) bool {
-	return size < machineIPv4SubnetSize
-}
-
-func IsMinimumIPv6MachineSubnetSize(size int) bool {
-	return size < machineIPv6SubnetSize
 }
 
 func IsIPv4(addr netip.Addr) bool {

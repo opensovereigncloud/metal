@@ -33,7 +33,6 @@ func TestFilterAndGenerateAddresses4Success(t *testing.T) {
 	addressSpec := dto.FilterAndGenerateAddresses(
 		switchInterfaces,
 		dto.IsIPv4,
-		dto.IsMinimumIPv4MachineSubnetSize,
 	)
 	a.Equal(1, len(addressSpec))
 	a.True(addressSpec[0].Addr().Is4())
@@ -51,7 +50,6 @@ func TestFilterAndGenerateAddresses6Success(t *testing.T) {
 	addressSpec := dto.FilterAndGenerateAddresses(
 		switchInterfaces,
 		dto.IsIPv6,
-		dto.IsMinimumIPv6MachineSubnetSize,
 	)
 	a.Equal(1, len(addressSpec))
 	a.True(addressSpec[0].Addr().Is6())
@@ -69,7 +67,6 @@ func TestFilterAndGenerateAddressesWrongIPType(t *testing.T) {
 	addressSpec := dto.FilterAndGenerateAddresses(
 		switchInterfaces,
 		dto.IsIPv4,
-		dto.IsMinimumIPv6MachineSubnetSize,
 	)
 	a.Equal(0, len(addressSpec))
 }

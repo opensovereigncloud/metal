@@ -22,11 +22,6 @@ import (
 	domain "github.com/onmetal/metal-api/domain/machine"
 )
 
-const (
-	machineIPv4SubnetSize = 30
-	machineIPv6SubnetSize = 128
-)
-
 func ToMachineInterfaces(nics []inventories.NICSpec) []machine.Interface {
 	interfaces := make([]machine.Interface, 0, len(nics))
 	for nic := range nics {
