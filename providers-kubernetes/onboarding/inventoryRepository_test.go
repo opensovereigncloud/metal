@@ -25,7 +25,11 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newInventoryRepository(a *assert.Assertions, publisher events.DomainEventPublisher, obj ...ctrlclient.Object) *persistence.InventoryRepository {
+func newInventoryRepository(
+	a *assert.Assertions,
+	publisher events.DomainEventPublisher,
+	obj ...ctrlclient.Object,
+) *persistence.InventoryRepository {
 	fakeClient, err := fake.NewFakeWithObjects(obj...)
 	a.Nil(err, "must create client with object")
 	return persistence.NewInventoryRepository(

@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	switches "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/common/types/common"
+	ipdomain "github.com/onmetal/metal-api/domain/address"
 	invdomain "github.com/onmetal/metal-api/domain/inventory"
 	domain "github.com/onmetal/metal-api/domain/machine"
 	usecase "github.com/onmetal/metal-api/usecase/onboarding"
@@ -116,8 +116,8 @@ type fakeLoopbackRepository struct {
 func (f *fakeLoopbackRepository) Try(_ int) providers.LoopbackExtractor {
 	return f
 }
-func (f *fakeLoopbackRepository) IPv4ByMachineUUID(uuid string) (common.Address, error) {
-	return common.Address{Prefix: f.address}, f.err
+func (f *fakeLoopbackRepository) IPv4ByMachineUUID(uuid string) (ipdomain.Address, error) {
+	return ipdomain.Address{Prefix: f.address}, f.err
 }
 
 type fakeSwitchRepository struct {

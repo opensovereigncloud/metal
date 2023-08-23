@@ -14,8 +14,10 @@
 
 package providers
 
-import "github.com/onmetal/metal-api/common/types/common"
+import (
+	ipdomain "github.com/onmetal/metal-api/domain/address"
+)
 
 type LoopbackPersister interface {
-	Save(address common.Address) error
+	Save(address ipdomain.Address) error
 }

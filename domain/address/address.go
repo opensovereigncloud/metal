@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package domain
 
 import (
 	"net/netip"
 )
 
 type Address struct {
+	Consumer
+
 	Prefix    netip.Prefix
 	Name      string
 	Namespace string
@@ -37,5 +39,12 @@ func CreateNewAddress(
 		Name:      name,
 		Namespace: namespace,
 		Subnet:    subnetName,
+	}
+}
+
+func (a *Address) SetConsumerInfo(name, consumerType string) {
+	a.Consumer = Consumer{
+		Name: name,
+		Type: consumerType,
 	}
 }

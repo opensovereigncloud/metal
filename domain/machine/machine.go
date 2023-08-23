@@ -19,8 +19,8 @@ package domain
 import (
 	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/common"
 	"github.com/onmetal/metal-api/common/types/errors"
+	ipdomain "github.com/onmetal/metal-api/domain/address"
 )
 
 type Machine struct {
@@ -64,8 +64,8 @@ func NewMachine(
 }
 
 type Loopbacks struct {
-	IPv4 common.Address
-	IPv6 common.Address
+	IPv4 ipdomain.Address
+	IPv6 ipdomain.Address
 }
 
 func CreateMachine(

@@ -14,9 +14,11 @@
 
 package providers
 
-import "github.com/onmetal/metal-api/common/types/common"
+import (
+	ipdomain "github.com/onmetal/metal-api/domain/address"
+)
 
 type LoopbackExtractor interface {
 	Try(times int) LoopbackExtractor
-	IPv4ByMachineUUID(uuid string) (common.Address, error)
+	IPv4ByMachineUUID(uuid string) (ipdomain.Address, error)
 }

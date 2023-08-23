@@ -20,8 +20,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/common"
 	"github.com/onmetal/metal-api/common/types/events"
+	ipdomain "github.com/onmetal/metal-api/domain/address"
 	domain "github.com/onmetal/metal-api/domain/machine"
 	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 )
@@ -72,7 +72,13 @@ func (c *CreateLoopbackForMachineRule) Handle(event base.DomainEvent) {
 		return
 	}
 	loopbackAddressName := fmt.Sprintf("%s-lo-ipv4", machine.UUID)
-	address := common.CreateNewAddress(netip.Addr{}, 0, loopbackAddressName, subnet.Namespace, subnet.Name)
+	address := ipdomain.CreateNewAddress(
+		netip.Addr{},
+		32,
+		loopbackAddressName,
+		subnet.Namespace,
+		subnet.Name)
+	address.SetConsumerInfo(machine.UUID, "Machine")
 	if err = c.loopbackPersister.Save(address); err != nil {
 		c.log.Info(
 			"can't save loopback ip for machine",

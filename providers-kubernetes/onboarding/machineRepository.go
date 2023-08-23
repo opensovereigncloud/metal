@@ -20,8 +20,8 @@ import (
 	"context"
 
 	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	"github.com/onmetal/metal-api/common/types/common"
 	"github.com/onmetal/metal-api/common/types/events"
+	ipdomain "github.com/onmetal/metal-api/domain/address"
 	domain "github.com/onmetal/metal-api/domain/machine"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -152,10 +152,10 @@ func (r *MachineRepository) ByID(id domain.MachineID) (domain.Machine, error) {
 
 func domainLoopbacks(loopbacks machine.LoopbackAddresses) domain.Loopbacks {
 	return domain.Loopbacks{
-		IPv4: common.Address{
+		IPv4: ipdomain.Address{
 			Prefix: loopbacks.IPv4.Prefix,
 		},
-		IPv6: common.Address{
+		IPv6: ipdomain.Address{
 			Prefix: loopbacks.IPv6.Prefix,
 		},
 	}

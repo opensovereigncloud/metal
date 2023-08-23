@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common_test
+package domain_test
 
 import (
 	"net/netip"
 	"testing"
 
-	"github.com/onmetal/metal-api/common/types/common"
+	domain "github.com/onmetal/metal-api/domain/address"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,7 @@ func TestCreateNewSuccess(t *testing.T) {
 	a.Nil(err)
 
 	name := "test"
-	result := common.CreateNewAddress(address.Addr(), address.Bits(), name, "", "")
+	result := domain.CreateNewAddress(address.Addr(), address.Bits(), name, "", "")
 	a.Equal(address, result.Prefix)
 	a.Equal(name, result.Name)
 }

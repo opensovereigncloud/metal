@@ -21,7 +21,7 @@ import (
 	"time"
 
 	ipam "github.com/onmetal/ipam/api/v1alpha1"
-	"github.com/onmetal/metal-api/common/types/common"
+	domain "github.com/onmetal/metal-api/domain/address"
 	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +47,7 @@ func NewLoopbackRepository(
 	}
 }
 
-func (l *LoopbackRepository) Save(address common.Address) error {
+func (l *LoopbackRepository) Save(address domain.Address) error {
 	ip := prepareIP(address)
 	return l.
 		client.
@@ -62,7 +62,7 @@ func (l *LoopbackRepository) Try(times int) providers.LoopbackExtractor {
 }
 func (l *LoopbackRepository) IPv4ByMachineUUID(
 	uuid string,
-) (common.Address, error) {
+) (domain.Address, error) {
 	var err error
 	var address *ipam.IP
 	for i := 0; i < l.tryCount; i++ {
@@ -77,13 +77,13 @@ func (l *LoopbackRepository) IPv4ByMachineUUID(
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
-		return common.Address{}, err
+		return domain.Address{}, err
 	}
 	addr, parseErr := netip.ParseAddr(address.Status.Reserved.String())
 	if parseErr != nil {
-		return common.Address{}, parseErr
+		return domain.Address{}, parseErr
 	}
-	return common.CreateNewAddress(
+	return domain.CreateNewAddress(
 		addr,
 		prefixBitsFromType(addr),
 		address.Name,
@@ -110,13 +110,17 @@ func (l *LoopbackRepository) getIPAMLoopbackIP(
 	return &ipamListData.Items[0], err
 }
 
-func prepareIP(address common.Address) *ipam.IP {
+func prepareIP(address domain.Address) *ipam.IP {
 	return &ipam.IP{
 		ObjectMeta: meta.ObjectMeta{
 			Name:      address.Name,
 			Namespace: address.Namespace,
 		},
 		Spec: ipam.IPSpec{
+			Consumer: &ipam.ResourceReference{
+				Kind: address.Consumer.Type,
+				Name: address.Consumer.Name,
+			},
 			Subnet: core.LocalObjectReference{
 				Name: address.Subnet,
 			},
