@@ -8,7 +8,7 @@ require (
 	github.com/d4l3k/messagediff v1.2.1
 	github.com/go-logr/logr v1.2.4
 	github.com/google/addlicense v1.1.1
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/onmetal/controller-utils v0.8.0
 	github.com/onmetal/ipam v0.0.25
 	github.com/onmetal/onmetal-api v0.1.2-0.20230816135533-6e1562703753
