@@ -23,6 +23,7 @@ import (
 	"github.com/onmetal/metal-api/common/types/events"
 	ipdomain "github.com/onmetal/metal-api/domain/address"
 	domain "github.com/onmetal/metal-api/domain/machine"
+	reservdomain "github.com/onmetal/metal-api/domain/reservation"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -189,6 +190,9 @@ func (r *MachineRepository) updateMachineStatus(
 	machineObj *machine.Machine,
 	domainMachine domain.Machine,
 ) {
+	if machineObj.Status.Reservation.Status == "" {
+		machineObj.Status.Reservation.Status = reservdomain.ReservationStatusAvailable
+	}
 	machineObj.Status.Health = updateHealthStatus(domainMachine.Interfaces)
 	machineObj.Status.Network = NetworkStatus(domainMachine)
 }
