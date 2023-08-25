@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dto
+package providers
 
-type LoopbackAddressInfo struct {
-	Address string
-	Name    string
+import "github.com/onmetal/metal-api/usecase/onboarding/dto"
+
+//go:generate mockery --name SubnetPersister
+type SubnetPersister interface {
+	Save(info dto.SubnetInfo) error
 }

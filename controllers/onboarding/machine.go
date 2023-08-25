@@ -89,7 +89,18 @@ func (r *OnboardingMachineReconciler) SetupWithManager(
 			"metadata.name",
 			ipIndex,
 		); err != nil {
-		r.log.Error(err, "unable to setup oob index field")
+		r.log.Error(err, "unable to setup ip index field")
+		return err
+	}
+	if err := mgr.
+		GetFieldIndexer().
+		IndexField(
+			context.Background(),
+			&ipamv1alpha1.Subnet{},
+			"metadata.name",
+			subnetIndex,
+		); err != nil {
+		r.log.Error(err, "unable to setup subnet index field")
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).

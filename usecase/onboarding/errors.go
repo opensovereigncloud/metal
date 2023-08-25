@@ -18,7 +18,6 @@ import "github.com/onmetal/metal-api/common/types/errors"
 
 const (
 	alreadyCreated = "already onboarded"
-	notValidated   = "not validated"
 	notFound       = "not found"
 )
 

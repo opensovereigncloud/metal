@@ -45,7 +45,7 @@ func (c *ServerMustBeEnabledOnFirstTimeRule) EventType() base.DomainEvent {
 }
 
 func (c *ServerMustBeEnabledOnFirstTimeRule) Handle(event base.DomainEvent) {
-	inv, err := c.inventoryExtractor.ByID(event.ID())
+	inv, err := c.inventoryExtractor.ByID(domain.NewInventoryID(event.ID()))
 	if err != nil {
 		c.log.Info("")
 	}

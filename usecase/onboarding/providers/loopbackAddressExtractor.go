@@ -12,28 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package providers_test
+package providers
 
 import (
-	"fmt"
-	"testing"
-
-	providers "github.com/onmetal/metal-api/providers-kubernetes/onboarding"
-	"github.com/onmetal/metal-api/providers-kubernetes/onboarding/fake"
-	"github.com/stretchr/testify/assert"
+	ipdomain "github.com/onmetal/metal-api/domain/address"
 )
 
-func TestLoopbackRepositoryIPv4ByMachineUUIDSuccess(t *testing.T) {
-	t.Parallel()
-
-	a := assert.New(t)
-	uuid := "123"
-	ip := fake.IPIPAMObject(fmt.Sprintf("%s-lo-ipv4", uuid), "test")
-	fakeClient, _ := fake.NewFakeWithObjects(ip)
-
-	repo := providers.NewLoopbackRepository(fakeClient)
-
-	address, err := repo.IPv4ByMachineUUID(uuid)
-	a.Nil(err)
-	a.NotEmpty(address.Prefix)
+type LoopbackAddressExtractor interface {
+	Try(times int) LoopbackAddressExtractor
+	IPv4ByMachineUUID(uuid string) (ipdomain.Address, error)
+	IPv6ByMachineUUID(uuid string) (ipdomain.Address, error)
 }

@@ -27,3 +27,8 @@ func ipIndex(rawObj client.Object) []string {
 	obj, _ := rawObj.(*ipam.IP)
 	return []string{obj.ObjectMeta.Name}
 }
+
+func subnetIndex(rawObj client.Object) []string {
+	obj, _ := rawObj.(*ipam.Subnet)
+	return []string{obj.ObjectMeta.Name}
+}

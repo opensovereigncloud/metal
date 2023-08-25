@@ -16,6 +16,13 @@ package providers
 
 import "github.com/onmetal/metal-api/usecase/onboarding/dto"
 
-type SubnetExtractor interface {
-	LoopbackIPv4Subnet() (dto.SubnetInfo, error)
+const (
+	IPv4 = "IPv4"
+	IPv6 = "IPv6"
+)
+
+//go:generate mockery --name LoopbackSubnetExtractor
+type LoopbackSubnetExtractor interface {
+	ByType(ipType string) (dto.SubnetInfo, error)
+	IPv6ByName(name string) (dto.SubnetInfo, error)
 }

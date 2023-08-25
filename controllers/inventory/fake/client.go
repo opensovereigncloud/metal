@@ -14,7 +14,6 @@
 // limitations under the License.
 // */
 
-// nolint
 package fake
 
 import (
@@ -28,26 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func NewFakeClient() (ctrlclient.Client, error) {
-	fakeK8sClient, err := newFakeClient()
-	if err != nil {
-		return nil, err
-	}
-	return fakeK8sClient, nil
-}
-
 func NewFakeWithObjects(objects ...ctrlclient.Object) (ctrlclient.Client, error) {
-	fakeBuilder := fake.NewClientBuilder()
-	scheme, err := getScheme()
-	if err != nil {
-		return nil, err
-	}
-
-	fakeWithObjects := fakeBuilder.WithScheme(scheme).WithObjects(objects...)
-	return fakeWithObjects.Build(), nil
-}
-
-func newFakeClient(objects ...ctrlclient.Object) (ctrlclient.Client, error) {
 	fakeBuilder := fake.NewClientBuilder()
 	scheme, err := getScheme()
 	if err != nil {
@@ -73,14 +53,6 @@ func getScheme() (*k8sRuntime.Scheme, error) {
 		return nil, err
 	}
 	return scheme, nil
-}
-
-func getInitObjectList(objects ...ctrlclient.Object) []ctrlclient.Object {
-	objectList := make([]ctrlclient.Object, len(objects))
-	for o := range objects {
-		objectList = append(objectList, objects[o])
-	}
-	return objectList
 }
 
 func IPObjectEndpoint(address string, port int32) *corev1.Endpoints {

@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	machinev1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 )
 
 const (
@@ -53,7 +53,7 @@ type InventoryReconciler struct {
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("inventory", req.NamespacedName)
 
-	inv := &machinev1alpha1.Inventory{}
+	inv := &inventories.Inventory{}
 
 	err := r.Get(ctx, req.NamespacedName, inv)
 	if apierrors.IsNotFound(err) {
@@ -73,7 +73,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		Namespace: req.Namespace,
 		Name:      CDefaultAggregateName,
 	}
-	defaultAggregate := &machinev1alpha1.Aggregate{}
+	defaultAggregate := &inventories.Aggregate{}
 	err = r.Get(ctx, defaultAggregateNamespacedName, defaultAggregate)
 	if apierrors.IsNotFound(err) {
 		log.Info("trying to create default aggregate", "name", defaultAggregateNamespacedName)
@@ -97,7 +97,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	limit := int64(1000)
 
 	for {
-		aggregateList := &machinev1alpha1.AggregateList{}
+		aggregateList := &inventories.AggregateList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     limit,
@@ -149,7 +149,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	continueToken = ""
 
 	for {
-		sizeList := &machinev1alpha1.SizeList{}
+		sizeList := &inventories.SizeList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     limit,
@@ -175,8 +175,8 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			if err != nil {
 				log.Error(err, "unable to check match to provided size; will remove match if present", "size", sizeNamespacedName)
 			}
-			// for some reason tests paniced due to assignment to nil map
-			// despite of the check above (L101-103)
+			// for some reason tests panicked due to assignment to nil map
+			// despite the check above
 			if inv.Labels == nil {
 				inv.Labels = map[string]string{}
 			}
@@ -211,7 +211,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&machinev1alpha1.Inventory{}).
+		For(&inventories.Inventory{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
@@ -223,8 +223,8 @@ func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 }
 
 func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
-	old, oldOK := event.ObjectOld.(*machinev1alpha1.Inventory)
-	upd, updOK := event.ObjectNew.(*machinev1alpha1.Inventory)
+	old, oldOK := event.ObjectOld.(*inventories.Inventory)
+	upd, updOK := event.ObjectNew.(*inventories.Inventory)
 	if !oldOK || !updOK {
 		r.Log.Info("printDiffOnUpdate: type assertions failed")
 		return false
@@ -249,42 +249,42 @@ func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
 }
 
 func (r *InventoryReconciler) createDefaultAggregate(ctx context.Context, namespace string) error {
-	agg := &machinev1alpha1.Aggregate{
+	agg := &inventories.Aggregate{
 		ObjectMeta: ctrl.ObjectMeta{
 			Namespace: namespace,
 			Name:      CDefaultAggregateName,
 		},
-		Spec: machinev1alpha1.AggregateSpec{
-			Aggregates: []machinev1alpha1.AggregateItem{
+		Spec: inventories.AggregateSpec{
+			Aggregates: []inventories.AggregateItem{
 				{
-					SourcePath: *machinev1alpha1.JSONPathFromString("spec.blocks[*]"),
-					TargetPath: *machinev1alpha1.JSONPathFromString("blocks.count"),
-					Aggregate:  machinev1alpha1.CCountAggregateType,
+					SourcePath: *inventories.JSONPathFromString("spec.blocks[*]"),
+					TargetPath: *inventories.JSONPathFromString("blocks.count"),
+					Aggregate:  inventories.CCountAggregateType,
 				},
 				{
-					SourcePath: *machinev1alpha1.JSONPathFromString("spec.blocks[*].size"),
-					TargetPath: *machinev1alpha1.JSONPathFromString("blocks.capacity"),
-					Aggregate:  machinev1alpha1.CSumAggregateType,
+					SourcePath: *inventories.JSONPathFromString("spec.blocks[*].size"),
+					TargetPath: *inventories.JSONPathFromString("blocks.capacity"),
+					Aggregate:  inventories.CSumAggregateType,
 				},
 				{
-					SourcePath: *machinev1alpha1.JSONPathFromString("spec.cpus[*]"),
-					TargetPath: *machinev1alpha1.JSONPathFromString("cpus.sockets"),
-					Aggregate:  machinev1alpha1.CCountAggregateType,
+					SourcePath: *inventories.JSONPathFromString("spec.cpus[*]"),
+					TargetPath: *inventories.JSONPathFromString("cpus.sockets"),
+					Aggregate:  inventories.CCountAggregateType,
 				},
 				{
-					SourcePath: *machinev1alpha1.JSONPathFromString("spec.cpus[*].cores"),
-					TargetPath: *machinev1alpha1.JSONPathFromString("cpus.cores"),
-					Aggregate:  machinev1alpha1.CSumAggregateType,
+					SourcePath: *inventories.JSONPathFromString("spec.cpus[*].cores"),
+					TargetPath: *inventories.JSONPathFromString("cpus.cores"),
+					Aggregate:  inventories.CSumAggregateType,
 				},
 				{
-					SourcePath: *machinev1alpha1.JSONPathFromString("spec.cpus[*].siblings"),
-					TargetPath: *machinev1alpha1.JSONPathFromString("cpus.threads"),
-					Aggregate:  machinev1alpha1.CSumAggregateType,
+					SourcePath: *inventories.JSONPathFromString("spec.cpus[*].siblings"),
+					TargetPath: *inventories.JSONPathFromString("cpus.threads"),
+					Aggregate:  inventories.CSumAggregateType,
 				},
 				{
-					SourcePath: *machinev1alpha1.JSONPathFromString("spec.nics[*]"),
-					TargetPath: *machinev1alpha1.JSONPathFromString("nics.count"),
-					Aggregate:  machinev1alpha1.CCountAggregateType,
+					SourcePath: *inventories.JSONPathFromString("spec.nics[*]"),
+					TargetPath: *inventories.JSONPathFromString("nics.count"),
+					Aggregate:  inventories.CCountAggregateType,
 				},
 			},
 		},

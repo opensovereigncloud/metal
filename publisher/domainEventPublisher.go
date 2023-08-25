@@ -21,14 +21,14 @@ import (
 )
 
 type DomainEventPublisher struct {
-	listeners map[string]events.DomainEventListener[base.DomainEvent]
+	listeners map[string][]events.DomainEventListener[base.DomainEvent]
 	log       logr.Logger
 }
 
 func NewDomainEventPublisher(
 	log logr.Logger,
 ) *DomainEventPublisher {
-	listeners := make(map[string]events.DomainEventListener[base.DomainEvent])
+	listeners := make(map[string][]events.DomainEventListener[base.DomainEvent])
 	return &DomainEventPublisher{
 		listeners: listeners,
 		log:       log,
@@ -36,10 +36,11 @@ func NewDomainEventPublisher(
 }
 
 func (d *DomainEventPublisher) RegisterListeners(
-	domainEventListeners ...events.DomainEventListener[base.DomainEvent]) {
+	domainEventListeners ...events.DomainEventListener[base.DomainEvent],
+) {
 	for _, domainEventListener := range domainEventListeners {
 		domainEvent := domainEventListener.EventType()
-		d.listeners[domainEvent.Type()] = domainEventListener
+		d.listeners[domainEvent.Type()] = append(d.listeners[domainEvent.Type()], domainEventListener)
 	}
 }
 
@@ -51,6 +52,15 @@ func (d *DomainEventPublisher) Publish(events ...base.DomainEvent) {
 			continue
 		}
 		d.log.Info("event published", "id", event.ID(), "event", event.Type())
-		listener.Handle(event)
+		d.sendEvent(listener, event)
+	}
+}
+
+func (d *DomainEventPublisher) sendEvent(
+	listener []events.DomainEventListener[base.DomainEvent],
+	event base.DomainEvent,
+) {
+	for l := range listener {
+		listener[l].Handle(event)
 	}
 }

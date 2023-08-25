@@ -77,6 +77,7 @@ func main() {
 	}
 
 	var metricsAddr, probeAddr, namespace, bootstrapAPIServer, loopbackSubnetLabelValue string
+	var ipV6PrefixBits int
 	var enableLeaderElection, profiling bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -86,6 +87,11 @@ func main() {
 		&loopbackSubnetLabelValue,
 		"loopback_subnet_value_name",
 		"loopback", "Loopback subnet label value name")
+	flag.IntVar(
+		&ipV6PrefixBits,
+		"ip_v6_prefix_bits",
+		64,
+		"Subnet prefix bit length")
 	flag.IntVar(&webhookPort, "webhook-bind-address", webhookPort, "The address the webhook endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -135,6 +141,7 @@ func startReconcilers(
 	loopbackSubnetLabelValue string,
 ) {
 	var err error
+	eventPublisher := publisher.NewDomainEventPublisher(mgr.GetLogger())
 
 	if err = (&benchmarkcontroller.Reconciler{
 		Client: mgr.GetClient(),
@@ -186,9 +193,10 @@ func startReconcilers(
 		os.Exit(1)
 	}
 	if err = (&inventorycontrollers.SizeReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Size"),
-		Scheme: mgr.GetScheme(),
+		Client:         mgr.GetClient(),
+		Log:            ctrl.Log.WithName("controllers").WithName("Size"),
+		Scheme:         mgr.GetScheme(),
+		EventPublisher: eventPublisher,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Size")
 		os.Exit(1)
@@ -210,7 +218,6 @@ func startReconcilers(
 		setupLog.Error(err, "unable to create controller", "controller", "Access")
 		os.Exit(1)
 	}
-	eventPublisher := publisher.NewDomainEventPublisher(mgr.GetLogger())
 
 	if err = inventoryOnboardingReconciler(mgr, eventPublisher).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Inventory-onboarding")
@@ -352,19 +359,35 @@ func machineOnboardingReconciler(
 ) *onboardingcontroller.OnboardingMachineReconciler {
 	machineRepository := onboardingprovider.NewMachineRepository(mgr.GetClient(), eventPublisher)
 	switchExtractor := onboardingprovider.NewSwitchRepository(mgr.GetClient())
-	subnetExtractor := onboardingprovider.NewSubnetRepository(mgr.GetClient(), loopbackSubnetLabelValue)
-	loopbackRepository := onboardingprovider.NewLoopbackRepository(mgr.GetClient())
+	subnetRepository := onboardingprovider.NewLoopbackSubnetRepository(mgr.GetClient(), loopbackSubnetLabelValue)
+	loopbackRepository := onboardingprovider.NewLoopbackAddressRepository(mgr.GetClient())
 	machineAlreadyExist := invariants.NewMachineAlreadyExist(machineRepository)
 	machineIDGenerator := onboardingprovider.NewKubernetesMachineIDGenerator()
 	inventoryRepository := onboardingprovider.NewInventoryRepository(mgr.GetClient(), eventPublisher)
 
-	createLoopbackForMachineRule := rules.NewCreateLoopbackForMachineRule(
-		subnetExtractor,
+	createLoopback4ForMachineRule := rules.NewCreateLoopback4ForMachineRule(
+		subnetRepository,
 		loopbackRepository,
-		machineRepository,
+		inventoryRepository,
 		mgr.GetLogger(),
 	)
-	eventPublisher.RegisterListeners(createLoopbackForMachineRule)
+	createLoopback6ForMachineRule := rules.NewCreateLoopback6ForMachineRule(
+		subnetRepository,
+		loopbackRepository,
+		inventoryRepository,
+		mgr.GetLogger(),
+	)
+
+	createIPv6SubnetFromParentForInventoryRule := rules.NewCreateIPv6SubnetFromParentForInventoryRule(
+		subnetRepository,
+		subnetRepository,
+		inventoryRepository,
+		mgr.GetLogger(),
+	)
+	eventPublisher.RegisterListeners(
+		createLoopback4ForMachineRule,
+		createLoopback6ForMachineRule,
+		createIPv6SubnetFromParentForInventoryRule)
 
 	machineUseCase := onboardingscenarios.NewGetMachineUseCase(machineRepository)
 

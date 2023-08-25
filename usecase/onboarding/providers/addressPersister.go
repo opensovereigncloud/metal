@@ -15,10 +15,10 @@
 package providers
 
 import (
-	ipdomain "github.com/onmetal/metal-api/domain/address"
+	domain "github.com/onmetal/metal-api/domain/address"
 )
 
-type LoopbackExtractor interface {
-	Try(times int) LoopbackExtractor
-	IPv4ByMachineUUID(uuid string) (ipdomain.Address, error)
+//go:generate mockery --name AddressPersister
+type AddressPersister interface {
+	Save(address domain.Address) error
 }

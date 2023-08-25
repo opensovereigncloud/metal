@@ -35,3 +35,17 @@ func TestCreateNewSuccess(t *testing.T) {
 	a.Equal(address, result.Prefix)
 	a.Equal(name, result.Name)
 }
+
+func TestCreateNewZeroPrefix(t *testing.T) {
+	t.Parallel()
+
+	a := assert.New(t)
+
+	address, err := netip.ParseAddr("192.168.0.1")
+	a.Nil(err)
+
+	name := "test"
+	result := domain.CreateNewAddress(address, 0, name, "", "")
+	a.Equal(address, result.Prefix.Addr())
+	a.Equal(name, result.Name)
+}

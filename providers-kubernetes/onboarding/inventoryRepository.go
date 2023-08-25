@@ -67,9 +67,9 @@ func (r *InventoryRepository) ByUUID(uuid string) (domain.Inventory, error) {
 	return domainInventory(inv), nil
 }
 
-func (r *InventoryRepository) ByID(id string) (domain.Inventory, error) {
+func (r *InventoryRepository) ByID(id domain.InventoryID) (domain.Inventory, error) {
 	idOptions := &ctrlclient.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{"id": id})}
+		LabelSelector: labels.SelectorFromSet(map[string]string{"id": id.String()})}
 	inv, err := r.extractInventoryFromCluster(idOptions)
 	if err != nil {
 		return domain.Inventory{}, err

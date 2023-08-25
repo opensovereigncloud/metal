@@ -18,7 +18,8 @@ import (
 	domain "github.com/onmetal/metal-api/domain/inventory"
 )
 
+//go:generate mockery --name InventoryExtractor
 type InventoryExtractor interface {
 	ByUUID(uuid string) (domain.Inventory, error)
-	ByID(id string) (domain.Inventory, error)
+	ByID(id domain.InventoryID) (domain.Inventory, error)
 }

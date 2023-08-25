@@ -33,21 +33,21 @@ const (
 	ipV6LoopbackBitLen = 128
 )
 
-type LoopbackRepository struct {
+type LoopbackAddressRepository struct {
 	tryCount int
 	client   ctrlclient.Client
 }
 
-func NewLoopbackRepository(
+func NewLoopbackAddressRepository(
 	client ctrlclient.Client,
-) *LoopbackRepository {
-	return &LoopbackRepository{
+) *LoopbackAddressRepository {
+	return &LoopbackAddressRepository{
 		tryCount: 1,
 		client:   client,
 	}
 }
 
-func (l *LoopbackRepository) Save(address domain.Address) error {
+func (l *LoopbackAddressRepository) Save(address domain.Address) error {
 	ip := prepareIP(address)
 	return l.
 		client.
@@ -56,26 +56,15 @@ func (l *LoopbackRepository) Save(address domain.Address) error {
 			ip)
 }
 
-func (l *LoopbackRepository) Try(times int) providers.LoopbackExtractor {
+func (l *LoopbackAddressRepository) Try(times int) providers.LoopbackAddressExtractor {
 	l.tryCount = times
 	return l
 }
-func (l *LoopbackRepository) IPv4ByMachineUUID(
+func (l *LoopbackAddressRepository) IPv4ByMachineUUID(
 	uuid string,
 ) (domain.Address, error) {
-	var err error
-	var address *ipam.IP
-	for i := 0; i < l.tryCount; i++ {
-		address, err = l.getIPAMLoopbackIP(uuid)
-		if err != nil {
-			continue
-		}
-		if address.Status.Reserved != nil {
-			break
-		}
-		err = errIPNotSet
-		time.Sleep(2 * time.Second)
-	}
+	uuid = fmt.Sprintf("%s-lo-ipv4", uuid)
+	address, err := l.tryByUUID(uuid)
 	if err != nil {
 		return domain.Address{}, err
 	}
@@ -92,7 +81,45 @@ func (l *LoopbackRepository) IPv4ByMachineUUID(
 	), nil
 }
 
-func (l *LoopbackRepository) getIPAMLoopbackIP(
+func (l *LoopbackAddressRepository) IPv6ByMachineUUID(
+	uuid string,
+) (domain.Address, error) {
+	uuid = fmt.Sprintf("%s-lo-ipv6", uuid)
+	address, err := l.tryByUUID(uuid)
+	if err != nil {
+		return domain.Address{}, err
+	}
+	addr, parseErr := netip.ParseAddr(address.Status.Reserved.String())
+	if parseErr != nil {
+		return domain.Address{}, parseErr
+	}
+	return domain.CreateNewAddress(
+		addr,
+		prefixBitsFromType(addr),
+		address.Name,
+		address.Namespace,
+		address.Spec.Subnet.Name,
+	), nil
+}
+
+func (l *LoopbackAddressRepository) tryByUUID(uuid string) (*ipam.IP, error) {
+	var err error
+	var address *ipam.IP
+	for i := 0; i < l.tryCount; i++ {
+		address, err = l.getIPAMLoopbackIP(uuid)
+		if err != nil {
+			continue
+		}
+		if address.Status.Reserved != nil {
+			break
+		}
+		err = errIPNotSet
+		time.Sleep(2 * time.Second)
+	}
+	return address, err
+}
+
+func (l *LoopbackAddressRepository) getIPAMLoopbackIP(
 	uuid string,
 ) (*ipam.IP, error) {
 	ipamListData := &ipam.IPList{}
@@ -102,7 +129,7 @@ func (l *LoopbackRepository) getIPAMLoopbackIP(
 			context.Background(),
 			ipamListData,
 			ctrlclient.MatchingFields{
-				"metadata.name": fmt.Sprintf("%s-lo-ipv4", uuid),
+				"metadata.name": uuid,
 			})
 	if len(ipamListData.Items) == 0 {
 		return nil, fmt.Errorf("%s: %s", errIPNotFound, err)

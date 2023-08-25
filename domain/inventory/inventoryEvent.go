@@ -20,18 +20,27 @@ type InventoryCreatedDomainEvent struct {
 	id InventoryID
 }
 
-func (m *InventoryCreatedDomainEvent) ID() string {
-	return m.id.String()
+type InventoryFlavorUpdatedDomainEvent struct {
+	id InventoryID
 }
 
-func (m *InventoryCreatedDomainEvent) Type() string {
-	return "inventory created"
-}
+func (m *InventoryCreatedDomainEvent) ID() string         { return m.id.String() }
+func (m *InventoryFlavorUpdatedDomainEvent) ID() string   { return m.id.String() }
+func (m *InventoryCreatedDomainEvent) Type() string       { return "inventory created" }
+func (m *InventoryFlavorUpdatedDomainEvent) Type() string { return "inventory flavor update" }
 
 func NewInventoryCreatedDomainEvent(
 	inventoryID InventoryID,
 ) base.DomainEvent {
 	return &InventoryCreatedDomainEvent{
+		id: inventoryID,
+	}
+}
+
+func NewInventoryFlavorUpdatedDomainEvent(
+	inventoryID InventoryID,
+) base.DomainEvent {
+	return &InventoryFlavorUpdatedDomainEvent{
 		id: inventoryID,
 	}
 }

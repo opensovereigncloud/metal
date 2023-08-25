@@ -32,7 +32,7 @@ type MachineOnboardingUseCase struct {
 	machinePersister   providers.MachinePersister
 	machineExtractor   providers.MachineExtractor
 	switchExtractor    providers.SwitchExtractor
-	loopbackRepository providers.LoopbackExtractor
+	loopbackRepository providers.LoopbackAddressExtractor
 	log                logr.Logger
 }
 
@@ -40,7 +40,7 @@ func NewMachineOnboardingUseCase(
 	machinePersister providers.MachinePersister,
 	machineExtractor providers.MachineExtractor,
 	switchExtractor providers.SwitchExtractor,
-	loopbackRepository providers.LoopbackExtractor,
+	loopbackRepository providers.LoopbackAddressExtractor,
 	log logr.Logger,
 ) *MachineOnboardingUseCase {
 	log = log.WithName("MachineOnboardingUseCase")
@@ -100,11 +100,16 @@ func (m *MachineOnboardingUseCase) FindSwitchAndAddInfo(
 }
 
 func (m *MachineOnboardingUseCase) LoopbackAddress(machine domain.Machine) (domain.Loopbacks, error) {
+	var loopbacks domain.Loopbacks
 	ipv4LoopbackAddress, err := m.loopbackRepository.Try(3).IPv4ByMachineUUID(machine.UUID)
 	if err != nil {
-		return domain.Loopbacks{}, err
+		return loopbacks, err
 	}
-	return domain.Loopbacks{
-		IPv4: ipv4LoopbackAddress,
-	}, nil
+	loopbacks.IPv4 = ipv4LoopbackAddress
+	ipv6LoopbackAddress, err := m.loopbackRepository.Try(3).IPv6ByMachineUUID(machine.UUID)
+	if err != nil {
+		return loopbacks, err
+	}
+	loopbacks.IPv6 = ipv6LoopbackAddress
+	return loopbacks, nil
 }

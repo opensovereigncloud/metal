@@ -113,10 +113,14 @@ type fakeLoopbackRepository struct {
 	err     error
 }
 
-func (f *fakeLoopbackRepository) Try(_ int) providers.LoopbackExtractor {
+func (f *fakeLoopbackRepository) Try(_ int) providers.LoopbackAddressExtractor {
 	return f
 }
 func (f *fakeLoopbackRepository) IPv4ByMachineUUID(uuid string) (ipdomain.Address, error) {
+	return ipdomain.Address{Prefix: f.address}, f.err
+}
+
+func (f *fakeLoopbackRepository) IPv6ByMachineUUID(uuid string) (ipdomain.Address, error) {
 	return ipdomain.Address{Prefix: f.address}, f.err
 }
 

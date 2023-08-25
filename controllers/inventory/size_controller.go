@@ -21,6 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	"github.com/onmetal/metal-api/common/types/events"
+	domain "github.com/onmetal/metal-api/domain/inventory"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,8 +40,9 @@ const (
 type SizeReconciler struct {
 	client.Client
 
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log            logr.Logger
+	Scheme         *runtime.Scheme
+	EventPublisher events.DomainEventPublisher
 }
 
 // +kubebuilder:rbac:groups=machine.onmetal.de,resources=sizes,verbs=get;list;watch;create;update;patch;delete
@@ -144,6 +147,8 @@ func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 				log.Error(err, "unable to update inventory resource", "inventory", inventoryNamespacedName)
 				return ctrl.Result{}, err
 			}
+			id := domain.NewInventoryID(inventory.Labels["id"])
+			r.EventPublisher.Publish(domain.NewInventoryFlavorUpdatedDomainEvent(id))
 		}
 
 		if inventoryList.Continue == "" ||

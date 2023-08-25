@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/onmetal/metal-api/publisher"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -77,7 +78,7 @@ var _ = BeforeSuite(func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		crd := &v1.CustomResourceDefinition{}
-		//crd.ObjectMeta.SetCreationTimestamp(metav1.NewTime(time.Now()))
+		// crd.ObjectMeta.SetCreationTimestamp(metav1.NewTime(time.Now()))
 		err = json.Unmarshal(resJSONBytes, crd)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -107,8 +108,9 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 	err = (&SizeReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Size"),
+		Client:         k8sManager.GetClient(),
+		Log:            ctrl.Log.WithName("controllers").WithName("Size"),
+		EventPublisher: publisher.NewDomainEventPublisher(ctrl.Log),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 	err = (&AggregateReconciler{

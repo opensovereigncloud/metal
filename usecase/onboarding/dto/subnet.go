@@ -15,6 +15,22 @@
 package dto
 
 type SubnetInfo struct {
-	Name      string
-	Namespace string
+	Name             string
+	Namespace        string
+	Prefix           int
+	ParentSubnetName string
+}
+
+func NewSubnetInfo(
+	name string,
+	namespace string,
+	prefix int,
+	parentSubnetName string,
+) SubnetInfo {
+	return SubnetInfo{
+		Name:             name,
+		Namespace:        namespace,
+		Prefix:           prefix,
+		ParentSubnetName: parentSubnetName,
+	}
 }
