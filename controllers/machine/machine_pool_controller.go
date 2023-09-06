@@ -34,7 +34,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const MachineFinalizer = "metal-api.onmetal.de/machine-finalizer"
+const (
+	MachineFinalizer                  = "metal-api.onmetal.de/machine-finalizer"
+	MachinePoolOOBNameAnnotation      = "metal-api.onmetal.de/oob-name"
+	MachinePoolOOBNamespaceAnnotation = "metal-api.onmetal.de/oob-namespace"
+)
+
+var OOBServiceAddr = poolv1alpha1.MachinePoolAddress{
+	Type:    poolv1alpha1.MachinePoolInternalDNS,
+	Address: "oob-console.oob.svc.cluster.local",
+}
 
 var (
 	errorSizesListIsEmpty         = errors.New("sizes list is empty")
@@ -168,6 +177,10 @@ func (r *MachinePoolReconciler) createMachinePool(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      machine.Name,
 			Namespace: machine.Namespace,
+			Annotations: map[string]string{
+				MachinePoolOOBNameAnnotation:      machine.Name,
+				MachinePoolOOBNamespaceAnnotation: machine.Namespace,
+			},
 		},
 	}
 	if err := r.Create(wCtx.ctx, machinePool); err != nil {
@@ -176,6 +189,7 @@ func (r *MachinePoolReconciler) createMachinePool(
 	}
 
 	machinePool.Status.AvailableMachineClasses = availableMachineClasses
+	machinePool.Status.Addresses = []poolv1alpha1.MachinePoolAddress{OOBServiceAddr}
 	if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
 		wCtx.log.Error(err, "could not update machine_pool status")
 		return ctrl.Result{}, err
@@ -192,12 +206,28 @@ func (r *MachinePoolReconciler) updateMachinePool(
 ) (ctrl.Result, error) {
 	wCtx.log.Info("updating machine_pool")
 
+	// ensure correct annotations
+	if machinePool.Annotations == nil {
+		machinePool.Annotations = make(map[string]string, 2)
+	}
+	if machinePool.Annotations[MachinePoolOOBNameAnnotation] != machine.Name || machinePool.Annotations[MachinePoolOOBNamespaceAnnotation] != machine.Namespace {
+		machinePool.Annotations[MachinePoolOOBNameAnnotation] = machine.Name
+		machinePool.Annotations[MachinePoolOOBNamespaceAnnotation] = machine.Namespace
+
+		if err := r.Update(wCtx.ctx, machinePool); err != nil {
+			wCtx.log.Error(err, "could not update machine_pool")
+			return ctrl.Result{}, err
+		}
+	}
+
+	machinePool.Status.Addresses = r.ensureAddress(machinePool.Status.Addresses, OOBServiceAddr)
+
 	// if machine is booked, remove available classes
 	if machine.Status.Reservation.Status != domain.ReservationStatusAvailable {
 		machinePool.Status.AvailableMachineClasses = make([]corev1.LocalObjectReference, 0)
 
 		if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
-			wCtx.log.Error(err, "could not update machine_pool")
+			wCtx.log.Error(err, "could not update machine_pool status")
 			return ctrl.Result{}, err
 		}
 
@@ -207,7 +237,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 	// refresh available classes
 	machinePool.Status.AvailableMachineClasses = r.getAvailableMachineClasses(machine, sizes)
 	if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
-		wCtx.log.Error(err, "could not update machine_pool")
+		wCtx.log.Error(err, "could not update machine_pool status")
 		return ctrl.Result{}, err
 	}
 
@@ -309,4 +339,13 @@ func (r *MachinePoolReconciler) resolveSizes(wCtx *machinePoolReconcileWrappedCt
 	}
 
 	return sizes, nil
+}
+
+func (r *MachinePoolReconciler) ensureAddress(addrs []poolv1alpha1.MachinePoolAddress, addr poolv1alpha1.MachinePoolAddress) []poolv1alpha1.MachinePoolAddress {
+	for _, a := range addrs {
+		if a == addr {
+			return addrs
+		}
+	}
+	return append(addrs, addr)
 }
