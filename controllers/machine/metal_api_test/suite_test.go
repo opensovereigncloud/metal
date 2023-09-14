@@ -23,6 +23,7 @@ import (
 
 	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	controllers "github.com/onmetal/metal-api/controllers/machine"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
@@ -98,7 +99,12 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
 
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, MetricsBindAddress: "0"})
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+	})
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&controllers.MachinePowerReconciler{

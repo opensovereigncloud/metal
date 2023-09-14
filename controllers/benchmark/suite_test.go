@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -92,7 +94,15 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
 
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme, Host: "127.0.0.1", MetricsBindAddress: "0"})
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Host: "127.0.0.1",
+		}),
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+	})
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&OnboardingReconciler{

@@ -48,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -105,15 +106,28 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	profHandlers := make(map[string]http.Handler)
+	if profiling {
+		profHandlers["debug/pprof"] = http.HandlerFunc(pprof.Index)
+		profHandlers["debug/pprof/profile"] = http.HandlerFunc(pprof.Profile)
+		setupLog.Info("profiling activated")
+	}
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress:   metricsAddr,
+			ExtraHandlers: profHandlers,
+		},
 		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookPort}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "064f77d7.machine.onmetal.de",
-		ClientDisableCacheFor: []client.Object{
-			&machinev1lpha3.Machine{},
+		Client: client.Options{
+			Cache: &client.CacheOptions{
+				DisableFor: []client.Object{
+					&machinev1lpha3.Machine{},
+				},
+			},
 		},
 	})
 	if err != nil {
@@ -127,7 +141,7 @@ func main() {
 	}
 
 	startReconcilers(mgr, bootstrapAPIServer, loopbackSubnetLabelValue)
-	addHandlers(mgr, profiling)
+	addHandlers(mgr)
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
@@ -279,7 +293,7 @@ func startReconcilers(
 	// +kubebuilder:scaffold:builder
 }
 
-func addHandlers(mgr ctrl.Manager, profiling bool) {
+func addHandlers(mgr ctrl.Manager) {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err := (&inventoriesv1alpha1.Size{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Size")
@@ -305,19 +319,6 @@ func addHandlers(mgr ctrl.Manager, profiling bool) {
 	if readyErr := mgr.AddReadyzCheck("readyz", healthz.Ping); readyErr != nil {
 		setupLog.Error(readyErr, "unable to set up ready check")
 		os.Exit(1)
-	}
-	if profiling {
-		err := mgr.AddMetricsExtraHandler("/debug/pprof/", http.HandlerFunc(pprof.Index))
-		if err != nil {
-			setupLog.Error(err, "unable to attach pprof to webserver")
-			os.Exit(1)
-		}
-		err = mgr.AddMetricsExtraHandler("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
-		if err != nil {
-			setupLog.Error(err, "unable to attach cpu pprof to webserver")
-			os.Exit(1)
-		}
-		setupLog.Info("profiling activated")
 	}
 }
 

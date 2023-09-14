@@ -47,6 +47,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -205,8 +206,10 @@ func SetupTest(ctx context.Context, reconcilers string) *corev1.Namespace {
 		Expect(k8sClient.Create(ctx, ns)).To(Succeed(), "failed to create test namespace")
 
 		k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-			Scheme:             scheme.Scheme,
-			MetricsBindAddress: "0",
+			Scheme: scheme.Scheme,
+			Metrics: metricsserver.Options{
+				BindAddress: "0",
+			},
 		})
 		Expect(err).ToNot(HaveOccurred())
 

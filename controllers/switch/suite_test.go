@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	ipamctrl "github.com/onmetal/ipam/controllers"
@@ -41,6 +42,7 @@ import (
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
@@ -125,12 +127,16 @@ var _ = BeforeSuite(func() {
 
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme,
-		Host:               webhookInstallOptions.LocalServingHost,
-		Port:               webhookInstallOptions.LocalServingPort,
-		CertDir:            webhookInstallOptions.LocalServingCertDir,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+		Scheme: scheme,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    webhookInstallOptions.LocalServingPort,
+			Host:    webhookInstallOptions.LocalServingHost,
+			CertDir: webhookInstallOptions.LocalServingCertDir,
+		}),
+		LeaderElection: false,
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
 	})
 	Expect(err).ToNot(HaveOccurred())
 
