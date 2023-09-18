@@ -1,0 +1,22 @@
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: Subnet
+metadata:
+  name: leaf-1-subnet-v6
+  namespace: onmetal
+  labels:
+    ipam.onmetal.de/object-purpose: "south-subnet"
+    ipam.onmetal.de/object-owner: "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5"
+spec:
+  prefixBits: 64
+  network:
+    name: underlay
+  parentSubnet:
+    name: switch-ranges-v6
+  regions:
+    - availabilityZones:
+        - B
+      name: eu-central
+status:
+  type: "IPv6"
+  reserved: "fd00:afc0:e014:1003:0000:0000:0000:0000/64"
+  state: "Finished"

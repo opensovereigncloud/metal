@@ -299,7 +299,7 @@ func TestUpdateSwitchConfigSelector(t *testing.T) {
 			ScanPorts: pointer.Bool(true),
 		},
 		Status: switchv1beta1.SwitchStatus{
-			Layer: pointer.Uint32(255),
+			Layer: 255,
 		},
 	}
 	testingState := initialState.DeepCopy()
@@ -353,7 +353,7 @@ func TestGetTotalAddressesCount(t *testing.T) {
 	var (
 		q           *resource.Quantity
 		addresses   int64
-		samplesPath = filepath.Join("./", "test_samples")
+		samplesPath = filepath.Join("..", "..", "test_samples", "switch", "helpers_samples")
 	)
 	var (
 		actualV4addresses int64 = 512
@@ -381,4 +381,11 @@ func TestGetTotalAddressesCount(t *testing.T) {
 		addresses, _ = q.AsInt64()
 		assert.Equal(t, addresses, actualV6addresses)
 	}
+}
+
+func TestParseInterfaceNameFromSubnet(t *testing.T) {
+	t.Parallel()
+	sample := "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5-ethernet120-aaaaaaaa"
+	expected := "Ethernet120"
+	assert.Equal(t, expected, ParseInterfaceNameFromSubnet(sample))
 }

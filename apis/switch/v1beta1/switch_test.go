@@ -33,10 +33,10 @@ func TestSpecGetters(t *testing.T) {
 			IPAM:         &IPAMSpec{},
 		},
 	}
-	assert.Equal(t, false, obj.GetManaged())
-	assert.Equal(t, false, obj.GetCordon())
-	assert.Equal(t, false, obj.GetTopSpine())
-	assert.Equal(t, false, obj.GetScanPorts())
+	assert.Equal(t, false, obj.Managed())
+	assert.Equal(t, false, obj.Cordon())
+	assert.Equal(t, false, obj.TopSpine())
+	assert.Equal(t, false, obj.ScanPorts())
 	assert.Equal(t, "", obj.GetInventoryRef())
 }
 
@@ -53,10 +53,10 @@ func TestSpecSetters(t *testing.T) {
 	obj.SetTopSpine(true)
 	obj.SetScanPorts(true)
 	obj.SetInventoryRef("inventory")
-	assert.Equal(t, true, obj.GetManaged())
-	assert.Equal(t, true, obj.GetCordon())
-	assert.Equal(t, true, obj.GetTopSpine())
-	assert.Equal(t, true, obj.GetScanPorts())
+	assert.Equal(t, true, obj.Managed())
+	assert.Equal(t, true, obj.Cordon())
+	assert.Equal(t, true, obj.TopSpine())
+	assert.Equal(t, true, obj.ScanPorts())
 	assert.Equal(t, "inventory", obj.GetInventoryRef())
 }
 
@@ -64,7 +64,8 @@ func TestStatusGetters(t *testing.T) {
 	t.Parallel()
 	obj := &Switch{
 		Status: SwitchStatus{
-			ConfigRef: &v1.LocalObjectReference{},
+			ConfigRef: v1.LocalObjectReference{},
+			Layer:     255,
 		},
 	}
 	assert.Equal(t, uint32(255), obj.GetLayer())
@@ -81,7 +82,7 @@ func TestStatusSetters(t *testing.T) {
 	t.Parallel()
 	obj := &Switch{
 		Status: SwitchStatus{
-			ConfigRef: &v1.LocalObjectReference{},
+			ConfigRef: v1.LocalObjectReference{},
 		},
 	}
 	obj.SetLayer(2)
@@ -91,7 +92,7 @@ func TestStatusSetters(t *testing.T) {
 	obj.SetRole("leaf")
 	obj.SetState("Ready")
 	obj.SetMessage("test")
-	obj.SetCondition("LayerAndRoleOK", true)
+	obj.UpdateCondition("LayerAndRoleOK", "", "", true)
 	assert.Equal(t, uint32(2), obj.GetLayer())
 	assert.Equal(t, uint32(4_204_194_305), obj.GetASN())
 	assert.Equal(t, uint32(35), obj.GetTotalPorts())

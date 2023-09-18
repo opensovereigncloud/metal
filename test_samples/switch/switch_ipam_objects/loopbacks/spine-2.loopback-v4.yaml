@@ -1,0 +1,15 @@
+apiVersion: ipam.onmetal.de/v1alpha1
+kind: IP
+metadata:
+  name: spine-2-loopback-v4
+  namespace: onmetal
+  labels:
+    ipam.onmetal.de/object-purpose: "loopback"
+    ipam.onmetal.de/object-owner: "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b"
+spec:
+  subnet:
+    name: loopbacks-v4
+  ip: 100.64.255.6
+status:
+  reserved: "100.64.255.6"
+  state: "Finished"

@@ -135,7 +135,7 @@ var _ = PDescribe("Switch client", func() {
 				var patchedSwitch *switchv1beta1.Switch
 				patchedSwitch, err = client.Patch(ctx, SwitchName, types.JSONPatchType, patchData, metav1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedSwitch.GetManaged()).Should(BeFalse())
+				Expect(patchedSwitch.Managed()).Should(BeFalse())
 				finished <- true
 			}()
 
@@ -144,7 +144,7 @@ var _ = PDescribe("Switch client", func() {
 			eventSwitch, ok = event.Object.(*switchv1beta1.Switch)
 			Expect(ok).To(BeTrue())
 			Expect(eventSwitch).NotTo(BeNil())
-			Expect(eventSwitch.GetManaged()).Should(BeFalse())
+			Expect(eventSwitch.Managed()).Should(BeFalse())
 
 			<-finished
 
@@ -152,10 +152,10 @@ var _ = PDescribe("Switch client", func() {
 			createdSwitch, err = client.Get(ctx, SwitchName, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			createdSwitch.Status = switchv1beta1.SwitchStatus{
-				TotalPorts:  pointer.Uint32(1),
-				SwitchPorts: pointer.Uint32(1),
-				Role:        pointer.String("spine"),
-				Layer:       pointer.Uint32(0),
+				TotalPorts:  1,
+				SwitchPorts: 1,
+				Role:        "spine",
+				Layer:       0,
 				Interfaces: map[string]*switchv1beta1.InterfaceSpec{"Ethernet0": {
 					MACAddress: pointer.String("00:00:00:00:00:01"),
 					Direction:  pointer.String(constants.DirectionSouth),

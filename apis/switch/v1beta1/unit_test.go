@@ -42,7 +42,7 @@ func TestSetDefaultConfigSelector(t *testing.T) {
 			ScanPorts: pointer.Bool(true),
 		},
 		Status: SwitchStatus{
-			Layer: pointer.Uint32(255),
+			Layer: 255,
 		},
 	}
 	testingState := initialState.DeepCopy()

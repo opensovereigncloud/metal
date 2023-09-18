@@ -96,27 +96,27 @@ type SwitchStatus struct {
 	// ConfigRef contains reference to corresponding SwitchConfig object
 	// Empty ConfigRef means that there is no corresponding SwitchConfig object
 	// +kubebuilder:validation:Optional
-	ConfigRef *v1.LocalObjectReference `json:"configRef,omitempty"`
+	ConfigRef v1.LocalObjectReference `json:"configRef,omitempty"`
 	// RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config.
 	// This field reflects the corresponding field of the related SwitchConfig object.
 	// +kubebuilder:validation:Optional
-	RoutingConfigTemplate *v1.LocalObjectReference `json:"routingConfigTemplate,omitempty"`
+	RoutingConfigTemplate v1.LocalObjectReference `json:"routingConfigTemplate,omitempty"`
 	// ASN contains current autonomous system number defined for switch
 	// +kubebuilder:validation:Optional
-	ASN *uint32 `json:"asn,omitempty"`
+	ASN uint32 `json:"asn,omitempty"`
 	// TotalPorts refers to total number of ports
 	// +kubebuilder:validation:Optional
-	TotalPorts *uint32 `json:"totalPorts,omitempty"`
+	TotalPorts uint32 `json:"totalPorts,omitempty"`
 	// SwitchPorts refers to the number of ports excluding management interfaces, loopback etc.
 	// +kubebuilder:validation:Optional
-	SwitchPorts *uint32 `json:"switchPorts,omitempty"`
+	SwitchPorts uint32 `json:"switchPorts,omitempty"`
 	// Role refers to switch's role
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=spine;leaf;edge-leaf
-	Role *string `json:"role,omitempty"`
+	Role string `json:"role,omitempty"`
 	// Layer refers to switch's current position in connection hierarchy
 	// +kubebuilder:validation:Optional
-	Layer *uint32 `json:"layer"`
+	Layer uint32 `json:"layer"`
 	// Interfaces refers to switch's interfaces configuration
 	// +kubebuilder:validation:Optional
 	Interfaces map[string]*InterfaceSpec `json:"interfaces,omitempty"`
@@ -306,6 +306,10 @@ func init() {
 	SchemeBuilder.Register(&Switch{}, &SwitchList{})
 }
 
+func (in *Switch) GetNamespace() string {
+	return in.Namespace
+}
+
 // NamespacedName returns types.NamespacedName built from
 // object's metadata.name and metadata.namespace.
 func (in *Switch) NamespacedName() types.NamespacedName {
@@ -325,27 +329,27 @@ func (in *Switch) GetInventoryRef() string {
 	return in.Spec.InventoryRef.Name
 }
 
-// GetManaged returns value of spec.managed field if it is not nil,
+// Managed returns value of spec.managed field if it is not nil,
 // otherwise false.
-func (in *Switch) GetManaged() bool {
+func (in *Switch) Managed() bool {
 	return pointer.BoolDeref(in.Spec.Managed, false)
 }
 
-// GetCordon returns value of spec.cordon field if it is not nil,
+// Cordon returns value of spec.cordon field if it is not nil,
 // otherwise false.
-func (in *Switch) GetCordon() bool {
+func (in *Switch) Cordon() bool {
 	return pointer.BoolDeref(in.Spec.Cordon, false)
 }
 
-// GetTopSpine returns value of spec.topSpine field if it is not nil,
+// TopSpine returns value of spec.topSpine field if it is not nil,
 // otherwise false.
-func (in *Switch) GetTopSpine() bool {
+func (in *Switch) TopSpine() bool {
 	return pointer.BoolDeref(in.Spec.TopSpine, false)
 }
 
-// GetScanPorts returns value of spec.topSpine field if it is not nil,
+// ScanPorts returns value of spec.topSpine field if it is not nil,
 // otherwise false.
-func (in *Switch) GetScanPorts() bool {
+func (in *Switch) ScanPorts() bool {
 	return pointer.BoolDeref(in.Spec.ScanPorts, false)
 }
 
@@ -368,18 +372,18 @@ func (in *Switch) GetConfigSelector() *metav1.LabelSelector {
 // GetConfigRef returns value of status.configRef.name field if
 // configRef is not nil, otherwise empty string.
 func (in *Switch) GetConfigRef() string {
-	if in.Status.ConfigRef == nil {
-		return ""
-	}
+	//if in.Status.ConfigRef == nil {
+	//	return ""
+	//}
 	return in.Status.ConfigRef.Name
 }
 
 // GetRoutingConfigTemplate returns value of status.routingConfigTemplate.name field if
 // routingConfigTemplate is not nil, otherwise empty string.
 func (in *Switch) GetRoutingConfigTemplate() string {
-	if in.Status.RoutingConfigTemplate == nil {
-		return ""
-	}
+	//if in.Status.RoutingConfigTemplate == nil {
+	//	return ""
+	//}
 	return in.Status.RoutingConfigTemplate.Name
 }
 
@@ -392,31 +396,31 @@ func (in *Switch) RoutingConfigTemplateIsEmpty() bool {
 // GetASN returns value of status.asn field if it is not nil,
 // otherwise 0.
 func (in *Switch) GetASN() uint32 {
-	return pointer.Uint32Deref(in.Status.ASN, 0)
+	return in.Status.ASN
 }
 
 // GetLayer returns value of status.layer field if it is not nil,
 // otherwise 255.
 func (in *Switch) GetLayer() uint32 {
-	return pointer.Uint32Deref(in.Status.Layer, 255)
+	return in.Status.Layer
 }
 
 // GetRole returns value of status.role field if it is not nil,
 // otherwise empty string.
 func (in *Switch) GetRole() string {
-	return pointer.StringDeref(in.Status.Role, "")
+	return in.Status.Role
 }
 
 // GetTotalPorts returns value of status.totalPorts field if it is not nil,
 // otherwise 0.
 func (in *Switch) GetTotalPorts() uint32 {
-	return pointer.Uint32Deref(in.Status.TotalPorts, 0)
+	return in.Status.TotalPorts
 }
 
 // GetSwitchPorts returns value of status.switchPorts field if it is not nil,
 // otherwise 0.
 func (in *Switch) GetSwitchPorts() uint32 {
-	return pointer.Uint32Deref(in.Status.SwitchPorts, 0)
+	return in.Status.SwitchPorts
 }
 
 // GetState returns value of status.state field if it is not nil,
@@ -472,33 +476,35 @@ func (in *Switch) SetScanPorts(value bool) {
 // SetConfigRef sets passed argument as a value of
 // status.configRef.name field.
 func (in *Switch) SetConfigRef(value string) {
-	if value == constants.EmptyString {
-		in.Status.ConfigRef = nil
-	} else {
-		in.Status.ConfigRef = &v1.LocalObjectReference{Name: value}
-	}
+	//if value == constants.EmptyString {
+	//	in.Status.ConfigRef = nil
+	//} else {
+	//	in.Status.ConfigRef = v1.LocalObjectReference{Name: value}
+	//}
+	in.Status.ConfigRef = v1.LocalObjectReference{Name: value}
 }
 
 // SetRoutingConfigTemplate sets passed argument as a value of
 // status.routingConfigTemplate.name field.
 func (in *Switch) SetRoutingConfigTemplate(value string) {
-	if value == constants.EmptyString {
-		in.Status.RoutingConfigTemplate = nil
-	} else {
-		in.Status.RoutingConfigTemplate = &v1.LocalObjectReference{Name: value}
-	}
+	//if value == constants.EmptyString {
+	//	in.Status.RoutingConfigTemplate = nil
+	//} else {
+	//	in.Status.RoutingConfigTemplate = &v1.LocalObjectReference{Name: value}
+	//}
+	in.Status.RoutingConfigTemplate = v1.LocalObjectReference{Name: value}
 }
 
 // SetASN sets passed argument as a value of
 // status.asn field.
 func (in *Switch) SetASN(value uint32) {
-	in.Status.ASN = pointer.Uint32(value)
+	in.Status.ASN = value
 }
 
 // SetLayer sets passed argument as a value of
 // status.layer field.
 func (in *Switch) SetLayer(value uint32) {
-	in.Status.Layer = pointer.Uint32(value)
+	in.Status.Layer = value
 }
 
 // SetRole sets passed argument as a value of
@@ -507,24 +513,25 @@ func (in *Switch) SetLayer(value uint32) {
 //   - leaf
 //   - edge-leaf
 func (in *Switch) SetRole(value string) {
-	switch value {
-	case "":
-		in.Status.Role = nil
-	default:
-		in.Status.Role = pointer.String(value)
-	}
+	//switch value {
+	//case "":
+	//	in.Status.Role = nil
+	//default:
+	//	in.Status.Role = pointer.String(value)
+	//}
+	in.Status.Role = value
 }
 
 // SetTotalPorts sets passed argument as a value of
 // status.totalPorts field.
 func (in *Switch) SetTotalPorts(value uint32) {
-	in.Status.TotalPorts = pointer.Uint32(value)
+	in.Status.TotalPorts = value
 }
 
 // SetSwitchPorts sets passed argument as a value of
 // status.switchPorts field.
 func (in *Switch) SetSwitchPorts(value uint32) {
-	in.Status.SwitchPorts = pointer.Uint32(value)
+	in.Status.SwitchPorts = value
 }
 
 // SetState sets passed argument as a value of
@@ -566,7 +573,7 @@ func (in *Switch) SetMessage(value string) {
 // stored in the list of switch's conditions, otherwise nil.
 func (in *Switch) GetCondition(name string) *ConditionSpec {
 	for _, item := range in.Status.Conditions {
-		if pointer.StringDeref(item.Name, "") == name {
+		if item.GetName() == name {
 			return item
 		}
 	}
@@ -576,6 +583,9 @@ func (in *Switch) GetCondition(name string) *ConditionSpec {
 // GetState returns value of ConditionSpec.State if it is not nil,
 // otherwise false.
 func (in *ConditionSpec) GetState() bool {
+	if in == nil {
+		return false
+	}
 	return pointer.BoolDeref(in.State, false)
 }
 
@@ -613,34 +623,42 @@ func (in *ConditionSpec) GetMessage() string {
 // ConditionSpec setters
 // ----------------------------------------
 
-// SetCondition updates the switch object's status.conditions list.
+func NewCondition(name string) *ConditionSpec {
+	return &ConditionSpec{Name: pointer.String(name)}
+}
+
+// UpdateCondition updates the switch object's status.conditions list.
 // Using passed "name" argument, it looks up for existing condition
-// with provided name. In case condition was found, it will be
-// updated with new state and lastUpdateTimestamp, it's "reason" and
-// "message" fields will be flushed, it's "lastTransitionTimestamp"
-// will be also updated if it's equal to nil or if passed state not
-// equal to stored state. In case condition was not found, then new
-// ConditionSpec object will be created and added to the list.
-func (in *Switch) SetCondition(name string, state bool) *ConditionSpec {
+// with provided name. In case condition was found, it will be updated.
+// Otherwise, new ConditionSpec object will be created and added to the list.
+func (in *Switch) UpdateCondition(name, reason, message string, state bool) {
+	var conditions []*ConditionSpec
 	ts := time.Now()
-	if c := in.GetCondition(name); c != nil {
-		if c.LastTransitionTimestamp == nil || state != c.GetState() {
-			return c.SetLastTransitionTimestamp(ts.String()).
-				SetLastUpdateTimestamp(ts.String()).
-				SetState(state).
-				FlushReason().
-				FlushMessage()
+	c := in.GetCondition(name)
+	if c == nil {
+		conditions = make([]*ConditionSpec, len(in.Status.Conditions)+1)
+		copy(conditions, in.Status.Conditions)
+		conditions[len(in.Status.Conditions)] = NewCondition(name).
+			SetState(state).
+			SetReason(reason).
+			SetMessage(message).
+			SetLastUpdateTimestamp(ts.String()).
+			SetLastTransitionTimestamp(ts.String())
+	} else {
+		conditions = make([]*ConditionSpec, len(in.Status.Conditions))
+		for i, item := range in.Status.Conditions {
+			if item.GetName() != c.GetName() {
+				conditions[i] = item
+				continue
+			}
+			if c.GetState() != state {
+				c.SetState(state).SetReason(reason).SetMessage(message).SetLastTransitionTimestamp(ts.String())
+			}
+			c.SetLastUpdateTimestamp(ts.String())
+			conditions[i] = c
 		}
-		return c.SetLastUpdateTimestamp(ts.String()).
-			FlushReason().
-			FlushMessage()
 	}
-	c := &ConditionSpec{Name: pointer.String(name)}
-	c.SetState(state).
-		SetLastUpdateTimestamp(ts.String()).
-		SetLastTransitionTimestamp(ts.String())
-	in.Status.Conditions = append(in.Status.Conditions, c)
-	return c
+	in.Status.Conditions = conditions
 }
 
 // SetState sets passed argument as a value of
@@ -667,7 +685,12 @@ func (in *ConditionSpec) SetLastTransitionTimestamp(value string) *ConditionSpec
 // SetReason sets passed argument as a value of
 // condition.reason field.
 func (in *ConditionSpec) SetReason(value string) *ConditionSpec {
-	in.Reason = pointer.String(value)
+	switch value {
+	case "":
+		in.Reason = nil
+	default:
+		in.Reason = pointer.String(value)
+	}
 	return in
 }
 
@@ -680,7 +703,12 @@ func (in *ConditionSpec) FlushReason() *ConditionSpec {
 // SetMessage sets passed argument as a value of
 // condition.message field.
 func (in *ConditionSpec) SetMessage(value string) *ConditionSpec {
-	in.Message = pointer.String(value)
+	switch value {
+	case "":
+		in.Message = nil
+	default:
+		in.Message = pointer.String(value)
+	}
 	return in
 }
 
@@ -1259,7 +1287,7 @@ func (in *Switch) StateReady() bool {
 }
 
 // StateNotReady checks actual value of .status.state field and
-// returns boolean value whether it matches corresponding constant.
+// returns boolean value whether it differs from "Ready".
 func (in *Switch) StateNotReady() bool {
 	return in.GetState() != constants.SwitchStateReady
 }

@@ -51,8 +51,14 @@ import (
 
 const defaultNamespace string = "onmetal"
 
+const (
+	timeout        = time.Second * 30
+	contextTimeout = time.Second * 35
+	interval       = time.Millisecond * 100
+)
+
 var (
-	samplesPath string = filepath.Join("./", "test_samples")
+	samplesPath = filepath.Join("..", "..", "test_samples", "switch")
 )
 
 var (
@@ -152,13 +158,14 @@ var _ = BeforeSuite(func() {
 		Log:    ctrl.Log.WithName("controllers").WithName("onboarding-reconciler"),
 	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
 	Expect((&switchv1beta1.Switch{}).SetupWebhookWithManager(k8sManager)).NotTo(HaveOccurred())
-	Expect((&SwConfigReconciler{
-		Client:   k8sManager.GetClient(),
-		Scheme:   k8sManager.GetScheme(),
-		Recorder: k8sManager.GetEventRecorderFor("switchconfig-reconciler"),
-		Log:      ctrl.Log.WithName("controllers").WithName("switchconfig-reconciler"),
-	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
 	Expect((&switchv1beta1.SwitchConfig{}).SetupWebhookWithManager(k8sManager)).NotTo(HaveOccurred())
+	Expect((&IPAMReconciler{
+		Client:                  k8sManager.GetClient(),
+		Scheme:                  k8sManager.GetScheme(),
+		Recorder:                k8sManager.GetEventRecorderFor("switch-ipam-reconciler"),
+		Log:                     ctrl.Log.WithName("controllers").WithName("switch-ipam-reconciler"),
+		SwitchPortsIPAMDisabled: true,
+	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
 
 	Expect((&ipamctrl.SubnetReconciler{
 		Client:        k8sManager.GetClient(),

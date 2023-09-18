@@ -36,8 +36,11 @@ import (
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	"github.com/pkg/errors"
 	"go4.org/netipx"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"inet.af/netaddr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -51,7 +54,6 @@ import (
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"github.com/onmetal/metal-api/pkg/constants"
-	"github.com/onmetal/metal-api/pkg/errors"
 )
 
 var (
@@ -65,7 +67,7 @@ var (
 var PatchOpts *client.SubResourcePatchOptions = &client.SubResourcePatchOptions{
 	PatchOptions: client.PatchOptions{
 		Force:        pointer.Bool(true),
-		FieldManager: "metal-api-controller-manager",
+		FieldManager: constants.SwitchManager,
 	},
 }
 
@@ -267,7 +269,7 @@ func ComputeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
 		return
 	}
 
-	switch obj.GetTopSpine() {
+	switch obj.TopSpine() {
 	case true:
 		obj.SetLayer(0)
 		for _, nicData := range obj.Status.Interfaces {
@@ -299,7 +301,7 @@ func ComputeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
 }
 
 func InheritInterfaceParams(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
-	if obj.GetTopSpine() {
+	if obj.TopSpine() {
 		return
 	}
 	connectionsMap, keys := buildConnectionMap(list)
@@ -326,7 +328,7 @@ func buildConnectionMap(obj *switchv1beta1.SwitchList) (map[uint32]*switchv1beta
 		if reflect.DeepEqual(item.Status, switchv1beta1.SwitchStatus{}) {
 			continue
 		}
-		if item.Status.Layer == nil {
+		if item.Status.Layer == 255 {
 			continue
 		}
 		layer := item.GetLayer()
@@ -458,6 +460,7 @@ func ResultingLabels(
 	for k, v := range fieldSelectors {
 		result[k] = v
 	}
+	result[constants.IPAMObjectGeneratedByLabel] = constants.SwitchManager
 	return result, err
 }
 
@@ -487,7 +490,7 @@ func GetSelectorFromIPAMSpec(
 
 func labelFromFieldRef(obj interface{}, src *switchv1beta1.FieldSelectorSpec) (map[string]string, error) {
 	if src == nil {
-		return nil, NewProcessingError(errors.MessageFieldSelectorNotDefined)
+		return nil, errors.New(constants.MessageFieldSelectorNotDefined)
 	}
 	mapRepr, err := interfaceToMap(obj)
 	if err != nil {
@@ -495,11 +498,11 @@ func labelFromFieldRef(obj interface{}, src *switchv1beta1.FieldSelectorSpec) (m
 	}
 	apiVersion, ok := mapRepr["apiVersion"]
 	if !ok {
-		return nil, NewProcessingError(errors.MessageMissingAPIVersion)
+		return nil, errors.New(constants.MessageMissingAPIVersion)
 	}
 	if src.FieldRef.APIVersion != "" && apiVersion != src.FieldRef.APIVersion {
-		return nil, NewProcessingError(
-			"%s: expected %s, actual %s", errors.MessageAPIVersionMismatch, apiVersion, src.FieldRef.APIVersion)
+		return nil, errors.New(fmt.Sprintf(
+			"%s: expected %s, actual %s", constants.MessageAPIVersionMismatch, apiVersion, src.FieldRef.APIVersion))
 	}
 	nested := strings.Split(src.FieldRef.FieldPath, ".")
 	label, err := processObjectMap(mapRepr, nested, src)
@@ -517,7 +520,8 @@ func processObjectMap(
 	for i, f := range path {
 		v, ok := currentSearchObj[f]
 		if !ok {
-			return nil, NewProcessingError("%s: %s", errors.MessageInvalidFieldPath, strings.Join(path, "."))
+			return nil, errors.New(fmt.Sprintf(
+				"%s: %s", constants.MessageInvalidFieldPath, strings.Join(path, ".")))
 		}
 		if i == len(path)-1 {
 			switch v.(type) {
@@ -525,7 +529,7 @@ func processObjectMap(
 				label[src.GetLabelKey()] = fmt.Sprintf("%v", v)
 				return label, nil
 			default:
-				return nil, NewProcessingError(errors.MessageInvalidInputType)
+				return nil, errors.New(constants.MessageInvalidInputType)
 			}
 		}
 		currentSearchObj, err = interfaceToMap(v)
@@ -541,19 +545,19 @@ func interfaceToMap(i interface{}) (map[string]interface{}, error) {
 	m := make(map[string]interface{})
 	raw, err := json.Marshal(i)
 	if err != nil {
-		return nil, NewProcessingError(errors.MessageMarshallingFailed)
+		return nil, errors.New(constants.MessageMarshallingFailed)
 	}
 	err = json.Unmarshal(raw, &m)
 	if err != nil {
-		return nil, NewProcessingError(errors.MessageUnmarshallingFailed)
+		return nil, errors.New(constants.MessageUnmarshallingFailed)
 	}
 	return m, nil
 }
 
-func SetState(obj *switchv1beta1.Switch, state, message string) {
-	obj.SetState(state)
-	obj.SetMessage(message)
-}
+//func SetState(obj *switchv1beta1.Switch, state, message string) {
+//	obj.SetState(state)
+//	obj.SetMessage(message)
+//}
 
 func CalculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 	var result uint32 = 0
@@ -564,7 +568,7 @@ func CalculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 		asn := constants.ASNBase
 		addr := net.ParseIP(item.GetAddress())
 		if addr == nil {
-			return 0, NewProcessingError("%s: %s", errors.MessageParseIPFailed, item.GetAddress())
+			return 0, errors.New(fmt.Sprintf("%s: %s", constants.MessageParseIPFailed, item.GetAddress()))
 		}
 		asn += uint32(addr[13]) * uint32(math.Pow(2, 16))
 		asn += uint32(addr[14]) * uint32(math.Pow(2, 8))
@@ -573,7 +577,7 @@ func CalculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 		break
 	}
 	if result == 0 {
-		return 0, NewProcessingError(errors.MessageMissingLoopbackV4IP)
+		return 0, errors.New(constants.MessageMissingLoopbackV4IP)
 	}
 	return result, nil
 }
@@ -607,7 +611,8 @@ func GetExtraIPs(obj *switchv1beta1.Switch, name string) ([]*switchv1beta1.IPAdd
 func getAddressFamily(address string) (string, error) {
 	addr, err := netaddr.ParseIP(address)
 	if err != nil {
-		return constants.EmptyString, NewProcessingError("%s: %s", errors.MessageParseIPFailed, address)
+		return constants.EmptyString, errors.New(fmt.Sprintf(
+			"%s: %s", constants.MessageParseIPFailed, address))
 	}
 	if addr.Is4() {
 		return constants.IPv4AF, nil
@@ -628,7 +633,8 @@ func GetComputedIPs(
 			return nil, nil, err
 		}
 		if cidr == nil {
-			return nil, nil, NewProcessingError("%s: %s", errors.MessageParseCIDRFailed, subnet.GetCIDR())
+			return nil, nil, errors.New(fmt.Sprintf(
+				"%s: %s", constants.MessageParseCIDRFailed, subnet.GetCIDR()))
 		}
 		mask := data.GetIPv4MaskLength()
 		addrIndex := BaseIPv4AddressIndex
@@ -731,6 +737,9 @@ func GetTotalAddressesCount(
 	ports map[string]*switchv1beta1.InterfaceSpec, af ipamv1alpha1.SubnetAddressType) *resource.Quantity {
 	var counter int64 = 0
 	for _, item := range ports {
+		if item.PortParametersSpec == nil {
+			return resource.NewQuantity(0, resource.DecimalSI)
+		}
 		var bits, ones uint32
 		switch af {
 		case ipamv1alpha1.CIPv4SubnetType:
@@ -746,14 +755,15 @@ func GetTotalAddressesCount(
 	return resource.NewQuantity(counter, resource.DecimalSI)
 }
 
-func AddressFamiliesMatchConfig(ipv4, ipv6 bool, foundAF map[ipamv1alpha1.SubnetAddressType]*bool) bool {
+func AddressFamiliesMatchConfig(ipv4, ipv6 bool, flag int) bool {
 	result := true
-	if ipv4 && foundAF[ipamv1alpha1.CIPv4SubnetType] == nil {
-		foundAF[ipamv1alpha1.CIPv4SubnetType] = pointer.Bool(false)
+	if flag == 0 {
+		return false
+	}
+	if ipv4 && flag == 2 {
 		result = false
 	}
-	if ipv6 && foundAF[ipamv1alpha1.CIPv6SubnetType] == nil {
-		foundAF[ipamv1alpha1.CIPv6SubnetType] = pointer.Bool(false)
+	if ipv6 && flag == 1 {
 		result = false
 	}
 	return result
@@ -776,16 +786,33 @@ func NeighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
 }
 
 func ObjectChanged(objOld, objNew *switchv1beta1.Switch) bool {
+	metadataChanged := MetadataChanged(objOld, objNew)
+	specChanged := SpecChanged(objOld, objNew)
+	statusChanged := StatusChanged(objOld, objNew)
+	return metadataChanged || specChanged || statusChanged
+}
+
+func MetadataChanged(objOld, objNew *switchv1beta1.Switch) bool {
 	labelsChanged := !reflect.DeepEqual(objOld.GetLabels(), objNew.GetLabels())
 	annotationsChanged := !reflect.DeepEqual(objOld.GetAnnotations(), objNew.GetAnnotations())
 	finalizersChanged := !reflect.DeepEqual(objOld.GetFinalizers(), objNew.GetFinalizers())
-	metadataChanged := labelsChanged || annotationsChanged || finalizersChanged
-	specChanged := !reflect.DeepEqual(objOld.Spec, objNew.Spec)
+	return labelsChanged || annotationsChanged || finalizersChanged
+}
+
+func SpecChanged(objOld, objNew *switchv1beta1.Switch) bool {
+	oldSpec, _ := json.Marshal(objOld.Spec)
+	newSpec, _ := json.Marshal(objNew.Spec)
+	changed := !reflect.DeepEqual(oldSpec, newSpec)
+	return changed
+}
+
+func StatusChanged(objOld, objNew *switchv1beta1.Switch) bool {
 	conditionsChanged := conditionsUpdated(objOld.Status.Conditions, objNew.Status.Conditions)
 	objOld.Status.Conditions = nil
 	objNew.Status.Conditions = nil
-	statusChanged := !reflect.DeepEqual(objOld.Status, objNew.Status)
-	return metadataChanged || specChanged || statusChanged || conditionsChanged
+	// statusChanged := !reflect.DeepEqual(objOld.Status, objNew.Status)
+	statusChanged := statusUpdated(objOld, objNew)
+	return conditionsChanged || statusChanged
 }
 
 func conditionsUpdated(oldData, newData []*switchv1beta1.ConditionSpec) bool {
@@ -799,6 +826,13 @@ func conditionsUpdated(oldData, newData []*switchv1beta1.ConditionSpec) bool {
 		item.LastUpdateTimestamp = nil
 	}
 	return !reflect.DeepEqual(oldData, newData)
+}
+
+func statusUpdated(objOld, objNew *switchv1beta1.Switch) bool {
+	oldStatus, _ := json.Marshal(objOld.Status)
+	newStatus, _ := json.Marshal(objNew.Status)
+	changed := !reflect.DeepEqual(oldStatus, newStatus)
+	return changed
 }
 
 func SwitchConfigSelectorInvalid(obj *switchv1beta1.Switch) bool {
@@ -880,7 +914,15 @@ func deleteLayerRefFromMatchExpressions(idx int, list []metav1.LabelSelectorRequ
 	return result
 }
 
+func ParseInterfaceNameFromSubnet(name string) string {
+	caser := cases.Title(language.English)
+	lowercaseName := strings.Split(name, "-")[5]
+	nicName := caser.String(lowercaseName)
+	return nicName
+}
+
 // functions used in tests.
+
 func GetCrdPath(crdPackageScheme interface{}) (string, error) {
 	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
 	goModData, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
@@ -943,20 +985,8 @@ func CreateSampleObject(ctx context.Context, c client.Client, obj client.Object,
 	if err != nil {
 		return err
 	}
-	if err := c.Create(ctx, obj); err != nil {
+	if err = c.Create(ctx, obj); err != nil {
 		return err
 	}
 	return nil
-}
-
-type ProcessingError struct {
-	message string
-}
-
-func NewProcessingError(message string, args ...interface{}) *ProcessingError {
-	return &ProcessingError{message: fmt.Sprintf(message, args...)}
-}
-
-func (e *ProcessingError) Error() string {
-	return e.message
 }

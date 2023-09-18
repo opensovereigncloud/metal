@@ -183,19 +183,20 @@ func startReconcilers(
 		os.Exit(1)
 	}
 	if err = (&switchcontroller.SwitchReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Switch"),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Switch"),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("Switch"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Switch")
 		os.Exit(1)
 	}
-	if err = (&switchcontroller.SwConfigReconciler{
+	if err = (&switchcontroller.IPAMReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SwitchConfig"),
+		Log:    ctrl.Log.WithName("controllers").WithName("IPAM"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SwitchConfig")
+		setupLog.Error(err, "unable to create controller", "controller", "Switch-IPAM")
 		os.Exit(1)
 	}
 	if err = (&inventorycontrollers.InventoryReconciler{

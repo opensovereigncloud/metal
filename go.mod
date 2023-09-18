@@ -6,6 +6,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/d4l3k/messagediff v1.2.1
+	github.com/go-errors/errors v1.4.2
 	github.com/go-logr/logr v1.2.4
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.3.1
@@ -20,6 +21,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	go4.org/netipx v0.0.0-20230728184502-ec4c8b891b28
 	golang.org/x/mod v0.12.0
+	golang.org/x/text v0.11.0
 	gopkg.in/inf.v0 v0.9.1
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
 	k8s.io/api v0.28.0
@@ -51,7 +53,6 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-logr/zapr v1.2.4 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
@@ -102,7 +103,6 @@ require (
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect

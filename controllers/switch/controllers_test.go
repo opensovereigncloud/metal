@@ -21,7 +21,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"time"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -39,11 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	timeout  = time.Second * 45
-	interval = time.Millisecond * 50
 )
 
 var (
@@ -95,11 +89,12 @@ var _ = Describe("Switch controller", func() {
 		deleteInventories(postTestContext)
 		deleteSwitches(postTestContext)
 		deleteLoopbackIPs(postTestContext)
+		deleteSwitchPortSubnets(postTestContext)
 		deleteSouthSubnets(postTestContext)
 	})
 
 	Context("Creating switches from inventories", func() {
-		It("Switches should be created from inventories by onboarding-controller", func() {
+		It("Switches should be created from inventories", func() {
 			testContext, testCancel := context.WithCancel(ctx)
 			defer testCancel()
 
@@ -112,7 +107,7 @@ var _ = Describe("Switch controller", func() {
 	})
 
 	Context("Onboarding metadata should be persistent", func() {
-		It("Onboarding-controller should restore labels and annotations if deleted", func() {
+		It("Labels and annotations are restored if deleted", func() {
 			testContext, testCancel := context.WithCancel(ctx)
 			defer testCancel()
 
@@ -138,7 +133,7 @@ var _ = Describe("Switch controller", func() {
 		})
 	})
 
-	Context("Onboarding-controller handles CREATE events from switches", func() {
+	Context("Onboarding metadata is set if not present", func() {
 		JustBeforeEach(func() {
 			preTestContext, preTestCancel := context.WithCancel(ctx)
 			defer preTestCancel()
@@ -192,7 +187,7 @@ var _ = Describe("Switch controller", func() {
 		})
 	})
 
-	Context("Existing switches are updated by onboarding-controller on inventory creation", func() {
+	Context("Existing switches are updated on inventory creation", func() {
 		It("Existing switches should be updated with onboarding metadata after inventories are created", func() {
 			testContext, testCancel := context.WithCancel(ctx)
 			defer testCancel()
@@ -237,7 +232,7 @@ var _ = Describe("Switch controller", func() {
 		})
 	})
 
-	Context("Onboarding-controller updates condition of the switch on inventory update", func() {
+	Context("Switch interfaces become updated on inventory update", func() {
 		JustBeforeEach(func() {
 			preTestContext, preTestCancel := context.WithCancel(ctx)
 			defer preTestCancel()
@@ -256,7 +251,7 @@ var _ = Describe("Switch controller", func() {
 			By("Expect switch spec matches initial state")
 			checkInterfaces()
 			target := &switchv1beta1.Switch{}
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(testContext, types.NamespacedName{
 					Namespace: "onmetal",
 					Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
@@ -275,7 +270,7 @@ var _ = Describe("Switch controller", func() {
 				targetInterface := target.Status.Interfaces["Ethernet100"]
 				g.Expect(targetInterface.Peer).NotTo(BeNil())
 				g.Expect(targetInterface.Peer.GetChassisID()).To(Equal("2a30fd70-008e-4975-ba77-8f5683505e37"))
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 
@@ -307,6 +302,7 @@ var _ = Describe("Switch controller", func() {
 			updateSpinesConfig()
 			checkInterfacesUpdated()
 			checkState(constants.SwitchStateReady)
+			setSwitchesUnmanaged()
 		})
 	})
 
@@ -339,6 +335,7 @@ var _ = Describe("Switch controller", func() {
 
 			By("Expect pre-created IPAM objects used in switches' configuration")
 			checkSeededLoopbacks()
+			setSwitchesUnmanaged()
 		})
 	})
 
@@ -347,6 +344,8 @@ var _ = Describe("Switch controller", func() {
 			preTestContext, preTestCancel := context.WithCancel(ctx)
 			defer preTestCancel()
 			Expect(seedInventories(preTestContext, k8sClient)).NotTo(HaveOccurred())
+			Expect(seedSwitchesSubnets(preTestContext, k8sClient)).NotTo(HaveOccurred())
+			Expect(seedSwitchesLoopbacks(preTestContext, k8sClient)).NotTo(HaveOccurred())
 			checkSwitches()
 			setTopSpines()
 		})
@@ -370,12 +369,13 @@ var _ = Describe("Switch controller", func() {
 			By("Updating of switch configs labels should lead to proper switch configuration")
 			updateSwitchConfigLabels()
 			checkState(constants.SwitchStateReady)
+			setSwitchesUnmanaged()
 		})
 	})
 })
 
 func setTopSpines() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	spineOne := &switchv1beta1.Switch{}
 	Expect(k8sClient.Get(testContext, types.NamespacedName{
@@ -394,13 +394,13 @@ func setTopSpines() {
 }
 
 func setConfigSelector() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
-			if item.GetTopSpine() {
+			if item.TopSpine() {
 				item.Spec.ConfigSelector = &metav1.LabelSelector{
 					MatchLabels: map[string]string{constants.SwitchTypeLabel: constants.SwitchRoleSpine},
 				}
@@ -416,7 +416,7 @@ func setConfigSelector() {
 }
 
 func flushConfigSelector() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -430,13 +430,13 @@ func flushConfigSelector() {
 }
 
 func checkConfigSelectorPopulated() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches))
 		for _, item := range switches.Items {
-			if item.GetTopSpine() {
+			if item.TopSpine() {
 				g.Expect(item.GetConfigSelector()).NotTo(BeNil())
 				g.Expect(item.GetConfigSelector().MatchLabels[constants.SwitchConfigLayerLabel]).To(Equal("0"))
 			} else {
@@ -448,7 +448,7 @@ func checkConfigSelectorPopulated() {
 }
 
 func updateSwitchConfigLabels() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switchConfigs := &switchv1beta1.SwitchConfigList{}
 	Eventually(func(g Gomega) {
@@ -468,7 +468,7 @@ func updateSwitchConfigLabels() {
 }
 
 func checkSwitches() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -483,19 +483,19 @@ func checkSwitches() {
 }
 
 func checkConfigRef() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
-			g.Expect(item.Status.ConfigRef).NotTo(BeNil())
+			g.Expect(item.GetConfigRef()).NotTo(BeEmpty())
 		}
 	}, timeout, interval).Should(Succeed())
 }
 
 func checkInterfaces() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -507,26 +507,26 @@ func checkInterfaces() {
 }
 
 func checkLayerAndRole() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
-			g.Expect(item.Status.Layer).NotTo(BeNil())
-			if item.GetTopSpine() {
+			g.Expect(item.Status.Layer).NotTo(Equal(uint32(255)))
+			if item.TopSpine() {
 				g.Expect(item.GetLayer()).To(Equal(uint32(0)))
 				g.Expect(item.GetRole()).To(Equal("spine"))
 			} else {
 				g.Expect(item.GetLayer()).To(Equal(uint32(1)))
-				g.Expect(item.Status.Role).NotTo(BeNil())
+				g.Expect(item.Status.Role).NotTo(BeEmpty())
 			}
 		}
 	}, timeout, interval).Should(Succeed())
 }
 
 func checkLoopbacks() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -539,19 +539,19 @@ func checkLoopbacks() {
 }
 
 func checkASN() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
-			g.Expect(item.Status.ASN).NotTo(BeNil())
+			g.Expect(item.Status.ASN).NotTo(BeZero())
 		}
 	}, timeout, interval).Should(Succeed())
 }
 
 func checkSubnets() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -564,7 +564,7 @@ func checkSubnets() {
 }
 
 func checkIPAddresses() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -582,7 +582,7 @@ func checkIPAddresses() {
 }
 
 func checkState(expected string) {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -590,11 +590,11 @@ func checkState(expected string) {
 		for _, item := range switches.Items {
 			g.Expect(item.GetState()).To(Equal(expected))
 		}
-	}, timeout*2, interval).Should(Succeed())
+	}, timeout, interval).Should(Succeed())
 }
 
 func updateSpinesConfig() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	config := &switchv1beta1.SwitchConfig{}
 	Expect(k8sClient.Get(testContext, types.NamespacedName{
@@ -606,7 +606,7 @@ func updateSpinesConfig() {
 }
 
 func updateInventory() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	samplePath := filepath.Join(samplesPath, "updatedInventory", "leaf-1.inventory.yaml")
 	raw, err := os.ReadFile(samplePath)
@@ -622,14 +622,14 @@ func updateInventory() {
 }
 
 func checkInterfacesUpdated() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
 			for _, nic := range item.Status.Interfaces {
-				if !item.GetTopSpine() && nic.GetDirection() == constants.DirectionSouth {
+				if !item.TopSpine() && nic.GetDirection() == constants.DirectionSouth {
 					continue
 				}
 				g.Expect(nic.GetMTU()).To(Equal(uint32(9216)))
@@ -639,7 +639,7 @@ func checkInterfacesUpdated() {
 }
 
 func checkSeededLoopbacks() {
-	testContext, testCancel := context.WithTimeout(ctx, timeout*2)
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
@@ -658,6 +658,8 @@ func checkSeededLoopbacks() {
 }
 
 func deleteInventories(ctx context.Context) {
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
+	defer testCancel()
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(constants.SizeLabel, selection.Exists, []string{})
 	selector = selector.Add(*req)
@@ -668,15 +670,17 @@ func deleteInventories(ctx context.Context) {
 	delOpts := &client.DeleteAllOfOptions{
 		ListOptions: opts,
 	}
-	Expect(k8sClient.DeleteAllOf(ctx, &inventoryv1alpha1.Inventory{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	Expect(k8sClient.DeleteAllOf(testContext, &inventoryv1alpha1.Inventory{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
 	inventories := &inventoryv1alpha1.InventoryList{}
 	Eventually(func(g Gomega) {
-		g.Expect(k8sClient.List(ctx, inventories, &opts)).NotTo(HaveOccurred())
+		g.Expect(k8sClient.List(testContext, inventories, &opts)).NotTo(HaveOccurred())
 		g.Expect(inventories.Items).To(BeEmpty())
 	}, timeout, interval).Should(Succeed())
 }
 
 func deleteSwitches(ctx context.Context) {
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
+	defer testCancel()
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(constants.InventoriedLabel, selection.Exists, []string{})
 	selector = selector.Add(*req)
@@ -687,15 +691,17 @@ func deleteSwitches(ctx context.Context) {
 	delOpts := &client.DeleteAllOfOptions{
 		ListOptions: opts,
 	}
-	Expect(k8sClient.DeleteAllOf(ctx, &switchv1beta1.Switch{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	Expect(k8sClient.DeleteAllOf(testContext, &switchv1beta1.Switch{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
 	switches := &switchv1beta1.SwitchList{}
 	Eventually(func(g Gomega) {
-		g.Expect(k8sClient.List(ctx, switches, &opts)).NotTo(HaveOccurred())
+		g.Expect(k8sClient.List(testContext, switches, &opts)).NotTo(HaveOccurred())
 		g.Expect(switches.Items).To(BeEmpty())
 	}, timeout, interval).Should(Succeed())
 }
 
 func deleteSouthSubnets(ctx context.Context) {
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
+	defer testCancel()
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMSouthSubnetPurpose})
 	selector = selector.Add(*req)
@@ -706,15 +712,17 @@ func deleteSouthSubnets(ctx context.Context) {
 	delOpts := &client.DeleteAllOfOptions{
 		ListOptions: opts,
 	}
-	Expect(k8sClient.DeleteAllOf(ctx, &ipamv1alpha1.Subnet{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	Expect(k8sClient.DeleteAllOf(testContext, &ipamv1alpha1.Subnet{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
 	subnets := &ipamv1alpha1.SubnetList{}
 	Eventually(func(g Gomega) {
-		g.Expect(k8sClient.List(ctx, subnets, &opts)).NotTo(HaveOccurred())
+		g.Expect(k8sClient.List(testContext, subnets, &opts)).NotTo(HaveOccurred())
 		g.Expect(subnets.Items).To(BeEmpty())
 	}, timeout, interval).Should(Succeed())
 }
 
 func deleteLoopbackIPs(ctx context.Context) {
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
+	defer testCancel()
 	selector := labels.NewSelector()
 	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMLoopbackPurpose})
 	selector = selector.Add(*req)
@@ -725,10 +733,52 @@ func deleteLoopbackIPs(ctx context.Context) {
 	delOpts := &client.DeleteAllOfOptions{
 		ListOptions: opts,
 	}
-	Expect(k8sClient.DeleteAllOf(ctx, &ipamv1alpha1.IP{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	Expect(k8sClient.DeleteAllOf(testContext, &ipamv1alpha1.IP{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
 	loopbacks := &ipamv1alpha1.IPList{}
 	Eventually(func(g Gomega) {
-		g.Expect(k8sClient.List(ctx, loopbacks, &opts)).NotTo(HaveOccurred())
+		g.Expect(k8sClient.List(testContext, loopbacks, &opts)).NotTo(HaveOccurred())
 		g.Expect(loopbacks.Items).To(BeEmpty())
+	}, timeout, interval).Should(Succeed())
+}
+
+func deleteSwitchPortSubnets(ctx context.Context) {
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
+	defer testCancel()
+	selector := labels.NewSelector()
+	req, _ := labels.NewRequirement(constants.IPAMObjectPurposeLabel, selection.In, []string{constants.IPAMSwitchPortPurpose})
+	selector = selector.Add(*req)
+	opts := client.ListOptions{
+		LabelSelector: selector,
+		Namespace:     defaultNamespace,
+	}
+	delOpts := &client.DeleteAllOfOptions{
+		ListOptions: opts,
+	}
+	Expect(k8sClient.DeleteAllOf(testContext, &ipamv1alpha1.Subnet{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	subnets := &ipamv1alpha1.SubnetList{}
+	Eventually(func(g Gomega) {
+		g.Expect(k8sClient.List(testContext, subnets, &opts)).NotTo(HaveOccurred())
+		g.Expect(subnets.Items).To(BeEmpty())
+	}, timeout, interval).Should(Succeed())
+}
+
+func setSwitchesUnmanaged() {
+	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
+	defer testCancel()
+	selector := labels.NewSelector()
+	req, _ := labels.NewRequirement(constants.InventoriedLabel, selection.Exists, []string{})
+	selector = selector.Add(*req)
+	opts := client.ListOptions{
+		LabelSelector: selector,
+		Namespace:     defaultNamespace,
+	}
+	switches := &switchv1beta1.SwitchList{}
+	Eventually(func(g Gomega) {
+		g.Expect(k8sClient.List(testContext, switches, &opts)).NotTo(HaveOccurred())
+		for _, item := range switches.Items {
+			item.SetManaged(false)
+			item.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
+			g.Expect(k8sClient.Patch(testContext, &item, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
+		}
 	}, timeout, interval).Should(Succeed())
 }
