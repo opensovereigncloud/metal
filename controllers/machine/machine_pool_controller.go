@@ -25,8 +25,10 @@ import (
 	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	domain "github.com/onmetal/metal-api/domain/reservation"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -188,8 +190,15 @@ func (r *MachinePoolReconciler) createMachinePool(
 		return ctrl.Result{}, err
 	}
 
+	capacity := corev1alpha1.ResourceList{}
+	for _, class := range availableMachineClasses {
+		capacity[corev1alpha1.ClassCountFor(corev1alpha1.ClassTypeMachineClass, class.Name)] = resource.MustParse("1")
+	}
+
 	machinePool.Status.AvailableMachineClasses = availableMachineClasses
 	machinePool.Status.Addresses = []poolv1alpha1.MachinePoolAddress{OOBServiceAddr}
+	machinePool.Status.Capacity = capacity
+	machinePool.Status.Allocatable = capacity.DeepCopy()
 	if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
 		wCtx.log.Error(err, "could not update machine_pool status")
 		return ctrl.Result{}, err
@@ -224,8 +233,11 @@ func (r *MachinePoolReconciler) updateMachinePool(
 
 	// if machine is booked, remove available classes
 	if machine.Status.Reservation.Status != domain.ReservationStatusAvailable {
-		machinePool.Status.AvailableMachineClasses = make([]corev1.LocalObjectReference, 0)
-
+		allocatable := machinePool.Status.Capacity.DeepCopy()
+		for name := range allocatable {
+			allocatable[name] = resource.MustParse("0")
+		}
+		machinePool.Status.Allocatable = allocatable
 		if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
 			wCtx.log.Error(err, "could not update machine_pool status")
 			return ctrl.Result{}, err
@@ -235,6 +247,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 	}
 
 	// refresh available classes
+	machinePool.Status.Allocatable = machinePool.Status.Capacity.DeepCopy()
 	machinePool.Status.AvailableMachineClasses = r.getAvailableMachineClasses(machine, sizes)
 	if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
 		wCtx.log.Error(err, "could not update machine_pool status")
