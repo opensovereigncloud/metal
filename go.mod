@@ -21,7 +21,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	go4.org/netipx v0.0.0-20230728184502-ec4c8b891b28
 	golang.org/x/mod v0.12.0
-	golang.org/x/text v0.11.0
+	golang.org/x/text v0.13.0
 	gopkg.in/inf.v0 v0.9.1
 	inet.af/netaddr v0.0.0-20220811202034-502d2d690317
 	k8s.io/api v0.28.1
