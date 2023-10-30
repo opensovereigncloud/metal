@@ -19,21 +19,19 @@ package controllers
 import (
 	"context"
 
-	controllers "github.com/onmetal/metal-api/controllers/machine"
-	domain "github.com/onmetal/metal-api/domain/reservation"
-	corev1 "k8s.io/api/core/v1"
-
-	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/google/uuid"
 	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	controllers "github.com/onmetal/metal-api/controllers/machine"
+	domain "github.com/onmetal/metal-api/domain/reservation"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -67,7 +65,11 @@ var _ = Describe("MachinePool-Controller", func() {
 		// testing
 		By("MachinePool created")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
+			if err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      name,
+				}, machinePool); err != nil {
 				return false
 			}
 
@@ -116,7 +118,11 @@ var _ = Describe("MachinePool-Controller", func() {
 
 		By("The available machine classes have been updated following the change in machine labels")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
+			if err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      name,
+				}, machinePool); err != nil {
 				return false
 			}
 
@@ -133,30 +139,36 @@ var _ = Describe("MachinePool-Controller", func() {
 			return true
 		}).Should(BeTrue())
 
-		By("Expect successful machine status update to Running")
+		By("Expect successful machine status update to Reserved")
 		machine.Status = prepareMachineStatus(domain.ReservationStatusReserved)
 		Expect(k8sClient.Status().Update(ctx, machine)).To(Succeed())
 
-		By("Expect there is machine in running reservation status")
+		By("Expect machine status is Reserved")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+			if err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      name,
+				}, machine); err != nil {
 				return false
 			}
 
-			return machine.Status.Reservation.Status == "Reserved"
-		}).Should(BeTrue())
-
-		// refresh MachinePool
-		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
-				return false
-			}
-
-			return true
+			return machine.Status.Reservation.Status == domain.ReservationStatusReserved
 		}).Should(BeTrue())
 
 		By("MachinePool has no available machine classes after machine becomes unavailable")
-		Expect(len(machinePool.Status.AvailableMachineClasses)).Should(Equal(0))
+		// refresh MachinePool
+		Eventually(func() int {
+			if err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      name,
+				}, machinePool); err != nil {
+				return 1
+			}
+
+			return len(machinePool.Status.AvailableMachineClasses)
+		}).Should(Equal(0))
 
 		By("Machine deleted")
 		Eventually(func() bool {
@@ -169,7 +181,11 @@ var _ = Describe("MachinePool-Controller", func() {
 
 		By("MachinePool deleted after deleting machine")
 		Eventually(func() bool {
-			err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool)
+			err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      name,
+				}, machinePool)
 
 			return apierrors.IsNotFound(err)
 		}).Should(BeTrue())

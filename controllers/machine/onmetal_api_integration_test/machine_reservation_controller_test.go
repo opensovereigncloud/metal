@@ -19,17 +19,16 @@ package controllers
 import (
 	"context"
 
-	domain "github.com/onmetal/metal-api/domain/reservation"
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/google/uuid"
 	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	domain "github.com/onmetal/metal-api/domain/reservation"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -127,7 +126,11 @@ var _ = Describe("MachineReservation-Controller", func() {
 
 		By("Expect ipxe configmap was created")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: "ipxe-" + metalMachine.Name}, ipxeCM); err != nil {
+			if err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      "ipxe-" + metalMachine.Name,
+				}, ipxeCM); err != nil {
 				return false
 			}
 
@@ -139,19 +142,27 @@ var _ = Describe("MachineReservation-Controller", func() {
 
 		By("Expect metal machine has reservation by compute machine")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, metalMachine); err != nil {
+			if err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      name,
+				}, metalMachine); err != nil {
 				return false
 			}
 
 			return metalMachine.Status.Reservation.Reference != nil &&
 				metalMachine.Status.Reservation.Reference.Name == computeMachine.Name &&
 				metalMachine.Status.Reservation.Reference.Namespace == computeMachine.Namespace &&
-				metalMachine.Status.Reservation.Status == "Reserved"
+				metalMachine.Status.Reservation.Status == domain.ReservationStatusReserved
 		}).Should(BeTrue())
 
 		By("Expect machine pool does not provide any available machine class after machine reservation")
 		Eventually(func() bool {
-			if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
+			if err := k8sClient.Get(ctx,
+				types.NamespacedName{
+					Namespace: namespace,
+					Name:      name,
+				}, machinePool); err != nil {
 				return false
 			}
 
@@ -210,7 +221,11 @@ func createHealthyRunningMachine(ctx context.Context, name, namespace string, ma
 
 	By("Expect machine was created")
 	Eventually(func() bool {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+		if err := k8sClient.Get(ctx,
+			types.NamespacedName{
+				Namespace: namespace,
+				Name:      name}, machine,
+		); err != nil {
 			return false
 		}
 
@@ -227,7 +242,8 @@ func createHealthyRunningMachine(ctx context.Context, name, namespace string, ma
 			return false
 		}
 
-		return machine.Status.Reservation.Status == "Running" && machine.Status.Health == "Healthy"
+		return machine.Status.Reservation.Status == domain.ReservationStatusRunning &&
+			machine.Status.Health == machinev1alpha3.MachineStateHealthy
 	}).Should(BeTrue())
 }
 
@@ -247,7 +263,11 @@ func createComputeMachine(ctx context.Context, name, namespace string, machine *
 
 	By("Expect successful machine class creation")
 	Eventually(func() bool {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machineClass); err != nil {
+		if err := k8sClient.Get(ctx,
+			types.NamespacedName{
+				Namespace: namespace,
+				Name:      name},
+			machineClass); err != nil {
 			return false
 		}
 
@@ -259,7 +279,11 @@ func createComputeMachine(ctx context.Context, name, namespace string, machine *
 
 	By("Expect compute machine was created")
 	Eventually(func() bool {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machine); err != nil {
+		if err := k8sClient.Get(ctx,
+			types.NamespacedName{
+				Namespace: namespace,
+				Name:      name,
+			}, machine); err != nil {
 			return false
 		}
 
@@ -291,7 +315,11 @@ func createMachinePool(ctx context.Context, name, namespace string, machinePool 
 
 	By("Expect successful machine pool creation")
 	Eventually(func() bool {
-		if err := k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, machinePool); err != nil {
+		if err := k8sClient.Get(ctx,
+			types.NamespacedName{
+				Namespace: namespace,
+				Name:      name,
+			}, machinePool); err != nil {
 			return false
 		}
 

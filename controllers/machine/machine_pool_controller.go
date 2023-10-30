@@ -86,24 +86,24 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log: r.Log.WithValues("namespace", req.NamespacedName),
 	}
 
-	machine := &machine.Machine{
+	metalMachine := &machine.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
 		},
 	}
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machine), machine); err != nil {
+	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(metalMachine), metalMachine); err != nil {
 		wCtx.log.Error(err, "could not get machine")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if !controllerutil.ContainsFinalizer(machine, MachineFinalizer) {
-		controllerutil.AddFinalizer(machine, MachineFinalizer)
-		return ctrl.Result{}, r.Client.Update(wCtx.ctx, machine)
+	if !controllerutil.ContainsFinalizer(metalMachine, MachineFinalizer) {
+		controllerutil.AddFinalizer(metalMachine, MachineFinalizer)
+		return ctrl.Result{}, r.Client.Update(wCtx.ctx, metalMachine)
 	}
 
-	if !machine.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.handleMachineDeletion(wCtx, machine)
+	if !metalMachine.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.handleMachineDeletion(wCtx, metalMachine)
 	}
 
 	sizes, err := r.resolveSizes(wCtx)
@@ -126,7 +126,7 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	err = r.Client.Get(ctx, client.ObjectKeyFromObject(machinePool), machinePool)
 
 	if apierrors.IsNotFound(err) {
-		return r.createMachinePool(wCtx, machine, sizes)
+		return r.createMachinePool(wCtx, metalMachine, sizes)
 	}
 
 	if err != nil {
@@ -134,7 +134,7 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	return r.updateMachinePool(wCtx, machine, machinePool, sizes)
+	return r.updateMachinePool(wCtx, metalMachine, machinePool, sizes)
 }
 
 func (r *MachinePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -219,7 +219,8 @@ func (r *MachinePoolReconciler) updateMachinePool(
 	if machinePool.Annotations == nil {
 		machinePool.Annotations = make(map[string]string, 2)
 	}
-	if machinePool.Annotations[MachinePoolOOBNameAnnotation] != machine.Name || machinePool.Annotations[MachinePoolOOBNamespaceAnnotation] != machine.Namespace {
+	if machinePool.Annotations[MachinePoolOOBNameAnnotation] != machine.Name ||
+		machinePool.Annotations[MachinePoolOOBNamespaceAnnotation] != machine.Namespace {
 		machinePool.Annotations[MachinePoolOOBNameAnnotation] = machine.Name
 		machinePool.Annotations[MachinePoolOOBNamespaceAnnotation] = machine.Namespace
 
@@ -238,6 +239,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 			allocatable[name] = resource.MustParse("0")
 		}
 		machinePool.Status.Allocatable = allocatable
+		machinePool.Status.AvailableMachineClasses = nil
 		if err := r.Status().Update(wCtx.ctx, machinePool); err != nil {
 			wCtx.log.Error(err, "could not update machine_pool status")
 			return ctrl.Result{}, err

@@ -62,7 +62,7 @@ var (
 // - Onboarded Switch object was updated: onboarding metadata was deleted. Onboarding-controller should restore label
 //   and annotations related to onboarding process;
 //
-// - Inventory object exists, for some reason automatically created Switch object was deleted, new Switch object was
+// - Inventory object exists, for some reason automatically created Switch object deleted, new Switch object
 //   created manually without onboarding metadata (labels/annotations/inventory reference). Onboarding-controller
 //   should handle "Create" event and update existing Switch object with proper metadata and Inventory reference;
 //   Constraints:
