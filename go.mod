@@ -7,7 +7,7 @@ require (
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/d4l3k/messagediff v1.2.1
 	github.com/go-errors/errors v1.5.1
-	github.com/go-logr/logr v1.2.4
+	github.com/go-logr/logr v1.3.0
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.4.0
 	github.com/onmetal/controller-utils v0.8.2
