@@ -11,7 +11,7 @@ require (
 	github.com/google/addlicense v1.1.1
 	github.com/google/uuid v1.4.0
 	github.com/onmetal/controller-utils v0.8.2
-	github.com/onmetal/ipam v0.0.25
+	github.com/onmetal/ipam v0.0.26
 	github.com/onmetal/onmetal-api v0.1.2-0.20230816135533-6e1562703753
 	github.com/onmetal/onmetal-image v0.1.1
 	github.com/onmetal/oob-operator v0.3.1
