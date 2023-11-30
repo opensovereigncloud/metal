@@ -283,9 +283,9 @@ type ConditionSpec struct {
 // +kubebuilder:printcolumn:name="Layer",type=integer,JSONPath=`.status.layer`,description="Vertical level in switches' connections hierarchy"
 // +kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`,description="Switch state"
 // +kubebuilder:printcolumn:name="Message",priority=1,type=string,JSONPath=`.status.message`,description="Switch state message reports about any issues during processing"
+// TODO: Rename or fix applyconfiguration-gen to handle the Switch name +genclient
 
 // Switch is the Schema for switches API.
-// TODO: Rename or fix applyconfiguration-gen to handle the Switch name +genclient
 type Switch struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

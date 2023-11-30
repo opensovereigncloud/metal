@@ -71,9 +71,9 @@ type SwitchConfigStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=sc
+// +genclient
 
 // SwitchConfig is the Schema for switch config API.
-// +genclient
 type SwitchConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

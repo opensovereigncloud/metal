@@ -431,7 +431,6 @@ type InventoryStatuses struct {
 	RequestsCount int  `json:"requestsCount,omitempty"`
 }
 
-// Inventory is the Schema for the inventories API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Hostname",type=string,JSONPath=`.spec.host.name`,description="Hostname"
@@ -441,6 +440,8 @@ type InventoryStatuses struct {
 // +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=`.status.computed.default.blocks.capacity`,description="Total amount of disk capacity"
 // +kubebuilder:printcolumn:name="NICs",type=string,JSONPath=`.status.computed.default.nics.count`,description="Total amount of hardware network interfaces"
 // +genclient
+
+// Inventory is the Schema for the inventories API.
 type Inventory struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

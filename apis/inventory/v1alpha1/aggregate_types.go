@@ -58,9 +58,9 @@ type AggregateStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +genclient
 
 // Aggregate is the Schema for the aggregates API.
-// +genclient
 type Aggregate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

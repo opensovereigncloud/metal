@@ -201,10 +201,10 @@ type ResourceReference struct {
 // +kubebuilder:printcolumn:name="Redundancy",type=string,JSONPath=`.status.network.redundancy`
 // +kubebuilder:printcolumn:name="Reservation Status",type=string,JSONPath=`.status.reservation.status`
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +genclient
 
 // Machine - is the data structure for a Machine resource.
 // It contains an aggregated information from Inventory and OOB resources.
-// +genclient
 type Machine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

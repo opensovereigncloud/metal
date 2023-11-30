@@ -1266,7 +1266,7 @@ func schema_metal_api_apis_inventory_v1alpha1_Inventory(ref common.ReferenceCall
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Inventory is the Schema for the inventories API",
+				Description: "Inventory is the Schema for the inventories API.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {

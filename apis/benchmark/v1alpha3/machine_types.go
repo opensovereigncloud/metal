@@ -53,9 +53,9 @@ type BenchmarkDeviation struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +genclient
 
 // Machine is the Schema for the machines API.
-// +genclient
 type Machine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
