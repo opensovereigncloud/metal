@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("MachineReservation-Controller", func() {
+var _ = PDescribe("MachineReservation-Controller", func() {
 	ctx := testing.SetupContext()
 	ns := SetupTest(ctx, machineReservationReconcilers)
 

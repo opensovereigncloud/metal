@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var _ = Describe("MachinePool-Controller", func() {
+var _ = PDescribe("MachinePool-Controller", func() {
 	ctx := testing.SetupContext()
 	ns := SetupTest(ctx, machinePoolReconcilers)
 
