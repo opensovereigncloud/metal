@@ -32,7 +32,7 @@ type SwitchV1Alpha1Client struct {
 
 func NewForConfig(c *rest.Config) (*SwitchV1Alpha1Client, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &switchv1beta1.GroupVersion
+	config.ContentConfig.GroupVersion = &switchv1beta1.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()

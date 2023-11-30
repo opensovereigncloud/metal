@@ -133,7 +133,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			Namespace: req.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         v1alpha3.GroupVersion.Version,
+					APIVersion:         v1alpha3.SchemeGroupVersion.Version,
 					Kind:               machineKind,
 					Name:               machine.Name,
 					UID:                machine.UID,

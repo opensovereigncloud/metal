@@ -15,6 +15,7 @@
 // */
 
 // +k8s:deepcopy-gen=package
+// +k8s:openapi-gen=true
 
 // Package v1alpha3 is a version of the API.
 // +groupName=benchmark.onmetal.de

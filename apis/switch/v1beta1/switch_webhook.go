@@ -125,7 +125,7 @@ func validateOverrides(currentState *Switch, newState *Switch) (err error) {
 	if len(errList) > 0 {
 		return apierrors.NewInvalid(
 			schema.GroupKind{
-				Group: GroupVersion.Group,
+				Group: SchemeGroupVersion.Group,
 				Kind:  "Switch"},
 			newState.Name,
 			errList)

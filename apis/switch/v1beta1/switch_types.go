@@ -285,6 +285,7 @@ type ConditionSpec struct {
 // +kubebuilder:printcolumn:name="Message",priority=1,type=string,JSONPath=`.status.message`,description="Switch state message reports about any issues during processing"
 
 // Switch is the Schema for switches API.
+// TODO: Rename or fix applyconfiguration-gen to handle the Switch name +genclient
 type Switch struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

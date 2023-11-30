@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 // +k8s:deepcopy-gen=package
+// +k8s:openapi-gen=true
 
 // Package v1beta1 is a version of the API.
 // +groupName=switch.onmetal.de

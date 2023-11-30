@@ -39,7 +39,7 @@ type v1Alpha1Client struct {
 
 func NewForConfig(c *rest.Config) (V1Alpha1Interface, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &v1alpha1.GroupVersion
+	config.ContentConfig.GroupVersion = &v1alpha1.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()

@@ -15,6 +15,7 @@
 // */
 
 // +k8s:deepcopy-gen=package
+// +k8s:openapi-gen=true
 
 // Package v1alpha1 is a version of the API.
 // +groupName=machine.onmetal.de

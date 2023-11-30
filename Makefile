@@ -6,9 +6,15 @@ CRD_OPTIONS ?= "crd"
 # Docker image name for the mkdocs based local development setup
 IMAGE=metal-api/documentation
 # Kubebuilder assets version used to run testing environment
-KUBE_VERSION ?= 1.26.0
+KUBE_VERSION ?= 1.28.3
+# Vgopath version
+VGOPATH_VERSION ?= v0.1.3
+# Models schema version
+MODELS_SCHEMA_VERSION ?= v0.1.1
 # Controller tools version
-CONTROLLER_TOOLS_VERSION ?= v0.12.1
+CONTROLLER_TOOLS_VERSION ?= v0.13.0
+# Code generator version
+CODE_GENERATOR_VERSION ?= v0.28.4
 
 GOPRIVATE ?= "github.com/onmetal/*"
 
@@ -59,8 +65,9 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen vgopath openapi-gen models-schema applyconfiguration-gen ## Generate DeepCopy, DeepCopyInto, and DeepCopyObject method implementations and applyconfiguration.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	hack/generate.sh
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -141,11 +148,30 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION))
+
+VGOPATH = $(shell pwd)/bin/vgopath
+.PHONY: vgopath
+vgopath: ## Download vgopath locally if necessary.
+	$(call go-get-tool,$(VGOPATH),github.com/ironcore-dev/vgopath@$(VGOPATH_VERSION))
+
+OPENAPI_GEN = $(shell pwd)/bin/openapi-gen
+.PHONY: openapi-gen
+openapi-gen: ## Download openapi-gen locally if necessary.
+	$(call go-get-tool,$(OPENAPI_GEN),k8s.io/code-generator/cmd/openapi-gen@$(CODE_GENERATOR_VERSION))
+
+MODELS_SCHEMA = $(shell pwd)/bin/models-schema
+.PHONY: models-schema
+models-schema: ## Download models-schema locally if necessary.
+	$(call go-get-tool,$(MODELS_SCHEMA),github.com/onmetal/onmetal-api/models-schema@$(MODELS_SCHEMA_VERSION))
+
+APPLYCONFIGURATION_GEN = $(shell pwd)/bin/applyconfiguration-gen
+.PHONY: applyconfiguration-gen
+applyconfiguration-gen: ## Download applyconfiguration-gen locally if necessary.
+	$(call go-get-tool,$(APPLYCONFIGURATION_GEN),k8s.io/code-generator/cmd/applyconfiguration-gen@$(CODE_GENERATOR_VERSION))
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 .PHONY: kustomize

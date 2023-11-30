@@ -204,6 +204,7 @@ type ResourceReference struct {
 
 // Machine - is the data structure for a Machine resource.
 // It contains an aggregated information from Inventory and OOB resources.
+// +genclient
 type Machine struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
