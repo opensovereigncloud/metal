@@ -228,6 +228,10 @@ spec:
                 description: Reservation - defines machine reservation state and reference
                   object.
                 properties:
+                  class:
+                    description: Class - defines what class the mahchine was reserved
+                      under
+                    type: string
                   reference:
                     description: Reference - defines underlying referenced object.
                     properties:

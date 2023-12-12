@@ -2738,6 +2738,13 @@ func schema_metal_api_apis_machine_v1alpha3_Reservation(ref common.ReferenceCall
 							Format:      "",
 						},
 					},
+					"class": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Class - defines what class the mahchine was reserved under",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"reference": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Reference - defines underlying referenced object.",

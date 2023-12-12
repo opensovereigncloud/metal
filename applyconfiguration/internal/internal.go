@@ -818,6 +818,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.onmetal.metal-api.apis.machine.v1alpha3.Reservation
   map:
     fields:
+    - name: class
+      type:
+        scalar: string
     - name: reference
       type:
         namedType: com.github.onmetal.metal-api.apis.machine.v1alpha3.ResourceReference

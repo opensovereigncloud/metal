@@ -173,6 +173,9 @@ type Reservation struct {
 	// Status - defines Machine Order state provided by OOB Machine Resources
 	// +optional
 	Status string `json:"status,omitempty"`
+	// Class - defines what class the mahchine was reserved under
+	// +optional
+	Class string `json:"class,omitempty"`
 	// Reference - defines underlying referenced object.
 	// +optional
 	Reference *ResourceReference `json:"reference,omitempty"`

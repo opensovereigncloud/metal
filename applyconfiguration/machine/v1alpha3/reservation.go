@@ -22,6 +22,7 @@ package v1alpha3
 // with apply.
 type ReservationApplyConfiguration struct {
 	Status    *string                              `json:"status,omitempty"`
+	Class     *string                              `json:"class,omitempty"`
 	Reference *ResourceReferenceApplyConfiguration `json:"reference,omitempty"`
 }
 
@@ -36,6 +37,14 @@ func Reservation() *ReservationApplyConfiguration {
 // If called multiple times, the Status field is set to the value of the last call.
 func (b *ReservationApplyConfiguration) WithStatus(value string) *ReservationApplyConfiguration {
 	b.Status = &value
+	return b
+}
+
+// WithClass sets the Class field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Class field is set to the value of the last call.
+func (b *ReservationApplyConfiguration) WithClass(value string) *ReservationApplyConfiguration {
+	b.Class = &value
 	return b
 }
 
