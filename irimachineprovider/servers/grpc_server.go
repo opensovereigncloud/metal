@@ -545,6 +545,7 @@ func internalError(ctx context.Context, err error) error {
 	return err
 }
 
+//nolint:unparam
 func overlayOntoPrefixed(prefix string, overlay, prefixed map[string]string) (map[string]string, bool) {
 	mod := false
 
