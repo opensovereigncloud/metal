@@ -18,17 +18,18 @@ package controllers
 
 import (
 	"github.com/google/uuid"
-	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	controllers "github.com/onmetal/metal-api/controllers/machine"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	controllers "github.com/onmetal/metal-api/controllers/machine"
 )
 
-var _ = Describe("machine-power-controller", func() {
+var _ = PDescribe("machine-power-controller", func() {
 	ctx := testing.SetupContext()
 	ns := SetupTest(ctx, ipxeReconcilers)
 

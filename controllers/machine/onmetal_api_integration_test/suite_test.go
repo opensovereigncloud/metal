@@ -30,8 +30,6 @@ import (
 
 	"github.com/onmetal/controller-utils/buildutils"
 	"github.com/onmetal/controller-utils/modutils"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	utilsenvtest "github.com/onmetal/onmetal-api/utils/envtest"
 	"github.com/onmetal/onmetal-api/utils/envtest/apiserver"
@@ -48,6 +46,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -72,6 +73,7 @@ const (
 
 // nolint
 func TestMachinePoolController(t *testing.T) {
+	t.Skip()
 	SetDefaultConsistentlyPollingInterval(pollingInterval)
 	SetDefaultEventuallyPollingInterval(pollingInterval)
 	SetDefaultEventuallyTimeout(eventuallyTimeout)

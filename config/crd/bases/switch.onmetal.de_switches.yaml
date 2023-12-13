@@ -45,8 +45,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: 'Switch is the Schema for switches API. TODO: Rename or fix applyconfiguration-gen
-          to handle the Switch name +genclient'
+        description: Switch is the Schema for switches API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
