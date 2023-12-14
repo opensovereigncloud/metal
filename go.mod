@@ -26,7 +26,7 @@ require (
 	go4.org/netipx v0.0.0-20230728184502-ec4c8b891b28
 	golang.org/x/mod v0.14.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.13.0
+	golang.org/x/sys v0.15.0
 	golang.org/x/text v0.14.0
 	google.golang.org/grpc v1.57.1
 	gopkg.in/inf.v0 v0.9.1
