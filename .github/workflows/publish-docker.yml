@@ -28,7 +28,7 @@ jobs:
         id: meta
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/metal-api-controller-manager
+            ghcr.io/${{ github.repository_owner }}/metal-controller-manager
           tags: |
             type=semver,pattern={{version}}
             type=schedule
