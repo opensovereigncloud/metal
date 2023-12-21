@@ -208,15 +208,15 @@ func main() {
 	}
 
 	var grpcServer *servers.GRPCServer
-	grpcServer, err = servers.New(p.gRPCAddr, p.namespace)
+	grpcServer, err = servers.NewGRPCServer(p.gRPCAddr, p.namespace)
 	if err != nil {
-		log.Error(ctx, fmt.Errorf("cannot create gRPC server: %w", err))
+		log.Error(ctx, fmt.Errorf("cannot create server: %w", err), "server", "gRPC")
 		exitCode = 1
 		return
 	}
 	err = grpcServer.SetupWithManager(mgr)
 	if err != nil {
-		log.Error(ctx, fmt.Errorf("cannot create gRPC server: %w", err))
+		log.Error(ctx, fmt.Errorf("cannot create server: %w", err), "server", "gRPC")
 		exitCode = 1
 		return
 	}

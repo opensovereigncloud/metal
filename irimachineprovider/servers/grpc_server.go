@@ -42,19 +42,18 @@ import (
 	irimetav1alpha1 "github.com/onmetal/onmetal-api/ori/apis/meta/v1alpha1"
 )
 
+func NewGRPCServer(addr string, namespace string) (*GRPCServer, error) {
+	return &GRPCServer{
+		addr:      addr,
+		namespace: namespace,
+	}, nil
+}
+
 type GRPCServer struct {
 	addr      string
 	namespace string
 	logger    logr.Logger
 	client.Client
-}
-
-func New(addr string, namespace string) (*GRPCServer, error) {
-	s := &GRPCServer{
-		addr:      addr,
-		namespace: namespace,
-	}
-	return s, nil
 }
 
 // SetupWithManager sets up the server with the Manager.
