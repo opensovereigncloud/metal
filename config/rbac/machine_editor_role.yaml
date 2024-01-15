@@ -5,7 +5,7 @@ metadata:
   name: machine-editor-role
 rules:
 - apiGroups:
-  - machine.onmetal.de
+  - metal.ironcore.dev
   resources:
   - machines
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - machine.onmetal.de
+  - metal.ironcore.dev
   resources:
   - machines/status
   verbs:

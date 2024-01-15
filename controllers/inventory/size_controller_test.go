@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 // nolint:forcetypeassert
@@ -50,26 +50,26 @@ var _ = Describe("Size controller", func() {
 			count func(client.ObjectList) int
 		}{
 			{
-				res:  &inventoryv1alpha1.Inventory{},
-				list: &inventoryv1alpha1.InventoryList{},
+				res:  &metalv1alpha4.Inventory{},
+				list: &metalv1alpha4.InventoryList{},
 				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.InventoryList)
+					list := objList.(*metalv1alpha4.InventoryList)
 					return len(list.Items)
 				},
 			},
 			{
-				res:  &inventoryv1alpha1.Aggregate{},
-				list: &inventoryv1alpha1.AggregateList{},
+				res:  &metalv1alpha4.Aggregate{},
+				list: &metalv1alpha4.AggregateList{},
 				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.AggregateList)
+					list := objList.(*metalv1alpha4.AggregateList)
 					return len(list.Items)
 				},
 			},
 			{
-				res:  &inventoryv1alpha1.Size{},
-				list: &inventoryv1alpha1.SizeList{},
+				res:  &metalv1alpha4.Size{},
+				list: &metalv1alpha4.SizeList{},
 				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.SizeList)
+					list := objList.(*metalv1alpha4.SizeList)
 					return len(list.Items)
 				},
 			},
@@ -95,16 +95,16 @@ var _ = Describe("Size controller", func() {
 			By("Inventories are installed")
 			ctx := context.Background()
 
-			testSize := inventoryv1alpha1.Size{
+			testSize := metalv1alpha4.Size{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      SizeName,
 					Namespace: SizeNamespace,
 				},
-				Spec: inventoryv1alpha1.SizeSpec{
-					Constraints: []inventoryv1alpha1.ConstraintSpec{
+				Spec: metalv1alpha4.SizeSpec{
+					Constraints: []metalv1alpha4.ConstraintSpec{
 						{
-							Path: *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
-							Equal: &inventoryv1alpha1.ConstraintValSpec{
+							Path: *metalv1alpha4.JSONPathFromString("spec.cpus[0].cores"),
+							Equal: &metalv1alpha4.ConstraintValSpec{
 								Numeric: resource.NewScaledQuantity(16, 0),
 							},
 						},
@@ -144,7 +144,7 @@ var _ = Describe("Size controller", func() {
 			inventoryShouldUnmatch.Spec.CPUs[0].Cores = 32
 			inventoryShouldUnmatch.Spec.CPUs[0].Siblings = 32
 
-			testInventories := []inventoryv1alpha1.Inventory{
+			testInventories := []metalv1alpha4.Inventory{
 				*inventoryShouldMatch,
 				*inventoryAlreadyMatched,
 				*inventoryShouldntMatch,
@@ -156,7 +156,7 @@ var _ = Describe("Size controller", func() {
 			}
 
 			Eventually(func() bool {
-				inventoryList := &inventoryv1alpha1.InventoryList{}
+				inventoryList := &metalv1alpha4.InventoryList{}
 				err := k8sClient.List(ctx, inventoryList)
 				if err != nil {
 					return false
@@ -174,7 +174,7 @@ var _ = Describe("Size controller", func() {
 				Namespace: SizeNamespace,
 				Name:      SizeName,
 			}
-			createdSize := inventoryv1alpha1.Size{}
+			createdSize := metalv1alpha4.Size{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, sizeNamespacedName, &createdSize)
 				if err != nil {
@@ -189,7 +189,7 @@ var _ = Describe("Size controller", func() {
 
 			By(fmt.Sprintf("Size should match %s", inventoryShouldMatch.Name))
 			Eventually(func() bool {
-				inventory := inventoryv1alpha1.Inventory{}
+				inventory := metalv1alpha4.Inventory{}
 				inventoryNamespacedName := types.NamespacedName{
 					Namespace: inventoryShouldMatch.Namespace,
 					Name:      inventoryShouldMatch.Name,
@@ -208,7 +208,7 @@ var _ = Describe("Size controller", func() {
 
 			By(fmt.Sprintf("Size should match but not get updated %s", inventoryAlreadyMatched.Name))
 			Consistently(func() bool {
-				inventory := inventoryv1alpha1.Inventory{}
+				inventory := metalv1alpha4.Inventory{}
 				inventoryNamespacedName := types.NamespacedName{
 					Namespace: inventoryAlreadyMatched.Namespace,
 					Name:      inventoryAlreadyMatched.Name,
@@ -227,7 +227,7 @@ var _ = Describe("Size controller", func() {
 
 			By(fmt.Sprintf("Size should unmatch %s", inventoryShouldUnmatch.Name))
 			Eventually(func() bool {
-				inventory := inventoryv1alpha1.Inventory{}
+				inventory := metalv1alpha4.Inventory{}
 				inventoryNamespacedName := types.NamespacedName{
 					Namespace: inventoryShouldUnmatch.Namespace,
 					Name:      inventoryShouldUnmatch.Name,
@@ -246,7 +246,7 @@ var _ = Describe("Size controller", func() {
 
 			By(fmt.Sprintf("Size shouldn't match %s", inventoryShouldntMatch.Name))
 			Consistently(func() bool {
-				inventory := inventoryv1alpha1.Inventory{}
+				inventory := metalv1alpha4.Inventory{}
 				inventoryNamespacedName := types.NamespacedName{
 					Namespace: inventoryShouldntMatch.Namespace,
 					Name:      inventoryShouldntMatch.Name,
@@ -264,33 +264,33 @@ var _ = Describe("Size controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Size is updated")
-			createdSize.Spec.Constraints = []inventoryv1alpha1.ConstraintSpec{
+			createdSize.Spec.Constraints = []metalv1alpha4.ConstraintSpec{
 				{
-					Path:        *inventoryv1alpha1.JSONPathFromString("spec.cpus[0].cores"),
+					Path:        *metalv1alpha4.JSONPathFromString("spec.cpus[0].cores"),
 					GreaterThan: resource.NewScaledQuantity(30, 0),
 				},
 			}
 
 			Expect(k8sClient.Update(ctx, &createdSize)).To(Succeed())
 
-			updatedSize := inventoryv1alpha1.Size{}
-			Eventually(func() inventoryv1alpha1.SizeSpec {
+			updatedSize := metalv1alpha4.Size{}
+			Eventually(func() metalv1alpha4.SizeSpec {
 				err := k8sClient.Get(ctx, sizeNamespacedName, &updatedSize)
 				if err != nil {
-					return inventoryv1alpha1.SizeSpec{}
+					return metalv1alpha4.SizeSpec{}
 				}
 				return updatedSize.Spec
 			}, timeout, interval).Should(Equal(createdSize.Spec))
 
 			By("Matched inventories should get unmatched")
-			matched := []inventoryv1alpha1.Inventory{
+			matched := []metalv1alpha4.Inventory{
 				*inventoryShouldMatch,
 				*inventoryAlreadyMatched,
 			}
 
 			for _, i := range matched {
 				Eventually(func() bool {
-					inventory := inventoryv1alpha1.Inventory{}
+					inventory := metalv1alpha4.Inventory{}
 					inventoryNamespacedName := types.NamespacedName{
 						Namespace: i.Namespace,
 						Name:      i.Name,
@@ -309,14 +309,14 @@ var _ = Describe("Size controller", func() {
 			}
 
 			By("Not matched inventories should get matched")
-			unmatched := []inventoryv1alpha1.Inventory{
+			unmatched := []metalv1alpha4.Inventory{
 				*inventoryShouldntMatch,
 				*inventoryShouldUnmatch,
 			}
 
 			for _, i := range unmatched {
 				Eventually(func() bool {
-					inventory := inventoryv1alpha1.Inventory{}
+					inventory := metalv1alpha4.Inventory{}
 					inventoryNamespacedName := types.NamespacedName{
 						Namespace: i.Namespace,
 						Name:      i.Name,
@@ -343,7 +343,7 @@ var _ = Describe("Size controller", func() {
 
 			By("All size labels are unset")
 			Eventually(func() bool {
-				inventoryList := &inventoryv1alpha1.InventoryList{}
+				inventoryList := &metalv1alpha4.InventoryList{}
 				err := k8sClient.List(ctx, inventoryList)
 				if err != nil {
 					return false
@@ -361,16 +361,16 @@ var _ = Describe("Size controller", func() {
 	})
 })
 
-func inventoryTemplate() *inventoryv1alpha1.Inventory {
-	return &inventoryv1alpha1.Inventory{
-		Spec: inventoryv1alpha1.InventorySpec{
-			System: &inventoryv1alpha1.SystemSpec{
+func inventoryTemplate() *metalv1alpha4.Inventory {
+	return &metalv1alpha4.Inventory{
+		Spec: metalv1alpha4.InventorySpec{
+			System: &metalv1alpha4.SystemSpec{
 				ID:           "a967954c-3475-11b2-a85c-84d8b4f8cd2d",
 				Manufacturer: "LENOVO",
 				ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
 				SerialNumber: "R90QR6J0",
 			},
-			Blocks: []inventoryv1alpha1.BlockSpec{
+			Blocks: []metalv1alpha4.BlockSpec{
 				{
 					Name:       "JustDisk",
 					Type:       "SCSI",
@@ -379,10 +379,10 @@ func inventoryTemplate() *inventoryv1alpha1.Inventory {
 					Size:       1000,
 				},
 			},
-			Memory: &inventoryv1alpha1.MemorySpec{
+			Memory: &metalv1alpha4.MemorySpec{
 				Total: 1024000,
 			},
-			CPUs: []inventoryv1alpha1.CPUSpec{
+			CPUs: []metalv1alpha4.CPUSpec{
 				{
 					PhysicalID: 0,
 					LogicalIDs: []uint64{0, 1, 2, 3},
@@ -393,7 +393,7 @@ func inventoryTemplate() *inventoryv1alpha1.Inventory {
 					ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
 				},
 			},
-			NICs: []inventoryv1alpha1.NICSpec{
+			NICs: []metalv1alpha4.NICSpec{
 				{
 					Name:       "enp0s31f6",
 					PCIAddress: "0000:00:1f.6",
@@ -402,7 +402,7 @@ func inventoryTemplate() *inventoryv1alpha1.Inventory {
 					Speed:      1000,
 				},
 			},
-			Host: &inventoryv1alpha1.HostSpec{
+			Host: &metalv1alpha4.HostSpec{
 				Name: "dummy.localdomain",
 			},
 		},

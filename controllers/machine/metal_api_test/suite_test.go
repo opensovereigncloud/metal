@@ -21,13 +21,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	controllers "github.com/onmetal/metal-api/controllers/machine"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	controllers "github.com/ironcore-dev/metal/controllers/machine"
+
 	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -76,22 +74,15 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	oobonmetal.SchemeBuilder.Register(&oobonmetal.OOB{})
-	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
-	switchv1beta1.SchemeBuilder.Register(&switchv1beta1.Switch{}, &switchv1beta1.SwitchList{})
-	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})
-	machinev1alpha3.SchemeBuilder.Register(&machinev1alpha3.Machine{}, &machinev1alpha3.MachineList{})
 
 	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(benchv1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(switchv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(machinev1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(metalv1alpha4.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
 

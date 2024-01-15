@@ -1,9 +1,9 @@
-apiVersion: switch.onmetal.de/v1beta1
-kind: Switch
+apiVersion: metal.ironcore.dev/v1beta1
+kind: NetworkSwitch
 metadata:
   name: switch-sample
   labels:
-    size.onmetal.de/spine: ""
+    size.ironcore.dev/spine: ""
   annotations:
     location/room: "1"
     location/row: "15"
@@ -28,13 +28,13 @@ spec:
     southSubnets:
       labelSelector:
         matchLabels:
-          ipam.onmetal.de/object-purpose: "south-subnet"
-          ipam.onmetal.de/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+          ipam.ironcore.dev/object-purpose: "south-subnet"
+          ipam.ironcore.dev/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
     loopbackAddresses:
       labelSelector:
         matchLabels:
-          ipam.onmetal.de/object-purpose: "loopback"
-          ipam.onmetal.de/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+          ipam.ironcore.dev/object-purpose: "loopback"
+          ipam.ironcore.dev/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
   interfaces:
     defaults:
       lanes: 4

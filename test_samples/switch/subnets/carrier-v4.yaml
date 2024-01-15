@@ -2,9 +2,9 @@ apiVersion: ipam.onmetal.de/v1alpha1
 kind: Subnet
 metadata:
   name: switch-ranges-v4
-  namespace: onmetal
+  namespace: ironcore
   labels:
-    ipam.onmetal.de/object-purpose: "switch-carrier"
+    ipam.ironcore.dev/object-purpose: "switch-carrier"
 spec:
   cidr: "100.64.0.0/16"
   network:

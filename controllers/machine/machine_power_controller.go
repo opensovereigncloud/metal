@@ -25,11 +25,12 @@ import (
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 
 	"github.com/go-logr/logr"
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 // MachinePowerReconciler reconciles a MachineReservation object.
@@ -40,9 +41,9 @@ type MachinePowerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=onmetal.de,resources=oobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=onmetal.de,resources=oobs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=onmetal.de,resources=oobs/finalizers,verbs=update
@@ -50,14 +51,14 @@ type MachinePowerReconciler struct {
 func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName)
 
-	machineObj := &machine.Machine{
+	machineObj := &metalv1alpha4.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
 		},
 	}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(machineObj), machineObj); err != nil {
-		log.Error(err, "could not get machine")
+		log.Error(err, "could not get metalv1alpha4")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -73,7 +74,7 @@ func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if machineObj.Status.Reservation.Reference == nil {
-		log.Info("machine has no reservation, turn off OOB if it's turned on")
+		log.Info("metalv1alpha4 has no reservation, turn off OOB if it's turned on")
 
 		if oob.Spec.Power == "Off" {
 			return ctrl.Result{}, nil
@@ -96,7 +97,7 @@ func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 func (r *MachinePowerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&machine.Machine{}).
+		For(&metalv1alpha4.Machine{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
@@ -109,9 +110,9 @@ func (r *MachinePowerReconciler) constructPredicates() predicate.Predicate {
 
 func (r *MachinePowerReconciler) handleMachineDeletion(e event.DeleteEvent) bool {
 	ctx := context.Background()
-	machineObj, ok := e.Object.(*machine.Machine)
+	machineObj, ok := e.Object.(*metalv1alpha4.Machine)
 	if !ok {
-		r.Log.Info("machine cast failed")
+		r.Log.Info("metalv1alpha4 cast failed")
 		return false
 	}
 

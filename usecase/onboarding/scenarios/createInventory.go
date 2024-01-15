@@ -17,10 +17,10 @@
 package scenarios
 
 import (
-	domain "github.com/onmetal/metal-api/domain/inventory"
-	usecase "github.com/onmetal/metal-api/usecase/onboarding"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
+	usecase "github.com/ironcore-dev/metal/usecase/onboarding"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 )
 
 type CreateInventoryUseCase struct {

@@ -32,533 +32,439 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.Benchmark":                schema_metal_api_apis_benchmark_v1alpha3_Benchmark(ref),
-		"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.BenchmarkDeviation":       schema_metal_api_apis_benchmark_v1alpha3_BenchmarkDeviation(ref),
-		"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.Machine":                  schema_metal_api_apis_benchmark_v1alpha3_Machine(ref),
-		"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.MachineList":              schema_metal_api_apis_benchmark_v1alpha3_MachineList(ref),
-		"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.MachineSpec":              schema_metal_api_apis_benchmark_v1alpha3_MachineSpec(ref),
-		"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.MachineStatus":            schema_metal_api_apis_benchmark_v1alpha3_MachineStatus(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.Aggregate":                schema_metal_api_apis_inventory_v1alpha1_Aggregate(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateItem":            schema_metal_api_apis_inventory_v1alpha1_AggregateItem(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateList":            schema_metal_api_apis_inventory_v1alpha1_AggregateList(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateSpec":            schema_metal_api_apis_inventory_v1alpha1_AggregateSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateStatus":          schema_metal_api_apis_inventory_v1alpha1_AggregateStatus(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregationResults":       schema_metal_api_apis_inventory_v1alpha1_AggregationResults(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.BlockSpec":                schema_metal_api_apis_inventory_v1alpha1_BlockSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.CPUSpec":                  schema_metal_api_apis_inventory_v1alpha1_CPUSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.ConstraintSpec":           schema_metal_api_apis_inventory_v1alpha1_ConstraintSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.ConstraintValSpec":        schema_metal_api_apis_inventory_v1alpha1_ConstraintValSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.DistroSpec":               schema_metal_api_apis_inventory_v1alpha1_DistroSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.HostSpec":                 schema_metal_api_apis_inventory_v1alpha1_HostSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.IPMISpec":                 schema_metal_api_apis_inventory_v1alpha1_IPMISpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.Inventory":                schema_metal_api_apis_inventory_v1alpha1_Inventory(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventoryList":            schema_metal_api_apis_inventory_v1alpha1_InventoryList(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventorySpec":            schema_metal_api_apis_inventory_v1alpha1_InventorySpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventoryStatus":          schema_metal_api_apis_inventory_v1alpha1_InventoryStatus(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventoryStatuses":        schema_metal_api_apis_inventory_v1alpha1_InventoryStatuses(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.JSONPath":                 schema_metal_api_apis_inventory_v1alpha1_JSONPath(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.LLDPSpec":                 schema_metal_api_apis_inventory_v1alpha1_LLDPSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.MemorySpec":               schema_metal_api_apis_inventory_v1alpha1_MemorySpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.NDPSpec":                  schema_metal_api_apis_inventory_v1alpha1_NDPSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.NICSpec":                  schema_metal_api_apis_inventory_v1alpha1_NICSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.NumaSpec":                 schema_metal_api_apis_inventory_v1alpha1_NumaSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec": schema_metal_api_apis_inventory_v1alpha1_PCIDeviceDescriptionSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceSpec":            schema_metal_api_apis_inventory_v1alpha1_PCIDeviceSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.PartitionSpec":            schema_metal_api_apis_inventory_v1alpha1_PartitionSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.PartitionTableSpec":       schema_metal_api_apis_inventory_v1alpha1_PartitionTableSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.Size":                     schema_metal_api_apis_inventory_v1alpha1_Size(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.SizeList":                 schema_metal_api_apis_inventory_v1alpha1_SizeList(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.SizeSpec":                 schema_metal_api_apis_inventory_v1alpha1_SizeSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.SizeStatus":               schema_metal_api_apis_inventory_v1alpha1_SizeStatus(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.SystemSpec":               schema_metal_api_apis_inventory_v1alpha1_SystemSpec(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.ValidationInventory":      schema_metal_api_apis_inventory_v1alpha1_ValidationInventory(ref),
-		"github.com/onmetal/metal-api/apis/inventory/v1alpha1.VirtSpec":                 schema_metal_api_apis_inventory_v1alpha1_VirtSpec(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Addresses":                  schema_metal_api_apis_machine_v1alpha3_Addresses(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.IPAddressSpec":              schema_metal_api_apis_machine_v1alpha3_IPAddressSpec(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Identity":                   schema_metal_api_apis_machine_v1alpha3_Identity(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Interface":                  schema_metal_api_apis_machine_v1alpha3_Interface(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Internal":                   schema_metal_api_apis_machine_v1alpha3_Internal(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.LoopbackAddresses":          schema_metal_api_apis_machine_v1alpha3_LoopbackAddresses(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Machine":                    schema_metal_api_apis_machine_v1alpha3_Machine(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.MachineList":                schema_metal_api_apis_machine_v1alpha3_MachineList(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.MachineSpec":                schema_metal_api_apis_machine_v1alpha3_MachineSpec(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.MachineStatus":              schema_metal_api_apis_machine_v1alpha3_MachineStatus(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Network":                    schema_metal_api_apis_machine_v1alpha3_Network(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Peer":                       schema_metal_api_apis_machine_v1alpha3_Peer(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.Reservation":                schema_metal_api_apis_machine_v1alpha3_Reservation(ref),
-		"github.com/onmetal/metal-api/apis/machine/v1alpha3.ResourceReference":          schema_metal_api_apis_machine_v1alpha3_ResourceReference(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.AdditionalIPSpec":             schema_metal_api_apis_switch_v1beta1_AdditionalIPSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.AddressFamiliesMap":           schema_metal_api_apis_switch_v1beta1_AddressFamiliesMap(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.ConditionSpec":                schema_metal_api_apis_switch_v1beta1_ConditionSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.FieldSelectorSpec":            schema_metal_api_apis_switch_v1beta1_FieldSelectorSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.GeneralIPAMSpec":              schema_metal_api_apis_switch_v1beta1_GeneralIPAMSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec":            schema_metal_api_apis_switch_v1beta1_IPAMSelectionSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSpec":                     schema_metal_api_apis_switch_v1beta1_IPAMSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.IPAddressSpec":                schema_metal_api_apis_switch_v1beta1_IPAddressSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.InterfaceOverridesSpec":       schema_metal_api_apis_switch_v1beta1_InterfaceOverridesSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.InterfaceSpec":                schema_metal_api_apis_switch_v1beta1_InterfaceSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.InterfacesSpec":               schema_metal_api_apis_switch_v1beta1_InterfacesSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.ObjectReference":              schema_metal_api_apis_switch_v1beta1_ObjectReference(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.PeerInfoSpec":                 schema_metal_api_apis_switch_v1beta1_PeerInfoSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.PeerSpec":                     schema_metal_api_apis_switch_v1beta1_PeerSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.PortParametersSpec":           schema_metal_api_apis_switch_v1beta1_PortParametersSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.RegionSpec":                   schema_metal_api_apis_switch_v1beta1_RegionSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SubnetSpec":                   schema_metal_api_apis_switch_v1beta1_SubnetSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.Switch":                       schema_metal_api_apis_switch_v1beta1_Switch(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfig":                 schema_metal_api_apis_switch_v1beta1_SwitchConfig(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfigList":             schema_metal_api_apis_switch_v1beta1_SwitchConfigList(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfigSpec":             schema_metal_api_apis_switch_v1beta1_SwitchConfigSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfigStatus":           schema_metal_api_apis_switch_v1beta1_SwitchConfigStatus(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchList":                   schema_metal_api_apis_switch_v1beta1_SwitchList(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchSpec":                   schema_metal_api_apis_switch_v1beta1_SwitchSpec(ref),
-		"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchStatus":                 schema_metal_api_apis_switch_v1beta1_SwitchStatus(ref),
-		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                           schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
-		"k8s.io/api/core/v1.Affinity":                                                   schema_k8sio_api_core_v1_Affinity(ref),
-		"k8s.io/api/core/v1.AttachedVolume":                                             schema_k8sio_api_core_v1_AttachedVolume(ref),
-		"k8s.io/api/core/v1.AvoidPods":                                                  schema_k8sio_api_core_v1_AvoidPods(ref),
-		"k8s.io/api/core/v1.AzureDiskVolumeSource":                                      schema_k8sio_api_core_v1_AzureDiskVolumeSource(ref),
-		"k8s.io/api/core/v1.AzureFilePersistentVolumeSource":                            schema_k8sio_api_core_v1_AzureFilePersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.AzureFileVolumeSource":                                      schema_k8sio_api_core_v1_AzureFileVolumeSource(ref),
-		"k8s.io/api/core/v1.Binding":                                                    schema_k8sio_api_core_v1_Binding(ref),
-		"k8s.io/api/core/v1.CSIPersistentVolumeSource":                                  schema_k8sio_api_core_v1_CSIPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.CSIVolumeSource":                                            schema_k8sio_api_core_v1_CSIVolumeSource(ref),
-		"k8s.io/api/core/v1.Capabilities":                                               schema_k8sio_api_core_v1_Capabilities(ref),
-		"k8s.io/api/core/v1.CephFSPersistentVolumeSource":                               schema_k8sio_api_core_v1_CephFSPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.CephFSVolumeSource":                                         schema_k8sio_api_core_v1_CephFSVolumeSource(ref),
-		"k8s.io/api/core/v1.CinderPersistentVolumeSource":                               schema_k8sio_api_core_v1_CinderPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.CinderVolumeSource":                                         schema_k8sio_api_core_v1_CinderVolumeSource(ref),
-		"k8s.io/api/core/v1.ClaimSource":                                                schema_k8sio_api_core_v1_ClaimSource(ref),
-		"k8s.io/api/core/v1.ClientIPConfig":                                             schema_k8sio_api_core_v1_ClientIPConfig(ref),
-		"k8s.io/api/core/v1.ComponentCondition":                                         schema_k8sio_api_core_v1_ComponentCondition(ref),
-		"k8s.io/api/core/v1.ComponentStatus":                                            schema_k8sio_api_core_v1_ComponentStatus(ref),
-		"k8s.io/api/core/v1.ComponentStatusList":                                        schema_k8sio_api_core_v1_ComponentStatusList(ref),
-		"k8s.io/api/core/v1.ConfigMap":                                                  schema_k8sio_api_core_v1_ConfigMap(ref),
-		"k8s.io/api/core/v1.ConfigMapEnvSource":                                         schema_k8sio_api_core_v1_ConfigMapEnvSource(ref),
-		"k8s.io/api/core/v1.ConfigMapKeySelector":                                       schema_k8sio_api_core_v1_ConfigMapKeySelector(ref),
-		"k8s.io/api/core/v1.ConfigMapList":                                              schema_k8sio_api_core_v1_ConfigMapList(ref),
-		"k8s.io/api/core/v1.ConfigMapNodeConfigSource":                                  schema_k8sio_api_core_v1_ConfigMapNodeConfigSource(ref),
-		"k8s.io/api/core/v1.ConfigMapProjection":                                        schema_k8sio_api_core_v1_ConfigMapProjection(ref),
-		"k8s.io/api/core/v1.ConfigMapVolumeSource":                                      schema_k8sio_api_core_v1_ConfigMapVolumeSource(ref),
-		"k8s.io/api/core/v1.Container":                                                  schema_k8sio_api_core_v1_Container(ref),
-		"k8s.io/api/core/v1.ContainerImage":                                             schema_k8sio_api_core_v1_ContainerImage(ref),
-		"k8s.io/api/core/v1.ContainerPort":                                              schema_k8sio_api_core_v1_ContainerPort(ref),
-		"k8s.io/api/core/v1.ContainerResizePolicy":                                      schema_k8sio_api_core_v1_ContainerResizePolicy(ref),
-		"k8s.io/api/core/v1.ContainerState":                                             schema_k8sio_api_core_v1_ContainerState(ref),
-		"k8s.io/api/core/v1.ContainerStateRunning":                                      schema_k8sio_api_core_v1_ContainerStateRunning(ref),
-		"k8s.io/api/core/v1.ContainerStateTerminated":                                   schema_k8sio_api_core_v1_ContainerStateTerminated(ref),
-		"k8s.io/api/core/v1.ContainerStateWaiting":                                      schema_k8sio_api_core_v1_ContainerStateWaiting(ref),
-		"k8s.io/api/core/v1.ContainerStatus":                                            schema_k8sio_api_core_v1_ContainerStatus(ref),
-		"k8s.io/api/core/v1.DaemonEndpoint":                                             schema_k8sio_api_core_v1_DaemonEndpoint(ref),
-		"k8s.io/api/core/v1.DownwardAPIProjection":                                      schema_k8sio_api_core_v1_DownwardAPIProjection(ref),
-		"k8s.io/api/core/v1.DownwardAPIVolumeFile":                                      schema_k8sio_api_core_v1_DownwardAPIVolumeFile(ref),
-		"k8s.io/api/core/v1.DownwardAPIVolumeSource":                                    schema_k8sio_api_core_v1_DownwardAPIVolumeSource(ref),
-		"k8s.io/api/core/v1.EmptyDirVolumeSource":                                       schema_k8sio_api_core_v1_EmptyDirVolumeSource(ref),
-		"k8s.io/api/core/v1.EndpointAddress":                                            schema_k8sio_api_core_v1_EndpointAddress(ref),
-		"k8s.io/api/core/v1.EndpointPort":                                               schema_k8sio_api_core_v1_EndpointPort(ref),
-		"k8s.io/api/core/v1.EndpointSubset":                                             schema_k8sio_api_core_v1_EndpointSubset(ref),
-		"k8s.io/api/core/v1.Endpoints":                                                  schema_k8sio_api_core_v1_Endpoints(ref),
-		"k8s.io/api/core/v1.EndpointsList":                                              schema_k8sio_api_core_v1_EndpointsList(ref),
-		"k8s.io/api/core/v1.EnvFromSource":                                              schema_k8sio_api_core_v1_EnvFromSource(ref),
-		"k8s.io/api/core/v1.EnvVar":                                                     schema_k8sio_api_core_v1_EnvVar(ref),
-		"k8s.io/api/core/v1.EnvVarSource":                                               schema_k8sio_api_core_v1_EnvVarSource(ref),
-		"k8s.io/api/core/v1.EphemeralContainer":                                         schema_k8sio_api_core_v1_EphemeralContainer(ref),
-		"k8s.io/api/core/v1.EphemeralContainerCommon":                                   schema_k8sio_api_core_v1_EphemeralContainerCommon(ref),
-		"k8s.io/api/core/v1.EphemeralVolumeSource":                                      schema_k8sio_api_core_v1_EphemeralVolumeSource(ref),
-		"k8s.io/api/core/v1.Event":                                                      schema_k8sio_api_core_v1_Event(ref),
-		"k8s.io/api/core/v1.EventList":                                                  schema_k8sio_api_core_v1_EventList(ref),
-		"k8s.io/api/core/v1.EventSeries":                                                schema_k8sio_api_core_v1_EventSeries(ref),
-		"k8s.io/api/core/v1.EventSource":                                                schema_k8sio_api_core_v1_EventSource(ref),
-		"k8s.io/api/core/v1.ExecAction":                                                 schema_k8sio_api_core_v1_ExecAction(ref),
-		"k8s.io/api/core/v1.FCVolumeSource":                                             schema_k8sio_api_core_v1_FCVolumeSource(ref),
-		"k8s.io/api/core/v1.FlexPersistentVolumeSource":                                 schema_k8sio_api_core_v1_FlexPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.FlexVolumeSource":                                           schema_k8sio_api_core_v1_FlexVolumeSource(ref),
-		"k8s.io/api/core/v1.FlockerVolumeSource":                                        schema_k8sio_api_core_v1_FlockerVolumeSource(ref),
-		"k8s.io/api/core/v1.GCEPersistentDiskVolumeSource":                              schema_k8sio_api_core_v1_GCEPersistentDiskVolumeSource(ref),
-		"k8s.io/api/core/v1.GRPCAction":                                                 schema_k8sio_api_core_v1_GRPCAction(ref),
-		"k8s.io/api/core/v1.GitRepoVolumeSource":                                        schema_k8sio_api_core_v1_GitRepoVolumeSource(ref),
-		"k8s.io/api/core/v1.GlusterfsPersistentVolumeSource":                            schema_k8sio_api_core_v1_GlusterfsPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.GlusterfsVolumeSource":                                      schema_k8sio_api_core_v1_GlusterfsVolumeSource(ref),
-		"k8s.io/api/core/v1.HTTPGetAction":                                              schema_k8sio_api_core_v1_HTTPGetAction(ref),
-		"k8s.io/api/core/v1.HTTPHeader":                                                 schema_k8sio_api_core_v1_HTTPHeader(ref),
-		"k8s.io/api/core/v1.HostAlias":                                                  schema_k8sio_api_core_v1_HostAlias(ref),
-		"k8s.io/api/core/v1.HostIP":                                                     schema_k8sio_api_core_v1_HostIP(ref),
-		"k8s.io/api/core/v1.HostPathVolumeSource":                                       schema_k8sio_api_core_v1_HostPathVolumeSource(ref),
-		"k8s.io/api/core/v1.ISCSIPersistentVolumeSource":                                schema_k8sio_api_core_v1_ISCSIPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.ISCSIVolumeSource":                                          schema_k8sio_api_core_v1_ISCSIVolumeSource(ref),
-		"k8s.io/api/core/v1.KeyToPath":                                                  schema_k8sio_api_core_v1_KeyToPath(ref),
-		"k8s.io/api/core/v1.Lifecycle":                                                  schema_k8sio_api_core_v1_Lifecycle(ref),
-		"k8s.io/api/core/v1.LifecycleHandler":                                           schema_k8sio_api_core_v1_LifecycleHandler(ref),
-		"k8s.io/api/core/v1.LimitRange":                                                 schema_k8sio_api_core_v1_LimitRange(ref),
-		"k8s.io/api/core/v1.LimitRangeItem":                                             schema_k8sio_api_core_v1_LimitRangeItem(ref),
-		"k8s.io/api/core/v1.LimitRangeList":                                             schema_k8sio_api_core_v1_LimitRangeList(ref),
-		"k8s.io/api/core/v1.LimitRangeSpec":                                             schema_k8sio_api_core_v1_LimitRangeSpec(ref),
-		"k8s.io/api/core/v1.List":                                                       schema_k8sio_api_core_v1_List(ref),
-		"k8s.io/api/core/v1.LoadBalancerIngress":                                        schema_k8sio_api_core_v1_LoadBalancerIngress(ref),
-		"k8s.io/api/core/v1.LoadBalancerStatus":                                         schema_k8sio_api_core_v1_LoadBalancerStatus(ref),
-		"k8s.io/api/core/v1.LocalObjectReference":                                       schema_k8sio_api_core_v1_LocalObjectReference(ref),
-		"k8s.io/api/core/v1.LocalVolumeSource":                                          schema_k8sio_api_core_v1_LocalVolumeSource(ref),
-		"k8s.io/api/core/v1.NFSVolumeSource":                                            schema_k8sio_api_core_v1_NFSVolumeSource(ref),
-		"k8s.io/api/core/v1.Namespace":                                                  schema_k8sio_api_core_v1_Namespace(ref),
-		"k8s.io/api/core/v1.NamespaceCondition":                                         schema_k8sio_api_core_v1_NamespaceCondition(ref),
-		"k8s.io/api/core/v1.NamespaceList":                                              schema_k8sio_api_core_v1_NamespaceList(ref),
-		"k8s.io/api/core/v1.NamespaceSpec":                                              schema_k8sio_api_core_v1_NamespaceSpec(ref),
-		"k8s.io/api/core/v1.NamespaceStatus":                                            schema_k8sio_api_core_v1_NamespaceStatus(ref),
-		"k8s.io/api/core/v1.Node":                                                       schema_k8sio_api_core_v1_Node(ref),
-		"k8s.io/api/core/v1.NodeAddress":                                                schema_k8sio_api_core_v1_NodeAddress(ref),
-		"k8s.io/api/core/v1.NodeAffinity":                                               schema_k8sio_api_core_v1_NodeAffinity(ref),
-		"k8s.io/api/core/v1.NodeCondition":                                              schema_k8sio_api_core_v1_NodeCondition(ref),
-		"k8s.io/api/core/v1.NodeConfigSource":                                           schema_k8sio_api_core_v1_NodeConfigSource(ref),
-		"k8s.io/api/core/v1.NodeConfigStatus":                                           schema_k8sio_api_core_v1_NodeConfigStatus(ref),
-		"k8s.io/api/core/v1.NodeDaemonEndpoints":                                        schema_k8sio_api_core_v1_NodeDaemonEndpoints(ref),
-		"k8s.io/api/core/v1.NodeList":                                                   schema_k8sio_api_core_v1_NodeList(ref),
-		"k8s.io/api/core/v1.NodeProxyOptions":                                           schema_k8sio_api_core_v1_NodeProxyOptions(ref),
-		"k8s.io/api/core/v1.NodeResources":                                              schema_k8sio_api_core_v1_NodeResources(ref),
-		"k8s.io/api/core/v1.NodeSelector":                                               schema_k8sio_api_core_v1_NodeSelector(ref),
-		"k8s.io/api/core/v1.NodeSelectorRequirement":                                    schema_k8sio_api_core_v1_NodeSelectorRequirement(ref),
-		"k8s.io/api/core/v1.NodeSelectorTerm":                                           schema_k8sio_api_core_v1_NodeSelectorTerm(ref),
-		"k8s.io/api/core/v1.NodeSpec":                                                   schema_k8sio_api_core_v1_NodeSpec(ref),
-		"k8s.io/api/core/v1.NodeStatus":                                                 schema_k8sio_api_core_v1_NodeStatus(ref),
-		"k8s.io/api/core/v1.NodeSystemInfo":                                             schema_k8sio_api_core_v1_NodeSystemInfo(ref),
-		"k8s.io/api/core/v1.ObjectFieldSelector":                                        schema_k8sio_api_core_v1_ObjectFieldSelector(ref),
-		"k8s.io/api/core/v1.ObjectReference":                                            schema_k8sio_api_core_v1_ObjectReference(ref),
-		"k8s.io/api/core/v1.PersistentVolume":                                           schema_k8sio_api_core_v1_PersistentVolume(ref),
-		"k8s.io/api/core/v1.PersistentVolumeClaim":                                      schema_k8sio_api_core_v1_PersistentVolumeClaim(ref),
-		"k8s.io/api/core/v1.PersistentVolumeClaimCondition":                             schema_k8sio_api_core_v1_PersistentVolumeClaimCondition(ref),
-		"k8s.io/api/core/v1.PersistentVolumeClaimList":                                  schema_k8sio_api_core_v1_PersistentVolumeClaimList(ref),
-		"k8s.io/api/core/v1.PersistentVolumeClaimSpec":                                  schema_k8sio_api_core_v1_PersistentVolumeClaimSpec(ref),
-		"k8s.io/api/core/v1.PersistentVolumeClaimStatus":                                schema_k8sio_api_core_v1_PersistentVolumeClaimStatus(ref),
-		"k8s.io/api/core/v1.PersistentVolumeClaimTemplate":                              schema_k8sio_api_core_v1_PersistentVolumeClaimTemplate(ref),
-		"k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource":                          schema_k8sio_api_core_v1_PersistentVolumeClaimVolumeSource(ref),
-		"k8s.io/api/core/v1.PersistentVolumeList":                                       schema_k8sio_api_core_v1_PersistentVolumeList(ref),
-		"k8s.io/api/core/v1.PersistentVolumeSource":                                     schema_k8sio_api_core_v1_PersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.PersistentVolumeSpec":                                       schema_k8sio_api_core_v1_PersistentVolumeSpec(ref),
-		"k8s.io/api/core/v1.PersistentVolumeStatus":                                     schema_k8sio_api_core_v1_PersistentVolumeStatus(ref),
-		"k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource":                           schema_k8sio_api_core_v1_PhotonPersistentDiskVolumeSource(ref),
-		"k8s.io/api/core/v1.Pod":                                                        schema_k8sio_api_core_v1_Pod(ref),
-		"k8s.io/api/core/v1.PodAffinity":                                                schema_k8sio_api_core_v1_PodAffinity(ref),
-		"k8s.io/api/core/v1.PodAffinityTerm":                                            schema_k8sio_api_core_v1_PodAffinityTerm(ref),
-		"k8s.io/api/core/v1.PodAntiAffinity":                                            schema_k8sio_api_core_v1_PodAntiAffinity(ref),
-		"k8s.io/api/core/v1.PodAttachOptions":                                           schema_k8sio_api_core_v1_PodAttachOptions(ref),
-		"k8s.io/api/core/v1.PodCondition":                                               schema_k8sio_api_core_v1_PodCondition(ref),
-		"k8s.io/api/core/v1.PodDNSConfig":                                               schema_k8sio_api_core_v1_PodDNSConfig(ref),
-		"k8s.io/api/core/v1.PodDNSConfigOption":                                         schema_k8sio_api_core_v1_PodDNSConfigOption(ref),
-		"k8s.io/api/core/v1.PodExecOptions":                                             schema_k8sio_api_core_v1_PodExecOptions(ref),
-		"k8s.io/api/core/v1.PodIP":                                                      schema_k8sio_api_core_v1_PodIP(ref),
-		"k8s.io/api/core/v1.PodList":                                                    schema_k8sio_api_core_v1_PodList(ref),
-		"k8s.io/api/core/v1.PodLogOptions":                                              schema_k8sio_api_core_v1_PodLogOptions(ref),
-		"k8s.io/api/core/v1.PodOS":                                                      schema_k8sio_api_core_v1_PodOS(ref),
-		"k8s.io/api/core/v1.PodPortForwardOptions":                                      schema_k8sio_api_core_v1_PodPortForwardOptions(ref),
-		"k8s.io/api/core/v1.PodProxyOptions":                                            schema_k8sio_api_core_v1_PodProxyOptions(ref),
-		"k8s.io/api/core/v1.PodReadinessGate":                                           schema_k8sio_api_core_v1_PodReadinessGate(ref),
-		"k8s.io/api/core/v1.PodResourceClaim":                                           schema_k8sio_api_core_v1_PodResourceClaim(ref),
-		"k8s.io/api/core/v1.PodResourceClaimStatus":                                     schema_k8sio_api_core_v1_PodResourceClaimStatus(ref),
-		"k8s.io/api/core/v1.PodSchedulingGate":                                          schema_k8sio_api_core_v1_PodSchedulingGate(ref),
-		"k8s.io/api/core/v1.PodSecurityContext":                                         schema_k8sio_api_core_v1_PodSecurityContext(ref),
-		"k8s.io/api/core/v1.PodSignature":                                               schema_k8sio_api_core_v1_PodSignature(ref),
-		"k8s.io/api/core/v1.PodSpec":                                                    schema_k8sio_api_core_v1_PodSpec(ref),
-		"k8s.io/api/core/v1.PodStatus":                                                  schema_k8sio_api_core_v1_PodStatus(ref),
-		"k8s.io/api/core/v1.PodStatusResult":                                            schema_k8sio_api_core_v1_PodStatusResult(ref),
-		"k8s.io/api/core/v1.PodTemplate":                                                schema_k8sio_api_core_v1_PodTemplate(ref),
-		"k8s.io/api/core/v1.PodTemplateList":                                            schema_k8sio_api_core_v1_PodTemplateList(ref),
-		"k8s.io/api/core/v1.PodTemplateSpec":                                            schema_k8sio_api_core_v1_PodTemplateSpec(ref),
-		"k8s.io/api/core/v1.PortStatus":                                                 schema_k8sio_api_core_v1_PortStatus(ref),
-		"k8s.io/api/core/v1.PortworxVolumeSource":                                       schema_k8sio_api_core_v1_PortworxVolumeSource(ref),
-		"k8s.io/api/core/v1.PreferAvoidPodsEntry":                                       schema_k8sio_api_core_v1_PreferAvoidPodsEntry(ref),
-		"k8s.io/api/core/v1.PreferredSchedulingTerm":                                    schema_k8sio_api_core_v1_PreferredSchedulingTerm(ref),
-		"k8s.io/api/core/v1.Probe":                                                      schema_k8sio_api_core_v1_Probe(ref),
-		"k8s.io/api/core/v1.ProbeHandler":                                               schema_k8sio_api_core_v1_ProbeHandler(ref),
-		"k8s.io/api/core/v1.ProjectedVolumeSource":                                      schema_k8sio_api_core_v1_ProjectedVolumeSource(ref),
-		"k8s.io/api/core/v1.QuobyteVolumeSource":                                        schema_k8sio_api_core_v1_QuobyteVolumeSource(ref),
-		"k8s.io/api/core/v1.RBDPersistentVolumeSource":                                  schema_k8sio_api_core_v1_RBDPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.RBDVolumeSource":                                            schema_k8sio_api_core_v1_RBDVolumeSource(ref),
-		"k8s.io/api/core/v1.RangeAllocation":                                            schema_k8sio_api_core_v1_RangeAllocation(ref),
-		"k8s.io/api/core/v1.ReplicationController":                                      schema_k8sio_api_core_v1_ReplicationController(ref),
-		"k8s.io/api/core/v1.ReplicationControllerCondition":                             schema_k8sio_api_core_v1_ReplicationControllerCondition(ref),
-		"k8s.io/api/core/v1.ReplicationControllerList":                                  schema_k8sio_api_core_v1_ReplicationControllerList(ref),
-		"k8s.io/api/core/v1.ReplicationControllerSpec":                                  schema_k8sio_api_core_v1_ReplicationControllerSpec(ref),
-		"k8s.io/api/core/v1.ReplicationControllerStatus":                                schema_k8sio_api_core_v1_ReplicationControllerStatus(ref),
-		"k8s.io/api/core/v1.ResourceClaim":                                              schema_k8sio_api_core_v1_ResourceClaim(ref),
-		"k8s.io/api/core/v1.ResourceFieldSelector":                                      schema_k8sio_api_core_v1_ResourceFieldSelector(ref),
-		"k8s.io/api/core/v1.ResourceQuota":                                              schema_k8sio_api_core_v1_ResourceQuota(ref),
-		"k8s.io/api/core/v1.ResourceQuotaList":                                          schema_k8sio_api_core_v1_ResourceQuotaList(ref),
-		"k8s.io/api/core/v1.ResourceQuotaSpec":                                          schema_k8sio_api_core_v1_ResourceQuotaSpec(ref),
-		"k8s.io/api/core/v1.ResourceQuotaStatus":                                        schema_k8sio_api_core_v1_ResourceQuotaStatus(ref),
-		"k8s.io/api/core/v1.ResourceRequirements":                                       schema_k8sio_api_core_v1_ResourceRequirements(ref),
-		"k8s.io/api/core/v1.SELinuxOptions":                                             schema_k8sio_api_core_v1_SELinuxOptions(ref),
-		"k8s.io/api/core/v1.ScaleIOPersistentVolumeSource":                              schema_k8sio_api_core_v1_ScaleIOPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.ScaleIOVolumeSource":                                        schema_k8sio_api_core_v1_ScaleIOVolumeSource(ref),
-		"k8s.io/api/core/v1.ScopeSelector":                                              schema_k8sio_api_core_v1_ScopeSelector(ref),
-		"k8s.io/api/core/v1.ScopedResourceSelectorRequirement":                          schema_k8sio_api_core_v1_ScopedResourceSelectorRequirement(ref),
-		"k8s.io/api/core/v1.SeccompProfile":                                             schema_k8sio_api_core_v1_SeccompProfile(ref),
-		"k8s.io/api/core/v1.Secret":                                                     schema_k8sio_api_core_v1_Secret(ref),
-		"k8s.io/api/core/v1.SecretEnvSource":                                            schema_k8sio_api_core_v1_SecretEnvSource(ref),
-		"k8s.io/api/core/v1.SecretKeySelector":                                          schema_k8sio_api_core_v1_SecretKeySelector(ref),
-		"k8s.io/api/core/v1.SecretList":                                                 schema_k8sio_api_core_v1_SecretList(ref),
-		"k8s.io/api/core/v1.SecretProjection":                                           schema_k8sio_api_core_v1_SecretProjection(ref),
-		"k8s.io/api/core/v1.SecretReference":                                            schema_k8sio_api_core_v1_SecretReference(ref),
-		"k8s.io/api/core/v1.SecretVolumeSource":                                         schema_k8sio_api_core_v1_SecretVolumeSource(ref),
-		"k8s.io/api/core/v1.SecurityContext":                                            schema_k8sio_api_core_v1_SecurityContext(ref),
-		"k8s.io/api/core/v1.SerializedReference":                                        schema_k8sio_api_core_v1_SerializedReference(ref),
-		"k8s.io/api/core/v1.Service":                                                    schema_k8sio_api_core_v1_Service(ref),
-		"k8s.io/api/core/v1.ServiceAccount":                                             schema_k8sio_api_core_v1_ServiceAccount(ref),
-		"k8s.io/api/core/v1.ServiceAccountList":                                         schema_k8sio_api_core_v1_ServiceAccountList(ref),
-		"k8s.io/api/core/v1.ServiceAccountTokenProjection":                              schema_k8sio_api_core_v1_ServiceAccountTokenProjection(ref),
-		"k8s.io/api/core/v1.ServiceList":                                                schema_k8sio_api_core_v1_ServiceList(ref),
-		"k8s.io/api/core/v1.ServicePort":                                                schema_k8sio_api_core_v1_ServicePort(ref),
-		"k8s.io/api/core/v1.ServiceProxyOptions":                                        schema_k8sio_api_core_v1_ServiceProxyOptions(ref),
-		"k8s.io/api/core/v1.ServiceSpec":                                                schema_k8sio_api_core_v1_ServiceSpec(ref),
-		"k8s.io/api/core/v1.ServiceStatus":                                              schema_k8sio_api_core_v1_ServiceStatus(ref),
-		"k8s.io/api/core/v1.SessionAffinityConfig":                                      schema_k8sio_api_core_v1_SessionAffinityConfig(ref),
-		"k8s.io/api/core/v1.StorageOSPersistentVolumeSource":                            schema_k8sio_api_core_v1_StorageOSPersistentVolumeSource(ref),
-		"k8s.io/api/core/v1.StorageOSVolumeSource":                                      schema_k8sio_api_core_v1_StorageOSVolumeSource(ref),
-		"k8s.io/api/core/v1.Sysctl":                                                     schema_k8sio_api_core_v1_Sysctl(ref),
-		"k8s.io/api/core/v1.TCPSocketAction":                                            schema_k8sio_api_core_v1_TCPSocketAction(ref),
-		"k8s.io/api/core/v1.Taint":                                                      schema_k8sio_api_core_v1_Taint(ref),
-		"k8s.io/api/core/v1.Toleration":                                                 schema_k8sio_api_core_v1_Toleration(ref),
-		"k8s.io/api/core/v1.TopologySelectorLabelRequirement":                           schema_k8sio_api_core_v1_TopologySelectorLabelRequirement(ref),
-		"k8s.io/api/core/v1.TopologySelectorTerm":                                       schema_k8sio_api_core_v1_TopologySelectorTerm(ref),
-		"k8s.io/api/core/v1.TopologySpreadConstraint":                                   schema_k8sio_api_core_v1_TopologySpreadConstraint(ref),
-		"k8s.io/api/core/v1.TypedLocalObjectReference":                                  schema_k8sio_api_core_v1_TypedLocalObjectReference(ref),
-		"k8s.io/api/core/v1.TypedObjectReference":                                       schema_k8sio_api_core_v1_TypedObjectReference(ref),
-		"k8s.io/api/core/v1.Volume":                                                     schema_k8sio_api_core_v1_Volume(ref),
-		"k8s.io/api/core/v1.VolumeDevice":                                               schema_k8sio_api_core_v1_VolumeDevice(ref),
-		"k8s.io/api/core/v1.VolumeMount":                                                schema_k8sio_api_core_v1_VolumeMount(ref),
-		"k8s.io/api/core/v1.VolumeNodeAffinity":                                         schema_k8sio_api_core_v1_VolumeNodeAffinity(ref),
-		"k8s.io/api/core/v1.VolumeProjection":                                           schema_k8sio_api_core_v1_VolumeProjection(ref),
-		"k8s.io/api/core/v1.VolumeSource":                                               schema_k8sio_api_core_v1_VolumeSource(ref),
-		"k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource":                             schema_k8sio_api_core_v1_VsphereVirtualDiskVolumeSource(ref),
-		"k8s.io/api/core/v1.WeightedPodAffinityTerm":                                    schema_k8sio_api_core_v1_WeightedPodAffinityTerm(ref),
-		"k8s.io/api/core/v1.WindowsSecurityContextOptions":                              schema_k8sio_api_core_v1_WindowsSecurityContextOptions(ref),
-		"k8s.io/apimachinery/pkg/api/resource.Quantity":                                 schema_apimachinery_pkg_api_resource_Quantity(ref),
-		"k8s.io/apimachinery/pkg/api/resource.int64Amount":                              schema_apimachinery_pkg_api_resource_int64Amount(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.APIGroup":                                 schema_pkg_apis_meta_v1_APIGroup(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.APIGroupList":                             schema_pkg_apis_meta_v1_APIGroupList(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.APIResource":                              schema_pkg_apis_meta_v1_APIResource(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.APIResourceList":                          schema_pkg_apis_meta_v1_APIResourceList(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.APIVersions":                              schema_pkg_apis_meta_v1_APIVersions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.ApplyOptions":                             schema_pkg_apis_meta_v1_ApplyOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Condition":                                schema_pkg_apis_meta_v1_Condition(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.CreateOptions":                            schema_pkg_apis_meta_v1_CreateOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.DeleteOptions":                            schema_pkg_apis_meta_v1_DeleteOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Duration":                                 schema_pkg_apis_meta_v1_Duration(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.FieldsV1":                                 schema_pkg_apis_meta_v1_FieldsV1(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.GetOptions":                               schema_pkg_apis_meta_v1_GetOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupKind":                                schema_pkg_apis_meta_v1_GroupKind(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupResource":                            schema_pkg_apis_meta_v1_GroupResource(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersion":                             schema_pkg_apis_meta_v1_GroupVersion(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersionForDiscovery":                 schema_pkg_apis_meta_v1_GroupVersionForDiscovery(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersionKind":                         schema_pkg_apis_meta_v1_GroupVersionKind(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersionResource":                     schema_pkg_apis_meta_v1_GroupVersionResource(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.InternalEvent":                            schema_pkg_apis_meta_v1_InternalEvent(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector":                            schema_pkg_apis_meta_v1_LabelSelector(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelectorRequirement":                 schema_pkg_apis_meta_v1_LabelSelectorRequirement(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.List":                                     schema_pkg_apis_meta_v1_List(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta":                                 schema_pkg_apis_meta_v1_ListMeta(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.ListOptions":                              schema_pkg_apis_meta_v1_ListOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.ManagedFieldsEntry":                       schema_pkg_apis_meta_v1_ManagedFieldsEntry(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.MicroTime":                                schema_pkg_apis_meta_v1_MicroTime(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta":                               schema_pkg_apis_meta_v1_ObjectMeta(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference":                           schema_pkg_apis_meta_v1_OwnerReference(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadata":                    schema_pkg_apis_meta_v1_PartialObjectMetadata(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadataList":                schema_pkg_apis_meta_v1_PartialObjectMetadataList(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Patch":                                    schema_pkg_apis_meta_v1_Patch(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.PatchOptions":                             schema_pkg_apis_meta_v1_PatchOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Preconditions":                            schema_pkg_apis_meta_v1_Preconditions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.RootPaths":                                schema_pkg_apis_meta_v1_RootPaths(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.ServerAddressByClientCIDR":                schema_pkg_apis_meta_v1_ServerAddressByClientCIDR(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Status":                                   schema_pkg_apis_meta_v1_Status(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.StatusCause":                              schema_pkg_apis_meta_v1_StatusCause(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.StatusDetails":                            schema_pkg_apis_meta_v1_StatusDetails(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Table":                                    schema_pkg_apis_meta_v1_Table(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.TableColumnDefinition":                    schema_pkg_apis_meta_v1_TableColumnDefinition(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.TableOptions":                             schema_pkg_apis_meta_v1_TableOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.TableRow":                                 schema_pkg_apis_meta_v1_TableRow(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.TableRowCondition":                        schema_pkg_apis_meta_v1_TableRowCondition(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Time":                                     schema_pkg_apis_meta_v1_Time(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.Timestamp":                                schema_pkg_apis_meta_v1_Timestamp(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta":                                 schema_pkg_apis_meta_v1_TypeMeta(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.UpdateOptions":                            schema_pkg_apis_meta_v1_UpdateOptions(ref),
-		"k8s.io/apimachinery/pkg/apis/meta/v1.WatchEvent":                               schema_pkg_apis_meta_v1_WatchEvent(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AdditionalIPSpec":         schema_metal_apis_metal_v1alpha4_AdditionalIPSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AddressFamiliesMap":       schema_metal_apis_metal_v1alpha4_AddressFamiliesMap(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Addresses":                schema_metal_apis_metal_v1alpha4_Addresses(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Aggregate":                schema_metal_apis_metal_v1alpha4_Aggregate(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateItem":            schema_metal_apis_metal_v1alpha4_AggregateItem(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateList":            schema_metal_apis_metal_v1alpha4_AggregateList(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateSpec":            schema_metal_apis_metal_v1alpha4_AggregateSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateStatus":          schema_metal_apis_metal_v1alpha4_AggregateStatus(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregationResults":       schema_metal_apis_metal_v1alpha4_AggregationResults(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Benchmark":                schema_metal_apis_metal_v1alpha4_Benchmark(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkDeviation":       schema_metal_apis_metal_v1alpha4_BenchmarkDeviation(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkList":            schema_metal_apis_metal_v1alpha4_BenchmarkList(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkResult":          schema_metal_apis_metal_v1alpha4_BenchmarkResult(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkSpec":            schema_metal_apis_metal_v1alpha4_BenchmarkSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkStatus":          schema_metal_apis_metal_v1alpha4_BenchmarkStatus(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BlockSpec":                schema_metal_apis_metal_v1alpha4_BlockSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.CPUSpec":                  schema_metal_apis_metal_v1alpha4_CPUSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConditionSpec":            schema_metal_apis_metal_v1alpha4_ConditionSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConstraintSpec":           schema_metal_apis_metal_v1alpha4_ConstraintSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConstraintValSpec":        schema_metal_apis_metal_v1alpha4_ConstraintValSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.DistroSpec":               schema_metal_apis_metal_v1alpha4_DistroSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.FieldSelectorSpec":        schema_metal_apis_metal_v1alpha4_FieldSelectorSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.GeneralIPAMSpec":          schema_metal_apis_metal_v1alpha4_GeneralIPAMSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.HostSpec":                 schema_metal_apis_metal_v1alpha4_HostSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec":        schema_metal_apis_metal_v1alpha4_IPAMSelectionSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSpec":                 schema_metal_apis_metal_v1alpha4_IPAMSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddrSpec":               schema_metal_apis_metal_v1alpha4_IPAddrSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddressSpec":            schema_metal_apis_metal_v1alpha4_IPAddressSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPMISpec":                 schema_metal_apis_metal_v1alpha4_IPMISpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Identity":                 schema_metal_apis_metal_v1alpha4_Identity(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Interface":                schema_metal_apis_metal_v1alpha4_Interface(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfaceOverridesSpec":   schema_metal_apis_metal_v1alpha4_InterfaceOverridesSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfaceSpec":            schema_metal_apis_metal_v1alpha4_InterfaceSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfacesSpec":           schema_metal_apis_metal_v1alpha4_InterfacesSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Internal":                 schema_metal_apis_metal_v1alpha4_Internal(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Inventory":                schema_metal_apis_metal_v1alpha4_Inventory(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventoryList":            schema_metal_apis_metal_v1alpha4_InventoryList(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventorySpec":            schema_metal_apis_metal_v1alpha4_InventorySpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventoryStatus":          schema_metal_apis_metal_v1alpha4_InventoryStatus(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventoryStatuses":        schema_metal_apis_metal_v1alpha4_InventoryStatuses(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.JSONPath":                 schema_metal_apis_metal_v1alpha4_JSONPath(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.LLDPSpec":                 schema_metal_apis_metal_v1alpha4_LLDPSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.LoopbackAddresses":        schema_metal_apis_metal_v1alpha4_LoopbackAddresses(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Machine":                  schema_metal_apis_metal_v1alpha4_Machine(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.MachineList":              schema_metal_apis_metal_v1alpha4_MachineList(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.MachineSpec":              schema_metal_apis_metal_v1alpha4_MachineSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.MachineStatus":            schema_metal_apis_metal_v1alpha4_MachineStatus(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.MemorySpec":               schema_metal_apis_metal_v1alpha4_MemorySpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NDPSpec":                  schema_metal_apis_metal_v1alpha4_NDPSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NICSpec":                  schema_metal_apis_metal_v1alpha4_NICSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Network":                  schema_metal_apis_metal_v1alpha4_Network(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitch":            schema_metal_apis_metal_v1alpha4_NetworkSwitch(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitchList":        schema_metal_apis_metal_v1alpha4_NetworkSwitchList(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitchSpec":        schema_metal_apis_metal_v1alpha4_NetworkSwitchSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitchStatus":      schema_metal_apis_metal_v1alpha4_NetworkSwitchStatus(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NumaSpec":                 schema_metal_apis_metal_v1alpha4_NumaSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ObjectReference":          schema_metal_apis_metal_v1alpha4_ObjectReference(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec": schema_metal_apis_metal_v1alpha4_PCIDeviceDescriptionSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceSpec":            schema_metal_apis_metal_v1alpha4_PCIDeviceSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PartitionSpec":            schema_metal_apis_metal_v1alpha4_PartitionSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PartitionTableSpec":       schema_metal_apis_metal_v1alpha4_PartitionTableSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Peer":                     schema_metal_apis_metal_v1alpha4_Peer(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PeerInfoSpec":             schema_metal_apis_metal_v1alpha4_PeerInfoSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PeerSpec":                 schema_metal_apis_metal_v1alpha4_PeerSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PortParametersSpec":       schema_metal_apis_metal_v1alpha4_PortParametersSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.RegionSpec":               schema_metal_apis_metal_v1alpha4_RegionSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Reservation":              schema_metal_apis_metal_v1alpha4_Reservation(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ResourceReference":        schema_metal_apis_metal_v1alpha4_ResourceReference(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Size":                     schema_metal_apis_metal_v1alpha4_Size(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SizeList":                 schema_metal_apis_metal_v1alpha4_SizeList(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SizeSpec":                 schema_metal_apis_metal_v1alpha4_SizeSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SizeStatus":               schema_metal_apis_metal_v1alpha4_SizeStatus(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SubnetSpec":               schema_metal_apis_metal_v1alpha4_SubnetSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfig":             schema_metal_apis_metal_v1alpha4_SwitchConfig(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfigList":         schema_metal_apis_metal_v1alpha4_SwitchConfigList(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfigSpec":         schema_metal_apis_metal_v1alpha4_SwitchConfigSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfigStatus":       schema_metal_apis_metal_v1alpha4_SwitchConfigStatus(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SystemSpec":               schema_metal_apis_metal_v1alpha4_SystemSpec(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ValidationInventory":      schema_metal_apis_metal_v1alpha4_ValidationInventory(ref),
+		"github.com/ironcore-dev/metal/apis/metal/v1alpha4.VirtSpec":                 schema_metal_apis_metal_v1alpha4_VirtSpec(ref),
+		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                        schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
+		"k8s.io/api/core/v1.Affinity":                                                schema_k8sio_api_core_v1_Affinity(ref),
+		"k8s.io/api/core/v1.AttachedVolume":                                          schema_k8sio_api_core_v1_AttachedVolume(ref),
+		"k8s.io/api/core/v1.AvoidPods":                                               schema_k8sio_api_core_v1_AvoidPods(ref),
+		"k8s.io/api/core/v1.AzureDiskVolumeSource":                                   schema_k8sio_api_core_v1_AzureDiskVolumeSource(ref),
+		"k8s.io/api/core/v1.AzureFilePersistentVolumeSource":                         schema_k8sio_api_core_v1_AzureFilePersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.AzureFileVolumeSource":                                   schema_k8sio_api_core_v1_AzureFileVolumeSource(ref),
+		"k8s.io/api/core/v1.Binding":                                                 schema_k8sio_api_core_v1_Binding(ref),
+		"k8s.io/api/core/v1.CSIPersistentVolumeSource":                               schema_k8sio_api_core_v1_CSIPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.CSIVolumeSource":                                         schema_k8sio_api_core_v1_CSIVolumeSource(ref),
+		"k8s.io/api/core/v1.Capabilities":                                            schema_k8sio_api_core_v1_Capabilities(ref),
+		"k8s.io/api/core/v1.CephFSPersistentVolumeSource":                            schema_k8sio_api_core_v1_CephFSPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.CephFSVolumeSource":                                      schema_k8sio_api_core_v1_CephFSVolumeSource(ref),
+		"k8s.io/api/core/v1.CinderPersistentVolumeSource":                            schema_k8sio_api_core_v1_CinderPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.CinderVolumeSource":                                      schema_k8sio_api_core_v1_CinderVolumeSource(ref),
+		"k8s.io/api/core/v1.ClaimSource":                                             schema_k8sio_api_core_v1_ClaimSource(ref),
+		"k8s.io/api/core/v1.ClientIPConfig":                                          schema_k8sio_api_core_v1_ClientIPConfig(ref),
+		"k8s.io/api/core/v1.ComponentCondition":                                      schema_k8sio_api_core_v1_ComponentCondition(ref),
+		"k8s.io/api/core/v1.ComponentStatus":                                         schema_k8sio_api_core_v1_ComponentStatus(ref),
+		"k8s.io/api/core/v1.ComponentStatusList":                                     schema_k8sio_api_core_v1_ComponentStatusList(ref),
+		"k8s.io/api/core/v1.ConfigMap":                                               schema_k8sio_api_core_v1_ConfigMap(ref),
+		"k8s.io/api/core/v1.ConfigMapEnvSource":                                      schema_k8sio_api_core_v1_ConfigMapEnvSource(ref),
+		"k8s.io/api/core/v1.ConfigMapKeySelector":                                    schema_k8sio_api_core_v1_ConfigMapKeySelector(ref),
+		"k8s.io/api/core/v1.ConfigMapList":                                           schema_k8sio_api_core_v1_ConfigMapList(ref),
+		"k8s.io/api/core/v1.ConfigMapNodeConfigSource":                               schema_k8sio_api_core_v1_ConfigMapNodeConfigSource(ref),
+		"k8s.io/api/core/v1.ConfigMapProjection":                                     schema_k8sio_api_core_v1_ConfigMapProjection(ref),
+		"k8s.io/api/core/v1.ConfigMapVolumeSource":                                   schema_k8sio_api_core_v1_ConfigMapVolumeSource(ref),
+		"k8s.io/api/core/v1.Container":                                               schema_k8sio_api_core_v1_Container(ref),
+		"k8s.io/api/core/v1.ContainerImage":                                          schema_k8sio_api_core_v1_ContainerImage(ref),
+		"k8s.io/api/core/v1.ContainerPort":                                           schema_k8sio_api_core_v1_ContainerPort(ref),
+		"k8s.io/api/core/v1.ContainerResizePolicy":                                   schema_k8sio_api_core_v1_ContainerResizePolicy(ref),
+		"k8s.io/api/core/v1.ContainerState":                                          schema_k8sio_api_core_v1_ContainerState(ref),
+		"k8s.io/api/core/v1.ContainerStateRunning":                                   schema_k8sio_api_core_v1_ContainerStateRunning(ref),
+		"k8s.io/api/core/v1.ContainerStateTerminated":                                schema_k8sio_api_core_v1_ContainerStateTerminated(ref),
+		"k8s.io/api/core/v1.ContainerStateWaiting":                                   schema_k8sio_api_core_v1_ContainerStateWaiting(ref),
+		"k8s.io/api/core/v1.ContainerStatus":                                         schema_k8sio_api_core_v1_ContainerStatus(ref),
+		"k8s.io/api/core/v1.DaemonEndpoint":                                          schema_k8sio_api_core_v1_DaemonEndpoint(ref),
+		"k8s.io/api/core/v1.DownwardAPIProjection":                                   schema_k8sio_api_core_v1_DownwardAPIProjection(ref),
+		"k8s.io/api/core/v1.DownwardAPIVolumeFile":                                   schema_k8sio_api_core_v1_DownwardAPIVolumeFile(ref),
+		"k8s.io/api/core/v1.DownwardAPIVolumeSource":                                 schema_k8sio_api_core_v1_DownwardAPIVolumeSource(ref),
+		"k8s.io/api/core/v1.EmptyDirVolumeSource":                                    schema_k8sio_api_core_v1_EmptyDirVolumeSource(ref),
+		"k8s.io/api/core/v1.EndpointAddress":                                         schema_k8sio_api_core_v1_EndpointAddress(ref),
+		"k8s.io/api/core/v1.EndpointPort":                                            schema_k8sio_api_core_v1_EndpointPort(ref),
+		"k8s.io/api/core/v1.EndpointSubset":                                          schema_k8sio_api_core_v1_EndpointSubset(ref),
+		"k8s.io/api/core/v1.Endpoints":                                               schema_k8sio_api_core_v1_Endpoints(ref),
+		"k8s.io/api/core/v1.EndpointsList":                                           schema_k8sio_api_core_v1_EndpointsList(ref),
+		"k8s.io/api/core/v1.EnvFromSource":                                           schema_k8sio_api_core_v1_EnvFromSource(ref),
+		"k8s.io/api/core/v1.EnvVar":                                                  schema_k8sio_api_core_v1_EnvVar(ref),
+		"k8s.io/api/core/v1.EnvVarSource":                                            schema_k8sio_api_core_v1_EnvVarSource(ref),
+		"k8s.io/api/core/v1.EphemeralContainer":                                      schema_k8sio_api_core_v1_EphemeralContainer(ref),
+		"k8s.io/api/core/v1.EphemeralContainerCommon":                                schema_k8sio_api_core_v1_EphemeralContainerCommon(ref),
+		"k8s.io/api/core/v1.EphemeralVolumeSource":                                   schema_k8sio_api_core_v1_EphemeralVolumeSource(ref),
+		"k8s.io/api/core/v1.Event":                                                   schema_k8sio_api_core_v1_Event(ref),
+		"k8s.io/api/core/v1.EventList":                                               schema_k8sio_api_core_v1_EventList(ref),
+		"k8s.io/api/core/v1.EventSeries":                                             schema_k8sio_api_core_v1_EventSeries(ref),
+		"k8s.io/api/core/v1.EventSource":                                             schema_k8sio_api_core_v1_EventSource(ref),
+		"k8s.io/api/core/v1.ExecAction":                                              schema_k8sio_api_core_v1_ExecAction(ref),
+		"k8s.io/api/core/v1.FCVolumeSource":                                          schema_k8sio_api_core_v1_FCVolumeSource(ref),
+		"k8s.io/api/core/v1.FlexPersistentVolumeSource":                              schema_k8sio_api_core_v1_FlexPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.FlexVolumeSource":                                        schema_k8sio_api_core_v1_FlexVolumeSource(ref),
+		"k8s.io/api/core/v1.FlockerVolumeSource":                                     schema_k8sio_api_core_v1_FlockerVolumeSource(ref),
+		"k8s.io/api/core/v1.GCEPersistentDiskVolumeSource":                           schema_k8sio_api_core_v1_GCEPersistentDiskVolumeSource(ref),
+		"k8s.io/api/core/v1.GRPCAction":                                              schema_k8sio_api_core_v1_GRPCAction(ref),
+		"k8s.io/api/core/v1.GitRepoVolumeSource":                                     schema_k8sio_api_core_v1_GitRepoVolumeSource(ref),
+		"k8s.io/api/core/v1.GlusterfsPersistentVolumeSource":                         schema_k8sio_api_core_v1_GlusterfsPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.GlusterfsVolumeSource":                                   schema_k8sio_api_core_v1_GlusterfsVolumeSource(ref),
+		"k8s.io/api/core/v1.HTTPGetAction":                                           schema_k8sio_api_core_v1_HTTPGetAction(ref),
+		"k8s.io/api/core/v1.HTTPHeader":                                              schema_k8sio_api_core_v1_HTTPHeader(ref),
+		"k8s.io/api/core/v1.HostAlias":                                               schema_k8sio_api_core_v1_HostAlias(ref),
+		"k8s.io/api/core/v1.HostIP":                                                  schema_k8sio_api_core_v1_HostIP(ref),
+		"k8s.io/api/core/v1.HostPathVolumeSource":                                    schema_k8sio_api_core_v1_HostPathVolumeSource(ref),
+		"k8s.io/api/core/v1.ISCSIPersistentVolumeSource":                             schema_k8sio_api_core_v1_ISCSIPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.ISCSIVolumeSource":                                       schema_k8sio_api_core_v1_ISCSIVolumeSource(ref),
+		"k8s.io/api/core/v1.KeyToPath":                                               schema_k8sio_api_core_v1_KeyToPath(ref),
+		"k8s.io/api/core/v1.Lifecycle":                                               schema_k8sio_api_core_v1_Lifecycle(ref),
+		"k8s.io/api/core/v1.LifecycleHandler":                                        schema_k8sio_api_core_v1_LifecycleHandler(ref),
+		"k8s.io/api/core/v1.LimitRange":                                              schema_k8sio_api_core_v1_LimitRange(ref),
+		"k8s.io/api/core/v1.LimitRangeItem":                                          schema_k8sio_api_core_v1_LimitRangeItem(ref),
+		"k8s.io/api/core/v1.LimitRangeList":                                          schema_k8sio_api_core_v1_LimitRangeList(ref),
+		"k8s.io/api/core/v1.LimitRangeSpec":                                          schema_k8sio_api_core_v1_LimitRangeSpec(ref),
+		"k8s.io/api/core/v1.List":                                                    schema_k8sio_api_core_v1_List(ref),
+		"k8s.io/api/core/v1.LoadBalancerIngress":                                     schema_k8sio_api_core_v1_LoadBalancerIngress(ref),
+		"k8s.io/api/core/v1.LoadBalancerStatus":                                      schema_k8sio_api_core_v1_LoadBalancerStatus(ref),
+		"k8s.io/api/core/v1.LocalObjectReference":                                    schema_k8sio_api_core_v1_LocalObjectReference(ref),
+		"k8s.io/api/core/v1.LocalVolumeSource":                                       schema_k8sio_api_core_v1_LocalVolumeSource(ref),
+		"k8s.io/api/core/v1.NFSVolumeSource":                                         schema_k8sio_api_core_v1_NFSVolumeSource(ref),
+		"k8s.io/api/core/v1.Namespace":                                               schema_k8sio_api_core_v1_Namespace(ref),
+		"k8s.io/api/core/v1.NamespaceCondition":                                      schema_k8sio_api_core_v1_NamespaceCondition(ref),
+		"k8s.io/api/core/v1.NamespaceList":                                           schema_k8sio_api_core_v1_NamespaceList(ref),
+		"k8s.io/api/core/v1.NamespaceSpec":                                           schema_k8sio_api_core_v1_NamespaceSpec(ref),
+		"k8s.io/api/core/v1.NamespaceStatus":                                         schema_k8sio_api_core_v1_NamespaceStatus(ref),
+		"k8s.io/api/core/v1.Node":                                                    schema_k8sio_api_core_v1_Node(ref),
+		"k8s.io/api/core/v1.NodeAddress":                                             schema_k8sio_api_core_v1_NodeAddress(ref),
+		"k8s.io/api/core/v1.NodeAffinity":                                            schema_k8sio_api_core_v1_NodeAffinity(ref),
+		"k8s.io/api/core/v1.NodeCondition":                                           schema_k8sio_api_core_v1_NodeCondition(ref),
+		"k8s.io/api/core/v1.NodeConfigSource":                                        schema_k8sio_api_core_v1_NodeConfigSource(ref),
+		"k8s.io/api/core/v1.NodeConfigStatus":                                        schema_k8sio_api_core_v1_NodeConfigStatus(ref),
+		"k8s.io/api/core/v1.NodeDaemonEndpoints":                                     schema_k8sio_api_core_v1_NodeDaemonEndpoints(ref),
+		"k8s.io/api/core/v1.NodeList":                                                schema_k8sio_api_core_v1_NodeList(ref),
+		"k8s.io/api/core/v1.NodeProxyOptions":                                        schema_k8sio_api_core_v1_NodeProxyOptions(ref),
+		"k8s.io/api/core/v1.NodeResources":                                           schema_k8sio_api_core_v1_NodeResources(ref),
+		"k8s.io/api/core/v1.NodeSelector":                                            schema_k8sio_api_core_v1_NodeSelector(ref),
+		"k8s.io/api/core/v1.NodeSelectorRequirement":                                 schema_k8sio_api_core_v1_NodeSelectorRequirement(ref),
+		"k8s.io/api/core/v1.NodeSelectorTerm":                                        schema_k8sio_api_core_v1_NodeSelectorTerm(ref),
+		"k8s.io/api/core/v1.NodeSpec":                                                schema_k8sio_api_core_v1_NodeSpec(ref),
+		"k8s.io/api/core/v1.NodeStatus":                                              schema_k8sio_api_core_v1_NodeStatus(ref),
+		"k8s.io/api/core/v1.NodeSystemInfo":                                          schema_k8sio_api_core_v1_NodeSystemInfo(ref),
+		"k8s.io/api/core/v1.ObjectFieldSelector":                                     schema_k8sio_api_core_v1_ObjectFieldSelector(ref),
+		"k8s.io/api/core/v1.ObjectReference":                                         schema_k8sio_api_core_v1_ObjectReference(ref),
+		"k8s.io/api/core/v1.PersistentVolume":                                        schema_k8sio_api_core_v1_PersistentVolume(ref),
+		"k8s.io/api/core/v1.PersistentVolumeClaim":                                   schema_k8sio_api_core_v1_PersistentVolumeClaim(ref),
+		"k8s.io/api/core/v1.PersistentVolumeClaimCondition":                          schema_k8sio_api_core_v1_PersistentVolumeClaimCondition(ref),
+		"k8s.io/api/core/v1.PersistentVolumeClaimList":                               schema_k8sio_api_core_v1_PersistentVolumeClaimList(ref),
+		"k8s.io/api/core/v1.PersistentVolumeClaimSpec":                               schema_k8sio_api_core_v1_PersistentVolumeClaimSpec(ref),
+		"k8s.io/api/core/v1.PersistentVolumeClaimStatus":                             schema_k8sio_api_core_v1_PersistentVolumeClaimStatus(ref),
+		"k8s.io/api/core/v1.PersistentVolumeClaimTemplate":                           schema_k8sio_api_core_v1_PersistentVolumeClaimTemplate(ref),
+		"k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource":                       schema_k8sio_api_core_v1_PersistentVolumeClaimVolumeSource(ref),
+		"k8s.io/api/core/v1.PersistentVolumeList":                                    schema_k8sio_api_core_v1_PersistentVolumeList(ref),
+		"k8s.io/api/core/v1.PersistentVolumeSource":                                  schema_k8sio_api_core_v1_PersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.PersistentVolumeSpec":                                    schema_k8sio_api_core_v1_PersistentVolumeSpec(ref),
+		"k8s.io/api/core/v1.PersistentVolumeStatus":                                  schema_k8sio_api_core_v1_PersistentVolumeStatus(ref),
+		"k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource":                        schema_k8sio_api_core_v1_PhotonPersistentDiskVolumeSource(ref),
+		"k8s.io/api/core/v1.Pod":                                                     schema_k8sio_api_core_v1_Pod(ref),
+		"k8s.io/api/core/v1.PodAffinity":                                             schema_k8sio_api_core_v1_PodAffinity(ref),
+		"k8s.io/api/core/v1.PodAffinityTerm":                                         schema_k8sio_api_core_v1_PodAffinityTerm(ref),
+		"k8s.io/api/core/v1.PodAntiAffinity":                                         schema_k8sio_api_core_v1_PodAntiAffinity(ref),
+		"k8s.io/api/core/v1.PodAttachOptions":                                        schema_k8sio_api_core_v1_PodAttachOptions(ref),
+		"k8s.io/api/core/v1.PodCondition":                                            schema_k8sio_api_core_v1_PodCondition(ref),
+		"k8s.io/api/core/v1.PodDNSConfig":                                            schema_k8sio_api_core_v1_PodDNSConfig(ref),
+		"k8s.io/api/core/v1.PodDNSConfigOption":                                      schema_k8sio_api_core_v1_PodDNSConfigOption(ref),
+		"k8s.io/api/core/v1.PodExecOptions":                                          schema_k8sio_api_core_v1_PodExecOptions(ref),
+		"k8s.io/api/core/v1.PodIP":                                                   schema_k8sio_api_core_v1_PodIP(ref),
+		"k8s.io/api/core/v1.PodList":                                                 schema_k8sio_api_core_v1_PodList(ref),
+		"k8s.io/api/core/v1.PodLogOptions":                                           schema_k8sio_api_core_v1_PodLogOptions(ref),
+		"k8s.io/api/core/v1.PodOS":                                                   schema_k8sio_api_core_v1_PodOS(ref),
+		"k8s.io/api/core/v1.PodPortForwardOptions":                                   schema_k8sio_api_core_v1_PodPortForwardOptions(ref),
+		"k8s.io/api/core/v1.PodProxyOptions":                                         schema_k8sio_api_core_v1_PodProxyOptions(ref),
+		"k8s.io/api/core/v1.PodReadinessGate":                                        schema_k8sio_api_core_v1_PodReadinessGate(ref),
+		"k8s.io/api/core/v1.PodResourceClaim":                                        schema_k8sio_api_core_v1_PodResourceClaim(ref),
+		"k8s.io/api/core/v1.PodResourceClaimStatus":                                  schema_k8sio_api_core_v1_PodResourceClaimStatus(ref),
+		"k8s.io/api/core/v1.PodSchedulingGate":                                       schema_k8sio_api_core_v1_PodSchedulingGate(ref),
+		"k8s.io/api/core/v1.PodSecurityContext":                                      schema_k8sio_api_core_v1_PodSecurityContext(ref),
+		"k8s.io/api/core/v1.PodSignature":                                            schema_k8sio_api_core_v1_PodSignature(ref),
+		"k8s.io/api/core/v1.PodSpec":                                                 schema_k8sio_api_core_v1_PodSpec(ref),
+		"k8s.io/api/core/v1.PodStatus":                                               schema_k8sio_api_core_v1_PodStatus(ref),
+		"k8s.io/api/core/v1.PodStatusResult":                                         schema_k8sio_api_core_v1_PodStatusResult(ref),
+		"k8s.io/api/core/v1.PodTemplate":                                             schema_k8sio_api_core_v1_PodTemplate(ref),
+		"k8s.io/api/core/v1.PodTemplateList":                                         schema_k8sio_api_core_v1_PodTemplateList(ref),
+		"k8s.io/api/core/v1.PodTemplateSpec":                                         schema_k8sio_api_core_v1_PodTemplateSpec(ref),
+		"k8s.io/api/core/v1.PortStatus":                                              schema_k8sio_api_core_v1_PortStatus(ref),
+		"k8s.io/api/core/v1.PortworxVolumeSource":                                    schema_k8sio_api_core_v1_PortworxVolumeSource(ref),
+		"k8s.io/api/core/v1.PreferAvoidPodsEntry":                                    schema_k8sio_api_core_v1_PreferAvoidPodsEntry(ref),
+		"k8s.io/api/core/v1.PreferredSchedulingTerm":                                 schema_k8sio_api_core_v1_PreferredSchedulingTerm(ref),
+		"k8s.io/api/core/v1.Probe":                                                   schema_k8sio_api_core_v1_Probe(ref),
+		"k8s.io/api/core/v1.ProbeHandler":                                            schema_k8sio_api_core_v1_ProbeHandler(ref),
+		"k8s.io/api/core/v1.ProjectedVolumeSource":                                   schema_k8sio_api_core_v1_ProjectedVolumeSource(ref),
+		"k8s.io/api/core/v1.QuobyteVolumeSource":                                     schema_k8sio_api_core_v1_QuobyteVolumeSource(ref),
+		"k8s.io/api/core/v1.RBDPersistentVolumeSource":                               schema_k8sio_api_core_v1_RBDPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.RBDVolumeSource":                                         schema_k8sio_api_core_v1_RBDVolumeSource(ref),
+		"k8s.io/api/core/v1.RangeAllocation":                                         schema_k8sio_api_core_v1_RangeAllocation(ref),
+		"k8s.io/api/core/v1.ReplicationController":                                   schema_k8sio_api_core_v1_ReplicationController(ref),
+		"k8s.io/api/core/v1.ReplicationControllerCondition":                          schema_k8sio_api_core_v1_ReplicationControllerCondition(ref),
+		"k8s.io/api/core/v1.ReplicationControllerList":                               schema_k8sio_api_core_v1_ReplicationControllerList(ref),
+		"k8s.io/api/core/v1.ReplicationControllerSpec":                               schema_k8sio_api_core_v1_ReplicationControllerSpec(ref),
+		"k8s.io/api/core/v1.ReplicationControllerStatus":                             schema_k8sio_api_core_v1_ReplicationControllerStatus(ref),
+		"k8s.io/api/core/v1.ResourceClaim":                                           schema_k8sio_api_core_v1_ResourceClaim(ref),
+		"k8s.io/api/core/v1.ResourceFieldSelector":                                   schema_k8sio_api_core_v1_ResourceFieldSelector(ref),
+		"k8s.io/api/core/v1.ResourceQuota":                                           schema_k8sio_api_core_v1_ResourceQuota(ref),
+		"k8s.io/api/core/v1.ResourceQuotaList":                                       schema_k8sio_api_core_v1_ResourceQuotaList(ref),
+		"k8s.io/api/core/v1.ResourceQuotaSpec":                                       schema_k8sio_api_core_v1_ResourceQuotaSpec(ref),
+		"k8s.io/api/core/v1.ResourceQuotaStatus":                                     schema_k8sio_api_core_v1_ResourceQuotaStatus(ref),
+		"k8s.io/api/core/v1.ResourceRequirements":                                    schema_k8sio_api_core_v1_ResourceRequirements(ref),
+		"k8s.io/api/core/v1.SELinuxOptions":                                          schema_k8sio_api_core_v1_SELinuxOptions(ref),
+		"k8s.io/api/core/v1.ScaleIOPersistentVolumeSource":                           schema_k8sio_api_core_v1_ScaleIOPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.ScaleIOVolumeSource":                                     schema_k8sio_api_core_v1_ScaleIOVolumeSource(ref),
+		"k8s.io/api/core/v1.ScopeSelector":                                           schema_k8sio_api_core_v1_ScopeSelector(ref),
+		"k8s.io/api/core/v1.ScopedResourceSelectorRequirement":                       schema_k8sio_api_core_v1_ScopedResourceSelectorRequirement(ref),
+		"k8s.io/api/core/v1.SeccompProfile":                                          schema_k8sio_api_core_v1_SeccompProfile(ref),
+		"k8s.io/api/core/v1.Secret":                                                  schema_k8sio_api_core_v1_Secret(ref),
+		"k8s.io/api/core/v1.SecretEnvSource":                                         schema_k8sio_api_core_v1_SecretEnvSource(ref),
+		"k8s.io/api/core/v1.SecretKeySelector":                                       schema_k8sio_api_core_v1_SecretKeySelector(ref),
+		"k8s.io/api/core/v1.SecretList":                                              schema_k8sio_api_core_v1_SecretList(ref),
+		"k8s.io/api/core/v1.SecretProjection":                                        schema_k8sio_api_core_v1_SecretProjection(ref),
+		"k8s.io/api/core/v1.SecretReference":                                         schema_k8sio_api_core_v1_SecretReference(ref),
+		"k8s.io/api/core/v1.SecretVolumeSource":                                      schema_k8sio_api_core_v1_SecretVolumeSource(ref),
+		"k8s.io/api/core/v1.SecurityContext":                                         schema_k8sio_api_core_v1_SecurityContext(ref),
+		"k8s.io/api/core/v1.SerializedReference":                                     schema_k8sio_api_core_v1_SerializedReference(ref),
+		"k8s.io/api/core/v1.Service":                                                 schema_k8sio_api_core_v1_Service(ref),
+		"k8s.io/api/core/v1.ServiceAccount":                                          schema_k8sio_api_core_v1_ServiceAccount(ref),
+		"k8s.io/api/core/v1.ServiceAccountList":                                      schema_k8sio_api_core_v1_ServiceAccountList(ref),
+		"k8s.io/api/core/v1.ServiceAccountTokenProjection":                           schema_k8sio_api_core_v1_ServiceAccountTokenProjection(ref),
+		"k8s.io/api/core/v1.ServiceList":                                             schema_k8sio_api_core_v1_ServiceList(ref),
+		"k8s.io/api/core/v1.ServicePort":                                             schema_k8sio_api_core_v1_ServicePort(ref),
+		"k8s.io/api/core/v1.ServiceProxyOptions":                                     schema_k8sio_api_core_v1_ServiceProxyOptions(ref),
+		"k8s.io/api/core/v1.ServiceSpec":                                             schema_k8sio_api_core_v1_ServiceSpec(ref),
+		"k8s.io/api/core/v1.ServiceStatus":                                           schema_k8sio_api_core_v1_ServiceStatus(ref),
+		"k8s.io/api/core/v1.SessionAffinityConfig":                                   schema_k8sio_api_core_v1_SessionAffinityConfig(ref),
+		"k8s.io/api/core/v1.StorageOSPersistentVolumeSource":                         schema_k8sio_api_core_v1_StorageOSPersistentVolumeSource(ref),
+		"k8s.io/api/core/v1.StorageOSVolumeSource":                                   schema_k8sio_api_core_v1_StorageOSVolumeSource(ref),
+		"k8s.io/api/core/v1.Sysctl":                                                  schema_k8sio_api_core_v1_Sysctl(ref),
+		"k8s.io/api/core/v1.TCPSocketAction":                                         schema_k8sio_api_core_v1_TCPSocketAction(ref),
+		"k8s.io/api/core/v1.Taint":                                                   schema_k8sio_api_core_v1_Taint(ref),
+		"k8s.io/api/core/v1.Toleration":                                              schema_k8sio_api_core_v1_Toleration(ref),
+		"k8s.io/api/core/v1.TopologySelectorLabelRequirement":                        schema_k8sio_api_core_v1_TopologySelectorLabelRequirement(ref),
+		"k8s.io/api/core/v1.TopologySelectorTerm":                                    schema_k8sio_api_core_v1_TopologySelectorTerm(ref),
+		"k8s.io/api/core/v1.TopologySpreadConstraint":                                schema_k8sio_api_core_v1_TopologySpreadConstraint(ref),
+		"k8s.io/api/core/v1.TypedLocalObjectReference":                               schema_k8sio_api_core_v1_TypedLocalObjectReference(ref),
+		"k8s.io/api/core/v1.TypedObjectReference":                                    schema_k8sio_api_core_v1_TypedObjectReference(ref),
+		"k8s.io/api/core/v1.Volume":                                                  schema_k8sio_api_core_v1_Volume(ref),
+		"k8s.io/api/core/v1.VolumeDevice":                                            schema_k8sio_api_core_v1_VolumeDevice(ref),
+		"k8s.io/api/core/v1.VolumeMount":                                             schema_k8sio_api_core_v1_VolumeMount(ref),
+		"k8s.io/api/core/v1.VolumeNodeAffinity":                                      schema_k8sio_api_core_v1_VolumeNodeAffinity(ref),
+		"k8s.io/api/core/v1.VolumeProjection":                                        schema_k8sio_api_core_v1_VolumeProjection(ref),
+		"k8s.io/api/core/v1.VolumeSource":                                            schema_k8sio_api_core_v1_VolumeSource(ref),
+		"k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource":                          schema_k8sio_api_core_v1_VsphereVirtualDiskVolumeSource(ref),
+		"k8s.io/api/core/v1.WeightedPodAffinityTerm":                                 schema_k8sio_api_core_v1_WeightedPodAffinityTerm(ref),
+		"k8s.io/api/core/v1.WindowsSecurityContextOptions":                           schema_k8sio_api_core_v1_WindowsSecurityContextOptions(ref),
+		"k8s.io/apimachinery/pkg/api/resource.Quantity":                              schema_apimachinery_pkg_api_resource_Quantity(ref),
+		"k8s.io/apimachinery/pkg/api/resource.int64Amount":                           schema_apimachinery_pkg_api_resource_int64Amount(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.APIGroup":                              schema_pkg_apis_meta_v1_APIGroup(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.APIGroupList":                          schema_pkg_apis_meta_v1_APIGroupList(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.APIResource":                           schema_pkg_apis_meta_v1_APIResource(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.APIResourceList":                       schema_pkg_apis_meta_v1_APIResourceList(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.APIVersions":                           schema_pkg_apis_meta_v1_APIVersions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ApplyOptions":                          schema_pkg_apis_meta_v1_ApplyOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Condition":                             schema_pkg_apis_meta_v1_Condition(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.CreateOptions":                         schema_pkg_apis_meta_v1_CreateOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.DeleteOptions":                         schema_pkg_apis_meta_v1_DeleteOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Duration":                              schema_pkg_apis_meta_v1_Duration(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.FieldsV1":                              schema_pkg_apis_meta_v1_FieldsV1(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.GetOptions":                            schema_pkg_apis_meta_v1_GetOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupKind":                             schema_pkg_apis_meta_v1_GroupKind(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupResource":                         schema_pkg_apis_meta_v1_GroupResource(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersion":                          schema_pkg_apis_meta_v1_GroupVersion(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersionForDiscovery":              schema_pkg_apis_meta_v1_GroupVersionForDiscovery(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersionKind":                      schema_pkg_apis_meta_v1_GroupVersionKind(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.GroupVersionResource":                  schema_pkg_apis_meta_v1_GroupVersionResource(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.InternalEvent":                         schema_pkg_apis_meta_v1_InternalEvent(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector":                         schema_pkg_apis_meta_v1_LabelSelector(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelectorRequirement":              schema_pkg_apis_meta_v1_LabelSelectorRequirement(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.List":                                  schema_pkg_apis_meta_v1_List(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta":                              schema_pkg_apis_meta_v1_ListMeta(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ListOptions":                           schema_pkg_apis_meta_v1_ListOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ManagedFieldsEntry":                    schema_pkg_apis_meta_v1_ManagedFieldsEntry(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.MicroTime":                             schema_pkg_apis_meta_v1_MicroTime(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta":                            schema_pkg_apis_meta_v1_ObjectMeta(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.OwnerReference":                        schema_pkg_apis_meta_v1_OwnerReference(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadata":                 schema_pkg_apis_meta_v1_PartialObjectMetadata(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.PartialObjectMetadataList":             schema_pkg_apis_meta_v1_PartialObjectMetadataList(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Patch":                                 schema_pkg_apis_meta_v1_Patch(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.PatchOptions":                          schema_pkg_apis_meta_v1_PatchOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Preconditions":                         schema_pkg_apis_meta_v1_Preconditions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.RootPaths":                             schema_pkg_apis_meta_v1_RootPaths(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.ServerAddressByClientCIDR":             schema_pkg_apis_meta_v1_ServerAddressByClientCIDR(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Status":                                schema_pkg_apis_meta_v1_Status(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.StatusCause":                           schema_pkg_apis_meta_v1_StatusCause(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.StatusDetails":                         schema_pkg_apis_meta_v1_StatusDetails(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Table":                                 schema_pkg_apis_meta_v1_Table(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableColumnDefinition":                 schema_pkg_apis_meta_v1_TableColumnDefinition(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableOptions":                          schema_pkg_apis_meta_v1_TableOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableRow":                              schema_pkg_apis_meta_v1_TableRow(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TableRowCondition":                     schema_pkg_apis_meta_v1_TableRowCondition(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Time":                                  schema_pkg_apis_meta_v1_Time(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.Timestamp":                             schema_pkg_apis_meta_v1_Timestamp(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta":                              schema_pkg_apis_meta_v1_TypeMeta(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.UpdateOptions":                         schema_pkg_apis_meta_v1_UpdateOptions(ref),
+		"k8s.io/apimachinery/pkg/apis/meta/v1.WatchEvent":                            schema_pkg_apis_meta_v1_WatchEvent(ref),
 	}
 }
 
-func schema_metal_api_apis_benchmark_v1alpha3_Benchmark(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_AdditionalIPSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name is the specific benchmark name. e.g. `fio-1k`.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"value": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Value is the exact result of specific benchmark.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-				},
-				Required: []string{"name"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_benchmark_v1alpha3_BenchmarkDeviation(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "BenchmarkDeviation is a deviation between old value and the new one.",
+				Description: "AdditionalIPSpec defines IP address and selector for subnet where address should be reserved",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"name": {
+					"address": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name is the specific benchmark name. e.g. `fio-1k`.",
-							Default:     "",
+							Description: "Address contains additional IP address that should be assigned to the interface",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"value": {
+					"parentSubnet": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Value is the exact result of specific benchmark.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"name"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_benchmark_v1alpha3_Machine(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Machine is the Schema for the machines API.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/benchmark/v1alpha3.MachineSpec"),
-						},
-					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/benchmark/v1alpha3.MachineStatus"),
+							Description: "ParentSubnet contains label selector to pick up IPAM objects",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.MachineSpec", "github.com/onmetal/metal-api/apis/benchmark/v1alpha3.MachineStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 	}
 }
 
-func schema_metal_api_apis_benchmark_v1alpha3_MachineList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_AddressFamiliesMap(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "MachineList contains a list of Machine.",
+				Description: "AddressFamiliesMap contains flags regarding what IP address families should be used",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"kind": {
+					"ipv4": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
+							Description: "IPv4 is a flag defining whether IPv4 is used or not",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
-					"apiVersion": {
+					"ipv6": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
+							Description: "IPv6 is a flag defining whether IPv6 is used or not",
+							Type:        []string{"boolean"},
 							Format:      "",
 						},
 					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
+				},
+				Required: []string{"ipv4", "ipv6"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_Addresses(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ipv4": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/benchmark/v1alpha3.Machine"),
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddrSpec"),
 									},
 								},
 							},
 						},
 					},
-				},
-				Required: []string{"items"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.Machine", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
-	}
-}
-
-func schema_metal_api_apis_benchmark_v1alpha3_MachineSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MachineSpec contains machine benchmark results.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"benchmarks": {
+					"ipv6": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Benchmarks is the collection of benchmarks.",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type: []string{"array"},
-										Items: &spec.SchemaOrArray{
-											Schema: &spec.Schema{
-												SchemaProps: spec.SchemaProps{
-													Default: map[string]interface{}{},
-													Ref:     ref("github.com/onmetal/metal-api/apis/benchmark/v1alpha3.Benchmark"),
-												},
-											},
-										},
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddrSpec"),
 									},
 								},
 							},
@@ -568,48 +474,11 @@ func schema_metal_api_apis_benchmark_v1alpha3_MachineSpec(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.Benchmark"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddrSpec"},
 	}
 }
 
-func schema_metal_api_apis_benchmark_v1alpha3_MachineStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MachineStatus contains machine benchmarks deviations.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"machine_deviation": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MachineDeviation shows the difference between last and current benchmark results.",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type: []string{"array"},
-										Items: &spec.SchemaOrArray{
-											Schema: &spec.Schema{
-												SchemaProps: spec.SchemaProps{
-													Default: map[string]interface{}{},
-													Ref:     ref("github.com/onmetal/metal-api/apis/benchmark/v1alpha3.BenchmarkDeviation"),
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/benchmark/v1alpha3.BenchmarkDeviation"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_Aggregate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_Aggregate(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -639,24 +508,24 @@ func schema_metal_api_apis_inventory_v1alpha1_Aggregate(ref common.ReferenceCall
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateSpec"),
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateStatus"),
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_AggregateItem(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_AggregateItem(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -666,14 +535,14 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregateItem(ref common.Reference
 						SchemaProps: spec.SchemaProps{
 							Description: "SourcePath is a path in Inventory spec aggregate will be applied to",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.JSONPath"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.JSONPath"),
 						},
 					},
 					"targetPath": {
 						SchemaProps: spec.SchemaProps{
 							Description: "TargetPath is a path in Inventory status `computed` field",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.JSONPath"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.JSONPath"),
 						},
 					},
 					"aggregate": {
@@ -688,11 +557,11 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregateItem(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.JSONPath"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.JSONPath"},
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_AggregateList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_AggregateList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -726,7 +595,7 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregateList(ref common.Reference
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.Aggregate"),
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Aggregate"),
 									},
 								},
 							},
@@ -737,11 +606,11 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregateList(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.Aggregate", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Aggregate", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_AggregateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_AggregateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -756,7 +625,7 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregateSpec(ref common.Reference
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateItem"),
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateItem"),
 									},
 								},
 							},
@@ -767,11 +636,11 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregateSpec(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregateItem"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregateItem"},
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_AggregateStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_AggregateStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -782,7 +651,7 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregateStatus(ref common.Referen
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_AggregationResults(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_AggregationResults(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -792,7 +661,234 @@ func schema_metal_api_apis_inventory_v1alpha1_AggregationResults(ref common.Refe
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_BlockSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_Benchmark(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Benchmark is the Schema for the machines API.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_BenchmarkDeviation(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BenchmarkDeviation is a deviation between old value and the new one.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the specific benchmark name. e.g. `fio-1k`.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the exact result of specific benchmark.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_BenchmarkList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BenchmarkList contains a list of Benchmark.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Benchmark"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Benchmark", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_BenchmarkResult(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the specific benchmark name. e.g. `fio-1k`.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the exact result of specific benchmark.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_BenchmarkSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BenchmarkSpec contains machine benchmark results.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"benchmarks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Benchmarks is the collection of benchmarks.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type: []string{"array"},
+										Items: &spec.SchemaOrArray{
+											Schema: &spec.Schema{
+												SchemaProps: spec.SchemaProps{
+													Default: map[string]interface{}{},
+													Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkResult"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkResult"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_BenchmarkStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BenchmarkStatus contains machine benchmarks deviations.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"machine_deviation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BenchmarkDeviations shows the difference between last and current benchmark results.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type: []string{"array"},
+										Items: &spec.SchemaOrArray{
+											Schema: &spec.Schema{
+												SchemaProps: spec.SchemaProps{
+													Default: map[string]interface{}{},
+													Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkDeviation"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BenchmarkDeviation"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_BlockSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -845,7 +941,7 @@ func schema_metal_api_apis_inventory_v1alpha1_BlockSpec(ref common.ReferenceCall
 					"partitionTable": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PartitionTable is a partition table currently written to the disk",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PartitionTableSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PartitionTableSpec"),
 						},
 					},
 				},
@@ -853,11 +949,11 @@ func schema_metal_api_apis_inventory_v1alpha1_BlockSpec(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.PartitionTableSpec"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PartitionTableSpec"},
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_CPUSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_CPUSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -1076,7 +1172,63 @@ func schema_metal_api_apis_inventory_v1alpha1_CPUSpec(ref common.ReferenceCallba
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_ConstraintSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_ConditionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ConditionSpec contains current condition of port parameters",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name reflects the name of the condition",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"state": {
+						SchemaProps: spec.SchemaProps{
+							Description: "State reflects the state of the condition",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"lastUpdateTimestamp": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastUpdateTimestamp reflects the last timestamp when condition was updated",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lastTransitionTimestamp": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LastTransitionTimestamp reflects the last timestamp when condition changed state from one to another",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"reason": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reason reflects the reason of condition state",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Message reflects the verbose message about the reason",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"lastUpdateTimestamp", "lastTransitionTimestamp"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_ConstraintSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -1087,7 +1239,7 @@ func schema_metal_api_apis_inventory_v1alpha1_ConstraintSpec(ref common.Referenc
 						SchemaProps: spec.SchemaProps{
 							Description: "Path is a path to the struct field constraint will be applied to",
 							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.JSONPath"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.JSONPath"),
 						},
 					},
 					"agg": {
@@ -1100,13 +1252,13 @@ func schema_metal_api_apis_inventory_v1alpha1_ConstraintSpec(ref common.Referenc
 					"eq": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Equal contains an exact expected value",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.ConstraintValSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConstraintValSpec"),
 						},
 					},
 					"neq": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NotEqual contains an exact not expected value",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.ConstraintValSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConstraintValSpec"),
 						},
 					},
 					"lt": {
@@ -1137,11 +1289,11 @@ func schema_metal_api_apis_inventory_v1alpha1_ConstraintSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.ConstraintValSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.JSONPath", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConstraintValSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.JSONPath", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_ConstraintValSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_ConstraintValSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -1152,7 +1304,7 @@ func schema_metal_api_apis_inventory_v1alpha1_ConstraintValSpec(ref common.Refer
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_DistroSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_DistroSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -1213,1706 +1365,7 @@ func schema_metal_api_apis_inventory_v1alpha1_DistroSpec(ref common.ReferenceCal
 	}
 }
 
-func schema_metal_api_apis_inventory_v1alpha1_HostSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "HostSpec contains type of inventorying object and in case it is a switch - SONiC version",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Hostname contains hostname",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"name"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_IPMISpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "IPMISpec contains info about IPMI module",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ipAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "IPAddress is an IP address assigned to IPMI network interface",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"macAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MACAddress is a MAC address of IPMI's network interface",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_Inventory(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Inventory is the Schema for the inventories API.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventorySpec"),
-						},
-					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventoryStatus"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventorySpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventoryStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_InventoryList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "InventoryList contains a list of Inventory.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.Inventory"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"items"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.Inventory", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_InventorySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "InventorySpec contains result of inventorization process on the host",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"system": {
-						SchemaProps: spec.SchemaProps{
-							Description: "System contains DMI system information",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.SystemSpec"),
-						},
-					},
-					"ipmis": {
-						SchemaProps: spec.SchemaProps{
-							Description: "IPMIs contains info about IPMI interfaces on the host",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.IPMISpec"),
-									},
-								},
-							},
-						},
-					},
-					"blocks": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Blocks contains info about block devices on the host",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.BlockSpec"),
-									},
-								},
-							},
-						},
-					},
-					"memory": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Memory contains info block devices on the host",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.MemorySpec"),
-						},
-					},
-					"cpus": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CPUs contains info about cpus, cores and threads",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.CPUSpec"),
-									},
-								},
-							},
-						},
-					},
-					"numa": {
-						SchemaProps: spec.SchemaProps{
-							Description: "NUMA contains info about cpu/memory topology",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.NumaSpec"),
-									},
-								},
-							},
-						},
-					},
-					"pciDevices": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PCIDevices contains info about devices accessible through",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceSpec"),
-									},
-								},
-							},
-						},
-					},
-					"nics": {
-						SchemaProps: spec.SchemaProps{
-							Description: "NICs contains info about network interfaces and network discovery",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.NICSpec"),
-									},
-								},
-							},
-						},
-					},
-					"virt": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Virt is a virtualization detected on host",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.VirtSpec"),
-						},
-					},
-					"host": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Host contains info about inventorying object",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.HostSpec"),
-						},
-					},
-					"distro": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Distro contains info about OS distro",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.DistroSpec"),
-						},
-					},
-				},
-				Required: []string{"host"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.BlockSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.CPUSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.DistroSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.HostSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.IPMISpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.MemorySpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.NICSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.NumaSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.SystemSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.VirtSpec"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_InventoryStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "InventoryStatus defines the observed state of Inventory",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"computed": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregationResults"),
-						},
-					},
-					"inventoryStatuses": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventoryStatuses"),
-						},
-					},
-				},
-				Required: []string{"computed"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.AggregationResults", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventoryStatuses"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_InventoryStatuses(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ready": {
-						SchemaProps: spec.SchemaProps{
-							Default: false,
-							Type:    []string{"boolean"},
-							Format:  "",
-						},
-					},
-					"requestsCount": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-				},
-				Required: []string{"ready"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_JSONPath(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_LLDPSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "LLDPSpec is an entry received by network interface by Link Layer Discovery Protocol",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"chassisId": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ChassisID is a neighbour box identifier",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"systemName": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SystemName is given name to the neighbour box",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"systemDescription": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SystemDescription is a short description of the neighbour box",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"portId": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PortID is a hardware identifier of the link port",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"portDescription": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PortDescription is a short description of the link port",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"capabilities": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Capabilities is a list of LLDP capabilities advertised by neighbor",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_MemorySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MemorySpec contains info about RAM on host",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"total": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Total is a total amount of RAM on host",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_NDPSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "NDPSpec is an entry received by IPv6 Neighbour Discovery Protocol",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ipAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "IPAddress is an IPv6 address of a neighbour",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"macAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MACAddress is an MAC address of a neighbour",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"state": {
-						SchemaProps: spec.SchemaProps{
-							Description: "State is a state of discovery",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_NICSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "NICSpec contains info about network interfaces",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name is a name of the device registered by Linux Kernel",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"pciAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PCIAddress is the PCI bus address network interface is connected to",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"macAddress": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MACAddress is the MAC address of network interface",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"mtu": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MTU is refers to Maximum Transmission Unit",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"speed": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Speed is a speed of network interface in Mbits/s",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"lanes": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Lanes is a number of used lanes (if supported)",
-							Type:        []string{"integer"},
-							Format:      "byte",
-						},
-					},
-					"activeFEC": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ActiveFEC is an active error correction mode",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"lldps": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LLDP is a collection of LLDP messages received by the network interface",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.LLDPSpec"),
-									},
-								},
-							},
-						},
-					},
-					"ndps": {
-						SchemaProps: spec.SchemaProps{
-							Description: "NDP is a collection of NDP messages received by the network interface",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.NDPSpec"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.LLDPSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.NDPSpec"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_NumaSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "NumaSpec describes NUMA node",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"id": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ID is NUMA node ID.",
-							Default:     0,
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"cpus": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CPUs is a list of CPU logical IDs in current numa node.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: 0,
-										Type:    []string{"integer"},
-										Format:  "int32",
-									},
-								},
-							},
-						},
-					},
-					"distances": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Distances contains distances to other nodes. Element index corresponds to NUMA node ID.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: 0,
-										Type:    []string{"integer"},
-										Format:  "int32",
-									},
-								},
-							},
-						},
-					},
-					"memory": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Memory contains info about NUMA node memory setup.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.MemorySpec"),
-						},
-					},
-				},
-				Required: []string{"id", "cpus", "distances", "memory"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.MemorySpec"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_PCIDeviceDescriptionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "PCIDeviceDescriptionSpec contains one of the options that is describing the PCI device",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"id": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ID is a hexadecimal identifier of device property , that corresponds to the value from PCIIDs database",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name is a string value of property extracted from PCIID DB",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"id", "name"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_PCIDeviceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "PCIDeviceSpec contains description of PCI device",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"busId": {
-						SchemaProps: spec.SchemaProps{
-							Description: "BusID is an ID of PCI bus on the board device is attached to.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"address": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Address is an ID of device on PCI bus.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"vendor": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Vendor refers to manufacturer ore device trademark.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"),
-						},
-					},
-					"subvendor": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Subvendor usually refers to the platform or co-manufacturer. E.g. Lenovo board manufactured for Intel platform (by Intel spec).",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"),
-						},
-					},
-					"type": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Type shows device's designation.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"),
-						},
-					},
-					"subtype": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Subtype shows device's subsystem.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"),
-						},
-					},
-					"class": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Class refers to generic device designation.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"),
-						},
-					},
-					"subclass": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Subclass narrows the designation scope.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"),
-						},
-					},
-					"interface": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ProgrammingInterface specifies communication protocols.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.PCIDeviceDescriptionSpec"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_PartitionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "PartitionSpec contains info about partition",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"id": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ID is a GUID of GPT partition or number for MBR partition",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name is a human readable name given to the partition",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"size": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Size is a size of partition in bytes",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_PartitionTableSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "PartitionTableSpec contains info about partition table on block device",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"type": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Type is a format of partition table",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"partitions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Partitions are active partition records on disk",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.PartitionSpec"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.PartitionSpec"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_Size(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Size is the Schema for the sizes API.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.SizeSpec"),
-						},
-					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.SizeStatus"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.SizeSpec", "github.com/onmetal/metal-api/apis/inventory/v1alpha1.SizeStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_SizeList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SizeList contains a list of Size.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.Size"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"items"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.Size", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_SizeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SizeSpec defines the desired state of Size.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"constraints": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Constraints is a list of selectors based on machine properties.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.ConstraintSpec"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.ConstraintSpec"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_SizeStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SizeStatus defines the observed state of Size.",
-				Type:        []string{"object"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_SystemSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SystemSpec contains DMI system information",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"id": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ID is a UUID of a system board",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"manufacturer": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Manufacturer refers to the company that produced the product",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"productSku": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ProductSKU is a product's Stock Keeping Unit",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"serialNumber": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SerialNumber contains serial number of a system",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_ValidationInventory(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventorySpec"),
-						},
-					},
-				},
-				Required: []string{"spec"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/inventory/v1alpha1.InventorySpec"},
-	}
-}
-
-func schema_metal_api_apis_inventory_v1alpha1_VirtSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "VirtSpec contains info about detected host virtualization",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"vmType": {
-						SchemaProps: spec.SchemaProps{
-							Description: "VMType is a type of virtual machine engine",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Addresses(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ipv4": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.IPAddressSpec"),
-									},
-								},
-							},
-						},
-					},
-					"ipv6": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.IPAddressSpec"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.IPAddressSpec"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_IPAddressSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "IPAddressSpec defines interface's ip address info.",
-				Type:        []string{"object"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Identity(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Identity - defines hardware information about machine.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"sku": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SKU - stock keeping unit. The label allows vendors automatically track the movement of inventory",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"serial_number": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SerialNumber - unique machine number",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"asset": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"internal": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Deprecated",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Internal"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.Internal"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Interface(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Interface - defines information about machine interfaces.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name - machine interface name",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"switch_reference": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SwitchReference - defines unique switch identification",
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.ResourceReference"),
-						},
-					},
-					"addresses": {
-						SchemaProps: spec.SchemaProps{
-							Description: "IPv4 - defines machine IPv4 address",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Addresses"),
-						},
-					},
-					"peer": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Peer - defines lldp peer info.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Peer"),
-						},
-					},
-					"lanes": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Lane - defines number of lines per interface",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"moved": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Moved  - defines if interface was reconnected to another switch or not",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"unknown": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Unknown - defines information availability about interface",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.Addresses", "github.com/onmetal/metal-api/apis/machine/v1alpha3.Peer", "github.com/onmetal/metal-api/apis/machine/v1alpha3.ResourceReference"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Internal(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"value": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_LoopbackAddresses(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ipv4": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.IPAddressSpec"),
-						},
-					},
-					"ipv6": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.IPAddressSpec"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.IPAddressSpec"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Machine(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Machine - is the data structure for a Machine resource. It contains an aggregated information from Inventory and OOB resources.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.MachineSpec"),
-						},
-					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.MachineStatus"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.MachineSpec", "github.com/onmetal/metal-api/apis/machine/v1alpha3.MachineStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_MachineList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MachineList - contains a list of Machine.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Machine"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"items"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.Machine", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_MachineSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MachineSpec - defines the desired spec of Machine.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"hostname": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Hostname - defines machine domain name",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"description": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Description - summary info about machine",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"identity": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Identity - defines machine hardware info",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Identity"),
-						},
-					},
-					"inventory_requested": {
-						SchemaProps: spec.SchemaProps{
-							Description: "InventoryRequested - defines if inventory requested or not",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.Identity"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_MachineStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MachineStatus - defines machine aggregated info.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"reboot": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Reboot - defines machine reboot status",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"health": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Health - defines machine condition. \"healthy\" if both OOB and Inventory are presented and \"unhealthy\" if one of them isn't",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"network": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Network - defines machine network status",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Network"),
-						},
-					},
-					"reservation": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Reservation - defines machine reservation state and reference object.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Reservation"),
-						},
-					},
-					"orphaned": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Orphaned - defines machine condition whether OOB or Inventory is missing or not",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.Network", "github.com/onmetal/metal-api/apis/machine/v1alpha3.Reservation"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Network(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Network - defines machine network status.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"asn": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ASN - defines calculated Autonomous system Number.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"redundancy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Redundancy - defines machine redundancy status. Available values: \"Single\", \"HighAvailability\" or \"None\"",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"ports": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Ports - defines number of machine ports",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"unknown_ports": {
-						SchemaProps: spec.SchemaProps{
-							Description: "UnknownPorts - defines number of machine interface without info",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"interfaces": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Interfaces - defines machine interfaces info",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.Interface"),
-									},
-								},
-							},
-						},
-					},
-					"loopback_addresses": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Loopbacks refers to the switch's loopback addresses",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.LoopbackAddresses"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.Interface", "github.com/onmetal/metal-api/apis/machine/v1alpha3.LoopbackAddresses"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Peer(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Peer - contains machine neighbor information collected from LLDP.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"lldp_system_name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol layer 2 neighbor discovery protocol",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"lldp_chassis_id": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"lldp_port_id": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"lldp_port_description": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LLDPPortDescription - defines switch definition obtained from Link Layer Discovery Protocol",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"resource_reference": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ResourceReference refers to the related resource definition",
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.ResourceReference"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.ResourceReference"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_Reservation(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Status - defines Machine Order state provided by OOB Machine Resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"class": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Class - defines what class the mahchine was reserved under",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"reference": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Reference - defines underlying referenced object.",
-							Ref:         ref("github.com/onmetal/metal-api/apis/machine/v1alpha3.ResourceReference"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/machine/v1alpha3.ResourceReference"},
-	}
-}
-
-func schema_metal_api_apis_machine_v1alpha3_ResourceReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ResourceReference defines related resource info.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion refers to the resource API version",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind refers to the resource kind",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name refers to the resource name",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"namespace": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Namespace refers to the resource namespace",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_switch_v1beta1_AdditionalIPSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "AdditionalIPSpec defines IP address and selector for subnet where address should be reserved",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"address": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Address contains additional IP address that should be assigned to the interface",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"parentSubnet": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ParentSubnet contains label selector to pick up IPAM objects",
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
-	}
-}
-
-func schema_metal_api_apis_switch_v1beta1_AddressFamiliesMap(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "AddressFamiliesMap contains flags regarding what IP address families should be used",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"ipv4": {
-						SchemaProps: spec.SchemaProps{
-							Description: "IPv4 is a flag defining whether IPv4 is used or not",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"ipv6": {
-						SchemaProps: spec.SchemaProps{
-							Description: "IPv6 is a flag defining whether IPv6 is used or not",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"ipv4", "ipv6"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_switch_v1beta1_ConditionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ConditionSpec contains current condition of port parameters",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name reflects the name of the condition",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"state": {
-						SchemaProps: spec.SchemaProps{
-							Description: "State reflects the state of the condition",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"lastUpdateTimestamp": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LastUpdateTimestamp reflects the last timestamp when condition was updated",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"lastTransitionTimestamp": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LastTransitionTimestamp reflects the last timestamp when condition changed state from one to another",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"reason": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Reason reflects the reason of condition state",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"message": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Message reflects the verbose message about the reason",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"lastUpdateTimestamp", "lastTransitionTimestamp"},
-			},
-		},
-	}
-}
-
-func schema_metal_api_apis_switch_v1beta1_FieldSelectorSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_FieldSelectorSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -2941,7 +1394,7 @@ func schema_metal_api_apis_switch_v1beta1_FieldSelectorSpec(ref common.Reference
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_GeneralIPAMSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_GeneralIPAMSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -2951,31 +1404,31 @@ func schema_metal_api_apis_switch_v1beta1_GeneralIPAMSpec(ref common.ReferenceCa
 					"addressFamily": {
 						SchemaProps: spec.SchemaProps{
 							Description: "AddressFamily contains flags to define which address families are used for switch subnets",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.AddressFamiliesMap"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.AddressFamiliesMap"),
 						},
 					},
 					"carrierSubnets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CarrierSubnets contains label selector for Subnet object where switch's south subnet should be reserved",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"),
 						},
 					},
 					"loopbackSubnets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LoopbackSubnets contains label selector for Subnet object where switch's loopback IP addresses should be reserved",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"),
 						},
 					},
 					"southSubnets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SouthSubnets defines selector for subnets object which will be assigned to switch",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"),
 						},
 					},
 					"loopbackAddresses": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LoopbackAddresses defines selector for IP objects which should be referenced as switch's loopback addresses",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"),
 						},
 					},
 				},
@@ -2983,11 +1436,33 @@ func schema_metal_api_apis_switch_v1beta1_GeneralIPAMSpec(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.AddressFamiliesMap", "github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AddressFamiliesMap", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_IPAMSelectionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_HostSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HostSpec contains type of inventorying object and in case it is a switch - SONiC version",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Hostname contains hostname",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_IPAMSelectionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3002,19 +1477,19 @@ func schema_metal_api_apis_switch_v1beta1_IPAMSelectionSpec(ref common.Reference
 					},
 					"fieldSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "FieldSelector contains label key and field path where to get label value for search. If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will reference to the field path in related Switch object. If FieldSelector is used as part of IPAM configuration in Switch object, it will reference to the field path in the same object",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.FieldSelectorSpec"),
+							Description: "FieldSelector contains label key and field path where to get label value for search. If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will reference to the field path in related NetworkSwitch object. If FieldSelector is used as part of IPAM configuration in NetworkSwitch object, it will reference to the field path in the same object",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.FieldSelectorSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.FieldSelectorSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.FieldSelectorSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_IPAMSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_IPAMSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3024,24 +1499,35 @@ func schema_metal_api_apis_switch_v1beta1_IPAMSpec(ref common.ReferenceCallback)
 					"southSubnets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SouthSubnets defines selector for subnet object which will be assigned to switch",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"),
 						},
 					},
 					"loopbackAddresses": {
 						SchemaProps: spec.SchemaProps{
 							Description: "LoopbackAddresses defines selector for IP object which will be assigned to switch's loopback interface",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSelectionSpec"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSelectionSpec"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_IPAddressSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_IPAddrSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "IPAddrSpec defines interface's ip address info.",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_IPAddressSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3089,7 +1575,146 @@ func schema_metal_api_apis_switch_v1beta1_IPAddressSpec(ref common.ReferenceCall
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_InterfaceOverridesSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_IPMISpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "IPMISpec contains info about IPMI module",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ipAddress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IPAddress is an IP address assigned to IPMI network interface",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"macAddress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MACAddress is a MAC address of IPMI's network interface",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_Identity(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Identity - defines hardware information about machine.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"sku": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SKU - stock keeping unit. The label allows vendors automatically track the movement of inventory",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"serial_number": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SerialNumber - unique machine number",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"asset": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"internal": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Deprecated",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Internal"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Internal"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_Interface(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Interface - defines information about machine interfaces.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name - machine interface name",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"switch_reference": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SwitchReference - defines unique switch identification",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ResourceReference"),
+						},
+					},
+					"addresses": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IPv4 - defines machine IPv4 address",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Addresses"),
+						},
+					},
+					"peer": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Peer - defines lldp peer info.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Peer"),
+						},
+					},
+					"lanes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Lane - defines number of lines per interface",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"moved": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Moved  - defines if interface was reconnected to another switch or not",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"unknown": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Unknown - defines information availability about interface",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Addresses", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.Peer", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.ResourceReference"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_InterfaceOverridesSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3152,7 +1777,7 @@ func schema_metal_api_apis_switch_v1beta1_InterfaceOverridesSpec(ref common.Refe
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/onmetal/metal-api/apis/switch/v1beta1.AdditionalIPSpec"),
+										Ref: ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.AdditionalIPSpec"),
 									},
 								},
 							},
@@ -3162,11 +1787,11 @@ func schema_metal_api_apis_switch_v1beta1_InterfaceOverridesSpec(ref common.Refe
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.AdditionalIPSpec"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AdditionalIPSpec"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_InterfaceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_InterfaceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3236,7 +1861,7 @@ func schema_metal_api_apis_switch_v1beta1_InterfaceSpec(ref common.ReferenceCall
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAddressSpec"),
+										Ref: ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddressSpec"),
 									},
 								},
 							},
@@ -3252,7 +1877,7 @@ func schema_metal_api_apis_switch_v1beta1_InterfaceSpec(ref common.ReferenceCall
 					"peer": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Peer refers to the info about device connected to current switch port",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.PeerSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PeerSpec"),
 						},
 					},
 				},
@@ -3260,11 +1885,11 @@ func schema_metal_api_apis_switch_v1beta1_InterfaceSpec(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.IPAddressSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.PeerSpec"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddressSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.PeerSpec"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_InterfacesSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_InterfacesSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3274,7 +1899,7 @@ func schema_metal_api_apis_switch_v1beta1_InterfacesSpec(ref common.ReferenceCal
 					"defaults": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Defaults contains switch port parameters which will be applied to all ports of the switches",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.PortParametersSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PortParametersSpec"),
 						},
 					},
 					"overrides": {
@@ -3284,7 +1909,7 @@ func schema_metal_api_apis_switch_v1beta1_InterfacesSpec(ref common.ReferenceCal
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/onmetal/metal-api/apis/switch/v1beta1.InterfaceOverridesSpec"),
+										Ref: ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfaceOverridesSpec"),
 									},
 								},
 							},
@@ -3294,11 +1919,1171 @@ func schema_metal_api_apis_switch_v1beta1_InterfacesSpec(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.InterfaceOverridesSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.PortParametersSpec"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfaceOverridesSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.PortParametersSpec"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_ObjectReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_Internal(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_Inventory(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Inventory is the Schema for the inventories API.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventorySpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventoryStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventorySpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventoryStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_InventoryList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "InventoryList contains a list of Inventory.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Inventory"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Inventory", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_InventorySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "InventorySpec contains result of inventorization process on the host",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"system": {
+						SchemaProps: spec.SchemaProps{
+							Description: "System contains DMI system information",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.SystemSpec"),
+						},
+					},
+					"ipmis": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IPMIs contains info about IPMI interfaces on the host",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPMISpec"),
+									},
+								},
+							},
+						},
+					},
+					"blocks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Blocks contains info about block devices on the host",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.BlockSpec"),
+									},
+								},
+							},
+						},
+					},
+					"memory": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Memory contains info block devices on the host",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.MemorySpec"),
+						},
+					},
+					"cpus": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CPUs contains info about cpus, cores and threads",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.CPUSpec"),
+									},
+								},
+							},
+						},
+					},
+					"numa": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NUMA contains info about cpu/memory topology",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.NumaSpec"),
+									},
+								},
+							},
+						},
+					},
+					"pciDevices": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PCIDevices contains info about devices accessible through",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceSpec"),
+									},
+								},
+							},
+						},
+					},
+					"nics": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NICs contains info about network interfaces and network discovery",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.NICSpec"),
+									},
+								},
+							},
+						},
+					},
+					"virt": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Virt is a virtualization detected on host",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.VirtSpec"),
+						},
+					},
+					"host": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Host contains info about inventorying object",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.HostSpec"),
+						},
+					},
+					"distro": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Distro contains info about OS distro",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.DistroSpec"),
+						},
+					},
+				},
+				Required: []string{"host"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.BlockSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.CPUSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.DistroSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.HostSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPMISpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.MemorySpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.NICSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.NumaSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.SystemSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.VirtSpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_InventoryStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "InventoryStatus defines the observed state of Inventory",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"computed": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregationResults"),
+						},
+					},
+					"inventoryStatuses": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventoryStatuses"),
+						},
+					},
+				},
+				Required: []string{"computed"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.AggregationResults", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventoryStatuses"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_InventoryStatuses(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ready": {
+						SchemaProps: spec.SchemaProps{
+							Default: false,
+							Type:    []string{"boolean"},
+							Format:  "",
+						},
+					},
+					"requestsCount": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+				Required: []string{"ready"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_JSONPath(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_LLDPSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "LLDPSpec is an entry received by network interface by Link Layer Discovery Protocol",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"chassisId": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ChassisID is a neighbour box identifier",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"systemName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SystemName is given name to the neighbour box",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"systemDescription": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SystemDescription is a short description of the neighbour box",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"portId": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PortID is a hardware identifier of the link port",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"portDescription": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PortDescription is a short description of the link port",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"capabilities": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Capabilities is a list of LLDP capabilities advertised by neighbor",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_LoopbackAddresses(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ipv4": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddrSpec"),
+						},
+					},
+					"ipv6": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddrSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddrSpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_Machine(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Machine - is the data structure for a Machine resource. It contains an aggregated information from Inventory and OOB resources.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.MachineSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.MachineStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.MachineSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.MachineStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_MachineList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachineList - contains a list of Machine.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Machine"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Machine", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_MachineSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachineSpec - defines the desired spec of Machine.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"hostname": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Hostname - defines machine domain name",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description - summary info about machine",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"identity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Identity - defines machine hardware info",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Identity"),
+						},
+					},
+					"inventory_requested": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InventoryRequested - defines if inventory requested or not",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Identity"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_MachineStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MachineStatus - defines machine aggregated info.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"reboot": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reboot - defines machine reboot status",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"health": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Health - defines machine condition. \"healthy\" if both OOB and Inventory are presented and \"unhealthy\" if one of them isn't",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"network": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Network - defines machine network status",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Network"),
+						},
+					},
+					"reservation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Reservation - defines machine reservation state and reference object.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Reservation"),
+						},
+					},
+					"orphaned": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Orphaned - defines machine condition whether OOB or Inventory is missing or not",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Network", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.Reservation"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_MemorySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MemorySpec contains info about RAM on host",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"total": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Total is a total amount of RAM on host",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_NDPSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NDPSpec is an entry received by IPv6 Neighbour Discovery Protocol",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ipAddress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IPAddress is an IPv6 address of a neighbour",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"macAddress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MACAddress is an MAC address of a neighbour",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"state": {
+						SchemaProps: spec.SchemaProps{
+							Description: "State is a state of discovery",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_NICSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NICSpec contains info about network interfaces",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is a name of the device registered by Linux Kernel",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"pciAddress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PCIAddress is the PCI bus address network interface is connected to",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"macAddress": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MACAddress is the MAC address of network interface",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"mtu": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MTU is refers to Maximum Transmission Unit",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"speed": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Speed is a speed of network interface in Mbits/s",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"lanes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Lanes is a number of used lanes (if supported)",
+							Type:        []string{"integer"},
+							Format:      "byte",
+						},
+					},
+					"activeFEC": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ActiveFEC is an active error correction mode",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lldps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LLDP is a collection of LLDP messages received by the network interface",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.LLDPSpec"),
+									},
+								},
+							},
+						},
+					},
+					"ndps": {
+						SchemaProps: spec.SchemaProps{
+							Description: "NDP is a collection of NDP messages received by the network interface",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.NDPSpec"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.LLDPSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.NDPSpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_Network(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Network - defines machine network status.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"asn": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ASN - defines calculated Autonomous system Number.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"redundancy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Redundancy - defines machine redundancy status. Available values: \"Single\", \"HighAvailability\" or \"None\"",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ports - defines number of machine ports",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"unknown_ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UnknownPorts - defines number of machine interface without info",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"interfaces": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Interfaces - defines machine interfaces info",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Interface"),
+									},
+								},
+							},
+						},
+					},
+					"loopback_addresses": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Loopbacks refers to the switch's loopback addresses",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.LoopbackAddresses"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Interface", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.LoopbackAddresses"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_NetworkSwitch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NetworkSwitch is the Schema for switches API.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitchSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitchStatus"),
+						},
+					},
+				},
+				Required: []string{"spec"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitchSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitchStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_NetworkSwitchList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NetworkSwitchList contains a list of NetworkSwitch.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitch"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.NetworkSwitch", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_NetworkSwitchSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NetworkSwitchSpec contains desired state of resulting NetworkSwitch configuration",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"inventoryRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InventoryRef contains reference to corresponding inventory object Empty InventoryRef means that there is no corresponding Inventory object",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+					"configSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConfigSelector contains selector to filter out corresponding SwitchConfig. If the selector is not defined, it will be populated by defaulting webhook with MatchLabels item, containing 'metal.ironcore.dev/layer' key with value equals to object's .status.layer.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
+						},
+					},
+					"managed": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Managed is a flag defining whether NetworkSwitch object would be processed during reconciliation",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"cordon": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Cordon is a flag defining whether NetworkSwitch object is taken offline",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"topSpine": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TopSpine is a flag defining whether NetworkSwitch is a top-level spine switch",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"scanPorts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ScanPorts is a flag defining whether to run periodical scanning on switch ports",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"ipam": {
+						SchemaProps: spec.SchemaProps{
+							Description: "IPAM refers to selectors for subnets which will be used for NetworkSwitch object",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSpec"),
+						},
+					},
+					"interfaces": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Interfaces contains general configuration for all switch ports",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfacesSpec"),
+						},
+					},
+				},
+				Required: []string{"managed", "cordon", "topSpine", "scanPorts"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAMSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfacesSpec", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_NetworkSwitchStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NetworkSwitchStatus contains observed state of NetworkSwitch",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"configRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ConfigRef contains reference to corresponding SwitchConfig object Empty ConfigRef means that there is no corresponding SwitchConfig object",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+					"routingConfigTemplate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config. This field reflects the corresponding field of the related SwitchConfig object.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+					"asn": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ASN contains current autonomous system number defined for switch",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"totalPorts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TotalPorts refers to total number of ports",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"switchPorts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SwitchPorts refers to the number of ports excluding management interfaces, loopback etc.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"role": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Role refers to switch's role",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"layer": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Layer refers to switch's current position in connection hierarchy",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"interfaces": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Interfaces refers to switch's interfaces configuration",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfaceSpec"),
+									},
+								},
+							},
+						},
+					},
+					"subnets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Subnets refers to the switch's south subnets",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.SubnetSpec"),
+									},
+								},
+							},
+						},
+					},
+					"loopbackAddresses": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LoopbackAddresses refers to the switch's loopback addresses",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddressSpec"),
+									},
+								},
+							},
+						},
+					},
+					"state": {
+						SchemaProps: spec.SchemaProps{
+							Description: "State is the current state of corresponding object or process",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"message": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Message contains a brief description of the current state",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Condition contains state of port parameters",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConditionSpec"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"layer"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConditionSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.IPAddressSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.InterfaceSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.SubnetSpec", "k8s.io/api/core/v1.LocalObjectReference"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_NumaSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "NumaSpec describes NUMA node",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"id": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ID is NUMA node ID.",
+							Default:     0,
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"cpus": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CPUs is a list of CPU logical IDs in current numa node.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: 0,
+										Type:    []string{"integer"},
+										Format:  "int32",
+									},
+								},
+							},
+						},
+					},
+					"distances": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Distances contains distances to other nodes. Element index corresponds to NUMA node ID.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: 0,
+										Type:    []string{"integer"},
+										Format:  "int32",
+									},
+								},
+							},
+						},
+					},
+					"memory": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Memory contains info about NUMA node memory setup.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.MemorySpec"),
+						},
+					},
+				},
+				Required: []string{"id", "cpus", "distances", "memory"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.MemorySpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_ObjectReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3325,7 +3110,227 @@ func schema_metal_api_apis_switch_v1beta1_ObjectReference(ref common.ReferenceCa
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_PeerInfoSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_PCIDeviceDescriptionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PCIDeviceDescriptionSpec contains one of the options that is describing the PCI device",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"id": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ID is a hexadecimal identifier of device property , that corresponds to the value from PCIIDs database",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is a string value of property extracted from PCIID DB",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"id", "name"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_PCIDeviceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PCIDeviceSpec contains description of PCI device",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"busId": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BusID is an ID of PCI bus on the board device is attached to.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"address": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Address is an ID of device on PCI bus.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"vendor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Vendor refers to manufacturer ore device trademark.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"),
+						},
+					},
+					"subvendor": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Subvendor usually refers to the platform or co-manufacturer. E.g. Lenovo board manufactured for Intel platform (by Intel spec).",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"),
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type shows device's designation.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"),
+						},
+					},
+					"subtype": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Subtype shows device's subsystem.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"),
+						},
+					},
+					"class": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Class refers to generic device designation.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"),
+						},
+					},
+					"subclass": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Subclass narrows the designation scope.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"),
+						},
+					},
+					"interface": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProgrammingInterface specifies communication protocols.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PCIDeviceDescriptionSpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_PartitionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PartitionSpec contains info about partition",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"id": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ID is a GUID of GPT partition or number for MBR partition",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is a human readable name given to the partition",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Size is a size of partition in bytes",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_PartitionTableSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PartitionTableSpec contains info about partition table on block device",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type is a format of partition table",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"partitions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Partitions are active partition records on disk",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PartitionSpec"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.PartitionSpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_Peer(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Peer - contains machine neighbor information collected from LLDP.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"lldp_system_name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LLDPSystemName - defines switch name obtained from Link Layer Discovery Protocol layer 2 neighbor discovery protocol",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lldp_chassis_id": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LLDPChassisID - defines switch ID for chassis obtained from Link Layer Discovery Protocol",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lldp_port_id": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LLDPPortID - defines switch port ID obtained from Link Layer Discovery Protocol",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"lldp_port_description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "LLDPPortDescription - defines switch definition obtained from Link Layer Discovery Protocol",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"resource_reference": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ResourceReference refers to the related resource definition",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ResourceReference"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ResourceReference"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_PeerInfoSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3373,7 +3378,7 @@ func schema_metal_api_apis_switch_v1beta1_PeerInfoSpec(ref common.ReferenceCallb
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_PeerSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_PeerSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3435,7 +3440,7 @@ func schema_metal_api_apis_switch_v1beta1_PeerSpec(ref common.ReferenceCallback)
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_PortParametersSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_PortParametersSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3490,7 +3495,7 @@ func schema_metal_api_apis_switch_v1beta1_PortParametersSpec(ref common.Referenc
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_RegionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_RegionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3518,59 +3523,86 @@ func schema_metal_api_apis_switch_v1beta1_RegionSpec(ref common.ReferenceCallbac
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_SubnetSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_Reservation(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "SubnetSpec defines switch's subnet info",
-				Type:        []string{"object"},
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"subnet": {
+					"status": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Contains information to locate the referenced object",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.ObjectReference"),
-						},
-					},
-					"network": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Contains information to locate the referenced object",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.ObjectReference"),
-						},
-					},
-					"cidr": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CIDR refers to subnet CIDR validation pattern",
+							Description: "Status - defines Machine Order state provided by OOB Machine Resources",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"region": {
+					"class": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Region refers to switch's region",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.RegionSpec"),
+							Description: "Class - defines what class the mahchine was reserved under",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
-					"addressFamily": {
+					"reference": {
 						SchemaProps: spec.SchemaProps{
-							Description: "AddressFamily refers to the AF of subnet",
+							Description: "Reference - defines underlying referenced object.",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ResourceReference"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ResourceReference"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_ResourceReference(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ResourceReference defines related resource info.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion refers to the resource API version",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind refers to the resource kind",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name refers to the resource name",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Namespace refers to the resource namespace",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
-				Required: []string{"subnet", "network"},
 			},
 		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.ObjectReference", "github.com/onmetal/metal-api/apis/switch/v1beta1.RegionSpec"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_Switch(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_Size(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Switch is the Schema for switches API.",
+				Description: "Size is the Schema for the sizes API.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -3596,25 +3628,161 @@ func schema_metal_api_apis_switch_v1beta1_Switch(ref common.ReferenceCallback) c
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchSpec"),
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.SizeSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchStatus"),
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.SizeStatus"),
 						},
 					},
 				},
-				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SizeSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.SizeStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_SwitchConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_SizeList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SizeList contains a list of Size.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.Size"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.Size", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_SizeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SizeSpec defines the desired state of Size.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"constraints": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Constraints is a list of selectors based on machine properties.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConstraintSpec"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ConstraintSpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_SizeStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SizeStatus defines the observed state of Size.",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_SubnetSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SubnetSpec defines switch's subnet info",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"subnet": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Contains information to locate the referenced object",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ObjectReference"),
+						},
+					},
+					"network": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Contains information to locate the referenced object",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.ObjectReference"),
+						},
+					},
+					"cidr": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CIDR refers to subnet CIDR validation pattern",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"region": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Region refers to switch's region",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.RegionSpec"),
+						},
+					},
+					"addressFamily": {
+						SchemaProps: spec.SchemaProps{
+							Description: "AddressFamily refers to the AF of subnet",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"subnet", "network"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.ObjectReference", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.RegionSpec"},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_SwitchConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3644,24 +3812,24 @@ func schema_metal_api_apis_switch_v1beta1_SwitchConfig(ref common.ReferenceCallb
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfigSpec"),
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfigSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfigStatus"),
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfigStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfigSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfigStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfigSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfigStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_SwitchConfigList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_SwitchConfigList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3695,7 +3863,7 @@ func schema_metal_api_apis_switch_v1beta1_SwitchConfigList(ref common.ReferenceC
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfig"),
+										Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfig"),
 									},
 								},
 							},
@@ -3706,11 +3874,11 @@ func schema_metal_api_apis_switch_v1beta1_SwitchConfigList(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.SwitchConfig", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.SwitchConfig", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_SwitchConfigSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_SwitchConfigSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3719,20 +3887,20 @@ func schema_metal_api_apis_switch_v1beta1_SwitchConfigSpec(ref common.ReferenceC
 				Properties: map[string]spec.Schema{
 					"switches": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Switches contains label selector to pick up Switch objects",
+							Description: "Switches contains label selector to pick up NetworkSwitch objects",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
 						},
 					},
 					"portsDefaults": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PortsDefaults contains switch port parameters which will be applied to all ports of the switches which fit selector conditions",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.PortParametersSpec"),
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.PortParametersSpec"),
 						},
 					},
 					"ipam": {
 						SchemaProps: spec.SchemaProps{
-							Description: "IPAM refers to selectors for subnets which will be used for Switch object",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.GeneralIPAMSpec"),
+							Description: "IPAM refers to selectors for subnets which will be used for NetworkSwitch object",
+							Ref:         ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.GeneralIPAMSpec"),
 						},
 					},
 					"routingConfigTemplate": {
@@ -3746,11 +3914,11 @@ func schema_metal_api_apis_switch_v1beta1_SwitchConfigSpec(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.GeneralIPAMSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.PortParametersSpec", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.GeneralIPAMSpec", "github.com/ironcore-dev/metal/apis/metal/v1alpha4.PortParametersSpec", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_SwitchConfigStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_SwitchConfigStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -3761,253 +3929,85 @@ func schema_metal_api_apis_switch_v1beta1_SwitchConfigStatus(ref common.Referenc
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_SwitchList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_SystemSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "SwitchList contains a list of Switch.",
+				Description: "SystemSpec contains DMI system information",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"kind": {
+					"id": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Description: "ID is a UUID of a system board",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"apiVersion": {
+					"manufacturer": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Description: "Manufacturer refers to the company that produced the product",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"metadata": {
+					"productSku": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProductSKU is a product's Stock Keeping Unit",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"serialNumber": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SerialNumber contains serial number of a system",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_metal_apis_metal_v1alpha4_ValidationInventory(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/onmetal/metal-api/apis/switch/v1beta1.Switch"),
-									},
-								},
-							},
+							Ref:     ref("github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventorySpec"),
 						},
 					},
 				},
-				Required: []string{"items"},
+				Required: []string{"spec"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.Switch", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+			"github.com/ironcore-dev/metal/apis/metal/v1alpha4.InventorySpec"},
 	}
 }
 
-func schema_metal_api_apis_switch_v1beta1_SwitchSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_metal_apis_metal_v1alpha4_VirtSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "SwitchSpec contains desired state of resulting Switch configuration",
+				Description: "VirtSpec contains info about detected host virtualization",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"inventoryRef": {
+					"vmType": {
 						SchemaProps: spec.SchemaProps{
-							Description: "InventoryRef contains reference to corresponding inventory object Empty InventoryRef means that there is no corresponding Inventory object",
-							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
-						},
-					},
-					"configSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigSelector contains selector to filter out corresponding SwitchConfig. If the selector is not defined, it will be populated by defaulting webhook with MatchLabels item, containing 'switch.onmetal.de/layer' key with value equals to object's .status.layer.",
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
-						},
-					},
-					"managed": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Managed is a flag defining whether Switch object would be processed during reconciliation",
-							Type:        []string{"boolean"},
+							Description: "VMType is a type of virtual machine engine",
+							Type:        []string{"string"},
 							Format:      "",
-						},
-					},
-					"cordon": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Cordon is a flag defining whether Switch object is taken offline",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"topSpine": {
-						SchemaProps: spec.SchemaProps{
-							Description: "TopSpine is a flag defining whether Switch is a top-level spine switch",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"scanPorts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ScanPorts is a flag defining whether to run periodical scanning on switch ports",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"ipam": {
-						SchemaProps: spec.SchemaProps{
-							Description: "IPAM refers to selectors for subnets which will be used for Switch object",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSpec"),
-						},
-					},
-					"interfaces": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Interfaces contains general configuration for all switch ports",
-							Ref:         ref("github.com/onmetal/metal-api/apis/switch/v1beta1.InterfacesSpec"),
 						},
 					},
 				},
-				Required: []string{"managed", "cordon", "topSpine", "scanPorts"},
 			},
 		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.IPAMSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.InterfacesSpec", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
-	}
-}
-
-func schema_metal_api_apis_switch_v1beta1_SwitchStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SwitchStatus contains observed state of Switch",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"configRef": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigRef contains reference to corresponding SwitchConfig object Empty ConfigRef means that there is no corresponding SwitchConfig object",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
-						},
-					},
-					"routingConfigTemplate": {
-						SchemaProps: spec.SchemaProps{
-							Description: "RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config. This field reflects the corresponding field of the related SwitchConfig object.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
-						},
-					},
-					"asn": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ASN contains current autonomous system number defined for switch",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"totalPorts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "TotalPorts refers to total number of ports",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"switchPorts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "SwitchPorts refers to the number of ports excluding management interfaces, loopback etc.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"role": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Role refers to switch's role",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"layer": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Layer refers to switch's current position in connection hierarchy",
-							Default:     0,
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-					"interfaces": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Interfaces refers to switch's interfaces configuration",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/onmetal/metal-api/apis/switch/v1beta1.InterfaceSpec"),
-									},
-								},
-							},
-						},
-					},
-					"subnets": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Subnets refers to the switch's south subnets",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/onmetal/metal-api/apis/switch/v1beta1.SubnetSpec"),
-									},
-								},
-							},
-						},
-					},
-					"loopbackAddresses": {
-						SchemaProps: spec.SchemaProps{
-							Description: "LoopbackAddresses refers to the switch's loopback addresses",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/onmetal/metal-api/apis/switch/v1beta1.IPAddressSpec"),
-									},
-								},
-							},
-						},
-					},
-					"state": {
-						SchemaProps: spec.SchemaProps{
-							Description: "State is the current state of corresponding object or process",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"message": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Message contains a brief description of the current state",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"conditions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Condition contains state of port parameters",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/onmetal/metal-api/apis/switch/v1beta1.ConditionSpec"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"layer"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/onmetal/metal-api/apis/switch/v1beta1.ConditionSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.IPAddressSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.InterfaceSpec", "github.com/onmetal/metal-api/apis/switch/v1beta1.SubnetSpec", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 

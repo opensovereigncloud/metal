@@ -20,10 +20,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	controllers "github.com/onmetal/metal-api/controllers/machine"
-	domain "github.com/onmetal/metal-api/domain/reservation"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
@@ -35,6 +31,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	controllers "github.com/ironcore-dev/metal/controllers/machine"
+	domain "github.com/ironcore-dev/metal/domain/reservation"
 )
 
 var _ = PDescribe("MachinePool-Controller", func() {
@@ -42,7 +42,7 @@ var _ = PDescribe("MachinePool-Controller", func() {
 	ns := SetupTest(ctx, machinePoolReconcilers)
 
 	It("Should watch machine objects and maintain the machinePool", func() {
-		machine := &machinev1alpha3.Machine{}
+		machine := &metalv1alpha4.Machine{}
 		machinePool := &poolv1alpha1.MachinePool{}
 
 		u, err := uuid.NewUUID()
@@ -112,7 +112,7 @@ var _ = PDescribe("MachinePool-Controller", func() {
 
 		By("Expect successful machine labels update")
 		machine.Labels = map[string]string{
-			"machine.onmetal.de/size-m5-metal-6cpu": "true",
+			"metal.ironcore.dev/size-m5-metal-6cpu": "true",
 		}
 		Expect(k8sClient.Update(ctx, machine)).To(Succeed())
 
@@ -193,7 +193,7 @@ var _ = PDescribe("MachinePool-Controller", func() {
 })
 
 // nolint reason:temp
-func createAvailableMachine(ctx context.Context, name, namespace string, machine *machinev1alpha3.Machine) {
+func createAvailableMachine(ctx context.Context, name, namespace string, machine *metalv1alpha4.Machine) {
 	By("Expect successful machine creation")
 	Expect(k8sClient.Create(ctx, prepareTestMachineWithSizeLabels(name, namespace))).Should(Succeed())
 
@@ -221,53 +221,53 @@ func createAvailableMachine(ctx context.Context, name, namespace string, machine
 }
 
 // nolint reason:temp
-func prepareTestMachineWithSizeLabels(name, namespace string) *machinev1alpha3.Machine {
-	return &machinev1alpha3.Machine{
+func prepareTestMachineWithSizeLabels(name, namespace string) *metalv1alpha4.Machine {
+	return &metalv1alpha4.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"machine.onmetal.de/size-m5-metal-4cpu": "true",
-				"machine.onmetal.de/size-m5-metal-2cpu": "true",
+				"metal.ironcore.dev/size-m5-metal-4cpu": "true",
+				"metal.ironcore.dev/size-m5-metal-2cpu": "true",
 			},
 		},
-		Spec: machinev1alpha3.MachineSpec{
+		Spec: metalv1alpha4.MachineSpec{
 			InventoryRequested: true,
 		},
 	}
 }
 
 // nolint reason:temp
-func prepareMachineStatus(status string) machinev1alpha3.MachineStatus {
-	return machinev1alpha3.MachineStatus{
-		Health: machinev1alpha3.MachineStateHealthy,
-		Network: machinev1alpha3.Network{
-			Interfaces: []machinev1alpha3.Interface{
+func prepareMachineStatus(status string) metalv1alpha4.MachineStatus {
+	return metalv1alpha4.MachineStatus{
+		Health: metalv1alpha4.MachineStateHealthy,
+		Network: metalv1alpha4.Network{
+			Interfaces: []metalv1alpha4.Interface{
 				{Name: "test"},
 				{Name: "test2"},
 			},
 		},
-		Reservation: machinev1alpha3.Reservation{Status: status},
+		Reservation: metalv1alpha4.Reservation{Status: status},
 	}
 }
 
 // nolint reason:temp
 func createSizes(ctx context.Context, namespace string) {
-	size6cpu := inventoryv1alpha1.Size{
+	size6cpu := metalv1alpha4.Size{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "m5-metal-6cpu",
 			Namespace: namespace,
 		},
 	}
 
-	size4cpu := inventoryv1alpha1.Size{
+	size4cpu := metalv1alpha4.Size{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "m5-metal-4cpu",
 			Namespace: namespace,
 		},
 	}
 
-	size2cpu := inventoryv1alpha1.Size{
+	size2cpu := metalv1alpha4.Size{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "m5-metal-2cpu",
 			Namespace: namespace,
@@ -281,14 +281,14 @@ func createSizes(ctx context.Context, namespace string) {
 	}
 	Expect(k8sClient.Create(ctx, oobNS)).To(Succeed(), "failed to create oob namespace")
 
-	size2cpuDuplicate := inventoryv1alpha1.Size{
+	size2cpuDuplicate := metalv1alpha4.Size{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "m5-metal-2cpu",
 			Namespace: oobNS.Name,
 		},
 	}
 
-	testSizes := []inventoryv1alpha1.Size{
+	testSizes := []metalv1alpha4.Size{
 		size6cpu,
 		size4cpu,
 		size2cpu,
@@ -300,7 +300,7 @@ func createSizes(ctx context.Context, namespace string) {
 	}
 
 	Eventually(func() bool {
-		list := &inventoryv1alpha1.SizeList{}
+		list := &metalv1alpha4.SizeList{}
 
 		if err := k8sClient.List(ctx, list); err != nil {
 			return false

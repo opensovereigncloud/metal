@@ -1,10 +1,10 @@
-apiVersion: switch.onmetal.de/v1beta1
-kind: Switch
+apiVersion: metal.ironcore.dev/v1alpha4
+kind: NetworkSwitch
 metadata:
   name: a177382d-a3b4-3ecd-97a4-01cc15e749e4
-  namespace: onmetal
+  namespace: ironcore
   labels:
-    switch.onmetal.de/inventoried: "true"
+    metal.ironcore.dev/inventoried: "true"
   annotations:
     hardware/chassis-id: 68215f47176e
 spec:

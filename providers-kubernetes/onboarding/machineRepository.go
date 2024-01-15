@@ -19,15 +19,16 @@ package providers
 import (
 	"context"
 
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	"github.com/onmetal/metal-api/common/types/events"
-	ipdomain "github.com/onmetal/metal-api/domain/address"
-	domain "github.com/onmetal/metal-api/domain/machine"
-	reservdomain "github.com/onmetal/metal-api/domain/reservation"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/common/types/events"
+	ipdomain "github.com/ironcore-dev/metal/domain/address"
+	domain "github.com/ironcore-dev/metal/domain/machine"
+	reservdomain "github.com/ironcore-dev/metal/domain/reservation"
 )
 
 const (
@@ -88,7 +89,7 @@ func (r *MachineRepository) Update(machine domain.Machine) error {
 }
 
 func (r *MachineRepository) updateMachineSpecAndStatus(
-	machineObj *machine.Machine,
+	machineObj *metalv1alpha4.Machine,
 	machine domain.Machine,
 ) error {
 	r.updateMachine(machineObj, machine)
@@ -151,7 +152,7 @@ func (r *MachineRepository) ByID(id domain.MachineID) (domain.Machine, error) {
 	}, nil
 }
 
-func domainLoopbacks(loopbacks machine.LoopbackAddresses) domain.Loopbacks {
+func domainLoopbacks(loopbacks metalv1alpha4.LoopbackAddresses) domain.Loopbacks {
 	return domain.Loopbacks{
 		IPv4: ipdomain.Address{
 			Prefix: loopbacks.IPv4.Prefix,
@@ -162,8 +163,8 @@ func domainLoopbacks(loopbacks machine.LoopbackAddresses) domain.Loopbacks {
 	}
 }
 
-func (r *MachineRepository) extractMachineFromCluster(options ctrlclient.ListOption) (*machine.Machine, error) {
-	obj := &machine.MachineList{}
+func (r *MachineRepository) extractMachineFromCluster(options ctrlclient.ListOption) (*metalv1alpha4.Machine, error) {
+	obj := &metalv1alpha4.MachineList{}
 	if err := r.
 		client.
 		List(
@@ -179,7 +180,7 @@ func (r *MachineRepository) extractMachineFromCluster(options ctrlclient.ListOpt
 	return &obj.Items[0], nil
 }
 
-func (r *MachineRepository) updateMachine(machineObj *machine.Machine, machine domain.Machine) {
+func (r *MachineRepository) updateMachine(machineObj *metalv1alpha4.Machine, machine domain.Machine) {
 	machineObj.Labels = CopySizeLabels(machineObj.Labels, machine.Size)
 
 	machineObj.Spec.Identity.SKU = machine.SKU
@@ -187,7 +188,7 @@ func (r *MachineRepository) updateMachine(machineObj *machine.Machine, machine d
 }
 
 func (r *MachineRepository) updateMachineStatus(
-	machineObj *machine.Machine,
+	machineObj *metalv1alpha4.Machine,
 	domainMachine domain.Machine,
 ) {
 	if machineObj.Status.Reservation.Status == "" {
@@ -197,30 +198,30 @@ func (r *MachineRepository) updateMachineStatus(
 	machineObj.Status.Network = NetworkStatus(domainMachine)
 }
 
-func updateHealthStatus(interfaces []machine.Interface) machine.MachineState {
+func updateHealthStatus(interfaces []metalv1alpha4.Interface) metalv1alpha4.MachineState {
 	if len(interfaces) < 2 {
-		return machine.MachineStateUnhealthy
+		return metalv1alpha4.MachineStateUnhealthy
 	}
-	return machine.MachineStateHealthy
+	return metalv1alpha4.MachineStateHealthy
 }
 
 func prepareMachine(
 	m domain.Machine,
-) *machine.Machine {
+) *metalv1alpha4.Machine {
 	m.Size["id"] = m.ID.String()
-	return &machine.Machine{
+	return &metalv1alpha4.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.UUID,
 			Namespace: m.Namespace,
 			Labels:    m.Size,
 		},
-		Spec: machine.MachineSpec{
-			Identity: machine.Identity{
+		Spec: metalv1alpha4.MachineSpec{
+			Identity: metalv1alpha4.Identity{
 				SKU:          m.SKU,
 				SerialNumber: m.SerialNumber,
 			},
 		},
-		Status: machine.MachineStatus{},
+		Status: metalv1alpha4.MachineStatus{},
 	}
 }
 
@@ -238,18 +239,18 @@ func CopySizeLabels(
 
 func NetworkStatus(
 	domainMachine domain.Machine,
-) machine.Network {
-	return machine.Network{
+) metalv1alpha4.Network {
+	return metalv1alpha4.Network{
 		ASN:          domainMachine.ASN,
 		Ports:        len(domainMachine.Interfaces),
 		Redundancy:   NetworkRedundancy(domainMachine.Interfaces),
 		UnknownPorts: UnknownPortCount(domainMachine.Interfaces),
 		Interfaces:   domainMachine.Interfaces,
-		Loopbacks: machine.LoopbackAddresses{
-			IPv4: machine.IPAddressSpec{
+		Loopbacks: metalv1alpha4.LoopbackAddresses{
+			IPv4: metalv1alpha4.IPAddrSpec{
 				Prefix: domainMachine.Loopbacks.IPv4.Prefix,
 			},
-			IPv6: machine.IPAddressSpec{
+			IPv6: metalv1alpha4.IPAddrSpec{
 				Prefix: domainMachine.Loopbacks.IPv6.Prefix,
 			},
 		},
@@ -257,7 +258,7 @@ func NetworkStatus(
 }
 
 func NetworkRedundancy(
-	machineInterfaces []machine.Interface,
+	machineInterfaces []metalv1alpha4.Interface,
 ) string {
 	switch {
 	case len(machineInterfaces) == onePort:
@@ -269,7 +270,7 @@ func NetworkRedundancy(
 	}
 }
 
-func UnknownPortCount(machineInterfaces []machine.Interface) int {
+func UnknownPortCount(machineInterfaces []metalv1alpha4.Interface) int {
 	var count int
 	for machinePort := range machineInterfaces {
 		if !machineInterfaces[machinePort].Unknown {

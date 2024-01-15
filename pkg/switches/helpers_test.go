@@ -28,8 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -39,30 +39,30 @@ import (
 
 func TestLabelFromFieldRef(t *testing.T) {
 	t.Parallel()
-	obj := &switchv1beta1.Switch{
+	obj := &metalv1alpha4.NetworkSwitch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sample-switch",
 			Namespace: "metal-api",
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Switch",
+			Kind:       "NetworkSwitch",
 			APIVersion: "v1beta1",
 		},
-		Spec: switchv1beta1.SwitchSpec{
+		Spec: metalv1alpha4.NetworkSwitchSpec{
 			Managed:   pointer.Bool(true),
 			Cordon:    pointer.Bool(false),
 			TopSpine:  pointer.Bool(true),
 			ScanPorts: pointer.Bool(true),
 		},
 	}
-	fieldSelector := &switchv1beta1.FieldSelectorSpec{
-		LabelKey: pointer.String("switch.onmetal.de/object-owner"),
+	fieldSelector := &metalv1alpha4.FieldSelectorSpec{
+		LabelKey: pointer.String("metal.ironcore.dev/object-owner"),
 		FieldRef: &v1.ObjectFieldSelector{
 			APIVersion: "v1beta1",
 			FieldPath:  "metadata.name",
 		},
 	}
-	expected := map[string]string{"switch.onmetal.de/object-owner": "sample-switch"}
+	expected := map[string]string{"metal.ironcore.dev/object-owner": "sample-switch"}
 	label, err := labelFromFieldRef(obj, fieldSelector)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, label)
@@ -70,24 +70,24 @@ func TestLabelFromFieldRef(t *testing.T) {
 
 func TestLabelFromFieldRefFail(t *testing.T) {
 	t.Parallel()
-	obj := &switchv1beta1.Switch{
+	obj := &metalv1alpha4.NetworkSwitch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sample-switch",
 			Namespace: "metal-api",
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Switch",
+			Kind:       "NetworkSwitch",
 			APIVersion: "v1beta1",
 		},
-		Spec: switchv1beta1.SwitchSpec{
+		Spec: metalv1alpha4.NetworkSwitchSpec{
 			Managed:   pointer.Bool(true),
 			Cordon:    pointer.Bool(false),
 			TopSpine:  pointer.Bool(true),
 			ScanPorts: pointer.Bool(true),
 		},
 	}
-	fieldSelector := &switchv1beta1.FieldSelectorSpec{
-		LabelKey: pointer.String("switch.onmetal.de/object-owner"),
+	fieldSelector := &metalv1alpha4.FieldSelectorSpec{
+		LabelKey: pointer.String("metal.ironcore.dev/object-owner"),
 		FieldRef: &v1.ObjectFieldSelector{
 			APIVersion: "v1",
 			FieldPath:  "metadata.name",
@@ -101,7 +101,7 @@ func TestLabelFromFieldRefFail(t *testing.T) {
 
 func TestCalculateASN(t *testing.T) {
 	t.Parallel()
-	loopbacksSamples := []*switchv1beta1.IPAddressSpec{
+	loopbacksSamples := []*metalv1alpha4.IPAddressSpec{
 
 		{
 			Address:       pointer.String("100.64.0.1"),
@@ -117,7 +117,7 @@ func TestCalculateASN(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, expected, asn)
 
-	loopbacksSamples = []*switchv1beta1.IPAddressSpec{
+	loopbacksSamples = []*metalv1alpha4.IPAddressSpec{
 		{
 			Address:       pointer.String("fd00:afc0:e013:1003:ffff::"),
 			AddressFamily: pointer.String(constants.IPv6AF),
@@ -127,7 +127,7 @@ func TestCalculateASN(t *testing.T) {
 	assert.Equal(t, uint32(0), asn)
 	assert.NotNil(t, err)
 
-	loopbacksSamples = []*switchv1beta1.IPAddressSpec{
+	loopbacksSamples = []*metalv1alpha4.IPAddressSpec{
 		{
 			Address:       pointer.String("100.64.999.1"),
 			AddressFamily: pointer.String(constants.IPv4AF),
@@ -144,8 +144,8 @@ func TestCalculateASN(t *testing.T) {
 
 func TestRequestIPs(t *testing.T) {
 	t.Parallel()
-	nicSample := &switchv1beta1.InterfaceSpec{
-		IP: []*switchv1beta1.IPAddressSpec{
+	nicSample := &metalv1alpha4.InterfaceSpec{
+		IP: []*metalv1alpha4.IPAddressSpec{
 			{
 				Address:       pointer.String("100.64.0.1/30"),
 				AddressFamily: pointer.String(constants.IPv4AF),
@@ -153,14 +153,14 @@ func TestRequestIPs(t *testing.T) {
 			{
 				Address:       pointer.String("fd00:afc0:e013:1003:ffff::0/127"),
 				AddressFamily: pointer.String(constants.IPv6AF),
-				ObjectReference: &switchv1beta1.ObjectReference{
+				ObjectReference: &metalv1alpha4.ObjectReference{
 					Name:      pointer.String("sample"),
 					Namespace: pointer.String("default"),
 				},
 			},
 		},
 	}
-	expectedIPs := []*switchv1beta1.IPAddressSpec{
+	expectedIPs := []*metalv1alpha4.IPAddressSpec{
 		{
 			ObjectReference: nil,
 			Address:         pointer.String("100.64.0.2/30"),
@@ -168,7 +168,7 @@ func TestRequestIPs(t *testing.T) {
 			ExtraAddress:    pointer.Bool(false),
 		},
 		{
-			ObjectReference: &switchv1beta1.ObjectReference{
+			ObjectReference: &metalv1alpha4.ObjectReference{
 				Name:      pointer.String("sample"),
 				Namespace: pointer.String("default"),
 			},
@@ -180,8 +180,8 @@ func TestRequestIPs(t *testing.T) {
 	requestedIPs := RequestIPs(nicSample)
 	assert.ElementsMatch(t, expectedIPs, requestedIPs)
 
-	nicSample = &switchv1beta1.InterfaceSpec{
-		IP: []*switchv1beta1.IPAddressSpec{
+	nicSample = &metalv1alpha4.InterfaceSpec{
+		IP: []*metalv1alpha4.IPAddressSpec{
 			{
 				Address:       pointer.String("100.64.0.1/30"),
 				AddressFamily: pointer.String(constants.IPv4AF),
@@ -189,14 +189,14 @@ func TestRequestIPs(t *testing.T) {
 			{
 				Address:       pointer.String("fd00:afc0:e013:1003:ffff::1/112"),
 				AddressFamily: pointer.String(constants.IPv6AF),
-				ObjectReference: &switchv1beta1.ObjectReference{
+				ObjectReference: &metalv1alpha4.ObjectReference{
 					Name:      pointer.String("sample"),
 					Namespace: pointer.String("default"),
 				},
 			},
 		},
 	}
-	expectedIPs = []*switchv1beta1.IPAddressSpec{
+	expectedIPs = []*metalv1alpha4.IPAddressSpec{
 		{
 			ObjectReference: nil,
 			Address:         pointer.String("100.64.0.2/30"),
@@ -204,7 +204,7 @@ func TestRequestIPs(t *testing.T) {
 			ExtraAddress:    pointer.Bool(false),
 		},
 		{
-			ObjectReference: &switchv1beta1.ObjectReference{
+			ObjectReference: &metalv1alpha4.ObjectReference{
 				Name:      pointer.String("sample"),
 				Namespace: pointer.String("default"),
 			},
@@ -237,7 +237,7 @@ func TestConditionsUpdated(t *testing.T) {
 	t.Parallel()
 	tsNow := time.Now()
 	tsPast := tsNow.Add(-time.Hour)
-	conditionsNow := []*switchv1beta1.ConditionSpec{
+	conditionsNow := []*metalv1alpha4.ConditionSpec{
 		{
 			Name:                    pointer.String(constants.ConditionInitialized),
 			State:                   pointer.Bool(true),
@@ -257,7 +257,7 @@ func TestConditionsUpdated(t *testing.T) {
 			LastTransitionTimestamp: pointer.String(tsNow.String()),
 		},
 	}
-	conditionsPast := []*switchv1beta1.ConditionSpec{
+	conditionsPast := []*metalv1alpha4.ConditionSpec{
 		{
 			Name:                    pointer.String(constants.ConditionInitialized),
 			State:                   pointer.Bool(true),
@@ -283,22 +283,22 @@ func TestConditionsUpdated(t *testing.T) {
 
 func TestUpdateSwitchConfigSelector(t *testing.T) {
 	t.Parallel()
-	initialState := &switchv1beta1.Switch{
+	initialState := &metalv1alpha4.NetworkSwitch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sample-switch",
 			Namespace: "metal-api",
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Switch",
+			Kind:       "NetworkSwitch",
 			APIVersion: "v1beta1",
 		},
-		Spec: switchv1beta1.SwitchSpec{
+		Spec: metalv1alpha4.NetworkSwitchSpec{
 			Managed:   pointer.Bool(true),
 			Cordon:    pointer.Bool(false),
 			TopSpine:  pointer.Bool(true),
 			ScanPorts: pointer.Bool(true),
 		},
-		Status: switchv1beta1.SwitchStatus{
+		Status: metalv1alpha4.NetworkSwitchStatus{
 			Layer: 255,
 		},
 	}
@@ -361,12 +361,12 @@ func TestGetTotalAddressesCount(t *testing.T) {
 	)
 	samples, err := GetTestSamples(samplesPath)
 	assert.Nil(t, err)
-	sampleObjects := make([]*switchv1beta1.Switch, 0)
+	sampleObjects := make([]*metalv1alpha4.NetworkSwitch, 0)
 	for _, f := range samples {
 		raw, err := os.ReadFile(f)
 		assert.Nil(t, err)
 		sampleYaml := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
-		obj := &switchv1beta1.Switch{}
+		obj := &metalv1alpha4.NetworkSwitch{}
 		err = sampleYaml.Decode(obj)
 		assert.Nil(t, err)
 		sampleObjects = append(sampleObjects, obj)

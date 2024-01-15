@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
@@ -39,7 +39,7 @@ type v1Alpha1Client struct {
 
 func NewForConfig(c *rest.Config) (V1Alpha1Interface, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &v1alpha1.SchemeGroupVersion
+	config.ContentConfig.GroupVersion = &metalv1alpha4.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()

@@ -27,11 +27,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
-	CAggregateFinalizer = "aggregate.machine.onmetal.de/finalizer"
+	CAggregateFinalizer = "aggregate.metal.ironcore.dev/finalizer"
 )
 
 // AggregateReconciler reconciles a Aggregate object.
@@ -42,14 +42,14 @@ type AggregateReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=aggregates,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=aggregates/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=aggregates/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=aggregates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=aggregates/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=aggregates/finalizers,verbs=update
 
 func (r *AggregateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("aggregate", req.NamespacedName)
 
-	aggregate := &inventories.Aggregate{}
+	aggregate := &metalv1alpha4.Aggregate{}
 	err := r.Get(ctx, req.NamespacedName, aggregate)
 	if apierrors.IsNotFound(err) {
 		log.Error(err, "requested aggregate resource not found", "name", req.NamespacedName)
@@ -89,7 +89,7 @@ func (r *AggregateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	continueToken := ""
 	for {
-		inventoryList := &inventories.InventoryList{}
+		inventoryList := &metalv1alpha4.InventoryList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     CPageLimit,
@@ -142,16 +142,16 @@ func (r *AggregateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *AggregateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&inventories.Aggregate{}).
+		For(&metalv1alpha4.Aggregate{}).
 		Complete(r)
 }
 
-func (r *AggregateReconciler) finalizeAggregate(ctx context.Context, req ctrl.Request, log logr.Logger, aggregate *inventories.Aggregate) error {
+func (r *AggregateReconciler) finalizeAggregate(ctx context.Context, req ctrl.Request, log logr.Logger, aggregate *metalv1alpha4.Aggregate) error {
 	continueToken := ""
 	aggregateKey := aggregate.Name
 
 	for {
-		inventoryList := &inventories.InventoryList{}
+		inventoryList := &metalv1alpha4.InventoryList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     CPageLimit,

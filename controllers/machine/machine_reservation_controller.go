@@ -20,8 +20,6 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	domain "github.com/onmetal/metal-api/domain/reservation"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,6 +29,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	domain "github.com/ironcore-dev/metal/domain/reservation"
 )
 
 // MachineReservationReconciler reconciles a MachineReservation object.
@@ -42,14 +43,14 @@ type MachineReservationReconciler struct {
 }
 
 var (
-	ErrMetalMachineNotMatchedWithComputeMachines = errors.New("metal machine not matched with compute machines")
-	ErrMetalMachineListEmpty                     = errors.New("metal machine list is empty")
-	ErrMetalMachineListNotFound                  = errors.New("metal machine list not found")
+	ErrMetalMachineNotMatchedWithComputeMachines = errors.New("metal metalv1alpha4 not matched with compute machines")
+	ErrMetalMachineListEmpty                     = errors.New("metal metalv1alpha4 list is empty")
+	ErrMetalMachineListNotFound                  = errors.New("metal metalv1alpha4 list not found")
 )
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/finalizers,verbs=update
@@ -64,27 +65,27 @@ func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.R
 		},
 	}
 	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(computeMachine), computeMachine); err != nil {
-		log.Error(err, "could not get compute machine")
+		log.Error(err, "could not get compute metalv1alpha4")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if computeMachine.Spec.MachinePoolRef == nil {
-		log.Info("compute machine has empty machine pool ref. skip reservation update")
+		log.Info("compute metalv1alpha4 has empty metalv1alpha4 pool ref. skip reservation update")
 		return ctrl.Result{}, nil
 	}
 
 	metalMachine, err := r.getMetalMachine(ctx, log, computeMachine)
 	if err != nil {
-		log.Error(err, "could not get metal machine")
+		log.Error(err, "could not get metal metalv1alpha4")
 		return ctrl.Result{}, err
 	}
 
-	if metalMachine.Status.Health != machine.MachineStateHealthy {
-		log.Info("could not update reservation. metal machine is unhealthy")
+	if metalMachine.Status.Health != metalv1alpha4.MachineStateHealthy {
+		log.Info("could not update reservation. metal metalv1alpha4 is unhealthy")
 		return ctrl.Result{}, nil
 	}
 
-	metalMachine.Status.Reservation.Reference = &machine.ResourceReference{
+	metalMachine.Status.Reservation.Reference = &metalv1alpha4.ResourceReference{
 		APIVersion: computeMachine.APIVersion,
 		Kind:       computeMachine.Kind,
 		Name:       computeMachine.Name,
@@ -93,8 +94,8 @@ func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.R
 	metalMachine.Status.Reservation.Status = domain.ReservationStatusReserved
 
 	if err := r.Client.Status().Update(ctx, metalMachine); err != nil {
-		log.Error(err, "could not update metal machine status")
-		return ctrl.Result{}, errors.Wrap(err, "failed to update machine status")
+		log.Error(err, "could not update metal metalv1alpha4 status")
+		return ctrl.Result{}, errors.Wrap(err, "failed to update metalv1alpha4 status")
 	}
 
 	return ctrl.Result{}, nil
@@ -111,13 +112,13 @@ func (r *MachineReservationReconciler) handleComputeMachineDeletion(e event.Dele
 	ctx := context.Background()
 	computeMachine, ok := e.Object.(*computev1alpha1.Machine)
 	if !ok {
-		r.Log.Info("compute machine cast failed")
+		r.Log.Info("compute metalv1alpha4 cast failed")
 		return false
 	}
 
 	metalMachine, err := r.getMetalMachine(ctx, r.Log, computeMachine)
 	if err != nil {
-		r.Log.Error(err, "could not get metal machine")
+		r.Log.Error(err, "could not get metal metalv1alpha4")
 		return false
 	}
 
@@ -125,7 +126,7 @@ func (r *MachineReservationReconciler) handleComputeMachineDeletion(e event.Dele
 	metalMachine.Status.Reservation.Status = domain.ReservationStatusAvailable
 
 	if err := r.Client.Status().Update(ctx, metalMachine); err != nil {
-		r.Log.Error(err, "could not update metal machine status")
+		r.Log.Error(err, "could not update metal metalv1alpha4 status")
 		return false
 	}
 
@@ -142,14 +143,14 @@ func (r *MachineReservationReconciler) getMetalMachine(
 	ctx context.Context,
 	log logr.Logger,
 	computeMachine *computev1alpha1.Machine,
-) (*machine.Machine, error) {
-	metalMachinesList := &machine.MachineList{}
+) (*metalv1alpha4.Machine, error) {
+	metalMachinesList := &metalv1alpha4.MachineList{}
 	err := r.List(ctx, metalMachinesList)
 	switch {
 	case err == nil:
 		log.Info("metal machines list was found")
 		if len(metalMachinesList.Items) == 0 {
-			log.Info("unable to create machine reservation. metal machines list is empty")
+			log.Info("unable to create metalv1alpha4 reservation. metal machines list is empty")
 			return nil, ErrMetalMachineListEmpty
 		}
 	case apierrors.IsNotFound(err):
@@ -162,7 +163,7 @@ func (r *MachineReservationReconciler) getMetalMachine(
 
 	for _, metalMachine := range metalMachinesList.Items {
 		if metalMachine.Name == computeMachine.Spec.MachinePoolRef.Name {
-			log.Info("metal machine matched with machine pool name")
+			log.Info("metal metalv1alpha4 matched with metalv1alpha4 pool name")
 			return &metalMachine, nil
 		}
 	}

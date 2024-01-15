@@ -1,11 +1,11 @@
-apiVersion: switch.onmetal.de/v1beta1
+apiVersion: metal.ironcore.dev/v1beta1
 kind: SwitchConfig
 metadata:
   name: switchconfig-sample
 spec:
   switches:
     matchLabels:
-      switch.onmetal.de/type: "spine"
+      metal.ironcore.dev/type: "spine"
   portsDefaults:
     fec: "rs"
     ipv4MaskLength: 30
@@ -19,24 +19,24 @@ spec:
     carrierSubnets:
       labelSelector:
         matchLabels:
-          ipam.onmetal.de/object-purpose: "switch-carrier"
+          ipam.ironcore.dev/object-purpose: "switch-carrier"
     loopbackSubnets:
       labelSelector:
         matchLabels:
-          ipam.onmetal.de/object-purpose: "switch-loopbacks"
+          ipam.ironcore.dev/object-purpose: "switch-loopbacks"
     southSubnets:
       labelSelector:
         matchLabels:
-          ipam.onmetal.de/object-purpose: "south-subnet"
+          ipam.ironcore.dev/object-purpose: "south-subnet"
       fieldSelector:
-        labelKey: "ipam.onmetal.de/object-owner"
+        labelKey: "ipam.ironcore.dev/object-owner"
         fieldRef:
           fieldPath: "metadata.name"
     loopbackAddresses:
       labelSelector:
         matchLabels:
-          ipam.onmetal.de/object-purpose: "loopback"
+          ipam.ironcore.dev/object-purpose: "loopback"
       fieldSelector:
-        labelKey: "ipam.onmetal.de/object-owner"
+        labelKey: "ipam.ironcore.dev/object-owner"
         fieldRef:
           fieldPath: "metadata.name"

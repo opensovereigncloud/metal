@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
@@ -34,15 +34,15 @@ const (
 )
 
 type SizeInterface interface {
-	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1alpha1.Size, error)
-	List(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.SizeList, error)
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*metalv1alpha4.Size, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*metalv1alpha4.SizeList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
-	Create(ctx context.Context, size *v1alpha1.Size, opts metav1.CreateOptions) (*v1alpha1.Size, error)
-	Update(ctx context.Context, size *v1alpha1.Size, opts metav1.UpdateOptions) (*v1alpha1.Size, error)
-	UpdateStatus(ctx context.Context, size *v1alpha1.Size, opts metav1.UpdateOptions) (*v1alpha1.Size, error)
+	Create(ctx context.Context, size *metalv1alpha4.Size, opts metav1.CreateOptions) (*metalv1alpha4.Size, error)
+	Update(ctx context.Context, size *metalv1alpha4.Size, opts metav1.UpdateOptions) (*metalv1alpha4.Size, error)
+	UpdateStatus(ctx context.Context, size *metalv1alpha4.Size, opts metav1.UpdateOptions) (*metalv1alpha4.Size, error)
 	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1alpha1.Size, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*metalv1alpha4.Size, error)
 }
 
 type sizeClient struct {
@@ -50,8 +50,8 @@ type sizeClient struct {
 	ns         string
 }
 
-func (c *sizeClient) Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1alpha1.Size, error) {
-	result := &v1alpha1.Size{}
+func (c *sizeClient) Get(ctx context.Context, name string, opts metav1.GetOptions) (*metalv1alpha4.Size, error) {
+	result := &metalv1alpha4.Size{}
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
@@ -64,12 +64,12 @@ func (c *sizeClient) Get(ctx context.Context, name string, opts metav1.GetOption
 	return result, err
 }
 
-func (c *sizeClient) List(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.SizeList, error) {
+func (c *sizeClient) List(ctx context.Context, opts metav1.ListOptions) (*metalv1alpha4.SizeList, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 	}
-	result := &v1alpha1.SizeList{}
+	result := &metalv1alpha4.SizeList{}
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
@@ -99,8 +99,8 @@ func (c *sizeClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.
 	return watcher, err
 }
 
-func (c *sizeClient) Create(ctx context.Context, size *v1alpha1.Size, opts metav1.CreateOptions) (*v1alpha1.Size, error) {
-	result := &v1alpha1.Size{}
+func (c *sizeClient) Create(ctx context.Context, size *metalv1alpha4.Size, opts metav1.CreateOptions) (*metalv1alpha4.Size, error) {
+	result := &metalv1alpha4.Size{}
 	err := c.restClient.
 		Post().
 		Namespace(c.ns).
@@ -113,8 +113,8 @@ func (c *sizeClient) Create(ctx context.Context, size *v1alpha1.Size, opts metav
 	return result, err
 }
 
-func (c *sizeClient) Update(ctx context.Context, size *v1alpha1.Size, opts metav1.UpdateOptions) (*v1alpha1.Size, error) {
-	result := &v1alpha1.Size{}
+func (c *sizeClient) Update(ctx context.Context, size *metalv1alpha4.Size, opts metav1.UpdateOptions) (*metalv1alpha4.Size, error) {
+	result := &metalv1alpha4.Size{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CSizesResourceType).
@@ -127,8 +127,8 @@ func (c *sizeClient) Update(ctx context.Context, size *v1alpha1.Size, opts metav
 	return result, err
 }
 
-func (c *sizeClient) UpdateStatus(ctx context.Context, size *v1alpha1.Size, opts metav1.UpdateOptions) (*v1alpha1.Size, error) {
-	result := &v1alpha1.Size{}
+func (c *sizeClient) UpdateStatus(ctx context.Context, size *metalv1alpha4.Size, opts metav1.UpdateOptions) (*metalv1alpha4.Size, error) {
+	result := &metalv1alpha4.Size{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CSizesResourceType).
@@ -168,8 +168,8 @@ func (c *sizeClient) DeleteCollection(ctx context.Context, opts metav1.DeleteOpt
 		Error()
 }
 
-func (c *sizeClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1alpha1.Size, error) {
-	result := &v1alpha1.Size{}
+func (c *sizeClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*metalv1alpha4.Size, error) {
+	result := &metalv1alpha4.Size{}
 	err := c.restClient.Patch(pt).
 		Namespace(c.ns).
 		Resource(CSizesResourceType).

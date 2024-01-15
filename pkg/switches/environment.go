@@ -21,20 +21,20 @@ import (
 
 	"github.com/go-logr/logr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
 )
 
 type SwitchEnvironment struct {
-	Inventory         *inventoryv1alpha1.Inventory
-	Switches          *switchv1beta1.SwitchList
-	Config            *switchv1beta1.SwitchConfig
+	Inventory         *metalv1alpha4.Inventory
+	Switches          *metalv1alpha4.NetworkSwitchList
+	Config            *metalv1alpha4.SwitchConfig
 	LoopbackIPs       *ipamv1alpha1.IPList
 	SouthSubnets      *ipamv1alpha1.SubnetList
 	SwitchPortSubnets *ipamv1alpha1.SubnetList
@@ -50,7 +50,7 @@ func NewSwitchEnvironmentSvc(cl client.Client, log logr.Logger) *SwitchEnvironme
 	return &SwitchEnvironmentSvc{cl, log, nil}
 }
 
-func (in *SwitchEnvironmentSvc) GetEnvironment(ctx context.Context, obj *switchv1beta1.Switch) *SwitchEnvironment {
+func (in *SwitchEnvironmentSvc) GetEnvironment(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) *SwitchEnvironment {
 	in.Log.Info("gathering info about environment")
 	inventory := in.GetInventory(ctx, obj)
 	switches := in.GetSwitches(ctx, obj)
@@ -71,13 +71,13 @@ func (in *SwitchEnvironmentSvc) GetEnvironment(ctx context.Context, obj *switchv
 
 func (in *SwitchEnvironmentSvc) GetInventory(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
-) *inventoryv1alpha1.Inventory {
+	obj *metalv1alpha4.NetworkSwitch,
+) *metalv1alpha4.Inventory {
 	in.Log.Info("requesting for related Inventory object")
 	if obj.GetInventoryRef() == "" {
 		return nil
 	}
-	inventory := &inventoryv1alpha1.Inventory{}
+	inventory := &metalv1alpha4.Inventory{}
 	key := client.ObjectKeyFromObject(obj)
 	err := in.Get(ctx, key, inventory)
 	if err != nil {
@@ -88,10 +88,10 @@ func (in *SwitchEnvironmentSvc) GetInventory(
 
 func (in *SwitchEnvironmentSvc) GetSwitches(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
-) *switchv1beta1.SwitchList {
+	obj *metalv1alpha4.NetworkSwitch,
+) *metalv1alpha4.NetworkSwitchList {
 	in.Log.Info("requesting for list of existing switches")
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	inventoriedLabelReq, _ := labels.NewRequirement(constants.InventoriedLabel, selection.Exists, []string{})
 	selector := labels.NewSelector().Add(*inventoriedLabelReq)
 	opts := &client.ListOptions{
@@ -107,10 +107,10 @@ func (in *SwitchEnvironmentSvc) GetSwitches(
 
 func (in *SwitchEnvironmentSvc) GetSwitchConfig(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
-) *switchv1beta1.SwitchConfig {
+	obj *metalv1alpha4.NetworkSwitch,
+) *metalv1alpha4.SwitchConfig {
 	in.Log.Info("requesting for related SwitchConfig object")
-	switchConfigs := &switchv1beta1.SwitchConfigList{}
+	switchConfigs := &metalv1alpha4.SwitchConfigList{}
 	selector, err := metav1.LabelSelectorAsSelector(obj.GetConfigSelector())
 	if err != nil {
 		return nil
@@ -134,8 +134,8 @@ func (in *SwitchEnvironmentSvc) GetSwitchConfig(
 
 func (in *SwitchEnvironmentSvc) GetLoopbacks(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
-	cfg *switchv1beta1.SwitchConfig,
+	obj *metalv1alpha4.NetworkSwitch,
+	cfg *metalv1alpha4.SwitchConfig,
 ) *ipamv1alpha1.IPList {
 	in.Log.Info("requesting for list of related IP objects")
 	if cfg == nil {
@@ -180,8 +180,8 @@ func (in *SwitchEnvironmentSvc) GetLoopbacks(
 
 func (in *SwitchEnvironmentSvc) GetSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
-	cfg *switchv1beta1.SwitchConfig,
+	obj *metalv1alpha4.NetworkSwitch,
+	cfg *metalv1alpha4.SwitchConfig,
 ) *ipamv1alpha1.SubnetList {
 	in.Log.Info("requesting for list of related Subnet objects")
 	if cfg == nil {
@@ -241,8 +241,8 @@ func (in *SwitchEnvironmentSvc) GetSubnets(
 
 func (in *SwitchEnvironmentSvc) GetSwitchPortsSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
-	cfg *switchv1beta1.SwitchConfig,
+	obj *metalv1alpha4.NetworkSwitch,
+	cfg *metalv1alpha4.SwitchConfig,
 ) *ipamv1alpha1.SubnetList {
 	in.Log.Info("requesting for list of related switch ports Subnet objects")
 	if cfg == nil {
@@ -261,7 +261,7 @@ func (in *SwitchEnvironmentSvc) GetSwitchPortsSubnets(
 		return nil
 	}
 	subnetsCountPerInterface := make(map[string]int)
-	afEnabledCount := func(af *switchv1beta1.AddressFamiliesMap) int {
+	afEnabledCount := func(af *metalv1alpha4.AddressFamiliesMap) int {
 		count := 0
 		if af.GetIPv4() {
 			count = count | 1
@@ -300,8 +300,8 @@ func (in *SwitchEnvironmentSvc) GetSwitchPortsSubnets(
 
 func (in *SwitchEnvironmentSvc) ListIPAMObjects(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
-	params *switchv1beta1.IPAMSelectionSpec,
+	obj *metalv1alpha4.NetworkSwitch,
+	params *metalv1alpha4.IPAMSelectionSpec,
 	list client.ObjectList,
 ) error {
 	selector, err := GetSelectorFromIPAMSpec(obj, params)

@@ -15,8 +15,8 @@
 package dto
 
 import (
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	domain "github.com/onmetal/metal-api/domain/inventory"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
 )
 
 type MachineInfo struct {
@@ -25,7 +25,7 @@ type MachineInfo struct {
 	ProductSKU   string
 	SerialNumber string
 	Sizes        map[string]string
-	Interfaces   []machine.Interface
+	Interfaces   []metalv1alpha4.Interface
 }
 
 func NewMachineInfoFromInventory(inv domain.Inventory) MachineInfo {

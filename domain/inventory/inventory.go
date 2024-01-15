@@ -15,9 +15,10 @@
 package domain
 
 import (
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/errors"
+	"github.com/ironcore-dev/metal/common/types/base"
+	"github.com/ironcore-dev/metal/common/types/errors"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
@@ -33,7 +34,7 @@ type Inventory struct {
 	ProductSKU   string
 	SerialNumber string
 	Sizes        map[string]string
-	NICs         []inventories.NICSpec
+	NICs         []metalv1alpha4.NICSpec
 }
 
 func NewInventory(
@@ -43,7 +44,7 @@ func NewInventory(
 	productSKU string,
 	serialNumber string,
 	sizes map[string]string,
-	NICs []inventories.NICSpec,
+	NICs []metalv1alpha4.NICSpec,
 ) Inventory {
 	domainEntity := base.NewDomainEntity()
 	return Inventory{
@@ -79,7 +80,7 @@ func CreateInventory(
 }
 
 func (i *Inventory) IsMachine() bool {
-	_, ok := i.Sizes[inventories.GetSizeMatchLabel(machineClassName)]
+	_, ok := i.Sizes[metalv1alpha4.GetSizeMatchLabel(machineClassName)]
 	return ok
 }
 

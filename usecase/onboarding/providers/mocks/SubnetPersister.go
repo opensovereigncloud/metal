@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	dto "github.com/onmetal/metal-api/usecase/onboarding/dto"
+	dto "github.com/ironcore-dev/metal/usecase/onboarding/dto"
 	mock "github.com/stretchr/testify/mock"
 )
 

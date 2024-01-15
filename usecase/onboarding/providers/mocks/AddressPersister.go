@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	domain "github.com/onmetal/metal-api/domain/address"
+	domain "github.com/ironcore-dev/metal/domain/address"
 	mock "github.com/stretchr/testify/mock"
 )
 

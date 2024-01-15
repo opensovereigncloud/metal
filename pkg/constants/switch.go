@@ -14,10 +14,6 @@
 
 package constants
 
-import (
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-)
-
 const APIVersion string = "v1beta1"
 
 const (
@@ -43,20 +39,20 @@ const (
 	HardwareChassisIDAnnotation    string = "hardware/chassis-id"
 )
 
-//const SwitchFinalizer string = "switch.onmetal.de/finalizer"
+// const SwitchFinalizer string = "metal.ironcore.dev/finalizer"
 
 const (
-	InventoriedLabel       string = "switch.onmetal.de/inventoried"
-	LabelChassisID         string = "metalapi.onmetal.de/chassis-id"
-	SwitchTypeLabel        string = "switch.onmetal.de/type"
-	SwitchConfigLayerLabel string = "switch.onmetal.de/layer"
+	InventoriedLabel       string = "metal.ironcore.dev/inventoried"
+	LabelChassisID         string = "metalapi.ironcore.dev/chassis-id"
+	SwitchTypeLabel        string = "metal.ironcore.dev/type"
+	SwitchConfigLayerLabel string = "metal.ironcore.dev/layer"
 
-	IPAMObjectPurposeLabel     string = "ipam.onmetal.de/object-purpose"
-	IPAMObjectOwnerLabel       string = "ipam.onmetal.de/object-owner"
-	IPAMObjectGeneratedByLabel string = "ipam.onmetal.de/generated-by"
-	IPAMObjectNICNameLabel     string = "ipam.onmetal.de/interface-name"
+	IPAMObjectPurposeLabel     string = "ipam.ironcore.dev/object-purpose"
+	IPAMObjectOwnerLabel       string = "ipam.ironcore.dev/object-owner"
+	IPAMObjectGeneratedByLabel string = "ipam.ironcore.dev/generated-by"
+	IPAMObjectNICNameLabel     string = "ipam.ironcore.dev/interface-name"
 
-	SizeLabel string = "machine.onmetal.de/size-switch"
+	SizeLabel string = "metal.ironcore.dev/size-switch"
 
 	IPAMLoopbackPurpose    string = "loopback"
 	IPAMSouthSubnetPurpose string = "south-subnet"
@@ -73,8 +69,6 @@ const (
 	SwitchStateProcessing string = "Processing"
 	SwitchStateReady      string = "Ready"
 	SwitchStatePending    string = "Pending"
-
-	LLDPCapabilityStation v1alpha1.LLDPCapabilities = "Station"
 
 	NeighborTypeMachine string = "machine"
 	NeighborTypeSwitch  string = "switch"

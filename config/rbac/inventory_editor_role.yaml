@@ -5,7 +5,7 @@ metadata:
   name: inventory-editor-role
 rules:
 - apiGroups:
-  - machine.onmetal.de
+  - metal.ironcore.dev
   resources:
   - inventories
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - machine.onmetal.de
+  - metal.ironcore.dev
   resources:
   - inventories/status
   verbs:

@@ -2,19 +2,19 @@ package controllers
 
 import (
 	ipam "github.com/onmetal/ipam/api/v1alpha1"
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
 	oob "github.com/onmetal/oob-operator/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 func machineIndex(rawObj client.Object) []string {
-	obj, _ := rawObj.(*machine.Machine)
+	obj, _ := rawObj.(*metalv1alpha4.Machine)
 	return []string{obj.ObjectMeta.Name}
 }
 
 func inventoryIndex(rawObj client.Object) []string {
-	obj, _ := rawObj.(*inventories.Inventory)
+	obj, _ := rawObj.(*metalv1alpha4.Inventory)
 	return []string{obj.ObjectMeta.Name}
 }
 

@@ -1,11 +1,11 @@
-apiVersion: machine.onmetal.de/v1alpha1
+apiVersion: metal.ironcore.dev/v1alpha4
 kind: Inventory
 metadata:
   name: a967954c-3475-11b2-a85c-84d8b4f8cd2d
   namespace: onmetal
   labels:
-    machine.onmetal.de/size-m5.metal: "true"
-    machine.onmetal.de/size-machine: "true"
+    metal.ironcore.dev/size-m5.metal: "true"
+    metal.ironcore.dev/size-machine: "true"
 spec:
   system:
     id: a967954c-3475-11b2-a85c-84d8b4f8cd2d

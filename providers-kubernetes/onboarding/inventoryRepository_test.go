@@ -17,10 +17,10 @@ package providers_test
 import (
 	"testing"
 
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/events"
-	persistence "github.com/onmetal/metal-api/providers-kubernetes/onboarding"
-	"github.com/onmetal/metal-api/providers-kubernetes/onboarding/fake"
+	"github.com/ironcore-dev/metal/common/types/base"
+	"github.com/ironcore-dev/metal/common/types/events"
+	persistence "github.com/ironcore-dev/metal/providers-kubernetes/onboarding"
+	"github.com/ironcore-dev/metal/providers-kubernetes/onboarding/fake"
 	"github.com/stretchr/testify/assert"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -46,7 +46,7 @@ patchesJson6902:
       version: v1
       group: apiextensions.k8s.io
       kind: CustomResourceDefinition
-      name: inventories.machine.onmetal.de
+      name: inventories.metal.ironcore.dev
     path: crd_patch.yaml
 ```
 
@@ -78,8 +78,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	apiv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	clientv1alpha1 "github.com/onmetal/metal-api/clientset/inventory/v1alpha1"
+	apiv1alpha1 "github.com/ironcore-dev/metal/apis/inventory/v1alpha1"
+	clientv1alpha1 "github.com/ironcore-dev/metal/clientset/inventory/v1alpha1"
 )
 
 func inbound() error {
@@ -134,8 +134,8 @@ import (
     
     "k8s.io/client-go/kubernetes/scheme"
     
-	apiv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	clientv1alpha1 "github.com/onmetal/metal-api/clientset/inventory/v1alpha1"
+	apiv1alpha1 "github.com/ironcore-dev/metal/apis/inventory/v1alpha1"
+	clientv1alpha1 "github.com/ironcore-dev/metal/clientset/inventory/v1alpha1"
 )
 
 func outbound() error {

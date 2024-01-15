@@ -31,15 +31,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	metalinventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	metalmachinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	metalmachinev1alpha3apply "github.com/onmetal/metal-api/applyconfiguration/machine/v1alpha3"
-	"github.com/onmetal/metal-api/irimachineprovider/internal/log"
-	"github.com/onmetal/metal-api/irimachineprovider/internal/patch"
-	"github.com/onmetal/metal-api/irimachineprovider/internal/unix"
 	onmetalcomputev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	irimachinev1alpha1 "github.com/onmetal/onmetal-api/ori/apis/machine/v1alpha1"
 	irimetav1alpha1 "github.com/onmetal/onmetal-api/ori/apis/meta/v1alpha1"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	metalv1alpha4apply "github.com/ironcore-dev/metal/applyconfiguration/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/irimachineprovider/internal/log"
+	"github.com/ironcore-dev/metal/irimachineprovider/internal/patch"
+	"github.com/ironcore-dev/metal/irimachineprovider/internal/unix"
 )
 
 func NewGRPCServer(addr string, namespace string) (*GRPCServer, error) {
@@ -116,11 +116,11 @@ func (s *GRPCServer) ListMachines(ctx context.Context, req *irimachinev1alpha1.L
 		return nil, err
 	}
 
-	var machines []metalmachinev1alpha3.Machine
+	var machines []metalv1alpha4.Machine
 	if id == "" {
 		pselector, _ := overlayOntoPrefixed("iri-", selector, map[string]string{})
 		log.Debug(ctx, "Listing machines", "selector", selector)
-		var machineList metalmachinev1alpha3.MachineList
+		var machineList metalv1alpha4.MachineList
 		err := s.List(ctx, &machineList, client.InNamespace(s.namespace), client.MatchingLabels(pselector))
 		if err != nil {
 			return nil, internalError(ctx, fmt.Errorf("could not list machines: %w", err))
@@ -131,7 +131,7 @@ func (s *GRPCServer) ListMachines(ctx context.Context, req *irimachinev1alpha1.L
 		ctx = log.WithValues(ctx, "machine", id)
 
 		log.Debug(ctx, "Getting machine")
-		var machine metalmachinev1alpha3.Machine
+		var machine metalv1alpha4.Machine
 		err := s.Get(ctx, client.ObjectKey{Namespace: s.namespace, Name: id}, &machine)
 		if err != nil {
 			if kerrors.IsNotFound(err) {
@@ -241,16 +241,16 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 	}
 
 	szl := map[string]string{
-		fmt.Sprintf("machine.onmetal.de/size-%s", class): "true",
+		fmt.Sprintf("metal.ironcore.dev/size-%s", class): "true",
 	}
 	log.Debug(ctx, "Listing machines")
-	var machineList metalmachinev1alpha3.MachineList
+	var machineList metalv1alpha4.MachineList
 	err = s.List(ctx, &machineList, client.InNamespace(s.namespace), client.MatchingLabels(szl))
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("could not list machines: %w", err))
 	}
 
-	var machine *metalmachinev1alpha3.Machine
+	var machine *metalv1alpha4.Machine
 	for _, m := range machineList.Items {
 		if m.Status.Reservation.Status == "Available" && m.Status.Health == "Healthy" {
 			machine = &m
@@ -264,8 +264,8 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 	}
 	ctx = log.WithValues(ctx, "machine", machine.Name)
 
-	machineApply := metalmachinev1alpha3apply.Machine(machine.Name, machine.Namespace).WithStatus(metalmachinev1alpha3apply.MachineStatus().WithReservation(metalmachinev1alpha3apply.Reservation().WithStatus("Reserved").WithClass(class)))
-	machine = &metalmachinev1alpha3.Machine{
+	machineApply := metalv1alpha4apply.Machine(machine.Name, machine.Namespace).WithStatus(metalv1alpha4apply.MachineStatus().WithReservation(metalv1alpha4apply.Reservation().WithStatus("Reserved").WithClass(class)))
+	machine = &metalv1alpha4.Machine{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: *machineApply.APIVersion,
 			Kind:       *machineApply.Kind,
@@ -276,12 +276,12 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 		},
 	}
 	log.Debug(ctx, "Applying machine status")
-	err = s.Client.Status().Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-api.onmetal.de/irimachineprovider"), client.ForceOwnership)
+	err = s.Client.Status().Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("could not apply machine status: %w", err))
 	}
 
-	machineApply = metalmachinev1alpha3apply.Machine(machine.Name, machine.Namespace)
+	machineApply = metalv1alpha4apply.Machine(machine.Name, machine.Namespace)
 	annotations, moda := overlayOntoPrefixed("iri-", reqMetadata.Annotations, machine.Annotations)
 	if moda {
 		machineApply = machineApply.WithAnnotations(annotations)
@@ -291,7 +291,7 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 		machineApply = machineApply.WithLabels(labels)
 	}
 	if moda || modl {
-		machine = &metalmachinev1alpha3.Machine{
+		machine = &metalv1alpha4.Machine{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: *machineApply.APIVersion,
 				Kind:       *machineApply.Kind,
@@ -302,7 +302,7 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 			},
 		}
 		log.Debug(ctx, "Applying machine annotations and labels")
-		err = s.Client.Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-api.onmetal.de/irimachineprovider"), client.ForceOwnership)
+		err = s.Client.Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
 		if err != nil {
 			return nil, internalError(ctx, fmt.Errorf("could not apply machine: %w", err))
 		}
@@ -346,7 +346,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 	ctx = log.WithValues(ctx, "machine", id)
 
 	log.Debug(ctx, "Getting machine")
-	var machine metalmachinev1alpha3.Machine
+	var machine metalv1alpha4.Machine
 	err := s.Get(ctx, client.ObjectKey{Namespace: s.namespace, Name: id}, &machine)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
@@ -365,7 +365,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 
 	// TODO: Power
 
-	machineApply := metalmachinev1alpha3apply.Machine(machine.Name, machine.Namespace)
+	machineApply := metalv1alpha4apply.Machine(machine.Name, machine.Namespace)
 	annotations, moda := overlayOntoPrefixed("iri-", map[string]string{}, machine.Annotations)
 	if moda {
 		machineApply = machineApply.WithAnnotations(annotations)
@@ -375,7 +375,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 		machineApply = machineApply.WithLabels(labels)
 	}
 	if moda || modl {
-		machine = metalmachinev1alpha3.Machine{
+		machine = metalv1alpha4.Machine{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: *machineApply.APIVersion,
 				Kind:       *machineApply.Kind,
@@ -386,14 +386,14 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 			},
 		}
 		log.Debug(ctx, "Applying machine annotations and labels")
-		err = s.Client.Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-api.onmetal.de/irimachineprovider"), client.ForceOwnership)
+		err = s.Client.Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
 		if err != nil {
 			return nil, internalError(ctx, fmt.Errorf("could not apply machine: %w", err))
 		}
 	}
 
-	machineApply = metalmachinev1alpha3apply.Machine(machine.Name, machine.Namespace).WithStatus(metalmachinev1alpha3apply.MachineStatus().WithReservation(metalmachinev1alpha3apply.Reservation().WithStatus("Available")))
-	machine = metalmachinev1alpha3.Machine{
+	machineApply = metalv1alpha4apply.Machine(machine.Name, machine.Namespace).WithStatus(metalv1alpha4apply.MachineStatus().WithReservation(metalv1alpha4apply.Reservation().WithStatus("Available")))
+	machine = metalv1alpha4.Machine{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: *machineApply.APIVersion,
 			Kind:       *machineApply.Kind,
@@ -404,7 +404,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 		},
 	}
 	log.Debug(ctx, "Applying machine status")
-	err = s.Client.Status().Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-api.onmetal.de/irimachineprovider"), client.ForceOwnership)
+	err = s.Client.Status().Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("could not apply machine status: %w", err))
 	}
@@ -456,14 +456,14 @@ func (s *GRPCServer) Status(ctx context.Context, _ *irimachinev1alpha1.StatusReq
 	classes := make(map[string]*irimachinev1alpha1.MachineClassStatus)
 
 	log.Debug(ctx, "Listing machines")
-	var machines metalmachinev1alpha3.MachineList
+	var machines metalv1alpha4.MachineList
 	err := s.List(ctx, &machines, client.InNamespace(s.namespace))
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("cannot list machines: %w", err))
 	}
 	for _, m := range machines.Items {
 		for l, v := range m.Labels {
-			sz, ok := strings.CutPrefix(l, "machine.onmetal.de/size-")
+			sz, ok := strings.CutPrefix(l, "metal.ironcore.dev/size-")
 			if !ok || v != "true" {
 				continue
 			}
@@ -475,7 +475,7 @@ func (s *GRPCServer) Status(ctx context.Context, _ *irimachinev1alpha1.StatusReq
 				classes[sz] = nil
 
 				log.Debug(ctxx, "Getting size")
-				var size metalinventoryv1alpha1.Size
+				var size metalv1alpha4.Size
 				err = s.Get(ctx, client.ObjectKey{Namespace: s.namespace, Name: sz}, &size)
 				if err != nil {
 					if kerrors.IsNotFound(err) {

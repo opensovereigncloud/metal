@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
@@ -35,15 +35,15 @@ const (
 )
 
 type SwitchInterface interface {
-	Get(context.Context, string, metav1.GetOptions) (*switchv1beta1.Switch, error)
-	List(context.Context, metav1.ListOptions) (*switchv1beta1.SwitchList, error)
+	Get(context.Context, string, metav1.GetOptions) (*metalv1alpha4.NetworkSwitch, error)
+	List(context.Context, metav1.ListOptions) (*metalv1alpha4.NetworkSwitchList, error)
 	Watch(context.Context, metav1.ListOptions) (watch.Interface, error)
-	Create(context.Context, *switchv1beta1.Switch, metav1.CreateOptions) (*switchv1beta1.Switch, error)
-	Update(context.Context, *switchv1beta1.Switch, metav1.UpdateOptions) (*switchv1beta1.Switch, error)
-	UpdateStatus(context.Context, *switchv1beta1.Switch, metav1.UpdateOptions) (*switchv1beta1.Switch, error)
+	Create(context.Context, *metalv1alpha4.NetworkSwitch, metav1.CreateOptions) (*metalv1alpha4.NetworkSwitch, error)
+	Update(context.Context, *metalv1alpha4.NetworkSwitch, metav1.UpdateOptions) (*metalv1alpha4.NetworkSwitch, error)
+	UpdateStatus(context.Context, *metalv1alpha4.NetworkSwitch, metav1.UpdateOptions) (*metalv1alpha4.NetworkSwitch, error)
 	Delete(context.Context, string, metav1.DeleteOptions) error
 	DeleteCollection(context.Context, metav1.DeleteOptions, metav1.ListOptions) error
-	Patch(context.Context, string, types.PatchType, []byte, metav1.PatchOptions, ...string) (*switchv1beta1.Switch, error)
+	Patch(context.Context, string, types.PatchType, []byte, metav1.PatchOptions, ...string) (*metalv1alpha4.NetworkSwitch, error)
 }
 
 type switchClient struct {
@@ -51,8 +51,8 @@ type switchClient struct {
 	ns         string
 }
 
-func (c *switchClient) Get(ctx context.Context, name string, opts metav1.GetOptions) (*switchv1beta1.Switch, error) {
-	result := &switchv1beta1.Switch{}
+func (c *switchClient) Get(ctx context.Context, name string, opts metav1.GetOptions) (*metalv1alpha4.NetworkSwitch, error) {
+	result := &metalv1alpha4.NetworkSwitch{}
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
@@ -65,12 +65,12 @@ func (c *switchClient) Get(ctx context.Context, name string, opts metav1.GetOpti
 	return result, err
 }
 
-func (c *switchClient) List(ctx context.Context, opts metav1.ListOptions) (*switchv1beta1.SwitchList, error) {
+func (c *switchClient) List(ctx context.Context, opts metav1.ListOptions) (*metalv1alpha4.NetworkSwitchList, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 	}
-	result := &switchv1beta1.SwitchList{}
+	result := &metalv1alpha4.NetworkSwitchList{}
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
@@ -100,8 +100,8 @@ func (c *switchClient) Watch(ctx context.Context, opts metav1.ListOptions) (watc
 	return watcher, err
 }
 
-func (c *switchClient) Create(ctx context.Context, obj *switchv1beta1.Switch, opts metav1.CreateOptions) (*switchv1beta1.Switch, error) {
-	result := &switchv1beta1.Switch{}
+func (c *switchClient) Create(ctx context.Context, obj *metalv1alpha4.NetworkSwitch, opts metav1.CreateOptions) (*metalv1alpha4.NetworkSwitch, error) {
+	result := &metalv1alpha4.NetworkSwitch{}
 	err := c.restClient.
 		Post().
 		Namespace(c.ns).
@@ -114,8 +114,8 @@ func (c *switchClient) Create(ctx context.Context, obj *switchv1beta1.Switch, op
 	return result, err
 }
 
-func (c *switchClient) Update(ctx context.Context, obj *switchv1beta1.Switch, opts metav1.UpdateOptions) (*switchv1beta1.Switch, error) {
-	result := &switchv1beta1.Switch{}
+func (c *switchClient) Update(ctx context.Context, obj *metalv1alpha4.NetworkSwitch, opts metav1.UpdateOptions) (*metalv1alpha4.NetworkSwitch, error) {
+	result := &metalv1alpha4.NetworkSwitch{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CSwitchesResourceType).
@@ -128,8 +128,8 @@ func (c *switchClient) Update(ctx context.Context, obj *switchv1beta1.Switch, op
 	return result, err
 }
 
-func (c *switchClient) UpdateStatus(ctx context.Context, obj *switchv1beta1.Switch, opts metav1.UpdateOptions) (*switchv1beta1.Switch, error) {
-	result := &switchv1beta1.Switch{}
+func (c *switchClient) UpdateStatus(ctx context.Context, obj *metalv1alpha4.NetworkSwitch, opts metav1.UpdateOptions) (*metalv1alpha4.NetworkSwitch, error) {
+	result := &metalv1alpha4.NetworkSwitch{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CSwitchesResourceType).
@@ -176,8 +176,8 @@ func (c *switchClient) Patch(
 	pt types.PatchType,
 	data []byte,
 	opts metav1.PatchOptions,
-	subresources ...string) (*switchv1beta1.Switch, error) {
-	result := &switchv1beta1.Switch{}
+	subresources ...string) (*metalv1alpha4.NetworkSwitch, error) {
+	result := &metalv1alpha4.NetworkSwitch{}
 	err := c.restClient.Patch(pt).
 		Namespace(c.ns).
 		Resource(CSwitchesResourceType).

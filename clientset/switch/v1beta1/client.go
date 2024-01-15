@@ -17,9 +17,10 @@ limitations under the License.
 package v1beta1
 
 import (
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 type SwitchV1Alpha1Interface interface {
@@ -32,7 +33,7 @@ type SwitchV1Alpha1Client struct {
 
 func NewForConfig(c *rest.Config) (*SwitchV1Alpha1Client, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &switchv1beta1.SchemeGroupVersion
+	config.ContentConfig.GroupVersion = &metalv1alpha4.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()

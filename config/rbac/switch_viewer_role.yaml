@@ -5,7 +5,7 @@ metadata:
   name: switch-viewer-role
 rules:
 - apiGroups:
-  - switch.onmetal.de
+  - metal.ironcore.dev
   resources:
   - switches
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - switch.onmetal.de
+  - metal.ironcore.dev
   resources:
   - switches/status
   verbs:

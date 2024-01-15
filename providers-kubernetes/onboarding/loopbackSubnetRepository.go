@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 	ipam "github.com/onmetal/ipam/api/v1alpha1"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"

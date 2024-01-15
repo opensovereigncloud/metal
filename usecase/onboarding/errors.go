@@ -14,7 +14,7 @@
 
 package usecase
 
-import "github.com/onmetal/metal-api/common/types/errors"
+import "github.com/ironcore-dev/metal/common/types/errors"
 
 const (
 	alreadyCreated = "already onboarded"

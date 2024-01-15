@@ -17,8 +17,8 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/onmetal/metal-api/common/types/errors"
-	domain "github.com/onmetal/metal-api/domain/inventory"
+	"github.com/ironcore-dev/metal/common/types/errors"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
 )
 
 type GetInventory interface {

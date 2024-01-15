@@ -2,10 +2,10 @@ apiVersion: ipam.onmetal.de/v1alpha1
 kind: IP
 metadata:
   name: leaf-2-loopback-v6
-  namespace: onmetal
+  namespace: ironcore
   labels:
-    ipam.onmetal.de/object-purpose: "loopback"
-    ipam.onmetal.de/object-owner: "044ca7d1-c6f8-37d8-83ce-bf6a18318f2d"
+    ipam.ironcore.dev/object-purpose: "loopback"
+    ipam.ironcore.dev/object-owner: "044ca7d1-c6f8-37d8-83ce-bf6a18318f2d"
 spec:
   subnet:
     name: loopbacks-v6

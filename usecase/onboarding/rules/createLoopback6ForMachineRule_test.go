@@ -17,11 +17,11 @@ package rules_test
 import (
 	"testing"
 
-	ipdomain "github.com/onmetal/metal-api/domain/address"
-	domain "github.com/onmetal/metal-api/domain/inventory"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers/mocks"
-	"github.com/onmetal/metal-api/usecase/onboarding/rules"
+	ipdomain "github.com/ironcore-dev/metal/domain/address"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers/mocks"
+	"github.com/ironcore-dev/metal/usecase/onboarding/rules"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -49,7 +49,7 @@ func TestNewCreateIPv6LoopbackForMachineRuleSuccess(t *testing.T) {
 		Return(domain.Inventory{
 			UUID: inventoryUUID,
 			Sizes: map[string]string{
-				"machine.onmetal.de/size-machine": "true",
+				"metal.ironcore.dev/size-machine": "true",
 			}}, nil)
 
 	rule := rules.NewCreateLoopback6ForMachineRule(

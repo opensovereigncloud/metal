@@ -19,11 +19,11 @@ import (
 	"net/netip"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/events"
-	ipdomain "github.com/onmetal/metal-api/domain/address"
-	domain "github.com/onmetal/metal-api/domain/inventory"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
+	"github.com/ironcore-dev/metal/common/types/base"
+	"github.com/ironcore-dev/metal/common/types/events"
+	ipdomain "github.com/ironcore-dev/metal/domain/address"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 )
 
 type CreateLoopback4ForMachineRule struct {

@@ -8,7 +8,7 @@ For IPv4 loopback subnets, you need to create a subnet with a specified CIDR ran
 
 Here's an example in YAML:
 ```yaml
-apiVersion: ipam.onmetal.de/v1alpha1
+apiVersion: ipam.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: ipv4-cidr-subnet-sample
@@ -30,7 +30,7 @@ For IPv6 loopback subnets, you should create a parent loopback subnet with a spe
 
 Here's an example in YAML:
 ```yaml
-apiVersion: ipam.onmetal.de/v1alpha1
+apiVersion: ipam.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: ipv6-cidr-subnet-sample

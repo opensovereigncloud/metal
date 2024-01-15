@@ -20,8 +20,8 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	usecase "github.com/onmetal/metal-api/usecase/onboarding"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	usecase "github.com/ironcore-dev/metal/usecase/onboarding"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
 	oob "github.com/onmetal/oob-operator/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )

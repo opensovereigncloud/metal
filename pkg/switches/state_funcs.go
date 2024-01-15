@@ -22,19 +22,20 @@ import (
 	"strings"
 
 	"github.com/go-errors/errors"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
 	v1 "k8s.io/api/core/v1"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
 )
 
-func Initialize(obj *switchv1beta1.Switch, _ *SwitchEnvironment) *StateUpdateResult {
+func Initialize(obj *metalv1alpha4.NetworkSwitch, _ *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionInitialized).
 		SetReason(constants.ReasonConditionInitialized).
 		SetMessage(constants.MessageConditionInitialized)
 	if obj.Uninitialized() {
-		obj.Status = switchv1beta1.SwitchStatus{
-			Conditions:            make([]*switchv1beta1.ConditionSpec, 0),
+		obj.Status = metalv1alpha4.NetworkSwitchStatus{
+			Conditions:            make([]*metalv1alpha4.ConditionSpec, 0),
 			ConfigRef:             v1.LocalObjectReference{},
 			RoutingConfigTemplate: v1.LocalObjectReference{},
 			ASN:                   0,
@@ -42,9 +43,9 @@ func Initialize(obj *switchv1beta1.Switch, _ *SwitchEnvironment) *StateUpdateRes
 			SwitchPorts:           0,
 			Role:                  constants.SwitchRoleLeaf,
 			Layer:                 255,
-			Interfaces:            make(map[string]*switchv1beta1.InterfaceSpec),
-			LoopbackAddresses:     make([]*switchv1beta1.IPAddressSpec, 0),
-			Subnets:               make([]*switchv1beta1.SubnetSpec, 0),
+			Interfaces:            make(map[string]*metalv1alpha4.InterfaceSpec),
+			LoopbackAddresses:     make([]*metalv1alpha4.IPAddressSpec, 0),
+			Subnets:               make([]*metalv1alpha4.SubnetSpec, 0),
 			Message:               nil,
 		}
 		if obj.TopSpine() {
@@ -60,7 +61,7 @@ func Initialize(obj *switchv1beta1.Switch, _ *SwitchEnvironment) *StateUpdateRes
 	return res
 }
 
-func UpdateInterfaces(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdateInterfaces(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionInterfacesOK).
 		SetReason(constants.ReasonConditionInterfacesOK).
@@ -77,7 +78,7 @@ func UpdateInterfaces(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateU
 	return res
 }
 
-func UpdateNeighbors(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdateNeighbors(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionNeighborsOK).
 		SetReason(constants.ReasonConditionNeighborsOK).
@@ -85,7 +86,7 @@ func UpdateNeighbors(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUp
 	if env.Switches == nil {
 		res.SetError(errors.Wrap(constants.ErrorUpdateNeighborsFailed, 0)).
 			SetReason(constants.ErrorReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "SwitchList"))
+			SetMessage(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "NetworkSwitchList"))
 		obj.SetState(constants.SwitchStateInvalid)
 		obj.SetMessage(constants.StateMessageRequestRelatedObjectsFailed)
 		return res
@@ -98,7 +99,7 @@ func UpdateNeighbors(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUp
 			if nicData.Peer.PeerInfoSpec == nil {
 				continue
 			}
-			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &switchv1beta1.PeerInfoSpec{}) {
+			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &metalv1alpha4.PeerInfoSpec{}) {
 				continue
 			}
 			peerChassisID := nicData.Peer.PeerInfoSpec.GetChassisID()
@@ -113,7 +114,7 @@ func UpdateNeighbors(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUp
 	return res
 }
 
-func UpdateLayerAndRole(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdateLayerAndRole(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionLayerAndRoleOK).
 		SetReason(constants.ReasonConditionLayerAndRoleOK).
@@ -121,7 +122,7 @@ func UpdateLayerAndRole(obj *switchv1beta1.Switch, env *SwitchEnvironment) *Stat
 	if env.Switches == nil {
 		res.SetError(errors.Wrap(constants.ErrorUpdateLayerAndRoleFailed, 0)).
 			SetReason(constants.ErrorReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "SwitchList"))
+			SetMessage(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "NetworkSwitchList"))
 		obj.SetState(constants.SwitchStateInvalid)
 		obj.SetMessage(constants.StateMessageRequestRelatedObjectsFailed)
 		return res
@@ -141,7 +142,7 @@ func UpdateLayerAndRole(obj *switchv1beta1.Switch, env *SwitchEnvironment) *Stat
 	return res
 }
 
-func UpdateConfigRef(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdateConfigRef(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionConfigRefOK).
 		SetReason(constants.ReasonConditionConfigRefOK).
@@ -163,7 +164,7 @@ func UpdateConfigRef(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUp
 	return res
 }
 
-func UpdatePortParameters(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdatePortParameters(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionPortParametersOK).
 		SetReason(constants.ReasonConditionPortParametersOK).
@@ -179,7 +180,7 @@ func UpdatePortParameters(obj *switchv1beta1.Switch, env *SwitchEnvironment) *St
 	if env.Switches == nil {
 		res.SetError(errors.Wrap(constants.ErrorUpdatePortParametersFailed, 0)).
 			SetReason(constants.ErrorReasonRequestFailed).
-			SetMessage(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "SwitchList"))
+			SetMessage(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "NetworkSwitchList"))
 		obj.SetState(constants.SwitchStateInvalid)
 		obj.SetMessage(constants.StateMessageRequestRelatedObjectsFailed)
 		return res
@@ -192,7 +193,7 @@ func UpdatePortParameters(obj *switchv1beta1.Switch, env *SwitchEnvironment) *St
 	return res
 }
 
-func UpdateLoopbacks(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdateLoopbacks(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionLoopbacksOK).
 		SetReason(constants.ReasonConditionLoopbacksOK).
@@ -205,7 +206,7 @@ func UpdateLoopbacks(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUp
 		obj.SetMessage(constants.StateMessageMissingRequirements)
 		return res
 	}
-	loopbacksToApply := make([]*switchv1beta1.IPAddressSpec, 0)
+	loopbacksToApply := make([]*metalv1alpha4.IPAddressSpec, 0)
 	for _, item := range env.LoopbackIPs.Items {
 		var af string
 		switch {
@@ -214,21 +215,21 @@ func UpdateLoopbacks(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUp
 		case item.Status.Reserved.Net.Is6():
 			af = constants.IPv6AF
 		}
-		ip := &switchv1beta1.IPAddressSpec{}
+		ip := &metalv1alpha4.IPAddressSpec{}
 		ip.SetObjectReference(item.Name, item.Namespace)
 		ip.SetAddress(item.Status.Reserved.String())
 		ip.SetAddressFamily(af)
 		ip.SetExtraAddress(false)
 		loopbacksToApply = append(loopbacksToApply, ip)
 	}
-	obj.Status.LoopbackAddresses = make([]*switchv1beta1.IPAddressSpec, len(loopbacksToApply))
+	obj.Status.LoopbackAddresses = make([]*metalv1alpha4.IPAddressSpec, len(loopbacksToApply))
 	copy(obj.Status.LoopbackAddresses, loopbacksToApply)
 	obj.SetState(constants.SwitchStateProcessing)
 	obj.SetMessage(constants.EmptyString)
 	return res
 }
 
-func UpdateASN(obj *switchv1beta1.Switch, _ *SwitchEnvironment) *StateUpdateResult {
+func UpdateASN(obj *metalv1alpha4.NetworkSwitch, _ *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionAsnOK).
 		SetReason(constants.ReasonConditionAsnOK).
@@ -248,7 +249,7 @@ func UpdateASN(obj *switchv1beta1.Switch, _ *SwitchEnvironment) *StateUpdateResu
 	return res
 }
 
-func UpdateSubnets(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdateSubnets(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionSubnetsOK).
 		SetReason(constants.ReasonConditionSubnetsOK).
@@ -261,23 +262,23 @@ func UpdateSubnets(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpda
 		obj.SetMessage(constants.StateMessageMissingRequirements)
 		return res
 	}
-	subnetsToApply := make([]*switchv1beta1.SubnetSpec, 0)
+	subnetsToApply := make([]*metalv1alpha4.SubnetSpec, 0)
 	for _, item := range env.SouthSubnets.Items {
-		subnet := &switchv1beta1.SubnetSpec{}
+		subnet := &metalv1alpha4.SubnetSpec{}
 		subnet.SetSubnetObjectRef(item.Name, item.Namespace)
 		subnet.SetNetworkObjectRef(item.Spec.Network.Name, item.Namespace)
 		subnet.SetCIDR(item.Status.Reserved.Net.String())
 		subnet.SetAddressFamily(string(item.Status.Type))
 		subnetsToApply = append(subnetsToApply, subnet)
 	}
-	obj.Status.Subnets = make([]*switchv1beta1.SubnetSpec, len(subnetsToApply))
+	obj.Status.Subnets = make([]*metalv1alpha4.SubnetSpec, len(subnetsToApply))
 	copy(obj.Status.Subnets, subnetsToApply)
 	obj.SetState(constants.SwitchStateProcessing)
 	obj.SetMessage(constants.EmptyString)
 	return res
 }
 
-func UpdateSwitchPortIPs(obj *switchv1beta1.Switch, env *SwitchEnvironment) *StateUpdateResult {
+func UpdateSwitchPortIPs(obj *metalv1alpha4.NetworkSwitch, env *SwitchEnvironment) *StateUpdateResult {
 	var err error
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionIPAddressesOK).
@@ -310,7 +311,7 @@ func UpdateSwitchPortIPs(obj *switchv1beta1.Switch, env *SwitchEnvironment) *Sta
 	return res
 }
 
-func SetStateReady(obj *switchv1beta1.Switch, _ *SwitchEnvironment) *StateUpdateResult {
+func SetStateReady(obj *metalv1alpha4.NetworkSwitch, _ *SwitchEnvironment) *StateUpdateResult {
 	res := NewStateUpdateResult().
 		SetCondition(constants.ConditionReady).
 		SetReason(constants.ReasonConditionReady).
@@ -320,11 +321,11 @@ func SetStateReady(obj *switchv1beta1.Switch, _ *SwitchEnvironment) *StateUpdate
 	return res
 }
 
-func updateNorthIPs(data *switchv1beta1.InterfaceSpec, env *SwitchEnvironment) error {
+func updateNorthIPs(data *metalv1alpha4.InterfaceSpec, env *SwitchEnvironment) error {
 	if env.Switches == nil {
-		return errors.New(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "SwitchList"))
+		return errors.New(fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "NetworkSwitchList"))
 	}
-	ipsToApply := make([]*switchv1beta1.IPAddressSpec, 0)
+	ipsToApply := make([]*metalv1alpha4.IPAddressSpec, 0)
 	for _, item := range env.Switches.Items {
 		if item.Name != data.Peer.GetObjectReferenceName() {
 			continue
@@ -338,14 +339,14 @@ func updateNorthIPs(data *switchv1beta1.InterfaceSpec, env *SwitchEnvironment) e
 			return errors.New(constants.MessageFailedIPAddressRequest)
 		}
 		ipsToApply = append(ipsToApply, requestedIPs...)
-		data.IP = make([]*switchv1beta1.IPAddressSpec, len(ipsToApply))
+		data.IP = make([]*metalv1alpha4.IPAddressSpec, len(ipsToApply))
 		copy(data.IP, ipsToApply)
 	}
 	return nil
 }
 
-func updateSouthIPs(nic string, obj *switchv1beta1.Switch, data *switchv1beta1.InterfaceSpec) error {
-	ipsToApply := make([]*switchv1beta1.IPAddressSpec, 0)
+func updateSouthIPs(nic string, obj *metalv1alpha4.NetworkSwitch, data *metalv1alpha4.InterfaceSpec) error {
+	ipsToApply := make([]*metalv1alpha4.IPAddressSpec, 0)
 	extraIPs, err := GetExtraIPs(obj, nic)
 	if err != nil {
 		return err
@@ -356,7 +357,7 @@ func updateSouthIPs(nic string, obj *switchv1beta1.Switch, data *switchv1beta1.I
 		return err
 	}
 	ipsToApply = append(ipsToApply, computedIPs...)
-	data.IP = make([]*switchv1beta1.IPAddressSpec, len(ipsToApply))
+	data.IP = make([]*metalv1alpha4.IPAddressSpec, len(ipsToApply))
 	copy(data.IP, ipsToApply)
 	return nil
 }

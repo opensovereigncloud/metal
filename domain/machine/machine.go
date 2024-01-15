@@ -17,10 +17,10 @@
 package domain
 
 import (
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/errors"
-	ipdomain "github.com/onmetal/metal-api/domain/address"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/common/types/base"
+	"github.com/ironcore-dev/metal/common/types/errors"
+	ipdomain "github.com/ironcore-dev/metal/domain/address"
 )
 
 type Machine struct {
@@ -32,7 +32,7 @@ type Machine struct {
 	ASN          uint32
 	SKU          string
 	SerialNumber string
-	Interfaces   []machine.Interface
+	Interfaces   []metalv1alpha4.Interface
 	Loopbacks    Loopbacks
 	Size         map[string]string
 }
@@ -44,7 +44,7 @@ func NewMachine(
 	ASN uint32,
 	SKU string,
 	serialNumber string,
-	interfaces []machine.Interface,
+	interfaces []metalv1alpha4.Interface,
 	loopbacks Loopbacks,
 	size map[string]string,
 ) Machine {
@@ -75,7 +75,7 @@ func CreateMachine(
 	namespace string,
 	SKU string,
 	serialNumber string,
-	interfaces []machine.Interface,
+	interfaces []metalv1alpha4.Interface,
 	loopbacks Loopbacks,
 	size map[string]string,
 ) (Machine, errors.BusinessError) {
@@ -101,5 +101,5 @@ func CreateMachine(
 func (m *Machine) SetMachineSizes(sizes map[string]string) { m.Size = sizes }
 
 func MachineAlreadyCreated() errors.BusinessError {
-	return errors.NewBusinessError(alreadyExist, "machine already exist")
+	return errors.NewBusinessError(alreadyExist, "metalv1alpha4 already exist")
 }

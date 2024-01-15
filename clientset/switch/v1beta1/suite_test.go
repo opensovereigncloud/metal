@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -28,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 var cfg *rest.Config
@@ -37,7 +38,7 @@ var testEnv *envtest.Environment
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Switch Controller Suite")
+	RunSpecs(t, "NetworkSwitch Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -55,7 +56,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = switchv1beta1.AddToScheme(scheme.Scheme)
+	err = metalv1alpha4.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

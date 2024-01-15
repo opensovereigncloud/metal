@@ -1,13 +1,102 @@
 <p>Packages:</p>
 <ul>
 <li>
-<a href="#benchmark.onmetal.de%2fv1alpha3">benchmark.onmetal.de/v1alpha3</a>
+<a href="#metal.ironcore.dev%2fv1alpha3">metal.ironcore.dev/v1alpha3</a>
 </li>
 </ul>
-<h2 id="benchmark.onmetal.de/v1alpha3">benchmark.onmetal.de/v1alpha3</h2>
+<h2 id="metal.ironcore.dev/v1alpha3">metal.ironcore.dev/v1alpha3</h2>
 Resource Types:
-<ul></ul>
-<h3 id="benchmark.onmetal.de/v1alpha3.Benchmark">Benchmark
+<ul><li>
+<a href="#metal.ironcore.dev/v1alpha3.MachineBenchmark">MachineBenchmark</a>
+</li></ul>
+<h3 id="metal.ironcore.dev/v1alpha3.MachineBenchmark">MachineBenchmark
+</h3>
+<div>
+<p>MachineBenchmark is the Schema for the machines API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+string</td>
+<td>
+<code>
+metal.ironcore.dev/v1alpha3
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code><br/>
+string
+</td>
+<td><code>MachineBenchmark</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha3.MachineSpec">
+MachineSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>benchmarks</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha3.Benchmarks">
+map[string]..Benchmarks
+</a>
+</em>
+</td>
+<td>
+<p>Benchmarks is the collection of benchmarks.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha3.MachineStatus">
+MachineStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metal.ironcore.dev/v1alpha3.Benchmark">Benchmark
 </h3>
 <div>
 </div>
@@ -43,7 +132,7 @@ uint64
 </tr>
 </tbody>
 </table>
-<h3 id="benchmark.onmetal.de/v1alpha3.BenchmarkDeviation">BenchmarkDeviation
+<h3 id="metal.ironcore.dev/v1alpha3.BenchmarkDeviation">BenchmarkDeviation
 </h3>
 <div>
 <p>BenchmarkDeviation is a deviation between old value and the new one.</p>
@@ -80,94 +169,24 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="benchmark.onmetal.de/v1alpha3.BenchmarkDeviations">BenchmarkDeviations
+<h3 id="metal.ironcore.dev/v1alpha3.BenchmarkDeviations">BenchmarkDeviations
 (<code>[]..BenchmarkDeviation</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.MachineStatus">MachineStatus</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha3.MachineStatus">MachineStatus</a>)
 </p>
 <div>
 </div>
-<h3 id="benchmark.onmetal.de/v1alpha3.Benchmarks">Benchmarks
+<h3 id="metal.ironcore.dev/v1alpha3.Benchmarks">Benchmarks
 (<code>[]..Benchmark</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.MachineSpec">MachineSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha3.MachineSpec">MachineSpec</a>)
 </p>
 <div>
 </div>
-<h3 id="benchmark.onmetal.de/v1alpha3.Machine">Machine
-</h3>
-<div>
-<p>Machine is the Schema for the machines API.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#benchmark.onmetal.de/v1alpha3.MachineSpec">
-MachineSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>benchmarks</code><br/>
-<em>
-<a href="#benchmark.onmetal.de/v1alpha3.Benchmarks">
-map[string]..Benchmarks
-</a>
-</em>
-</td>
-<td>
-<p>Benchmarks is the collection of benchmarks.</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code><br/>
-<em>
-<a href="#benchmark.onmetal.de/v1alpha3.MachineStatus">
-MachineStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="benchmark.onmetal.de/v1alpha3.MachineSpec">MachineSpec
+<h3 id="metal.ironcore.dev/v1alpha3.MachineSpec">MachineSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.Machine">Machine</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha3.MachineBenchmark">MachineBenchmark</a>)
 </p>
 <div>
 <p>MachineSpec contains machine benchmark results.</p>
@@ -184,7 +203,7 @@ MachineStatus
 <td>
 <code>benchmarks</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.Benchmarks">
+<a href="#metal.ironcore.dev/v1alpha3.Benchmarks">
 map[string]..Benchmarks
 </a>
 </em>
@@ -195,10 +214,10 @@ map[string]..Benchmarks
 </tr>
 </tbody>
 </table>
-<h3 id="benchmark.onmetal.de/v1alpha3.MachineStatus">MachineStatus
+<h3 id="metal.ironcore.dev/v1alpha3.MachineStatus">MachineStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#benchmark.onmetal.de/v1alpha3.Machine">Machine</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha3.MachineBenchmark">MachineBenchmark</a>)
 </p>
 <div>
 <p>MachineStatus contains machine benchmarks deviations.</p>
@@ -215,7 +234,7 @@ map[string]..Benchmarks
 <td>
 <code>machine_deviation</code><br/>
 <em>
-<a href="#benchmark.onmetal.de/v1alpha3.BenchmarkDeviations">
+<a href="#metal.ironcore.dev/v1alpha3.BenchmarkDeviations">
 map[string]..BenchmarkDeviations
 </a>
 </em>
@@ -229,5 +248,5 @@ map[string]..BenchmarkDeviations
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>1a7d81b</code>.
+on git commit <code>95c3af5</code>.
 </em></p>

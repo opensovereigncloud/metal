@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 // nolint:forcetypeassert
@@ -53,17 +53,17 @@ var _ = PDescribe("Aggregate client", func() {
 
 			client := clientset.Aggregates(AggregateNamespace)
 
-			aggregate := &v1alpha1.Aggregate{
+			aggregate := &metalv1alpha4.Aggregate{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      AggregateName,
 					Namespace: AggregateNamespace,
 				},
-				Spec: v1alpha1.AggregateSpec{
-					Aggregates: []v1alpha1.AggregateItem{
+				Spec: metalv1alpha4.AggregateSpec{
+					Aggregates: []metalv1alpha4.AggregateItem{
 						{
-							SourcePath: *v1alpha1.JSONPathFromString("spec.cpus"),
-							TargetPath: *v1alpha1.JSONPathFromString("status.computed.cpus.cpuCount"),
-							Aggregate:  v1alpha1.CCountAggregateType,
+							SourcePath: *metalv1alpha4.JSONPathFromString("spec.cpus"),
+							TargetPath: *metalv1alpha4.JSONPathFromString("status.computed.cpus.cpuCount"),
+							Aggregate:  metalv1alpha4.CCountAggregateType,
 						},
 					},
 				},
@@ -75,7 +75,7 @@ var _ = PDescribe("Aggregate client", func() {
 			events := watcher.ResultChan()
 
 			By("Creating Aggregate")
-			createdAggregate := &v1alpha1.Aggregate{}
+			createdAggregate := &metalv1alpha4.Aggregate{}
 			go func() {
 				defer GinkgoRecover()
 				createdAggregate, err = client.Create(ctx, aggregate, v1.CreateOptions{})
@@ -87,14 +87,14 @@ var _ = PDescribe("Aggregate client", func() {
 			event := &watch.Event{}
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Added))
-			eventAggregate := event.Object.(*v1alpha1.Aggregate)
+			eventAggregate := event.Object.(*metalv1alpha4.Aggregate)
 			Expect(eventAggregate).NotTo(BeNil())
 			Expect(eventAggregate.Spec).Should(Equal(aggregate.Spec))
 
 			<-finished
 
 			By("Updating Aggregate")
-			createdAggregate.Spec.Aggregates[0].SourcePath = *v1alpha1.JSONPathFromString("spec.nets")
+			createdAggregate.Spec.Aggregates[0].SourcePath = *metalv1alpha4.JSONPathFromString("spec.nets")
 			go func() {
 				defer GinkgoRecover()
 				updatedAggregate, err := client.Update(ctx, createdAggregate, v1.UpdateOptions{})
@@ -105,7 +105,7 @@ var _ = PDescribe("Aggregate client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventAggregate = event.Object.(*v1alpha1.Aggregate)
+			eventAggregate = event.Object.(*metalv1alpha4.Aggregate)
 			Expect(eventAggregate).NotTo(BeNil())
 			Expect(eventAggregate.Spec).Should(Equal(createdAggregate.Spec))
 
@@ -129,15 +129,15 @@ var _ = PDescribe("Aggregate client", func() {
 				defer GinkgoRecover()
 				patchedAggregate, err := client.Patch(ctx, AggregateName, types.JSONPatchType, patchData, v1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedAggregate.Spec.Aggregates[0].TargetPath).Should(BeEquivalentTo(*v1alpha1.JSONPathFromString(patch[0].Value)))
+				Expect(patchedAggregate.Spec.Aggregates[0].TargetPath).Should(BeEquivalentTo(*metalv1alpha4.JSONPathFromString(patch[0].Value)))
 				finished <- true
 			}()
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventAggregate = event.Object.(*v1alpha1.Aggregate)
+			eventAggregate = event.Object.(*metalv1alpha4.Aggregate)
 			Expect(eventAggregate).NotTo(BeNil())
-			Expect(eventAggregate.Spec.Aggregates[0].TargetPath).Should(Equal(*v1alpha1.JSONPathFromString(patch[0].Value)))
+			Expect(eventAggregate.Spec.Aggregates[0].TargetPath).Should(Equal(*metalv1alpha4.JSONPathFromString(patch[0].Value)))
 
 			<-finished
 
@@ -148,7 +148,7 @@ var _ = PDescribe("Aggregate client", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(events).Should(Receive())
 
-			aggregateToDelete := &v1alpha1.Aggregate{
+			aggregateToDelete := &metalv1alpha4.Aggregate{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      AggregateToDeleteName,
 					Namespace: AggregateNamespace,
@@ -156,12 +156,12 @@ var _ = PDescribe("Aggregate client", func() {
 						DeleteLabel: "",
 					},
 				},
-				Spec: v1alpha1.AggregateSpec{
-					Aggregates: []v1alpha1.AggregateItem{
+				Spec: metalv1alpha4.AggregateSpec{
+					Aggregates: []metalv1alpha4.AggregateItem{
 						{
-							SourcePath: *v1alpha1.JSONPathFromString("a.b.c"),
-							TargetPath: *v1alpha1.JSONPathFromString("q.w.e"),
-							Aggregate:  v1alpha1.CSumAggregateType,
+							SourcePath: *metalv1alpha4.JSONPathFromString("a.b.c"),
+							TargetPath: *metalv1alpha4.JSONPathFromString("q.w.e"),
+							Aggregate:  metalv1alpha4.CSumAggregateType,
 						},
 					},
 				},
@@ -192,7 +192,7 @@ var _ = PDescribe("Aggregate client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventAggregate = event.Object.(*v1alpha1.Aggregate)
+			eventAggregate = event.Object.(*metalv1alpha4.Aggregate)
 			Expect(eventAggregate).NotTo(BeNil())
 			Expect(eventAggregate.Name).To(Equal(AggregateToDeleteName))
 
@@ -206,7 +206,7 @@ var _ = PDescribe("Aggregate client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventAggregate = event.Object.(*v1alpha1.Aggregate)
+			eventAggregate = event.Object.(*metalv1alpha4.Aggregate)
 			Expect(eventAggregate).NotTo(BeNil())
 			Expect(eventAggregate.Name).To(Equal(AggregateName))
 

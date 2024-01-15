@@ -22,7 +22,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+
 	"k8s.io/utils/pointer"
 
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
@@ -59,9 +60,9 @@ const (
 		"boot"
 )
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
@@ -70,7 +71,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	log.Info("reconcile started")
 
-	machine := &v1alpha3.Machine{
+	machine := &metalv1alpha4.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
@@ -133,7 +134,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			Namespace: req.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         v1alpha3.SchemeGroupVersion.Version,
+					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
 					Kind:               machineKind,
 					Name:               machine.Name,
 					UID:                machine.UID,
@@ -173,7 +174,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 func (r *IpxeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha3.Machine{}).
+		For(&metalv1alpha4.Machine{}).
 		Complete(r)
 }
 

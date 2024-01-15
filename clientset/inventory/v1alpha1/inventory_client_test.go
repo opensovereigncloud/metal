@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 // nolint:forcetypeassert
@@ -54,19 +54,19 @@ var _ = PDescribe("Inventory client", func() {
 
 			client := clientset.Inventories(InventoryNamespace)
 
-			inventory := &v1alpha1.Inventory{
+			inventory := &metalv1alpha4.Inventory{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      InventoryName,
 					Namespace: InventoryNamespace,
 				},
-				Spec: v1alpha1.InventorySpec{
-					System: &v1alpha1.SystemSpec{
+				Spec: metalv1alpha4.InventorySpec{
+					System: &metalv1alpha4.SystemSpec{
 						ID:           "a967954c-3475-11b2-a85c-84d8b4f8cd2d",
 						Manufacturer: "LENOVO",
 						ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
 						SerialNumber: "R90QR6J0",
 					},
-					Blocks: []v1alpha1.BlockSpec{
+					Blocks: []metalv1alpha4.BlockSpec{
 						{
 							Name:       "JustDisk",
 							Type:       "SCSI",
@@ -75,10 +75,10 @@ var _ = PDescribe("Inventory client", func() {
 							Size:       1000,
 						},
 					},
-					Memory: &v1alpha1.MemorySpec{
+					Memory: &metalv1alpha4.MemorySpec{
 						Total: 1024000,
 					},
-					CPUs: []v1alpha1.CPUSpec{
+					CPUs: []metalv1alpha4.CPUSpec{
 						{
 							PhysicalID: 0,
 							LogicalIDs: []uint64{0, 1, 2, 3},
@@ -97,7 +97,7 @@ var _ = PDescribe("Inventory client", func() {
 							BogoMIPS: resource.MustParse("0"),
 						},
 					},
-					NICs: []v1alpha1.NICSpec{
+					NICs: []metalv1alpha4.NICSpec{
 						{
 							Name:       "enp0s31f6",
 							PCIAddress: "0000:00:1f.6",
@@ -106,7 +106,7 @@ var _ = PDescribe("Inventory client", func() {
 							Speed:      1000,
 						},
 					},
-					Host: &v1alpha1.HostSpec{
+					Host: &metalv1alpha4.HostSpec{
 						Name: "dummy.localdomain",
 					},
 				},
@@ -118,7 +118,7 @@ var _ = PDescribe("Inventory client", func() {
 			events := watcher.ResultChan()
 
 			By("Creating Inventory")
-			createdInventory := &v1alpha1.Inventory{}
+			createdInventory := &metalv1alpha4.Inventory{}
 			go func() {
 				defer GinkgoRecover()
 				createdInventory, err = client.Create(ctx, inventory, v1.CreateOptions{})
@@ -130,7 +130,7 @@ var _ = PDescribe("Inventory client", func() {
 			event := &watch.Event{}
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Added))
-			eventInventory := event.Object.(*v1alpha1.Inventory)
+			eventInventory := event.Object.(*metalv1alpha4.Inventory)
 			Expect(eventInventory).NotTo(BeNil())
 			Expect(eventInventory.Spec).Should(Equal(inventory.Spec))
 
@@ -148,7 +148,7 @@ var _ = PDescribe("Inventory client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventInventory = event.Object.(*v1alpha1.Inventory)
+			eventInventory = event.Object.(*metalv1alpha4.Inventory)
 			Expect(eventInventory).NotTo(BeNil())
 			Expect(eventInventory.Spec).Should(Equal(createdInventory.Spec))
 
@@ -178,7 +178,7 @@ var _ = PDescribe("Inventory client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventInventory = event.Object.(*v1alpha1.Inventory)
+			eventInventory = event.Object.(*metalv1alpha4.Inventory)
 			Expect(eventInventory).NotTo(BeNil())
 			Expect(eventInventory.Spec.Host.Name).Should(Equal(patch[0].Value))
 
@@ -222,7 +222,7 @@ var _ = PDescribe("Inventory client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventInventory = event.Object.(*v1alpha1.Inventory)
+			eventInventory = event.Object.(*metalv1alpha4.Inventory)
 			Expect(eventInventory).NotTo(BeNil())
 			Expect(eventInventory.Name).To(Equal(InventoryToDeleteName))
 
@@ -236,7 +236,7 @@ var _ = PDescribe("Inventory client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventInventory = event.Object.(*v1alpha1.Inventory)
+			eventInventory = event.Object.(*metalv1alpha4.Inventory)
 			Expect(eventInventory).NotTo(BeNil())
 			Expect(eventInventory.Name).To(Equal(InventoryName))
 

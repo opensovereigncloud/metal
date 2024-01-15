@@ -1,5 +1,5 @@
-apiVersion: switch.onmetal.de/v1alpha1
-kind: Switch
+apiVersion: metal.ironcore.dev/v1alpha4
+kind: NetworkSwitch
 metadata:
   name: switch-sample
 spec:
@@ -35,8 +35,8 @@ status:
         portDescription: Ethernet108
         portId: Eth28/1
         resourceReference:
-          apiVersion: switch.onmetal.de/v1alpha1
-          kind: Switch
+          apiVersion: metal.ironcore.dev/v1alpha4
+          kind: NetworkSwitch
           name: b9a234a5-416b-3d49-a4f8-65b6f30c8ee5
           namespace: onmetal
         systemName: sonic-leaf-1

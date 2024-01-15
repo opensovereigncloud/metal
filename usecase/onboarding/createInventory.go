@@ -19,8 +19,8 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/onmetal/metal-api/common/types/errors"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/common/types/errors"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
 )
 
 type CreateInventory interface {

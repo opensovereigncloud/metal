@@ -20,14 +20,15 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/pkg/benchmark"
-	machinerr "github.com/onmetal/metal-api/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/benchmark"
+	machinerr "github.com/ironcore-dev/metal/pkg/errors"
 )
 
 type OnboardingReconciler struct {
@@ -40,7 +41,7 @@ type OnboardingReconciler struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&inventoriesv1alpha1.Inventory{}).
+		For(&metalv1alpha4.Inventory{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }

@@ -19,12 +19,12 @@ package controllers
 import (
 	"context"
 
-	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 var _ = Describe("machine-controller", func() {
@@ -49,34 +49,34 @@ func testBenchmarkOnboarding(name, namespace string) {
 	Expect(k8sClient.Create(ctx, inventory)).Should(BeNil())
 
 	By("Expect successful benchmark creation")
-	b := &benchv1alpha3.Machine{}
+	b := &metalv1alpha4.Benchmark{}
 	Eventually(func(g Gomega) error {
 		return k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, b)
 	}, timeout, interval).Should(Succeed())
 }
 
-func prepareInventory(name, namespace string) *inventoriesv1alpha1.Inventory {
-	return &inventoriesv1alpha1.Inventory{
+func prepareInventory(name, namespace string) *metalv1alpha4.Inventory {
+	return &metalv1alpha4.Inventory{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec:       prepareSpecForInventory(name),
 	}
 }
 
-func prepareSpecForInventory(name string) inventoriesv1alpha1.InventorySpec {
-	return inventoriesv1alpha1.InventorySpec{
-		System: &inventoriesv1alpha1.SystemSpec{
+func prepareSpecForInventory(name string) metalv1alpha4.InventorySpec {
+	return metalv1alpha4.InventorySpec{
+		System: &metalv1alpha4.SystemSpec{
 			ID: name,
 		},
-		Host: &inventoriesv1alpha1.HostSpec{
+		Host: &metalv1alpha4.HostSpec{
 			Name: "node1",
 		},
-		Blocks: []inventoriesv1alpha1.BlockSpec{},
-		Memory: &inventoriesv1alpha1.MemorySpec{},
-		CPUs:   []inventoriesv1alpha1.CPUSpec{},
-		NICs: []inventoriesv1alpha1.NICSpec{
+		Blocks: []metalv1alpha4.BlockSpec{},
+		Memory: &metalv1alpha4.MemorySpec{},
+		CPUs:   []metalv1alpha4.CPUSpec{},
+		NICs: []metalv1alpha4.NICSpec{
 			{
 				Name: "enp0s31f6",
-				LLDPs: []inventoriesv1alpha1.LLDPSpec{
+				LLDPs: []metalv1alpha4.LLDPSpec{
 					{
 						ChassisID:         "3c:2c:99:9d:cd:48",
 						SystemName:        "EC1817001226",
@@ -88,7 +88,7 @@ func prepareSpecForInventory(name string) inventoriesv1alpha1.InventorySpec {
 			},
 			{
 				Name: "enp1s32f6",
-				LLDPs: []inventoriesv1alpha1.LLDPSpec{
+				LLDPs: []metalv1alpha4.LLDPSpec{
 					{
 						ChassisID:         "3c:2c:99:9d:cd:48",
 						SystemName:        "EC1817001226",

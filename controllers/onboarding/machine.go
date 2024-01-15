@@ -21,13 +21,13 @@ import (
 
 	"github.com/go-logr/logr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1lpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	domain "github.com/onmetal/metal-api/domain/inventory"
-	usecase "github.com/onmetal/metal-api/usecase/onboarding"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
+	usecase "github.com/ironcore-dev/metal/usecase/onboarding"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
 )
 
 type OnboardingMachineReconciler struct {
@@ -62,7 +62,7 @@ func (r *OnboardingMachineReconciler) SetupWithManager(
 		GetFieldIndexer().
 		IndexField(
 			context.Background(),
-			&machinev1lpha3.Machine{},
+			&metalv1alpha4.Machine{},
 			"metadata.name",
 			machineIndex,
 		); err != nil {
@@ -73,7 +73,7 @@ func (r *OnboardingMachineReconciler) SetupWithManager(
 		GetFieldIndexer().
 		IndexField(
 			context.Background(),
-			&inventories.Inventory{},
+			&metalv1alpha4.Inventory{},
 			"metadata.name",
 			inventoryIndex,
 		); err != nil {
@@ -104,7 +104,7 @@ func (r *OnboardingMachineReconciler) SetupWithManager(
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&inventories.Inventory{}).
+		For(&metalv1alpha4.Inventory{}).
 		Complete(r)
 }
 

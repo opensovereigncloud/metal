@@ -51,9 +51,8 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
 )
 
 var (
@@ -71,15 +70,17 @@ var PatchOpts *client.SubResourcePatchOptions = &client.SubResourcePatchOptions{
 	},
 }
 
-func ApplyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventoryv1alpha1.Inventory) {
+const LLDPCapabilityStation metalv1alpha4.LLDPCapabilities = "Station"
+
+func ApplyInterfacesFromInventory(obj *metalv1alpha4.NetworkSwitch, inventory *metalv1alpha4.Inventory) {
 	if obj.Status.Interfaces == nil {
-		obj.Status.Interfaces = make(map[string]*switchv1beta1.InterfaceSpec)
+		obj.Status.Interfaces = make(map[string]*metalv1alpha4.InterfaceSpec)
 	}
 	for _, item := range inventory.Spec.NICs {
 		if !strings.HasPrefix(item.Name, constants.SwitchPortNamePrefix) {
 			continue
 		}
-		iface := &switchv1beta1.InterfaceSpec{}
+		iface := &metalv1alpha4.InterfaceSpec{}
 		iface.SetMACAddress(item.MACAddress)
 		iface.SetSpeed(item.Speed)
 		iface.SetDirection(constants.DirectionSouth)
@@ -90,9 +91,9 @@ func ApplyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventor
 			continue
 		}
 		neighborData := item.LLDPs[0]
-		peerData := &switchv1beta1.PeerSpec{
-			PeerInfoSpec:    &switchv1beta1.PeerInfoSpec{},
-			ObjectReference: &switchv1beta1.ObjectReference{},
+		peerData := &metalv1alpha4.PeerSpec{
+			PeerInfoSpec:    &metalv1alpha4.PeerInfoSpec{},
+			ObjectReference: &metalv1alpha4.ObjectReference{},
 		}
 		peerData.SetChassisID(neighborData.ChassisID)
 		peerData.SetSystemName(neighborData.SystemName)
@@ -103,7 +104,7 @@ func ApplyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventor
 				return constants.NeighborTypeMachine
 			}
 			for _, capability := range neighborData.Capabilities {
-				if capability == constants.LLDPCapabilityStation {
+				if capability == LLDPCapabilityStation {
 					return constants.NeighborTypeMachine
 				}
 			}
@@ -116,13 +117,13 @@ func ApplyInterfacesFromInventory(obj *switchv1beta1.Switch, inventory *inventor
 	obj.SetTotalPorts(uint32(len(inventory.Spec.NICs)))
 }
 
-func ApplyInterfaceParams(obj *switchv1beta1.Switch, config *switchv1beta1.SwitchConfig) {
+func ApplyInterfaceParams(obj *metalv1alpha4.NetworkSwitch, config *metalv1alpha4.SwitchConfig) {
 	// set interfaces params:
 	//   overrides - the highest priority
 	//   defaults defined in switch spec - have higher priority then global params
 	//   defined in switchConfig - applied if overrides & default are not defined
 	basicParameters := config.Spec.PortsDefaults.DeepCopy()
-	overriddenParameters := make(map[string]*switchv1beta1.PortParametersSpec)
+	overriddenParameters := make(map[string]*metalv1alpha4.PortParametersSpec)
 	if obj.Spec.Interfaces == nil {
 		for _, params := range obj.Status.Interfaces {
 			params.PortParametersSpec = basicParameters.DeepCopy()
@@ -146,11 +147,11 @@ func ApplyInterfaceParams(obj *switchv1beta1.Switch, config *switchv1beta1.Switc
 	}
 }
 
-func AlignInterfacesWithParams(obj *switchv1beta1.Switch) {
-	// Since the source of truth for switch configuration is the parameters defined in SwitchConfig and Switch specs,
+func AlignInterfacesWithParams(obj *metalv1alpha4.NetworkSwitch) {
+	// Since the source of truth for switch configuration is the parameters defined in SwitchConfig and NetworkSwitch specs,
 	// it might occur that data from Inventory does not match these parameters. For instance, there might be no
 	// breakout into lanes configured on physical switch yet, hence Inventory will store some interface with, say, 4
-	// lanes. However, in the same time it might be defined in SwitchConfig (or Switch overrides) that every interface
+	// lanes. However, in the same time it might be defined in SwitchConfig (or NetworkSwitch overrides) that every interface
 	// should have 1 line, so we want to configure breakout for interfaces. This will lead to the discrepancy between
 	// interfaces entries and the total number of used lanes. Which in turn will lead to incorrect calculation of
 	// the number of IP addresses required for south subnet.
@@ -172,7 +173,7 @@ func AlignInterfacesWithParams(obj *switchv1beta1.Switch) {
 	//  - interface Ethernet6, number of lines 2 - match in case there is interface Ethernet4, otherwise it should be
 	//    added;
 
-	toAddTotal := make(map[string]*switchv1beta1.InterfaceSpec)
+	toAddTotal := make(map[string]*metalv1alpha4.InterfaceSpec)
 	toRemoveTotal := make(map[string]struct{})
 	for name, data := range obj.Status.Interfaces {
 		ok, index := indexDivisibleWithoutRemainder(name, 2)
@@ -207,8 +208,8 @@ func indexDivisibleWithoutRemainder(name string, divider int) (bool, int) {
 	return index%divider == 0, index
 }
 
-func processEvenInterface(obj *switchv1beta1.Switch, index int) (map[string]*switchv1beta1.InterfaceSpec, map[string]struct{}) {
-	toAdd := make(map[string]*switchv1beta1.InterfaceSpec)
+func processEvenInterface(obj *metalv1alpha4.NetworkSwitch, index int) (map[string]*metalv1alpha4.InterfaceSpec, map[string]struct{}) {
+	toAdd := make(map[string]*metalv1alpha4.InterfaceSpec)
 	toRemove := make(map[string]struct{})
 
 	nic := buildInterfaceName(index)
@@ -218,13 +219,13 @@ func processEvenInterface(obj *switchv1beta1.Switch, index int) (map[string]*swi
 	return toAdd, toRemove
 }
 
-func processBaselineInterface(obj *switchv1beta1.Switch, index int) (map[string]*switchv1beta1.InterfaceSpec, map[string]struct{}) {
+func processBaselineInterface(obj *metalv1alpha4.NetworkSwitch, index int) (map[string]*metalv1alpha4.InterfaceSpec, map[string]struct{}) {
 	var (
 		ok      bool
-		nicData *switchv1beta1.InterfaceSpec
+		nicData *metalv1alpha4.InterfaceSpec
 	)
 
-	toAdd := make(map[string]*switchv1beta1.InterfaceSpec)
+	toAdd := make(map[string]*metalv1alpha4.InterfaceSpec)
 	toRemove := make(map[string]struct{})
 
 	nic := buildInterfaceName(index)
@@ -263,7 +264,7 @@ func buildInterfaceName(index int) string {
 	return strings.Join([]string{constants.SwitchPortNamePrefix, strconv.Itoa(index)}, "")
 }
 
-func ComputeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
+func ComputeLayer(obj *metalv1alpha4.NetworkSwitch, list *metalv1alpha4.NetworkSwitchList) {
 	connectionsMap, keys := buildConnectionMap(list)
 	if _, ok := connectionsMap[0]; !ok {
 		return
@@ -300,7 +301,7 @@ func ComputeLayer(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
 	}
 }
 
-func InheritInterfaceParams(obj *switchv1beta1.Switch, list *switchv1beta1.SwitchList) {
+func InheritInterfaceParams(obj *metalv1alpha4.NetworkSwitch, list *metalv1alpha4.NetworkSwitchList) {
 	if obj.TopSpine() {
 		return
 	}
@@ -321,11 +322,11 @@ func InheritInterfaceParams(obj *switchv1beta1.Switch, list *switchv1beta1.Switc
 	}
 }
 
-func buildConnectionMap(obj *switchv1beta1.SwitchList) (map[uint32]*switchv1beta1.SwitchList, []uint32) {
-	connectionsMap := make(map[uint32]*switchv1beta1.SwitchList)
+func buildConnectionMap(obj *metalv1alpha4.NetworkSwitchList) (map[uint32]*metalv1alpha4.NetworkSwitchList, []uint32) {
+	connectionsMap := make(map[uint32]*metalv1alpha4.NetworkSwitchList)
 	keys := make([]uint32, 0)
 	for _, item := range obj.Items {
-		if reflect.DeepEqual(item.Status, switchv1beta1.SwitchStatus{}) {
+		if reflect.DeepEqual(item.Status, metalv1alpha4.NetworkSwitchStatus{}) {
 			continue
 		}
 		if item.Status.Layer == 255 {
@@ -334,7 +335,7 @@ func buildConnectionMap(obj *switchv1beta1.SwitchList) (map[uint32]*switchv1beta
 		layer := item.GetLayer()
 		list, ok := connectionsMap[layer]
 		if !ok {
-			list = &switchv1beta1.SwitchList{}
+			list = &metalv1alpha4.NetworkSwitchList{}
 			list.Items = append(list.Items, item)
 			connectionsMap[layer] = list
 			keys = append(keys, layer)
@@ -348,8 +349,8 @@ func buildConnectionMap(obj *switchv1beta1.SwitchList) (map[uint32]*switchv1beta
 	return connectionsMap, keys
 }
 
-func getPeers(obj *switchv1beta1.Switch, switches *switchv1beta1.SwitchList) *switchv1beta1.SwitchList {
-	result := &switchv1beta1.SwitchList{Items: make([]switchv1beta1.Switch, 0)}
+func getPeers(obj *metalv1alpha4.NetworkSwitch, switches *metalv1alpha4.NetworkSwitchList) *metalv1alpha4.NetworkSwitchList {
+	result := &metalv1alpha4.NetworkSwitchList{Items: make([]metalv1alpha4.NetworkSwitch, 0)}
 	for _, item := range switches.Items {
 		for _, nicData := range obj.Status.Interfaces {
 			if nicData.Peer == nil {
@@ -358,7 +359,7 @@ func getPeers(obj *switchv1beta1.Switch, switches *switchv1beta1.SwitchList) *sw
 			if nicData.Peer.PeerInfoSpec == nil {
 				continue
 			}
-			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &switchv1beta1.PeerInfoSpec{}) {
+			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &metalv1alpha4.PeerInfoSpec{}) {
 				continue
 			}
 			peerChassisID := nicData.Peer.PeerInfoSpec.GetChassisID()
@@ -370,7 +371,7 @@ func getPeers(obj *switchv1beta1.Switch, switches *switchv1beta1.SwitchList) *sw
 	return result
 }
 
-func setNICsDirections(obj *switchv1beta1.Switch, switches *switchv1beta1.SwitchList) {
+func setNICsDirections(obj *metalv1alpha4.NetworkSwitch, switches *metalv1alpha4.NetworkSwitchList) {
 	for _, item := range switches.Items {
 		for _, nicData := range obj.Status.Interfaces {
 			if nicData.Peer == nil {
@@ -381,7 +382,7 @@ func setNICsDirections(obj *switchv1beta1.Switch, switches *switchv1beta1.Switch
 				nicData.SetDirection(constants.DirectionSouth)
 				continue
 			}
-			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &switchv1beta1.PeerInfoSpec{}) {
+			if reflect.DeepEqual(nicData.Peer.PeerInfoSpec, &metalv1alpha4.PeerInfoSpec{}) {
 				nicData.SetDirection(constants.DirectionSouth)
 				continue
 			}
@@ -403,7 +404,7 @@ func setNICsDirections(obj *switchv1beta1.Switch, switches *switchv1beta1.Switch
 	}
 }
 
-func SetRole(in *switchv1beta1.Switch) {
+func SetRole(in *metalv1alpha4.NetworkSwitch) {
 	in.SetRole(constants.SwitchRoleSpine)
 	for _, data := range in.Status.Interfaces {
 		if data.Peer == nil {
@@ -416,7 +417,7 @@ func SetRole(in *switchv1beta1.Switch) {
 	}
 }
 
-func copyPortParams(src, dst *switchv1beta1.PortParametersSpec) {
+func copyPortParams(src, dst *metalv1alpha4.PortParametersSpec) {
 	if src == nil {
 		return
 	}
@@ -441,8 +442,8 @@ func copyPortParams(src, dst *switchv1beta1.PortParametersSpec) {
 }
 
 func ResultingLabels(
-	obj *switchv1beta1.Switch,
-	objectSelectors, globalSelectors *switchv1beta1.IPAMSelectionSpec,
+	obj *metalv1alpha4.NetworkSwitch,
+	objectSelectors, globalSelectors *metalv1alpha4.IPAMSelectionSpec,
 ) (map[string]string, error) {
 	var err error
 	result := make(map[string]string)
@@ -465,7 +466,7 @@ func ResultingLabels(
 }
 
 func GetSelectorFromIPAMSpec(
-	obj *switchv1beta1.Switch, spec *switchv1beta1.IPAMSelectionSpec) (labels.Selector, error) {
+	obj *metalv1alpha4.NetworkSwitch, spec *metalv1alpha4.IPAMSelectionSpec) (labels.Selector, error) {
 	var err error
 	var selector labels.Selector
 	if spec != nil {
@@ -488,7 +489,7 @@ func GetSelectorFromIPAMSpec(
 	return selector, nil
 }
 
-func labelFromFieldRef(obj interface{}, src *switchv1beta1.FieldSelectorSpec) (map[string]string, error) {
+func labelFromFieldRef(obj interface{}, src *metalv1alpha4.FieldSelectorSpec) (map[string]string, error) {
 	if src == nil {
 		return nil, errors.New(constants.MessageFieldSelectorNotDefined)
 	}
@@ -513,7 +514,7 @@ func labelFromFieldRef(obj interface{}, src *switchv1beta1.FieldSelectorSpec) (m
 }
 
 func processObjectMap(
-	repr map[string]interface{}, path []string, src *switchv1beta1.FieldSelectorSpec) (map[string]string, error) {
+	repr map[string]interface{}, path []string, src *metalv1alpha4.FieldSelectorSpec) (map[string]string, error) {
 	var err error
 	label := make(map[string]string)
 	currentSearchObj := repr
@@ -554,12 +555,12 @@ func interfaceToMap(i interface{}) (map[string]interface{}, error) {
 	return m, nil
 }
 
-//func SetState(obj *switchv1beta1.Switch, state, message string) {
+// func SetState(obj *metalv1alpha4.NetworkSwitch, state, message string) {
 //	obj.SetState(state)
 //	obj.SetMessage(message)
-//}
+// }
 
-func CalculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
+func CalculateASN(loopbacks []*metalv1alpha4.IPAddressSpec) (uint32, error) {
 	var result uint32 = 0
 	for _, item := range loopbacks {
 		if item.GetAddressFamily() != constants.IPv4AF {
@@ -582,8 +583,8 @@ func CalculateASN(loopbacks []*switchv1beta1.IPAddressSpec) (uint32, error) {
 	return result, nil
 }
 
-func GetExtraIPs(obj *switchv1beta1.Switch, name string) ([]*switchv1beta1.IPAddressSpec, error) {
-	ips := make([]*switchv1beta1.IPAddressSpec, 0)
+func GetExtraIPs(obj *metalv1alpha4.NetworkSwitch, name string) ([]*metalv1alpha4.IPAddressSpec, error) {
+	ips := make([]*metalv1alpha4.IPAddressSpec, 0)
 	if obj.Spec.Interfaces != nil && obj.Spec.Interfaces.Overrides != nil {
 		for _, item := range obj.Spec.Interfaces.Overrides {
 			if item.GetName() != name {
@@ -593,7 +594,7 @@ func GetExtraIPs(obj *switchv1beta1.Switch, name string) ([]*switchv1beta1.IPAdd
 				continue
 			}
 			for _, data := range item.IP {
-				ip := &switchv1beta1.IPAddressSpec{}
+				ip := &metalv1alpha4.IPAddressSpec{}
 				ip.SetAddress(data.GetAddress())
 				ip.SetExtraAddress(true)
 				af, err := getAddressFamily(data.GetAddress())
@@ -621,11 +622,11 @@ func getAddressFamily(address string) (string, error) {
 }
 
 func GetComputedIPs(
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	name string,
-	data *switchv1beta1.InterfaceSpec,
-) ([]*switchv1beta1.IPAddressSpec, []*ipamv1alpha1.SubnetSpec, error) {
-	ips := make([]*switchv1beta1.IPAddressSpec, 0)
+	data *metalv1alpha4.InterfaceSpec,
+) ([]*metalv1alpha4.IPAddressSpec, []*ipamv1alpha1.SubnetSpec, error) {
+	ips := make([]*metalv1alpha4.IPAddressSpec, 0)
 	subnetSpecs := make([]*ipamv1alpha1.SubnetSpec, 0)
 	for _, subnet := range obj.Status.Subnets {
 		cidr, err := ipamv1alpha1.CIDRFromString(subnet.GetCIDR())
@@ -660,7 +661,7 @@ func GetComputedIPs(
 		if err != nil {
 			return nil, nil, err
 		}
-		ip := &switchv1beta1.IPAddressSpec{}
+		ip := &metalv1alpha4.IPAddressSpec{}
 		hash := md5.Sum([]byte(subnetSpec.CIDR.String()))
 		ip.SetObjectReference(
 			fmt.Sprintf("%s-%s-%x", obj.Name, strings.ToLower(name), hash[:4]),
@@ -697,8 +698,8 @@ func buildSubnetObject(parentSubnet, network string, subnet *net.IPNet) (*ipamv1
 }
 
 func GetPeerData(
-	interfaces map[string]*switchv1beta1.InterfaceSpec, portDesc, portID string) *switchv1beta1.InterfaceSpec {
-	var nicData *switchv1beta1.InterfaceSpec
+	interfaces map[string]*metalv1alpha4.InterfaceSpec, portDesc, portID string) *metalv1alpha4.InterfaceSpec {
+	var nicData *metalv1alpha4.InterfaceSpec
 	if v, ok := interfaces[portDesc]; ok {
 		nicData = v
 	} else {
@@ -707,8 +708,8 @@ func GetPeerData(
 	return nicData
 }
 
-func RequestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAddressSpec {
-	requestedAddresses := make([]*switchv1beta1.IPAddressSpec, 0)
+func RequestIPs(peerNICData *metalv1alpha4.InterfaceSpec) []*metalv1alpha4.IPAddressSpec {
+	requestedAddresses := make([]*metalv1alpha4.IPAddressSpec, 0)
 	for _, addr := range peerNICData.IP {
 		_, cidr, _ := net.ParseCIDR(addr.GetAddress())
 		addressIndex := BaseIPv4AddressIndex + 1
@@ -721,7 +722,7 @@ func RequestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAdd
 		}
 		ip, _ := gocidr.Host(cidr, addressIndex)
 		res := net.IPNet{IP: ip, Mask: cidr.Mask}
-		address := &switchv1beta1.IPAddressSpec{}
+		address := &metalv1alpha4.IPAddressSpec{}
 		address.SetAddress(res.String())
 		address.SetExtraAddress(false)
 		address.SetAddressFamily(addr.GetAddressFamily())
@@ -734,7 +735,7 @@ func RequestIPs(peerNICData *switchv1beta1.InterfaceSpec) []*switchv1beta1.IPAdd
 }
 
 func GetTotalAddressesCount(
-	ports map[string]*switchv1beta1.InterfaceSpec, af ipamv1alpha1.SubnetAddressType) *resource.Quantity {
+	ports map[string]*metalv1alpha4.InterfaceSpec, af ipamv1alpha1.SubnetAddressType) *resource.Quantity {
 	var counter int64 = 0
 	for _, item := range ports {
 		if item.PortParametersSpec == nil {
@@ -769,7 +770,7 @@ func AddressFamiliesMatchConfig(ipv4, ipv6 bool, flag int) bool {
 	return result
 }
 
-func NeighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
+func NeighborIsSwitch(nicData *metalv1alpha4.InterfaceSpec) bool {
 	if nicData.Peer == nil {
 		return false
 	}
@@ -785,28 +786,28 @@ func NeighborIsSwitch(nicData *switchv1beta1.InterfaceSpec) bool {
 	return true
 }
 
-func ObjectChanged(objOld, objNew *switchv1beta1.Switch) bool {
+func ObjectChanged(objOld, objNew *metalv1alpha4.NetworkSwitch) bool {
 	metadataChanged := MetadataChanged(objOld, objNew)
 	specChanged := SpecChanged(objOld, objNew)
 	statusChanged := StatusChanged(objOld, objNew)
 	return metadataChanged || specChanged || statusChanged
 }
 
-func MetadataChanged(objOld, objNew *switchv1beta1.Switch) bool {
+func MetadataChanged(objOld, objNew *metalv1alpha4.NetworkSwitch) bool {
 	labelsChanged := !reflect.DeepEqual(objOld.GetLabels(), objNew.GetLabels())
 	annotationsChanged := !reflect.DeepEqual(objOld.GetAnnotations(), objNew.GetAnnotations())
 	finalizersChanged := !reflect.DeepEqual(objOld.GetFinalizers(), objNew.GetFinalizers())
 	return labelsChanged || annotationsChanged || finalizersChanged
 }
 
-func SpecChanged(objOld, objNew *switchv1beta1.Switch) bool {
+func SpecChanged(objOld, objNew *metalv1alpha4.NetworkSwitch) bool {
 	oldSpec, _ := json.Marshal(objOld.Spec)
 	newSpec, _ := json.Marshal(objNew.Spec)
 	changed := !reflect.DeepEqual(oldSpec, newSpec)
 	return changed
 }
 
-func StatusChanged(objOld, objNew *switchv1beta1.Switch) bool {
+func StatusChanged(objOld, objNew *metalv1alpha4.NetworkSwitch) bool {
 	conditionsChanged := conditionsUpdated(objOld.Status.Conditions, objNew.Status.Conditions)
 	objOld.Status.Conditions = nil
 	objNew.Status.Conditions = nil
@@ -815,7 +816,7 @@ func StatusChanged(objOld, objNew *switchv1beta1.Switch) bool {
 	return conditionsChanged || statusChanged
 }
 
-func conditionsUpdated(oldData, newData []*switchv1beta1.ConditionSpec) bool {
+func conditionsUpdated(oldData, newData []*metalv1alpha4.ConditionSpec) bool {
 	if len(oldData) != len(newData) {
 		return true
 	}
@@ -828,14 +829,14 @@ func conditionsUpdated(oldData, newData []*switchv1beta1.ConditionSpec) bool {
 	return !reflect.DeepEqual(oldData, newData)
 }
 
-func statusUpdated(objOld, objNew *switchv1beta1.Switch) bool {
+func statusUpdated(objOld, objNew *metalv1alpha4.NetworkSwitch) bool {
 	oldStatus, _ := json.Marshal(objOld.Status)
 	newStatus, _ := json.Marshal(objNew.Status)
 	changed := !reflect.DeepEqual(oldStatus, newStatus)
 	return changed
 }
 
-func SwitchConfigSelectorInvalid(obj *switchv1beta1.Switch) bool {
+func SwitchConfigSelectorInvalid(obj *metalv1alpha4.NetworkSwitch) bool {
 	selector := obj.GetConfigSelector()
 	if selector == nil {
 		return obj.GetLayer() != 255
@@ -860,7 +861,7 @@ func SwitchConfigSelectorInvalid(obj *switchv1beta1.Switch) bool {
 	return false
 }
 
-func UpdateSwitchConfigSelector(obj *switchv1beta1.Switch) {
+func UpdateSwitchConfigSelector(obj *metalv1alpha4.NetworkSwitch) {
 	selector := obj.GetConfigSelector()
 	if selector == nil {
 		if obj.GetLayer() == 255 {

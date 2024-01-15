@@ -15,8 +15,8 @@
 package usecase
 
 import (
-	domain "github.com/onmetal/metal-api/domain/machine"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	domain "github.com/ironcore-dev/metal/domain/machine"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
 )
 
 type CreateMachine interface {

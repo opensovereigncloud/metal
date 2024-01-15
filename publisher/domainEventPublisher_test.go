@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/events"
-	"github.com/onmetal/metal-api/publisher"
+	"github.com/ironcore-dev/metal/common/types/base"
+	"github.com/ironcore-dev/metal/common/types/events"
+	"github.com/ironcore-dev/metal/publisher"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )

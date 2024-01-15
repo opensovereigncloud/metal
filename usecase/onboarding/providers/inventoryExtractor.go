@@ -15,7 +15,7 @@
 package providers
 
 import (
-	domain "github.com/onmetal/metal-api/domain/inventory"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
 )
 
 //go:generate mockery --name InventoryExtractor

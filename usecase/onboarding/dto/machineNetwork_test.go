@@ -18,7 +18,7 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
 	"github.com/stretchr/testify/assert"
 )
 

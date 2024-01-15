@@ -2,13 +2,13 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-  - bases/machine.onmetal.de_inventories.yaml
-  - bases/machine.onmetal.de_aggregates.yaml
-  - bases/machine.onmetal.de_sizes.yaml
-  - bases/machine.onmetal.de_machines.yaml
-  - bases/benchmark.onmetal.de_machines.yaml
-  - bases/switch.onmetal.de_switches.yaml
-  - bases/switch.onmetal.de_switchconfigs.yaml
+  - bases/metal.ironcore.dev_inventories.yaml
+  - bases/metal.ironcore.dev_aggregates.yaml
+  - bases/metal.ironcore.dev_sizes.yaml
+  - bases/metal.ironcore.dev_machines.yaml
+  - bases/metal.ironcore.dev_benchmarks.yaml
+  - bases/metal.ironcore.dev_networkswitches.yaml
+  - bases/metal.ironcore.dev_switchconfigs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesJson6902:
@@ -16,7 +16,7 @@ patchesJson6902:
       version: v1
       group: apiextensions.k8s.io
       kind: CustomResourceDefinition
-      name: sizes.machine.onmetal.de
+      name: sizes.metal.ironcore.dev
     path: constraint_val_type_patch.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 

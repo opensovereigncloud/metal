@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 // nolint:forcetypeassert
@@ -51,26 +51,26 @@ var _ = Describe("Aggregate controller", func() {
 			count func(client.ObjectList) int
 		}{
 			{
-				res:  &inventoryv1alpha1.Inventory{},
-				list: &inventoryv1alpha1.InventoryList{},
+				res:  &metalv1alpha4.Inventory{},
+				list: &metalv1alpha4.InventoryList{},
 				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.InventoryList)
+					list := objList.(*metalv1alpha4.InventoryList)
 					return len(list.Items)
 				},
 			},
 			{
-				res:  &inventoryv1alpha1.Aggregate{},
-				list: &inventoryv1alpha1.AggregateList{},
+				res:  &metalv1alpha4.Aggregate{},
+				list: &metalv1alpha4.AggregateList{},
 				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.AggregateList)
+					list := objList.(*metalv1alpha4.AggregateList)
 					return len(list.Items)
 				},
 			},
 			{
-				res:  &inventoryv1alpha1.Size{},
-				list: &inventoryv1alpha1.SizeList{},
+				res:  &metalv1alpha4.Size{},
+				list: &metalv1alpha4.SizeList{},
 				count: func(objList client.ObjectList) int {
-					list := objList.(*inventoryv1alpha1.SizeList)
+					list := objList.(*metalv1alpha4.SizeList)
 					return len(list.Items)
 				},
 			},
@@ -130,7 +130,7 @@ var _ = Describe("Aggregate controller", func() {
 			By("Inventories are installed")
 			ctx := context.Background()
 
-			testInventory := &inventoryv1alpha1.Inventory{
+			testInventory := &metalv1alpha4.Inventory{
 				ObjectMeta: controllerruntime.ObjectMeta{
 					Name:      InventoryName,
 					Namespace: AggregateNamespace,
@@ -139,14 +139,14 @@ var _ = Describe("Aggregate controller", func() {
 						"test": "test",
 					},
 				},
-				Spec: inventoryv1alpha1.InventorySpec{
-					System: &inventoryv1alpha1.SystemSpec{
+				Spec: metalv1alpha4.InventorySpec{
+					System: &metalv1alpha4.SystemSpec{
 						ID:           "a967954c-3475-11b2-a85c-84d8b4f8cd2d",
 						Manufacturer: "LENOVO",
 						ProductSKU:   "LENOVO_MT_20JX_BU_Think_FM_ThinkPad T570 W10DG",
 						SerialNumber: "R90QR6J0",
 					},
-					Blocks: []inventoryv1alpha1.BlockSpec{
+					Blocks: []metalv1alpha4.BlockSpec{
 						{
 							Name:       "JustDisk",
 							Type:       "SCSI",
@@ -155,10 +155,10 @@ var _ = Describe("Aggregate controller", func() {
 							Size:       1000,
 						},
 					},
-					Memory: &inventoryv1alpha1.MemorySpec{
+					Memory: &metalv1alpha4.MemorySpec{
 						Total: 1024000,
 					},
-					CPUs: []inventoryv1alpha1.CPUSpec{
+					CPUs: []metalv1alpha4.CPUSpec{
 						{
 							PhysicalID: 0,
 							LogicalIDs: []uint64{0, 1, 2, 3},
@@ -169,7 +169,7 @@ var _ = Describe("Aggregate controller", func() {
 							ModelName:  "Intel(R) Core(TM) i5-6300U CPU @ 2.40GHz",
 						},
 					},
-					NICs: []inventoryv1alpha1.NICSpec{
+					NICs: []metalv1alpha4.NICSpec{
 						{
 							Name:       "enp0s31f6",
 							PCIAddress: "0000:00:1f.6",
@@ -178,7 +178,7 @@ var _ = Describe("Aggregate controller", func() {
 							Speed:      1000,
 						},
 					},
-					Host: &inventoryv1alpha1.HostSpec{
+					Host: &metalv1alpha4.HostSpec{
 						Name: "dummy.localdomain",
 					},
 				},
@@ -192,23 +192,23 @@ var _ = Describe("Aggregate controller", func() {
 			}
 
 			Eventually(func() bool {
-				createdInventory := inventoryv1alpha1.Inventory{}
+				createdInventory := metalv1alpha4.Inventory{}
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &createdInventory)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			By("Aggregate is installed")
-			testAggregate := inventoryv1alpha1.Aggregate{
+			testAggregate := metalv1alpha4.Aggregate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      AggregateName,
 					Namespace: AggregateNamespace,
 				},
-				Spec: inventoryv1alpha1.AggregateSpec{
-					Aggregates: []inventoryv1alpha1.AggregateItem{
+				Spec: metalv1alpha4.AggregateSpec{
+					Aggregates: []metalv1alpha4.AggregateItem{
 						{
-							SourcePath: *inventoryv1alpha1.JSONPathFromString("spec.cpus[*].logicalIds[*]"),
-							TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.maxLogicalId"),
-							Aggregate:  inventoryv1alpha1.CMaxAggregateType,
+							SourcePath: *metalv1alpha4.JSONPathFromString("spec.cpus[*].logicalIds[*]"),
+							TargetPath: *metalv1alpha4.JSONPathFromString("cpus.maxLogicalId"),
+							Aggregate:  metalv1alpha4.CMaxAggregateType,
 						},
 					},
 				},
@@ -233,7 +233,7 @@ var _ = Describe("Aggregate controller", func() {
 
 			By("Inventory has aggregate calculated")
 			Eventually(func() bool {
-				inventory := inventoryv1alpha1.Inventory{}
+				inventory := metalv1alpha4.Inventory{}
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &inventory)
 				if err != nil {
 					return false
@@ -251,11 +251,11 @@ var _ = Describe("Aggregate controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			By("Aggregate is updated")
-			testAggregate.Spec.Aggregates = []inventoryv1alpha1.AggregateItem{
+			testAggregate.Spec.Aggregates = []metalv1alpha4.AggregateItem{
 				{
-					SourcePath: *inventoryv1alpha1.JSONPathFromString("spec.cpus[*].cores"),
-					TargetPath: *inventoryv1alpha1.JSONPathFromString("cpus.coreCount"),
-					Aggregate:  inventoryv1alpha1.CSumAggregateType,
+					SourcePath: *metalv1alpha4.JSONPathFromString("spec.cpus[*].cores"),
+					TargetPath: *metalv1alpha4.JSONPathFromString("cpus.coreCount"),
+					Aggregate:  metalv1alpha4.CSumAggregateType,
 				},
 			}
 
@@ -266,7 +266,7 @@ var _ = Describe("Aggregate controller", func() {
 					Namespace: testAggregate.Namespace,
 					Name:      testAggregate.Name,
 				}
-				aggregate := inventoryv1alpha1.Aggregate{}
+				aggregate := metalv1alpha4.Aggregate{}
 				err := k8sClient.Get(ctx, aggregateNamespacedName, &aggregate)
 				if testAggregate.Spec.Aggregates[0].SourcePath != aggregate.Spec.Aggregates[0].SourcePath {
 					return false
@@ -279,7 +279,7 @@ var _ = Describe("Aggregate controller", func() {
 
 			By("Inventory has aggregate recalculated")
 			Eventually(func() bool {
-				inventory := inventoryv1alpha1.Inventory{}
+				inventory := metalv1alpha4.Inventory{}
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &inventory)
 				if err != nil {
 					return false
@@ -304,7 +304,7 @@ var _ = Describe("Aggregate controller", func() {
 
 			By("Inventory has no aggregate")
 			Eventually(func() bool {
-				inventory := inventoryv1alpha1.Inventory{}
+				inventory := metalv1alpha4.Inventory{}
 				err := k8sClient.Get(ctx, inventoryNamespacedName, &inventory)
 				if err != nil {
 					return false

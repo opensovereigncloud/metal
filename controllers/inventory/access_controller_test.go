@@ -19,14 +19,15 @@ import (
 	"fmt"
 	"testing"
 
-	controllers "github.com/onmetal/metal-api/controllers/inventory"
-	"github.com/onmetal/metal-api/controllers/inventory/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	controllers "github.com/ironcore-dev/metal/controllers/inventory"
+	"github.com/ironcore-dev/metal/controllers/inventory/fake"
 )
 
 func accessReconciler(a *assert.Assertions, objects ...ctrlclient.Object) *controllers.AccessReconciler {

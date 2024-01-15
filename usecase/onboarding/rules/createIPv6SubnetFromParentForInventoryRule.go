@@ -16,10 +16,10 @@ package rules
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/common/types/base"
-	domain "github.com/onmetal/metal-api/domain/inventory"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
+	"github.com/ironcore-dev/metal/common/types/base"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 )
 
 type CreateIPv6SubnetFromParentForInventoryRule struct {

@@ -1,32 +1,33 @@
-domain: onmetal.de
+domain: ironcore.dev
 layout:
   - go.kubebuilder.io/v3
-multigroup: true
-projectName: metal-api
-repo: github.com/onmetal/metal-api
+multigroup: false
+projectName: metal
+repo: github.com/ironcore-dev/metal
 resources:
   - api:
-      crdVersion: v1alpha3
+      crdVersion: v1
       namespaced: true
     controller: true
-    group: machine
+    group: metal
     kind: Machine
-    path: github.com/onmetal/metal-api/apis/machine/v1alpha3
-    version: v1alpha3
+    path: github.com/ironcore-dev/metal/apis/metal/v1alpha4
+    version: v1alpha4
   - api:
       crdVersion: v1
       namespaced: true
     controller: true
-    group: machine
+    group: metal
     kind: Inventory
-    version: v1alpha1
+    version: v1alpha4
   - api:
       crdVersion: v1
       namespaced: true
     controller: true
-    group: machine
+    group: metal
     kind: Aggregate
-    version: v1alpha1
+    path: github.com/ironcore-dev/metal/apis/metal/v1alpha4
+    version: v1alpha4
     webhooks:
       validation: true
       webhookVersion: v1
@@ -34,9 +35,10 @@ resources:
       crdVersion: v1
       namespaced: true
     controller: true
-    group: machine
+    group: metal
     kind: Size
-    version: v1alpha1
+    path: github.com/ironcore-dev/metal/apis/metal/v1alpha4
+    version: v1alpha4
     webhooks:
       validation: true
       webhookVersion: v1
@@ -44,10 +46,10 @@ resources:
       crdVersion: v1
       namespaced: true
     controller: true
-    group: switch
-    kind: Switch
-    path: github.com/onmetal/metal-api/apis/switch/v1beta1
-    version: v1beta1
+    group: metal
+    kind: NetworkSwitch
+    path: github.com/ironcore-dev/metal/apis/metal/v1alpha4
+    version: v1alpha4
     webhooks:
       defaulting: true
       validation: true
@@ -55,18 +57,17 @@ resources:
   - api:
       crdVersion: v1
       namespaced: true
-    group: switch
+    group: metal
     kind: SwitchConfig
     controller: true
-    path: github.com/onmetal/metal-api/apis/switch/v1beta1
-    version: v1beta1
+    path: github.com/ironcore-dev/metal/apis/metal/v1alpha4
+    version: v1alpha4
     webhooks:
       defaulting: true
       validation: false
       webhookVersion: v1
   - controller: true
-    domain: machine.onmetal.de
-    group: machine
+    group: metal
     kind: Ignition
     version: v1
 version: "3"

@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	controllers "github.com/onmetal/metal-api/controllers/machine"
+	controllers "github.com/ironcore-dev/metal/controllers/machine"
 
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -47,8 +47,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -158,9 +157,8 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 	DeferCleanup(utilsenvtest.StopWithExtensions, testEnv, testEnvExt)
 
-	Expect(inventoriesv1alpha1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
-	Expect(machinev1alpha3.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
+	Expect(metalv1alpha4.AddToScheme(scheme.Scheme)).NotTo(HaveOccurred())
 	Expect(computev1alpha1.AddToScheme(scheme.Scheme)).To(Succeed())
 	Expect(apiregistrationv1.AddToScheme(scheme.Scheme)).To(Succeed())
 

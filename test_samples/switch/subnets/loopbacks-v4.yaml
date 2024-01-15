@@ -2,9 +2,9 @@ apiVersion: ipam.onmetal.de/v1alpha1
 kind: Subnet
 metadata:
   name: loopbacks-v4
-  namespace: onmetal
+  namespace: ironcore
   labels:
-    ipam.onmetal.de/object-purpose: "switch-loopbacks"
+    ipam.ironcore.dev/object-purpose: "switch-loopbacks"
 spec:
   cidr: "100.64.255.0/24"
   parentSubnet:

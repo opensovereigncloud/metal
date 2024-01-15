@@ -14,7 +14,7 @@
 
 package invariants
 
-import "github.com/onmetal/metal-api/usecase/onboarding/providers"
+import "github.com/ironcore-dev/metal/usecase/onboarding/providers"
 
 type InventoryAlreadyExist struct {
 	extractor providers.InventoryExtractor

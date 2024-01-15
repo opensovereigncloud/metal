@@ -24,23 +24,23 @@ import (
 	"testing"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/yaml"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
 )
 
 var basePath = filepath.Join("..", "..", "test_samples", "switch")
-var statuses = make(map[string]switchv1beta1.SwitchStatus)
+var statuses = make(map[string]metalv1alpha4.NetworkSwitchStatus)
 
-func loadSwitches() []*switchv1beta1.Switch {
-	list := make([]*switchv1beta1.Switch, 0)
+func loadSwitches() []*metalv1alpha4.NetworkSwitch {
+	list := make([]*metalv1alpha4.NetworkSwitch, 0)
 	samplesPath := filepath.Join(basePath, "switches")
 	samples, _ := GetTestSamples(samplesPath)
 	for _, sample := range samples {
 		raw, _ := os.ReadFile(sample)
-		obj := &switchv1beta1.Switch{}
+		obj := &metalv1alpha4.NetworkSwitch{}
 		sampleYaml := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
 		_ = sampleYaml.Decode(obj)
 		list = append(list, obj)
@@ -48,13 +48,13 @@ func loadSwitches() []*switchv1beta1.Switch {
 	return list
 }
 
-func loadInventories() map[string]*inventoryv1alpha1.Inventory {
-	inventoriesMap := make(map[string]*inventoryv1alpha1.Inventory)
+func loadInventories() map[string]*metalv1alpha4.Inventory {
+	inventoriesMap := make(map[string]*metalv1alpha4.Inventory)
 	samplesPath := filepath.Join(basePath, "inventories")
 	samples, _ := GetTestSamples(samplesPath)
 	for _, sample := range samples {
 		raw, _ := os.ReadFile(sample)
-		obj := &inventoryv1alpha1.Inventory{}
+		obj := &metalv1alpha4.Inventory{}
 		sampleYaml := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
 		_ = sampleYaml.Decode(obj)
 		inventoriesMap[obj.Name] = obj
@@ -62,13 +62,13 @@ func loadInventories() map[string]*inventoryv1alpha1.Inventory {
 	return inventoriesMap
 }
 
-func loadConfigs() map[string]*switchv1beta1.SwitchConfig {
-	configsMap := make(map[string]*switchv1beta1.SwitchConfig)
+func loadConfigs() map[string]*metalv1alpha4.SwitchConfig {
+	configsMap := make(map[string]*metalv1alpha4.SwitchConfig)
 	samplesPath := filepath.Join(basePath, "switch_configs")
 	samples, _ := GetTestSamples(samplesPath)
 	for _, sample := range samples {
 		raw, _ := os.ReadFile(sample)
-		obj := &switchv1beta1.SwitchConfig{}
+		obj := &metalv1alpha4.SwitchConfig{}
 		sampleYaml := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
 		_ = sampleYaml.Decode(obj)
 		configsMap[obj.Name] = obj
@@ -114,8 +114,8 @@ func loadSubnets() map[string]*ipamv1alpha1.SubnetList {
 	return subnets
 }
 
-func copySwitchList(src []*switchv1beta1.Switch) []switchv1beta1.Switch {
-	dst := make([]switchv1beta1.Switch, 0)
+func copySwitchList(src []*metalv1alpha4.NetworkSwitch) []metalv1alpha4.NetworkSwitch {
+	dst := make([]metalv1alpha4.NetworkSwitch, 0)
 	for _, item := range src {
 		dst = append(dst, *item)
 	}
@@ -164,8 +164,8 @@ func TestUpdateNeighbors(t *testing.T) {
 		result := UpdateNeighbors(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionNeighborsOK)
 		assert.Equal(t, result.reason, constants.ErrorReasonRequestFailed)
-		assert.Equal(t, result.verboseMessage, fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "SwitchList"))
-		env.Switches = &switchv1beta1.SwitchList{Items: copySwitchList(switches)}
+		assert.Equal(t, result.verboseMessage, fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "NetworkSwitchList"))
+		env.Switches = &metalv1alpha4.NetworkSwitchList{Items: copySwitchList(switches)}
 		result = UpdateNeighbors(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionNeighborsOK)
 		assert.Equal(t, result.reason, constants.ReasonConditionNeighborsOK)
@@ -188,8 +188,8 @@ func TestUpdateLayerAndRole(t *testing.T) {
 		result := UpdateLayerAndRole(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionLayerAndRoleOK)
 		assert.Equal(t, result.reason, constants.ErrorReasonRequestFailed)
-		assert.Equal(t, result.verboseMessage, fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "SwitchList"))
-		env.Switches = &switchv1beta1.SwitchList{Items: copySwitchList(switches)}
+		assert.Equal(t, result.verboseMessage, fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "NetworkSwitchList"))
+		env.Switches = &metalv1alpha4.NetworkSwitchList{Items: copySwitchList(switches)}
 		result = UpdateLayerAndRole(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionLayerAndRoleOK)
 		assert.Equal(t, result.reason, constants.ReasonConditionLayerAndRoleOK)
@@ -207,7 +207,7 @@ func TestUpdateLayerAndRole(t *testing.T) {
 			continue
 		}
 		env := &SwitchEnvironment{
-			Switches: &switchv1beta1.SwitchList{Items: copySwitchList(switches)},
+			Switches: &metalv1alpha4.NetworkSwitchList{Items: copySwitchList(switches)},
 		}
 		result := UpdateLayerAndRole(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionLayerAndRoleOK)
@@ -270,8 +270,8 @@ func TestUpdatePortParameters(t *testing.T) {
 		result = UpdatePortParameters(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionPortParametersOK)
 		assert.Equal(t, result.reason, constants.ErrorReasonRequestFailed)
-		assert.Equal(t, result.verboseMessage, fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "SwitchList"))
-		env.Switches = &switchv1beta1.SwitchList{Items: copySwitchList(switches)}
+		assert.Equal(t, result.verboseMessage, fmt.Sprintf("%s: %s", constants.MessageRequestFailed, "NetworkSwitchList"))
+		env.Switches = &metalv1alpha4.NetworkSwitchList{Items: copySwitchList(switches)}
 		result = UpdatePortParameters(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionPortParametersOK)
 		assert.Equal(t, result.reason, constants.ReasonConditionPortParametersOK)
@@ -365,7 +365,7 @@ func TestUpdateSwitchPortIPs(t *testing.T) {
 		assert.Equal(t, result.condition, constants.ConditionIPAddressesOK)
 		assert.Equal(t, result.reason, constants.ErrorReasonIPAssignmentFailed)
 		assert.Equal(t, result.verboseMessage, constants.ErrorUpdateSwitchPortIPsFailed)
-		env = &SwitchEnvironment{Switches: &switchv1beta1.SwitchList{Items: copySwitchList(switches)}}
+		env = &SwitchEnvironment{Switches: &metalv1alpha4.NetworkSwitchList{Items: copySwitchList(switches)}}
 		result = UpdateSwitchPortIPs(testObject, env)
 		assert.Equal(t, result.condition, constants.ConditionIPAddressesOK)
 		assert.Equal(t, result.reason, constants.ReasonConditionIPAddressesOK)

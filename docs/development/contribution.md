@@ -8,11 +8,11 @@ The Gardener on Metal project uses Github to manage reviews of pull requests.
 
 * If you have a trivial fix or improvement, go ahead and create a pull request and
 address (with @...) a suitable maintainer of this repository 
-(see [CODEOWNERS](https://raw.githubusercontent.com/onmetal/metal-api/main/CODEOWNERS) 
+(see [CODEOWNERS](https://raw.githubusercontent.com/ironcore-dev/metal/main/CODEOWNERS) 
 of this repository) in the description of the pull request.
 
 * If you plan to do something more involved, first discuss your ideas by creating an 
-[issue](https://github.com/onmetal/metal-api/issues) for this repository. This will avoid unnecessary work and surely give you 
+[issue](https://github.com/ironcore-dev/metal/issues) for this repository. This will avoid unnecessary work and surely give you 
 and us a good deal of inspiration.
 
 !!! note 
@@ -111,4 +111,4 @@ for a review in the pull request or a comment.
 We use GitHub issues to track bugs and enhancement requests. Please provide as much context as possible when you open  an issue. The information you provide must be comprehensive enough to understand, reproduce the behavior and find related reports of  that issue for the assignee. 
 Therefore, contributors may use but aren't restricted to the issue template provided by the Gardener on Metal maintainers.
 
-Issues and pull requests are tracked in the [backlog](https://github.com/onmetal/metal-api/projects/1) for this project.
+Issues and pull requests are tracked in the [backlog](https://github.com/ironcore-dev/metal/projects/1) for this project.

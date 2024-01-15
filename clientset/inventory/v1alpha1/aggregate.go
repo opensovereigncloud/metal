@@ -26,7 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
@@ -34,15 +34,15 @@ const (
 )
 
 type AggregateInterface interface {
-	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1alpha1.Aggregate, error)
-	List(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.AggregateList, error)
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*metalv1alpha4.Aggregate, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*metalv1alpha4.AggregateList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
-	Create(ctx context.Context, aggregate *v1alpha1.Aggregate, opts metav1.CreateOptions) (*v1alpha1.Aggregate, error)
-	Update(ctx context.Context, aggregate *v1alpha1.Aggregate, opts metav1.UpdateOptions) (*v1alpha1.Aggregate, error)
-	UpdateStatus(ctx context.Context, aggregate *v1alpha1.Aggregate, opts metav1.UpdateOptions) (*v1alpha1.Aggregate, error)
+	Create(ctx context.Context, aggregate *metalv1alpha4.Aggregate, opts metav1.CreateOptions) (*metalv1alpha4.Aggregate, error)
+	Update(ctx context.Context, aggregate *metalv1alpha4.Aggregate, opts metav1.UpdateOptions) (*metalv1alpha4.Aggregate, error)
+	UpdateStatus(ctx context.Context, aggregate *metalv1alpha4.Aggregate, opts metav1.UpdateOptions) (*metalv1alpha4.Aggregate, error)
 	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1alpha1.Aggregate, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*metalv1alpha4.Aggregate, error)
 }
 
 type aggregateClient struct {
@@ -50,8 +50,8 @@ type aggregateClient struct {
 	ns         string
 }
 
-func (c *aggregateClient) Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1alpha1.Aggregate, error) {
-	result := &v1alpha1.Aggregate{}
+func (c *aggregateClient) Get(ctx context.Context, name string, opts metav1.GetOptions) (*metalv1alpha4.Aggregate, error) {
+	result := &metalv1alpha4.Aggregate{}
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
@@ -64,12 +64,12 @@ func (c *aggregateClient) Get(ctx context.Context, name string, opts metav1.GetO
 	return result, err
 }
 
-func (c *aggregateClient) List(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.AggregateList, error) {
+func (c *aggregateClient) List(ctx context.Context, opts metav1.ListOptions) (*metalv1alpha4.AggregateList, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 	}
-	result := &v1alpha1.AggregateList{}
+	result := &metalv1alpha4.AggregateList{}
 	err := c.restClient.
 		Get().
 		Namespace(c.ns).
@@ -99,8 +99,8 @@ func (c *aggregateClient) Watch(ctx context.Context, opts metav1.ListOptions) (w
 	return watcher, err
 }
 
-func (c *aggregateClient) Create(ctx context.Context, aggregate *v1alpha1.Aggregate, opts metav1.CreateOptions) (*v1alpha1.Aggregate, error) {
-	result := &v1alpha1.Aggregate{}
+func (c *aggregateClient) Create(ctx context.Context, aggregate *metalv1alpha4.Aggregate, opts metav1.CreateOptions) (*metalv1alpha4.Aggregate, error) {
+	result := &metalv1alpha4.Aggregate{}
 	err := c.restClient.
 		Post().
 		Namespace(c.ns).
@@ -113,8 +113,8 @@ func (c *aggregateClient) Create(ctx context.Context, aggregate *v1alpha1.Aggreg
 	return result, err
 }
 
-func (c *aggregateClient) Update(ctx context.Context, aggregate *v1alpha1.Aggregate, opts metav1.UpdateOptions) (*v1alpha1.Aggregate, error) {
-	result := &v1alpha1.Aggregate{}
+func (c *aggregateClient) Update(ctx context.Context, aggregate *metalv1alpha4.Aggregate, opts metav1.UpdateOptions) (*metalv1alpha4.Aggregate, error) {
+	result := &metalv1alpha4.Aggregate{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CAggregatesResourceType).
@@ -127,8 +127,8 @@ func (c *aggregateClient) Update(ctx context.Context, aggregate *v1alpha1.Aggreg
 	return result, err
 }
 
-func (c *aggregateClient) UpdateStatus(ctx context.Context, aggregate *v1alpha1.Aggregate, opts metav1.UpdateOptions) (*v1alpha1.Aggregate, error) {
-	result := &v1alpha1.Aggregate{}
+func (c *aggregateClient) UpdateStatus(ctx context.Context, aggregate *metalv1alpha4.Aggregate, opts metav1.UpdateOptions) (*metalv1alpha4.Aggregate, error) {
+	result := &metalv1alpha4.Aggregate{}
 	err := c.restClient.Put().
 		Namespace(c.ns).
 		Resource(CAggregatesResourceType).
@@ -168,8 +168,8 @@ func (c *aggregateClient) DeleteCollection(ctx context.Context, opts metav1.Dele
 		Error()
 }
 
-func (c *aggregateClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*v1alpha1.Aggregate, error) {
-	result := &v1alpha1.Aggregate{}
+func (c *aggregateClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*metalv1alpha4.Aggregate, error) {
+	result := &metalv1alpha4.Aggregate{}
 	err := c.restClient.Patch(pt).
 		Namespace(c.ns).
 		Resource(CAggregatesResourceType).

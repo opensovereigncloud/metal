@@ -21,17 +21,16 @@ import (
 	"net/netip"
 
 	ipam "github.com/onmetal/ipam/api/v1alpha1"
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	switches "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	domain "github.com/onmetal/metal-api/domain/infrastructure"
-	"github.com/onmetal/metal-api/pkg/constants"
 	oob "github.com/onmetal/oob-operator/api/v1alpha1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	domain "github.com/ironcore-dev/metal/domain/infrastructure"
+	"github.com/ironcore-dev/metal/pkg/constants"
 )
 
 func NewFakeWithObjects(objects ...ctrlclient.Object) (ctrlclient.Client, error) {
@@ -44,9 +43,9 @@ func NewFakeWithObjects(objects ...ctrlclient.Object) (ctrlclient.Client, error)
 	fakeWithObjects := fakeBuilder.WithScheme(scheme).WithObjects(objects...)
 	fakeWithObjects = fakeWithObjects.
 		WithIndex(
-			&machine.Machine{}, "metadata.name", machineIndex).
+			&metalv1alpha4.Machine{}, "metadata.name", machineIndex).
 		WithIndex(
-			&inventories.Inventory{}, "metadata.name", inventoryIndex).
+			&metalv1alpha4.Inventory{}, "metadata.name", inventoryIndex).
 		WithIndex(
 			&ipam.IP{}, "metadata.name", ipIndex)
 
@@ -54,12 +53,12 @@ func NewFakeWithObjects(objects ...ctrlclient.Object) (ctrlclient.Client, error)
 }
 
 func machineIndex(rawObj ctrlclient.Object) []string {
-	obj := rawObj.(*machine.Machine)
+	obj := rawObj.(*metalv1alpha4.Machine)
 	return []string{obj.ObjectMeta.Name}
 }
 
 func inventoryIndex(rawObj ctrlclient.Object) []string {
-	obj := rawObj.(*inventories.Inventory)
+	obj := rawObj.(*metalv1alpha4.Inventory)
 	return []string{obj.ObjectMeta.Name}
 }
 
@@ -70,22 +69,16 @@ func ipIndex(rawObj ctrlclient.Object) []string {
 
 func getScheme() (*k8sRuntime.Scheme, error) {
 	scheme := k8sRuntime.NewScheme()
-	if err := machine.AddToScheme(scheme); err != nil {
+	if err := metalv1alpha4.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 	if err := ipam.AddToScheme(scheme); err != nil {
-		return nil, err
-	}
-	if err := inventories.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 	if err := oob.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 	if err := core.AddToScheme(scheme); err != nil {
-		return nil, err
-	}
-	if err := switches.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 	return scheme, nil
@@ -99,8 +92,8 @@ func getInitObjectList(objects ...ctrlclient.Object) []ctrlclient.Object {
 	return objectList
 }
 
-func InventoryObject(name, namespace string) *inventories.Inventory {
-	return &inventories.Inventory{
+func InventoryObject(name, namespace string) *metalv1alpha4.Inventory {
+	return &metalv1alpha4.Inventory{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -108,16 +101,16 @@ func InventoryObject(name, namespace string) *inventories.Inventory {
 				"id": name,
 			},
 		},
-		Spec: inventories.InventorySpec{
-			System: &inventories.SystemSpec{
+		Spec: metalv1alpha4.InventorySpec{
+			System: &metalv1alpha4.SystemSpec{
 				ID: "",
 			},
-			Host: &inventories.HostSpec{
+			Host: &metalv1alpha4.HostSpec{
 				Name: "",
 			},
 		},
-		Status: inventories.InventoryStatus{
-			InventoryStatuses: inventories.InventoryStatuses{
+		Status: metalv1alpha4.InventoryStatus{
+			InventoryStatuses: metalv1alpha4.InventoryStatuses{
 				RequestsCount: 1,
 			},
 		},
@@ -137,8 +130,8 @@ func OOBObject(name, namespace string) *oob.OOB {
 	}
 }
 
-func FakeMachineObject(name, namespace string) *machine.Machine {
-	return &machine.Machine{
+func FakeMachineObject(name, namespace string) *metalv1alpha4.Machine {
+	return &metalv1alpha4.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -180,13 +173,13 @@ func FakeSwitchObject(
 	namespace,
 	chassisID string,
 	portDescription string,
-	prefix string) *switches.Switch {
-	ips := make([]*switches.IPAddressSpec, 0)
-	ips = append(ips, &switches.IPAddressSpec{Address: &prefix})
-	interfaces := make(map[string]*switches.InterfaceSpec)
-	interfaces[portDescription] = &switches.InterfaceSpec{IP: ips}
+	prefix string) *metalv1alpha4.NetworkSwitch {
+	ips := make([]*metalv1alpha4.IPAddressSpec, 0)
+	ips = append(ips, &metalv1alpha4.IPAddressSpec{Address: &prefix})
+	interfaces := make(map[string]*metalv1alpha4.InterfaceSpec)
+	interfaces[portDescription] = &metalv1alpha4.InterfaceSpec{IP: ips}
 	ready := constants.SwitchStateReady
-	return &switches.Switch{
+	return &metalv1alpha4.NetworkSwitch{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -194,7 +187,7 @@ func FakeSwitchObject(
 				constants.LabelChassisID: chassisID,
 			},
 		},
-		Status: switches.SwitchStatus{
+		Status: metalv1alpha4.NetworkSwitchStatus{
 			Interfaces: interfaces,
 			State:      &ready,
 		},

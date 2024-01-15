@@ -14,7 +14,7 @@
 
 package providers
 
-import "github.com/onmetal/metal-api/usecase/onboarding/dto"
+import "github.com/ironcore-dev/metal/usecase/onboarding/dto"
 
 //go:generate mockery --name SubnetPersister
 type SubnetPersister interface {

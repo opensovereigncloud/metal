@@ -1,4 +1,4 @@
-apiVersion: machine.onmetal.de/v1alpha1
+apiVersion: metal.ironcore.dev/v1alpha4
 kind: Aggregate
 metadata:
   name: default

@@ -15,7 +15,7 @@
 package providers
 
 import (
-	domain "github.com/onmetal/metal-api/domain/machine"
+	domain "github.com/ironcore-dev/metal/domain/machine"
 )
 
 type MachinePersister interface {

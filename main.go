@@ -24,20 +24,6 @@ import (
 	"strconv"
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machinev1lpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	benchmarkcontroller "github.com/onmetal/metal-api/controllers/benchmark"
-	inventorycontrollers "github.com/onmetal/metal-api/controllers/inventory"
-	machinecontrollers "github.com/onmetal/metal-api/controllers/machine"
-	onboardingcontroller "github.com/onmetal/metal-api/controllers/onboarding"
-	switchcontroller "github.com/onmetal/metal-api/controllers/switch"
-	onboardingprovider "github.com/onmetal/metal-api/providers-kubernetes/onboarding"
-	"github.com/onmetal/metal-api/publisher"
-	"github.com/onmetal/metal-api/usecase/onboarding/invariants"
-	"github.com/onmetal/metal-api/usecase/onboarding/rules"
-	onboardingscenarios "github.com/onmetal/metal-api/usecase/onboarding/scenarios"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	"github.com/onmetal/onmetal-image/oci/remote"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
@@ -50,6 +36,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	benchmarkcontroller "github.com/ironcore-dev/metal/controllers/benchmark"
+	inventorycontrollers "github.com/ironcore-dev/metal/controllers/inventory"
+	machinecontrollers "github.com/ironcore-dev/metal/controllers/machine"
+	onboardingcontroller "github.com/ironcore-dev/metal/controllers/onboarding"
+	switchcontroller "github.com/ironcore-dev/metal/controllers/switch"
+	onboardingprovider "github.com/ironcore-dev/metal/providers-kubernetes/onboarding"
+	"github.com/ironcore-dev/metal/publisher"
+	"github.com/ironcore-dev/metal/usecase/onboarding/invariants"
+	"github.com/ironcore-dev/metal/usecase/onboarding/rules"
+	onboardingscenarios "github.com/ironcore-dev/metal/usecase/onboarding/scenarios"
 )
 
 var (
@@ -59,12 +57,9 @@ var (
 
 func addToScheme() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(benchv1alpha3.AddToScheme(scheme))
-	utilruntime.Must(machinev1lpha3.AddToScheme(scheme))
-	utilruntime.Must(inventoriesv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(metalv1alpha4.AddToScheme(scheme))
 	utilruntime.Must(oobv1.AddToScheme(scheme))
 	utilruntime.Must(ipamv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(switchv1beta1.AddToScheme(scheme))
 	utilruntime.Must(poolv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -121,11 +116,11 @@ func main() {
 		WebhookServer:          webhook.NewServer(webhook.Options{Port: webhookPort}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "064f77d7.machine.onmetal.de",
+		LeaderElectionID:       "064f77d7.metal.ironcore.dev",
 		Client: client.Options{
 			Cache: &client.CacheOptions{
 				DisableFor: []client.Object{
-					&machinev1lpha3.Machine{},
+					&metalv1alpha4.Machine{},
 				},
 			},
 		},
@@ -176,19 +171,19 @@ func startReconcilers(
 
 	if err = (&switchcontroller.OnboardingReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Switch-onboarding"),
+		Log:    ctrl.Log.WithName("controllers").WithName("NetworkSwitch-onboarding"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Switch-onboarding")
+		setupLog.Error(err, "unable to create controller", "controller", "NetworkSwitch-onboarding")
 		os.Exit(1)
 	}
 	if err = (&switchcontroller.SwitchReconciler{
 		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Switch"),
+		Log:      ctrl.Log.WithName("controllers").WithName("NetworkSwitch"),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("Switch"),
+		Recorder: mgr.GetEventRecorderFor("NetworkSwitch"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Switch")
+		setupLog.Error(err, "unable to create controller", "controller", "NetworkSwitch")
 		os.Exit(1)
 	}
 	if err = (&switchcontroller.IPAMReconciler{
@@ -196,7 +191,7 @@ func startReconcilers(
 		Log:    ctrl.Log.WithName("controllers").WithName("IPAM"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Switch-IPAM")
+		setupLog.Error(err, "unable to create controller", "controller", "NetworkSwitch-IPAM")
 		os.Exit(1)
 	}
 	if err = (&inventorycontrollers.InventoryReconciler{
@@ -296,19 +291,19 @@ func startReconcilers(
 
 func addHandlers(mgr ctrl.Manager) {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err := (&inventoriesv1alpha1.Size{}).SetupWebhookWithManager(mgr); err != nil {
+		if err := (&metalv1alpha4.Size{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Size")
 			os.Exit(1)
 		}
-		if err := (&inventoriesv1alpha1.Aggregate{}).SetupWebhookWithManager(mgr); err != nil {
+		if err := (&metalv1alpha4.Aggregate{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Aggregate")
 			os.Exit(1)
 		}
-		if err := (&switchv1beta1.Switch{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Switch")
+		if err := (&metalv1alpha4.NetworkSwitch{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "NetworkSwitch")
 			os.Exit(1)
 		}
-		if err := (&switchv1beta1.SwitchConfig{}).SetupWebhookWithManager(mgr); err != nil {
+		if err := (&metalv1alpha4.SwitchConfig{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "SwitchConfig")
 			os.Exit(1)
 		}

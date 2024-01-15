@@ -15,8 +15,8 @@
 package providers
 
 import (
-	domain "github.com/onmetal/metal-api/domain/infrastructure"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
+	domain "github.com/ironcore-dev/metal/domain/infrastructure"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
 )
 
 type ServerExtractor interface {

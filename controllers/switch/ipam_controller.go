@@ -25,9 +25,6 @@ import (
 
 	"github.com/go-logr/logr"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
-	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -42,9 +39,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
+	switchespkg "github.com/ironcore-dev/metal/pkg/switches"
 )
 
-// IPAMReconciler reconciles Switch object
+// IPAMReconciler reconciles NetworkSwitch object
 // and creates required IPAM objects.
 type IPAMReconciler struct {
 	client.Client
@@ -55,15 +56,15 @@ type IPAMReconciler struct {
 	SwitchPortsIPAMDisabled bool
 }
 
-// +kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets/status,verbs=get
 // +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips/status,verbs=get
 
 func (r *IPAMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	obj := &switchv1beta1.Switch{}
+	obj := &metalv1alpha4.NetworkSwitch{}
 	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -80,14 +81,14 @@ func (r *IPAMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return r.reconcileRequired(requestCtx, obj)
 }
 
-func (r *IPAMReconciler) reconcileRequired(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *IPAMReconciler) reconcileRequired(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	if !obj.GetDeletionTimestamp().IsZero() {
 		return ctrl.Result{}, nil
 	}
 	return r.reconcileManaged(ctx, obj)
 }
 
-func (r *IPAMReconciler) reconcileManaged(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *IPAMReconciler) reconcileManaged(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	if !obj.Managed() {
 		log := logr.FromContextOrDiscard(ctx)
 		log.WithValues("reason", constants.ReasonUnmanagedSwitch).Info("reconciliation finished")
@@ -96,7 +97,7 @@ func (r *IPAMReconciler) reconcileManaged(ctx context.Context, obj *switchv1beta
 	return r.reconcile(ctx, obj)
 }
 
-func (r *IPAMReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *IPAMReconciler) reconcile(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	log := logr.FromContextOrDiscard(ctx)
 	svc := switchespkg.NewSwitchEnvironmentSvc(r.Client, log)
 	env := svc.GetEnvironment(ctx, obj)
@@ -109,7 +110,7 @@ func (r *IPAMReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Switc
 
 func (r *IPAMReconciler) reconcileCleanup(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) (ctrl.Result, error) {
 	log := logr.FromContextOrDiscard(ctx)
@@ -130,7 +131,7 @@ func (r *IPAMReconciler) reconcileCleanup(
 
 func (r *IPAMReconciler) reconcileIPAM(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) (ctrl.Result, error) {
 	log := logr.FromContextOrDiscard(ctx)
@@ -163,7 +164,7 @@ func (r *IPAMReconciler) reconcileIPAM(
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *IPAMReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// label predicate to filter only Switch object,
+	// label predicate to filter only NetworkSwitch object,
 	// which were already onboarded
 	labelPredicate, err := predicate.LabelSelectorPredicate(metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.InventoriedLabel: "true"},
@@ -173,7 +174,7 @@ func (r *IPAMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&switchv1beta1.Switch{}).
+		For(&metalv1alpha4.NetworkSwitch{}).
 		WithOptions(controller.Options{
 			RecoverPanic: pointer.Bool(true),
 		}).
@@ -183,7 +184,7 @@ func (r *IPAMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func processLoopbacks(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) error {
 	counter := 0
@@ -212,7 +213,7 @@ func processLoopbacks(
 
 func existingLoopbacksAddressFamilies(
 	list *ipamv1alpha1.IPList,
-	af *switchv1beta1.AddressFamiliesMap,
+	af *metalv1alpha4.AddressFamiliesMap,
 ) int {
 	afEnabledFlag := 0
 	for _, item := range list.Items {
@@ -234,7 +235,7 @@ func existingLoopbacksAddressFamilies(
 
 func createIPs(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 	afFlag int,
 ) (int, error) {
@@ -279,7 +280,7 @@ func createIPs(
 }
 
 func buildIPObject(
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	parent ipamv1alpha1.Subnet,
 	labels map[string]string,
 ) *ipamv1alpha1.IP {
@@ -310,7 +311,7 @@ func buildIPObject(
 
 func processSouthSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) error {
 	counter := 0
@@ -338,9 +339,9 @@ func processSouthSubnets(
 }
 
 func existingSouthSubnetsAddressFamilies(
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	list *ipamv1alpha1.SubnetList,
-	af *switchv1beta1.AddressFamiliesMap,
+	af *metalv1alpha4.AddressFamiliesMap,
 ) int {
 	afEnabledFlag := 0
 	for _, item := range list.Items {
@@ -366,7 +367,7 @@ func existingSouthSubnetsAddressFamilies(
 
 func createSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 	afFlag int,
 ) (int, error) {
@@ -408,7 +409,7 @@ func createSubnets(
 }
 
 func buildSubnetObject(
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	parent ipamv1alpha1.Subnet,
 	labels map[string]string,
 ) *ipamv1alpha1.Subnet {
@@ -442,7 +443,7 @@ func buildSubnetObject(
 
 func processSwitchPortsSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) error {
 	c := obj.GetCondition(constants.ConditionIPAddressesOK)
@@ -466,10 +467,10 @@ func processSwitchPortsSubnets(
 
 func createSwitchPortSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 	nic string,
-	data *switchv1beta1.InterfaceSpec,
+	data *metalv1alpha4.InterfaceSpec,
 ) (int, error) {
 	counter := 0
 	for _, ip := range data.IP {
@@ -506,7 +507,7 @@ func createSwitchPortSubnets(
 	return counter, nil
 }
 
-func subnetContainsIP(obj *switchv1beta1.Switch, address *switchv1beta1.IPAddressSpec) (*switchv1beta1.SubnetSpec, error) {
+func subnetContainsIP(obj *metalv1alpha4.NetworkSwitch, address *metalv1alpha4.IPAddressSpec) (*metalv1alpha4.SubnetSpec, error) {
 	for _, subnet := range obj.Status.Subnets {
 		if address.GetAddressFamily() != subnet.GetAddressFamily() {
 			continue
@@ -527,7 +528,7 @@ func subnetContainsIP(obj *switchv1beta1.Switch, address *switchv1beta1.IPAddres
 }
 
 func buildSwitchPortSubnet(
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	cidr *ipamv1alpha1.CIDR,
 	nic, parent, network string,
 ) *ipamv1alpha1.Subnet {
@@ -567,7 +568,7 @@ func buildSwitchPortSubnet(
 
 func cleanupFailedLoopbackIPs(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) error {
 	filterLabels, err := switchespkg.ResultingLabels(
@@ -606,7 +607,7 @@ func cleanupFailedLoopbackIPs(
 
 func cleanupFailedSwitchPortSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) error {
 	subnets := &ipamv1alpha1.SubnetList{}
@@ -639,7 +640,7 @@ func cleanupFailedSwitchPortSubnets(
 
 func cleanupFailedSouthSubnets(
 	ctx context.Context,
-	obj *switchv1beta1.Switch,
+	obj *metalv1alpha4.NetworkSwitch,
 	svc *switchespkg.SwitchEnvironmentSvc,
 ) error {
 	filterLabels, err := switchespkg.ResultingLabels(

@@ -17,9 +17,9 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/onmetal/metal-api/common/types/errors"
-	invdomain "github.com/onmetal/metal-api/domain/inventory"
-	domain "github.com/onmetal/metal-api/domain/machine"
+	"github.com/ironcore-dev/metal/common/types/errors"
+	invdomain "github.com/ironcore-dev/metal/domain/inventory"
+	domain "github.com/ironcore-dev/metal/domain/machine"
 )
 
 type MachineOnboarding interface {

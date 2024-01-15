@@ -44,12 +44,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	switchespkg "github.com/onmetal/metal-api/pkg/switches"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	switchespkg "github.com/ironcore-dev/metal/pkg/switches"
 )
 
-const defaultNamespace string = "onmetal"
+const defaultNamespace string = "ironcore"
 
 const (
 	timeout        = time.Second * 30
@@ -72,7 +71,7 @@ var (
 //nolint:paralleltest,gosec
 func TestSwitchController(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Switch Controller Suite")
+	RunSpecs(t, "NetworkSwitch Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -103,15 +102,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	switchv1beta1.SchemeBuilder.Register(
-		&switchv1beta1.Switch{},
-		&switchv1beta1.SwitchList{},
-		&switchv1beta1.SwitchConfig{},
-		&switchv1beta1.SwitchConfigList{},
-	)
-	inventoryv1alpha1.SchemeBuilder.Register(
-		&inventoryv1alpha1.Inventory{},
-	)
 	ipamv1alpha1.SchemeBuilder.Register(
 		&ipamv1alpha1.Network{},
 		&ipamv1alpha1.Subnet{},
@@ -123,8 +113,7 @@ var _ = BeforeSuite(func() {
 	scheme := runtime.NewScheme()
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(admissionv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(switchv1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(inventoryv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(metalv1alpha4.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(ipamv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
@@ -157,8 +146,8 @@ var _ = BeforeSuite(func() {
 		Scheme: k8sManager.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("onboarding-reconciler"),
 	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
-	Expect((&switchv1beta1.Switch{}).SetupWebhookWithManager(k8sManager)).NotTo(HaveOccurred())
-	Expect((&switchv1beta1.SwitchConfig{}).SetupWebhookWithManager(k8sManager)).NotTo(HaveOccurred())
+	Expect((&metalv1alpha4.NetworkSwitch{}).SetupWebhookWithManager(k8sManager)).NotTo(HaveOccurred())
+	Expect((&metalv1alpha4.SwitchConfig{}).SetupWebhookWithManager(k8sManager)).NotTo(HaveOccurred())
 	Expect((&IPAMReconciler{
 		Client:                  k8sManager.GetClient(),
 		Scheme:                  k8sManager.GetScheme(),
@@ -244,7 +233,7 @@ func seedInventories(ctx context.Context, c client.Client) error {
 		if err != nil {
 			return err
 		}
-		obj := &inventoryv1alpha1.Inventory{}
+		obj := &metalv1alpha4.Inventory{}
 		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
@@ -263,7 +252,7 @@ func seedConfigs(ctx context.Context, c client.Client) error {
 		if err != nil {
 			return err
 		}
-		obj := &switchv1beta1.SwitchConfig{}
+		obj := &metalv1alpha4.SwitchConfig{}
 		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}
@@ -334,7 +323,7 @@ func seedSwitches(ctx context.Context, c client.Client) error {
 		if err != nil {
 			return err
 		}
-		obj := &switchv1beta1.Switch{}
+		obj := &metalv1alpha4.NetworkSwitch{}
 		if err := switchespkg.CreateSampleObject(ctx, c, obj, raw); err != nil {
 			return err
 		}

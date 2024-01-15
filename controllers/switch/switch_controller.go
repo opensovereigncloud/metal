@@ -21,10 +21,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
-	switchespkg "github.com/onmetal/metal-api/pkg/switches"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,9 +36,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
+	switchespkg "github.com/ironcore-dev/metal/pkg/switches"
 )
 
-// SwitchReconciler reconciles Switch object corresponding
+// SwitchReconciler reconciles NetworkSwitch object corresponding
 // to given Inventory object.
 type SwitchReconciler struct {
 	client.Client
@@ -52,16 +52,16 @@ type SwitchReconciler struct {
 	Recorder record.EventRecorder
 }
 
-// +kubebuilder:rbac:groups=switch.onmetal.de,resources=switches,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=switch.onmetal.de,resources=switches/finalizers,verbs=update
-// +kubebuilder:rbac:groups=switch.onmetal.de,resources=switchconfigs,verbs=get;list;watch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switchconfigs,verbs=get;list;watch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories,verbs=get;list;watch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories/status,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	obj := &switchv1beta1.Switch{}
+	obj := &metalv1alpha4.NetworkSwitch{}
 	if err := r.Get(ctx, req.NamespacedName, obj); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -78,14 +78,14 @@ func (r *SwitchReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return r.reconcileRequired(requestCtx, obj)
 }
 
-func (r *SwitchReconciler) reconcileRequired(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *SwitchReconciler) reconcileRequired(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	if !obj.GetDeletionTimestamp().IsZero() {
 		return ctrl.Result{}, nil
 	}
 	return r.reconcileManaged(ctx, obj)
 }
 
-func (r *SwitchReconciler) reconcileManaged(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *SwitchReconciler) reconcileManaged(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	if !obj.Managed() {
 		log := logr.FromContextOrDiscard(ctx)
 		log.WithValues("reason", constants.ReasonUnmanagedSwitch).Info("reconciliation finished")
@@ -94,7 +94,7 @@ func (r *SwitchReconciler) reconcileManaged(ctx context.Context, obj *switchv1be
 	return r.reconcile(ctx, obj)
 }
 
-func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *SwitchReconciler) reconcile(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	if ok, err := r.mapToInventory(ctx, obj); !ok {
 		return ctrl.Result{}, err
 	}
@@ -104,7 +104,7 @@ func (r *SwitchReconciler) reconcile(ctx context.Context, obj *switchv1beta1.Swi
 	return r.reconcileState(ctx, obj)
 }
 
-func (r *SwitchReconciler) reconcileState(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *SwitchReconciler) reconcileState(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	log := logr.FromContextOrDiscard(ctx)
 	svc := switchespkg.NewSwitchEnvironmentSvc(r.Client, log)
 	env := svc.GetEnvironment(ctx, obj)
@@ -144,7 +144,7 @@ func (r *SwitchReconciler) reconcileState(ctx context.Context, obj *switchv1beta
 	return r.updateState(ctx, obj)
 }
 
-func (r *SwitchReconciler) updateState(ctx context.Context, obj *switchv1beta1.Switch) (ctrl.Result, error) {
+func (r *SwitchReconciler) updateState(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (ctrl.Result, error) {
 	obj.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)
 	err := r.Status().Patch(ctx, obj, client.Apply, switchespkg.PatchOpts)
 	if apierrors.IsConflict(err) {
@@ -162,28 +162,28 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&switchv1beta1.Switch{}).
+		For(&metalv1alpha4.NetworkSwitch{}).
 		WithOptions(controller.Options{
 			RecoverPanic: pointer.Bool(true),
 		}).
 		WithEventFilter(predicate.And(discoverObjectChangesPredicate)).
-		// watches for Switch objects required, because switches are
+		// watches for NetworkSwitch objects required, because switches are
 		// interconnected and changes in configuration of one object
 		// might affect another objects.
-		Watches(&switchv1beta1.Switch{}, &handler.Funcs{
+		Watches(&metalv1alpha4.NetworkSwitch{}, &handler.Funcs{
 			UpdateFunc: r.handleSwitchUpdateEvent,
 			DeleteFunc: r.handleSwitchDeleteEvent,
 		}).
 		// watches for SwitchConfig objects required, because
-		// Switch objects' configuration is based on config defined
+		// NetworkSwitch objects' configuration is based on config defined
 		// in SwitchConfig objects, so changes must be tracked.
-		Watches(&switchv1beta1.SwitchConfig{}, &handler.Funcs{
+		Watches(&metalv1alpha4.SwitchConfig{}, &handler.Funcs{
 			UpdateFunc: r.handleSwitchConfigUpdateEvent,
 		}).
 		// watches for Inventory objects required, because
 		// changes in hardware, especially discovering new
 		// neighbors connected to switch ports must be tracked.
-		Watches(&inventoryv1alpha1.Inventory{}, &handler.Funcs{
+		Watches(&metalv1alpha4.Inventory{}, &handler.Funcs{
 			CreateFunc: r.handleInventoryCreateEvent,
 			UpdateFunc: r.handleInventoryUpdateEvent,
 		}).
@@ -192,25 +192,25 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func detectChangesPredicate(e event.UpdateEvent) bool {
 	var (
-		switchOld, switchNew       *switchv1beta1.Switch
-		configOld, configNew       *switchv1beta1.SwitchConfig
-		inventoryOld, inventoryNew *inventoryv1alpha1.Inventory
+		switchOld, switchNew       *metalv1alpha4.NetworkSwitch
+		configOld, configNew       *metalv1alpha4.SwitchConfig
+		inventoryOld, inventoryNew *metalv1alpha4.Inventory
 		castOldOk, castNewOk       bool
 	)
-	switchOld, castOldOk = e.ObjectOld.(*switchv1beta1.Switch)
-	switchNew, castNewOk = e.ObjectNew.(*switchv1beta1.Switch)
+	switchOld, castOldOk = e.ObjectOld.(*metalv1alpha4.NetworkSwitch)
+	switchNew, castNewOk = e.ObjectNew.(*metalv1alpha4.NetworkSwitch)
 	if castOldOk && castNewOk {
 		return switchespkg.ObjectChanged(switchOld.DeepCopy(), switchNew.DeepCopy())
 	}
-	configOld, castOldOk = e.ObjectOld.(*switchv1beta1.SwitchConfig)
-	configNew, castNewOk = e.ObjectNew.(*switchv1beta1.SwitchConfig)
+	configOld, castOldOk = e.ObjectOld.(*metalv1alpha4.SwitchConfig)
+	configNew, castNewOk = e.ObjectNew.(*metalv1alpha4.SwitchConfig)
 	if castOldOk && castNewOk {
 		specChanged := !reflect.DeepEqual(configOld.Spec, configNew.Spec)
 		labelsChanged := !reflect.DeepEqual(configOld.Labels, configNew.Labels)
 		return specChanged || labelsChanged
 	}
-	inventoryOld, castOldOk = e.ObjectOld.(*inventoryv1alpha1.Inventory)
-	inventoryNew, castNewOk = e.ObjectNew.(*inventoryv1alpha1.Inventory)
+	inventoryOld, castOldOk = e.ObjectOld.(*metalv1alpha4.Inventory)
+	inventoryNew, castNewOk = e.ObjectNew.(*metalv1alpha4.Inventory)
 	if castOldOk && castNewOk {
 		return !reflect.DeepEqual(inventoryOld.Spec, inventoryNew.Spec)
 	}
@@ -219,8 +219,8 @@ func detectChangesPredicate(e event.UpdateEvent) bool {
 
 func (r *SwitchReconciler) handleSwitchUpdateEvent(_ context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	r.Log.WithValues("handler", "SwitchUpdateEvent").Info("enqueueing switches")
-	objOld, okOld := e.ObjectOld.(*switchv1beta1.Switch)
-	objNew, okNew := e.ObjectNew.(*switchv1beta1.Switch)
+	objOld, okOld := e.ObjectOld.(*metalv1alpha4.NetworkSwitch)
+	objNew, okNew := e.ObjectNew.(*metalv1alpha4.NetworkSwitch)
 	if !okOld || !okNew {
 		return
 	}
@@ -252,7 +252,7 @@ func (r *SwitchReconciler) handleSwitchUpdateEvent(_ context.Context, e event.Up
 
 func (r *SwitchReconciler) handleSwitchDeleteEvent(_ context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	r.Log.WithValues("handler", "SwitchDeleteEvent").Info("enqueueing switches")
-	obj, ok := e.Object.(*switchv1beta1.Switch)
+	obj, ok := e.Object.(*metalv1alpha4.NetworkSwitch)
 	if !ok {
 		return
 	}
@@ -273,12 +273,12 @@ func (r *SwitchReconciler) handleSwitchDeleteEvent(_ context.Context, e event.De
 
 func (r *SwitchReconciler) handleSwitchConfigUpdateEvent(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	r.Log.WithValues("handler", "SwitchConfigUpdateEvent").Info("enqueueing switches")
-	_, castOldOk := e.ObjectOld.(*switchv1beta1.SwitchConfig)
-	_, castNewOk := e.ObjectNew.(*switchv1beta1.SwitchConfig)
+	_, castOldOk := e.ObjectOld.(*metalv1alpha4.SwitchConfig)
+	_, castNewOk := e.ObjectNew.(*metalv1alpha4.SwitchConfig)
 	if !castOldOk || !castNewOk {
 		return
 	}
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	if err := r.List(ctx, switches); err != nil {
 		r.Log.Error(err, "failed to list switches while handling SwitchConfig update event")
 		return
@@ -290,7 +290,7 @@ func (r *SwitchReconciler) handleSwitchConfigUpdateEvent(ctx context.Context, e 
 
 func (r *SwitchReconciler) handleInventoryCreateEvent(_ context.Context, e event.CreateEvent, q workqueue.RateLimitingInterface) {
 	r.Log.WithValues("handler", "InventoryCreateEvent").Info("enqueueing corresponding switch")
-	inventory, castOk := e.Object.(*inventoryv1alpha1.Inventory)
+	inventory, castOk := e.Object.(*metalv1alpha4.Inventory)
 	if !castOk {
 		return
 	}
@@ -299,20 +299,20 @@ func (r *SwitchReconciler) handleInventoryCreateEvent(_ context.Context, e event
 
 func (r *SwitchReconciler) handleInventoryUpdateEvent(_ context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 	r.Log.WithValues("handler", "InventoryUpdateEvent").Info("enqueueing corresponding switch")
-	_, castOldOk := e.ObjectOld.(*inventoryv1alpha1.Inventory)
-	inventoryNew, castNewOk := e.ObjectNew.(*inventoryv1alpha1.Inventory)
+	_, castOldOk := e.ObjectOld.(*metalv1alpha4.Inventory)
+	inventoryNew, castNewOk := e.ObjectNew.(*metalv1alpha4.Inventory)
 	if castOldOk && castNewOk {
 		return
 	}
 	q.Add(reconcile.Request{NamespacedName: client.ObjectKeyFromObject(inventoryNew)})
 }
 
-func (r *SwitchReconciler) mapToInventory(ctx context.Context, obj *switchv1beta1.Switch) (bool, error) {
+func (r *SwitchReconciler) mapToInventory(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (bool, error) {
 	inventoryRefDefined := obj.GetInventoryRef() != constants.EmptyString
 	_, inventoriedLabel := obj.Labels[constants.InventoriedLabel]
 	_, chassisIDLabel := obj.Labels[constants.LabelChassisID]
 	if !(inventoryRefDefined && inventoriedLabel && chassisIDLabel) {
-		inv := &inventoryv1alpha1.Inventory{}
+		inv := &metalv1alpha4.Inventory{}
 		if err := r.Get(ctx, client.ObjectKeyFromObject(obj), inv); err != nil {
 			return false, err
 		}
@@ -326,7 +326,7 @@ func (r *SwitchReconciler) mapToInventory(ctx context.Context, obj *switchv1beta
 	return true, nil
 }
 
-func (r *SwitchReconciler) configSelectorValid(ctx context.Context, obj *switchv1beta1.Switch) (bool, error) {
+func (r *SwitchReconciler) configSelectorValid(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (bool, error) {
 	if switchespkg.SwitchConfigSelectorInvalid(obj) {
 		switchespkg.UpdateSwitchConfigSelector(obj)
 		obj.ManagedFields = make([]metav1.ManagedFieldsEntry, 0)

@@ -2,6 +2,6 @@ apiVersion: ipam.onmetal.de/v1alpha1
 kind: Network
 metadata:
   name: underlay
-  namespace: onmetal
+  namespace: ironcore
 spec:
   description: "test network"

@@ -1,13 +1,318 @@
 <p>Packages:</p>
 <ul>
 <li>
-<a href="#switch.onmetal.de%2fv1beta1">switch.onmetal.de/v1beta1</a>
+<a href="#metal.ironcore.dev%2fv1beta1">metal.ironcore.dev/v1beta1</a>
 </li>
 </ul>
-<h2 id="switch.onmetal.de/v1beta1">switch.onmetal.de/v1beta1</h2>
+<h2 id="metal.ironcore.dev/v1beta1">metal.ironcore.dev/v1beta1</h2>
 Resource Types:
-<ul></ul>
-<h3 id="switch.onmetal.de/v1beta1.AdditionalIPSpec">AdditionalIPSpec
+<ul><li>
+<a href="#metal.ironcore.dev/v1beta1.Switch">Switch</a>
+</li><li>
+<a href="#metal.ironcore.dev/v1beta1.SwitchConfig">SwitchConfig</a>
+</li></ul>
+<h3 id="metal.ironcore.dev/v1beta1.Switch">Switch
+</h3>
+<div>
+<p>Switch is the Schema for switches API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+string</td>
+<td>
+<code>
+metal.ironcore.dev/v1beta1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code><br/>
+string
+</td>
+<td><code>Switch</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.SwitchSpec">
+SwitchSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>inventoryRef</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>InventoryRef contains reference to corresponding inventory object
+Empty InventoryRef means that there is no corresponding Inventory object</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>configSelector</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#labelselector-v1-meta">
+Kubernetes meta/v1.LabelSelector
+</a>
+</em>
+</td>
+<td>
+<p>ConfigSelector contains selector to filter out corresponding SwitchConfig.
+If the selector is not defined, it will be populated by defaulting webhook
+with MatchLabels item, containing &lsquo;metal.ironcore.dev/layer&rsquo; key with value
+equals to object&rsquo;s .status.layer.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>managed</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Managed is a flag defining whether Switch object would be processed during reconciliation</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cordon</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Cordon is a flag defining whether Switch object is taken offline</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>topSpine</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>TopSpine is a flag defining whether Switch is a top-level spine switch</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>scanPorts</code><br/>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>ScanPorts is a flag defining whether to run periodical scanning on switch ports</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ipam</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.IPAMSpec">
+IPAMSpec
+</a>
+</em>
+</td>
+<td>
+<p>IPAM refers to selectors for subnets which will be used for Switch object</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>interfaces</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.InterfacesSpec">
+InterfacesSpec
+</a>
+</em>
+</td>
+<td>
+<p>Interfaces contains general configuration for all switch ports</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.SwitchStatus">
+SwitchStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metal.ironcore.dev/v1beta1.SwitchConfig">SwitchConfig
+</h3>
+<div>
+<p>SwitchConfig is the Schema for switch config API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+string</td>
+<td>
+<code>
+metal.ironcore.dev/v1beta1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code><br/>
+string
+</td>
+<td><code>SwitchConfig</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.SwitchConfigSpec">
+SwitchConfigSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>switches</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#labelselector-v1-meta">
+Kubernetes meta/v1.LabelSelector
+</a>
+</em>
+</td>
+<td>
+<p>Switches contains label selector to pick up Switch objects</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>portsDefaults</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.PortParametersSpec">
+PortParametersSpec
+</a>
+</em>
+</td>
+<td>
+<p>PortsDefaults contains switch port parameters which will be applied to all ports of the switches
+which fit selector conditions</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ipam</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.GeneralIPAMSpec">
+GeneralIPAMSpec
+</a>
+</em>
+</td>
+<td>
+<p>IPAM refers to selectors for subnets which will be used for Switch object</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>routingConfigTemplate</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.SwitchConfigStatus">
+SwitchConfigStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metal.ironcore.dev/v1beta1.AdditionalIPSpec">AdditionalIPSpec
 </h3>
 <div>
 <p>AdditionalIPSpec defines IP address and selector for subnet where address should be reserved</p>
@@ -46,10 +351,10 @@ Kubernetes meta/v1.LabelSelector
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.AddressFamiliesMap">AddressFamiliesMap
+<h3 id="metal.ironcore.dev/v1beta1.AddressFamiliesMap">AddressFamiliesMap
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.GeneralIPAMSpec">GeneralIPAMSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.GeneralIPAMSpec">GeneralIPAMSpec</a>)
 </p>
 <div>
 <p>AddressFamiliesMap contains flags regarding what IP address families should be used</p>
@@ -86,7 +391,7 @@ bool
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.ConditionSpec">ConditionSpec
+<h3 id="metal.ironcore.dev/v1beta1.ConditionSpec">ConditionSpec
 </h3>
 <div>
 <p>ConditionSpec contains current condition of port parameters</p>
@@ -167,14 +472,14 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.ConnectionsMap">ConnectionsMap
+<h3 id="metal.ironcore.dev/v1beta1.ConnectionsMap">ConnectionsMap
 (<code>map[uint8]*..SwitchList</code> alias)</h3>
 <div>
 </div>
-<h3 id="switch.onmetal.de/v1beta1.FieldSelectorSpec">FieldSelectorSpec
+<h3 id="metal.ironcore.dev/v1beta1.FieldSelectorSpec">FieldSelectorSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.IPAMSelectionSpec">IPAMSelectionSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.IPAMSelectionSpec">IPAMSelectionSpec</a>)
 </p>
 <div>
 <p>FieldSelectorSpec contains label key and field path where to get label value for search</p>
@@ -213,10 +518,10 @@ Kubernetes core/v1.ObjectFieldSelector
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.GeneralIPAMSpec">GeneralIPAMSpec
+<h3 id="metal.ironcore.dev/v1beta1.GeneralIPAMSpec">GeneralIPAMSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.SwitchConfigSpec">SwitchConfigSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.SwitchConfigSpec">SwitchConfigSpec</a>)
 </p>
 <div>
 <p>GeneralIPAMSpec contains definition of selectors, used to filter
@@ -234,7 +539,7 @@ required IPAM objects.</p>
 <td>
 <code>addressFamily</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.AddressFamiliesMap">
+<a href="#metal.ironcore.dev/v1beta1.AddressFamiliesMap">
 AddressFamiliesMap
 </a>
 </em>
@@ -247,7 +552,7 @@ AddressFamiliesMap
 <td>
 <code>carrierSubnets</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSelectionSpec">
+<a href="#metal.ironcore.dev/v1beta1.IPAMSelectionSpec">
 IPAMSelectionSpec
 </a>
 </em>
@@ -261,7 +566,7 @@ should be reserved</p>
 <td>
 <code>loopbackSubnets</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSelectionSpec">
+<a href="#metal.ironcore.dev/v1beta1.IPAMSelectionSpec">
 IPAMSelectionSpec
 </a>
 </em>
@@ -275,7 +580,7 @@ IP addresses should be reserved</p>
 <td>
 <code>southSubnets</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSelectionSpec">
+<a href="#metal.ironcore.dev/v1beta1.IPAMSelectionSpec">
 IPAMSelectionSpec
 </a>
 </em>
@@ -288,7 +593,7 @@ IPAMSelectionSpec
 <td>
 <code>loopbackAddresses</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSelectionSpec">
+<a href="#metal.ironcore.dev/v1beta1.IPAMSelectionSpec">
 IPAMSelectionSpec
 </a>
 </em>
@@ -299,10 +604,10 @@ IPAMSelectionSpec
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.IPAMSelectionSpec">IPAMSelectionSpec
+<h3 id="metal.ironcore.dev/v1beta1.IPAMSelectionSpec">IPAMSelectionSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.GeneralIPAMSpec">GeneralIPAMSpec</a>, <a href="#switch.onmetal.de/v1beta1.IPAMSpec">IPAMSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.GeneralIPAMSpec">GeneralIPAMSpec</a>, <a href="#metal.ironcore.dev/v1beta1.IPAMSpec">IPAMSpec</a>)
 </p>
 <div>
 <p>IPAMSelectionSpec contains label selector and address family</p>
@@ -332,7 +637,7 @@ Kubernetes meta/v1.LabelSelector
 <td>
 <code>fieldSelector</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.FieldSelectorSpec">
+<a href="#metal.ironcore.dev/v1beta1.FieldSelectorSpec">
 FieldSelectorSpec
 </a>
 </em>
@@ -346,10 +651,10 @@ configuration in Switch object, it will reference to the field path in the same 
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.IPAMSpec">IPAMSpec
+<h3 id="metal.ironcore.dev/v1beta1.IPAMSpec">IPAMSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.SwitchSpec">SwitchSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.SwitchSpec">SwitchSpec</a>)
 </p>
 <div>
 <p>IPAMSpec contains selectors for subnets and loopback IPs and
@@ -367,7 +672,7 @@ definition of address families which should be claimed</p>
 <td>
 <code>southSubnets</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSelectionSpec">
+<a href="#metal.ironcore.dev/v1beta1.IPAMSelectionSpec">
 IPAMSelectionSpec
 </a>
 </em>
@@ -380,7 +685,7 @@ IPAMSelectionSpec
 <td>
 <code>loopbackAddresses</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSelectionSpec">
+<a href="#metal.ironcore.dev/v1beta1.IPAMSelectionSpec">
 IPAMSelectionSpec
 </a>
 </em>
@@ -391,7 +696,7 @@ IPAMSelectionSpec
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.IPAddressSpec">IPAddressSpec
+<h3 id="metal.ironcore.dev/v1beta1.IPAddressSpec">IPAddressSpec
 </h3>
 <div>
 <p>IPAddressSpec defines interface&rsquo;s ip address info</p>
@@ -408,7 +713,7 @@ IPAMSelectionSpec
 <td>
 <code>ObjectReference</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.ObjectReference">
+<a href="#metal.ironcore.dev/v1beta1.ObjectReference">
 ObjectReference
 </a>
 </em>
@@ -455,7 +760,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.InterfaceOverridesSpec">InterfaceOverridesSpec
+<h3 id="metal.ironcore.dev/v1beta1.InterfaceOverridesSpec">InterfaceOverridesSpec
 </h3>
 <div>
 <p>InterfaceOverridesSpec contains overridden parameters for certain switch port</p>
@@ -472,7 +777,7 @@ string
 <td>
 <code>PortParametersSpec</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.PortParametersSpec">
+<a href="#metal.ironcore.dev/v1beta1.PortParametersSpec">
 PortParametersSpec
 </a>
 </em>
@@ -499,7 +804,7 @@ string
 <td>
 <code>ip</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.*..AdditionalIPSpec">
+<a href="#metal.ironcore.dev/v1beta1.*..AdditionalIPSpec">
 []*..AdditionalIPSpec
 </a>
 </em>
@@ -510,7 +815,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.InterfaceSpec">InterfaceSpec
+<h3 id="metal.ironcore.dev/v1beta1.InterfaceSpec">InterfaceSpec
 </h3>
 <div>
 <p>InterfaceSpec defines the state of switch&rsquo;s interface</p>
@@ -527,7 +832,7 @@ string
 <td>
 <code>PortParametersSpec</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.PortParametersSpec">
+<a href="#metal.ironcore.dev/v1beta1.PortParametersSpec">
 PortParametersSpec
 </a>
 </em>
@@ -566,7 +871,7 @@ uint32
 <td>
 <code>ip</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.*..IPAddressSpec">
+<a href="#metal.ironcore.dev/v1beta1.*..IPAddressSpec">
 []*..IPAddressSpec
 </a>
 </em>
@@ -590,7 +895,7 @@ string
 <td>
 <code>peer</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.PeerSpec">
+<a href="#metal.ironcore.dev/v1beta1.PeerSpec">
 PeerSpec
 </a>
 </em>
@@ -601,10 +906,10 @@ PeerSpec
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.InterfacesSpec">InterfacesSpec
+<h3 id="metal.ironcore.dev/v1beta1.InterfacesSpec">InterfacesSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.SwitchSpec">SwitchSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.SwitchSpec">SwitchSpec</a>)
 </p>
 <div>
 <p>InterfacesSpec contains definitions for general switch ports&rsquo; configuration</p>
@@ -621,7 +926,7 @@ PeerSpec
 <td>
 <code>defaults</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.PortParametersSpec">
+<a href="#metal.ironcore.dev/v1beta1.PortParametersSpec">
 PortParametersSpec
 </a>
 </em>
@@ -634,7 +939,7 @@ PortParametersSpec
 <td>
 <code>overrides</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.*..InterfaceOverridesSpec">
+<a href="#metal.ironcore.dev/v1beta1.*..InterfaceOverridesSpec">
 []*..InterfaceOverridesSpec
 </a>
 </em>
@@ -645,10 +950,10 @@ PortParametersSpec
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.ObjectReference">ObjectReference
+<h3 id="metal.ironcore.dev/v1beta1.ObjectReference">ObjectReference
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.IPAddressSpec">IPAddressSpec</a>, <a href="#switch.onmetal.de/v1beta1.PeerSpec">PeerSpec</a>, <a href="#switch.onmetal.de/v1beta1.SubnetSpec">SubnetSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.IPAddressSpec">IPAddressSpec</a>, <a href="#metal.ironcore.dev/v1beta1.PeerSpec">PeerSpec</a>, <a href="#metal.ironcore.dev/v1beta1.SubnetSpec">SubnetSpec</a>)
 </p>
 <div>
 <p>ObjectReference contains enough information to let you locate the
@@ -686,10 +991,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.PeerInfoSpec">PeerInfoSpec
+<h3 id="metal.ironcore.dev/v1beta1.PeerInfoSpec">PeerInfoSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.PeerSpec">PeerSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.PeerSpec">PeerSpec</a>)
 </p>
 <div>
 <p>PeerInfoSpec contains LLDP info about peer</p>
@@ -760,10 +1065,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.PeerSpec">PeerSpec
+<h3 id="metal.ironcore.dev/v1beta1.PeerSpec">PeerSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.InterfaceSpec">InterfaceSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.InterfaceSpec">InterfaceSpec</a>)
 </p>
 <div>
 <p>PeerSpec defines peer info</p>
@@ -780,7 +1085,7 @@ string
 <td>
 <code>ObjectReference</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.ObjectReference">
+<a href="#metal.ironcore.dev/v1beta1.ObjectReference">
 ObjectReference
 </a>
 </em>
@@ -796,7 +1101,7 @@ ObjectReference
 <td>
 <code>PeerInfoSpec</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.PeerInfoSpec">
+<a href="#metal.ironcore.dev/v1beta1.PeerInfoSpec">
 PeerInfoSpec
 </a>
 </em>
@@ -810,10 +1115,10 @@ PeerInfoSpec
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.PortParametersSpec">PortParametersSpec
+<h3 id="metal.ironcore.dev/v1beta1.PortParametersSpec">PortParametersSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.InterfaceOverridesSpec">InterfaceOverridesSpec</a>, <a href="#switch.onmetal.de/v1beta1.InterfaceSpec">InterfaceSpec</a>, <a href="#switch.onmetal.de/v1beta1.InterfacesSpec">InterfacesSpec</a>, <a href="#switch.onmetal.de/v1beta1.SwitchConfigSpec">SwitchConfigSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.InterfaceOverridesSpec">InterfaceOverridesSpec</a>, <a href="#metal.ironcore.dev/v1beta1.InterfaceSpec">InterfaceSpec</a>, <a href="#metal.ironcore.dev/v1beta1.InterfacesSpec">InterfacesSpec</a>, <a href="#metal.ironcore.dev/v1beta1.SwitchConfigSpec">SwitchConfigSpec</a>)
 </p>
 <div>
 <p>PortParametersSpec contains a set of parameters of switch port</p>
@@ -894,10 +1199,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.RegionSpec">RegionSpec
+<h3 id="metal.ironcore.dev/v1beta1.RegionSpec">RegionSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.SubnetSpec">SubnetSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.SubnetSpec">SubnetSpec</a>)
 </p>
 <div>
 <p>RegionSpec defines region info</p>
@@ -934,7 +1239,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.SubnetSpec">SubnetSpec
+<h3 id="metal.ironcore.dev/v1beta1.SubnetSpec">SubnetSpec
 </h3>
 <div>
 <p>SubnetSpec defines switch&rsquo;s subnet info</p>
@@ -949,17 +1254,27 @@ string
 <tbody>
 <tr>
 <td>
-<code>ObjectReference</code><br/>
+<code>subnet</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.ObjectReference">
+<a href="#metal.ironcore.dev/v1beta1.ObjectReference">
 ObjectReference
 </a>
 </em>
 </td>
 <td>
-<p>
-(Members of <code>ObjectReference</code> are embedded into this type.)
-</p>
+<p>Contains information to locate the referenced object</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>network</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1beta1.ObjectReference">
+ObjectReference
+</a>
+</em>
+</td>
+<td>
 <p>Contains information to locate the referenced object</p>
 </td>
 </tr>
@@ -979,7 +1294,7 @@ validation pattern</p>
 <td>
 <code>region</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.RegionSpec">
+<a href="#metal.ironcore.dev/v1beta1.RegionSpec">
 RegionSpec
 </a>
 </em>
@@ -1001,277 +1316,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.Switch">Switch
-</h3>
-<div>
-<p>Switch is the Schema for switches API.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.SwitchSpec">
-SwitchSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>inventoryRef</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
-Kubernetes core/v1.LocalObjectReference
-</a>
-</em>
-</td>
-<td>
-<p>InventoryRef contains reference to corresponding inventory object
-Empty InventoryRef means that there is no corresponding Inventory object</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>configSelector</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#labelselector-v1-meta">
-Kubernetes meta/v1.LabelSelector
-</a>
-</em>
-</td>
-<td>
-<p>ConfigSelector contains selector to filter out corresponding SwitchConfig.
-If the selector is not defined, it will be populated by defaulting webhook
-with MatchLabels item, containing &lsquo;switch.onmetal.de/layer&rsquo; key with value
-equals to object&rsquo;s .status.layer.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>managed</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Managed is a flag defining whether Switch object would be processed during reconciliation</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>cordon</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Cordon is a flag defining whether Switch object is taken offline</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>topSpine</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>TopSpine is a flag defining whether Switch is a top-level spine switch</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>scanPorts</code><br/>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>ScanPorts is a flag defining whether to run periodical scanning on switch ports</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ipam</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSpec">
-IPAMSpec
-</a>
-</em>
-</td>
-<td>
-<p>IPAM refers to selectors for subnets which will be used for Switch object</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>interfaces</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.InterfacesSpec">
-InterfacesSpec
-</a>
-</em>
-</td>
-<td>
-<p>Interfaces contains general configuration for all switch ports</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.SwitchStatus">
-SwitchStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="switch.onmetal.de/v1beta1.SwitchConfig">SwitchConfig
-</h3>
-<div>
-<p>SwitchConfig is the Schema for switch config API.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.SwitchConfigSpec">
-SwitchConfigSpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>switches</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#labelselector-v1-meta">
-Kubernetes meta/v1.LabelSelector
-</a>
-</em>
-</td>
-<td>
-<p>Switches contains label selector to pick up Switch objects</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>portsDefaults</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.PortParametersSpec">
-PortParametersSpec
-</a>
-</em>
-</td>
-<td>
-<p>PortsDefaults contains switch port parameters which will be applied to all ports of the switches
-which fit selector conditions</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ipam</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.GeneralIPAMSpec">
-GeneralIPAMSpec
-</a>
-</em>
-</td>
-<td>
-<p>IPAM refers to selectors for subnets which will be used for Switch object</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>routingConfigTemplate</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
-Kubernetes core/v1.LocalObjectReference
-</a>
-</em>
-</td>
-<td>
-<p>RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code><br/>
-<em>
-<a href="#switch.onmetal.de/v1beta1.SwitchConfigStatus">
-SwitchConfigStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="switch.onmetal.de/v1beta1.SwitchConfigSpec">SwitchConfigSpec
+<h3 id="metal.ironcore.dev/v1beta1.SwitchConfigSpec">SwitchConfigSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.SwitchConfig">SwitchConfig</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.SwitchConfig">SwitchConfig</a>)
 </p>
 <div>
 <p>SwitchConfigSpec contains desired configuration for selected switches.</p>
@@ -1301,7 +1349,7 @@ Kubernetes meta/v1.LabelSelector
 <td>
 <code>portsDefaults</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.PortParametersSpec">
+<a href="#metal.ironcore.dev/v1beta1.PortParametersSpec">
 PortParametersSpec
 </a>
 </em>
@@ -1315,7 +1363,7 @@ which fit selector conditions</p>
 <td>
 <code>ipam</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.GeneralIPAMSpec">
+<a href="#metal.ironcore.dev/v1beta1.GeneralIPAMSpec">
 GeneralIPAMSpec
 </a>
 </em>
@@ -1339,18 +1387,18 @@ Kubernetes core/v1.LocalObjectReference
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.SwitchConfigStatus">SwitchConfigStatus
+<h3 id="metal.ironcore.dev/v1beta1.SwitchConfigStatus">SwitchConfigStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.SwitchConfig">SwitchConfig</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.SwitchConfig">SwitchConfig</a>)
 </p>
 <div>
 <p>SwitchConfigStatus contains observed state of SwitchConfig</p>
 </div>
-<h3 id="switch.onmetal.de/v1beta1.SwitchSpec">SwitchSpec
+<h3 id="metal.ironcore.dev/v1beta1.SwitchSpec">SwitchSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.Switch">Switch</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.Switch">Switch</a>)
 </p>
 <div>
 <p>SwitchSpec contains desired state of resulting Switch configuration</p>
@@ -1389,7 +1437,7 @@ Kubernetes meta/v1.LabelSelector
 <td>
 <p>ConfigSelector contains selector to filter out corresponding SwitchConfig.
 If the selector is not defined, it will be populated by defaulting webhook
-with MatchLabels item, containing &lsquo;switch.onmetal.de/layer&rsquo; key with value
+with MatchLabels item, containing &lsquo;metal.ironcore.dev/layer&rsquo; key with value
 equals to object&rsquo;s .status.layer.</p>
 </td>
 </tr>
@@ -1441,7 +1489,7 @@ bool
 <td>
 <code>ipam</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.IPAMSpec">
+<a href="#metal.ironcore.dev/v1beta1.IPAMSpec">
 IPAMSpec
 </a>
 </em>
@@ -1454,7 +1502,7 @@ IPAMSpec
 <td>
 <code>interfaces</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.InterfacesSpec">
+<a href="#metal.ironcore.dev/v1beta1.InterfacesSpec">
 InterfacesSpec
 </a>
 </em>
@@ -1465,10 +1513,10 @@ InterfacesSpec
 </tr>
 </tbody>
 </table>
-<h3 id="switch.onmetal.de/v1beta1.SwitchStatus">SwitchStatus
+<h3 id="metal.ironcore.dev/v1beta1.SwitchStatus">SwitchStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#switch.onmetal.de/v1beta1.Switch">Switch</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1beta1.Switch">Switch</a>)
 </p>
 <div>
 <p>SwitchStatus contains observed state of Switch</p>
@@ -1493,6 +1541,20 @@ Kubernetes core/v1.LocalObjectReference
 <td>
 <p>ConfigRef contains reference to corresponding SwitchConfig object
 Empty ConfigRef means that there is no corresponding SwitchConfig object</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>routingConfigTemplate</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>RoutingConfigTemplate contains the reference to the ConfigMap object which contains go-template for FRR config.
+This field reflects the corresponding field of the related SwitchConfig object.</p>
 </td>
 </tr>
 <tr>
@@ -1554,7 +1616,7 @@ uint32
 <td>
 <code>interfaces</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.*..InterfaceSpec">
+<a href="#metal.ironcore.dev/v1beta1.*..InterfaceSpec">
 map[string]*..InterfaceSpec
 </a>
 </em>
@@ -1567,7 +1629,7 @@ map[string]*..InterfaceSpec
 <td>
 <code>subnets</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.*..SubnetSpec">
+<a href="#metal.ironcore.dev/v1beta1.*..SubnetSpec">
 []*..SubnetSpec
 </a>
 </em>
@@ -1580,7 +1642,7 @@ map[string]*..InterfaceSpec
 <td>
 <code>loopbackAddresses</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.*..IPAddressSpec">
+<a href="#metal.ironcore.dev/v1beta1.*..IPAddressSpec">
 []*..IPAddressSpec
 </a>
 </em>
@@ -1615,7 +1677,7 @@ string
 <td>
 <code>conditions</code><br/>
 <em>
-<a href="#switch.onmetal.de/v1beta1.*..ConditionSpec">
+<a href="#metal.ironcore.dev/v1beta1.*..ConditionSpec">
 []*..ConditionSpec
 </a>
 </em>
@@ -1629,5 +1691,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>1a7d81b</code>.
+on git commit <code>95c3af5</code>.
 </em></p>

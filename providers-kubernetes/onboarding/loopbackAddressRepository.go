@@ -20,9 +20,9 @@ import (
 	"net/netip"
 	"time"
 
+	domain "github.com/ironcore-dev/metal/domain/address"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 	ipam "github.com/onmetal/ipam/api/v1alpha1"
-	domain "github.com/onmetal/metal-api/domain/address"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"

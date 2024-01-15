@@ -1,4 +1,4 @@
-module github.com/onmetal/metal-api
+module github.com/ironcore-dev/metal
 
 go 1.21
 

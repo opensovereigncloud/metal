@@ -18,7 +18,7 @@ import (
 	"net/netip"
 	"testing"
 
-	domain "github.com/onmetal/metal-api/domain/address"
+	domain "github.com/ironcore-dev/metal/domain/address"
 	"github.com/stretchr/testify/assert"
 )
 

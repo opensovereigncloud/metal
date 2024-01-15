@@ -2,7 +2,7 @@
 
 ## Resources
 
-Switch operator manages two custom resources: [`SwitchConfig`](#switchconfig) and [`Switch`](#switch). Apart from that `Switch` objects reconciliation depends on other resources: `Inventory`, `Size` (both are parts of [metal-api](https://github.com/onmetal/metal-api)) and `Subnet`, `IP` (both are parts of [IPAM](https://github.com/onmetal/ipam)). Switches also affect `Machines` (also part of [metal-api](https://github.com/onmetal/metal-api)) in terms of obtaining IP addresses by machines.
+Switch operator manages two custom resources: [`SwitchConfig`](#switchconfig) and [`Switch`](#switch). Apart from that `Switch` objects reconciliation depends on other resources: `Inventory`, `Size` (both are parts of [metal-api](https://github.com/ironcore-dev/metal)) and `Subnet`, `IP` (both are parts of [IPAM](https://github.com/onmetal/ipam)). Switches also affect `Machines` (also part of [metal-api](https://github.com/ironcore-dev/metal)) in terms of obtaining IP addresses by machines.
 
 ## SwitchConfig
 
@@ -58,13 +58,13 @@ The main goals of `Switch` type are:
 
 ## Mapping between Switch and SwitchConfig objects
 
-The mapping between `Switch` and `SwitchConfig` objects is set up using labels. There is the field `.spec.configSelector` in `Switch` object definition. It contains native kubernetes labels selector for filtering out which `SwitchConfig` objects to consume. The field `.spec.configSelector` in `Switch` object is optional. However, in case it is not defined, it will be populated by defaulting webhook with `MatchLabels` item containing `switch.onmetal.de/layer` label. The label will reflect the value of `.status.layer` field of the `Switch` object.
+The mapping between `Switch` and `SwitchConfig` objects is set up using labels. There is the field `.spec.configSelector` in `Switch` object definition. It contains native kubernetes labels selector for filtering out which `SwitchConfig` objects to consume. The field `.spec.configSelector` in `Switch` object is optional. However, in case it is not defined, it will be populated by defaulting webhook with `MatchLabels` item containing `metal.ironcore.dev/layer` label. The label will reflect the value of `.status.layer` field of the `Switch` object.
 
-If later selector will be defined, defaulting webhook will remove `switch.onmetal.de/layer` label from selector.
+If later selector will be defined, defaulting webhook will remove `metal.ironcore.dev/layer` label from selector.
 
 Thus, there are two mutually exclusive options to set up relationship between `Switch` and `SwitchConfig` objects:
 
-- Leave `.spec.configSelector` blank for `Switch` object and set label `switch.onmetal.de/layer` to the `SwitchConfig` object;
+- Leave `.spec.configSelector` blank for `Switch` object and set label `metal.ironcore.dev/layer` to the `SwitchConfig` object;
 - Define labelSelector in `.spec.configSelector` for `Switch` object and label `SwitchConfig` object with respective labels;
 
 ## How it works at scale

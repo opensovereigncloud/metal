@@ -20,12 +20,13 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	invdomain "github.com/onmetal/metal-api/domain/inventory"
-	domain "github.com/onmetal/metal-api/domain/machine"
-	"github.com/onmetal/metal-api/pkg/network/bgp"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	invdomain "github.com/ironcore-dev/metal/domain/inventory"
+	domain "github.com/ironcore-dev/metal/domain/machine"
+	"github.com/ironcore-dev/metal/pkg/network/bgp"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 )
 
 type MachineOnboardingUseCase struct {
@@ -71,7 +72,7 @@ func (m *MachineOnboardingUseCase) Execute(machine domain.Machine, inventory inv
 
 func (m *MachineOnboardingUseCase) MachineInterfacesWithSwitchInfo(
 	inventory invdomain.Inventory,
-) []machine.Interface {
+) []metalv1alpha4.Interface {
 	interfaces := dto.ToMachineInterfaces(inventory.NICs)
 	for i := range interfaces {
 		updatedInterfaceInfo, err := m.FindSwitchAndAddInfo(interfaces[i])
@@ -84,8 +85,8 @@ func (m *MachineOnboardingUseCase) MachineInterfacesWithSwitchInfo(
 }
 
 func (m *MachineOnboardingUseCase) FindSwitchAndAddInfo(
-	machineInterface machine.Interface,
-) (machine.Interface, error) {
+	machineInterface metalv1alpha4.Interface,
+) (metalv1alpha4.Interface, error) {
 	chassisID := strings.ReplaceAll(machineInterface.Peer.LLDPChassisID, ":", "-")
 	sw, err := m.switchExtractor.ByChassisID(chassisID)
 	if err != nil {
@@ -94,7 +95,7 @@ func (m *MachineOnboardingUseCase) FindSwitchAndAddInfo(
 			"chassis-id", chassisID,
 			"error", err,
 		)
-		return machine.Interface{}, err
+		return metalv1alpha4.Interface{}, err
 	}
 	return sw.AddSwitchInfoToMachineInterfaces(machineInterface), nil
 }

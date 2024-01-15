@@ -30,11 +30,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
-	CMACAddressLabelPrefix = "machine.onmetal.de/mac-address-"
+	CMACAddressLabelPrefix = "metal.ironcore.dev/mac-address-"
 	CDefaultAggregateName  = "default"
 )
 
@@ -46,14 +46,14 @@ type InventoryReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=metalv1alpha4,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=metalv1alpha4/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=metalv1alpha4/finalizers,verbs=update
 
 func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("inventory", req.NamespacedName)
 
-	inv := &inventories.Inventory{}
+	inv := &metalv1alpha4.Inventory{}
 
 	err := r.Get(ctx, req.NamespacedName, inv)
 	if apierrors.IsNotFound(err) {
@@ -73,7 +73,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		Namespace: req.Namespace,
 		Name:      CDefaultAggregateName,
 	}
-	defaultAggregate := &inventories.Aggregate{}
+	defaultAggregate := &metalv1alpha4.Aggregate{}
 	err = r.Get(ctx, defaultAggregateNamespacedName, defaultAggregate)
 	if apierrors.IsNotFound(err) {
 		log.Info("trying to create default aggregate", "name", defaultAggregateNamespacedName)
@@ -97,7 +97,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	limit := int64(1000)
 
 	for {
-		aggregateList := &inventories.AggregateList{}
+		aggregateList := &metalv1alpha4.AggregateList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     limit,
@@ -149,7 +149,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	continueToken = ""
 
 	for {
-		sizeList := &inventories.SizeList{}
+		sizeList := &metalv1alpha4.SizeList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     limit,
@@ -211,7 +211,7 @@ func (r *InventoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *InventoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&inventories.Inventory{}).
+		For(&metalv1alpha4.Inventory{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
@@ -223,8 +223,8 @@ func (r *InventoryReconciler) constructPredicates() predicate.Predicate {
 }
 
 func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
-	old, oldOK := event.ObjectOld.(*inventories.Inventory)
-	upd, updOK := event.ObjectNew.(*inventories.Inventory)
+	old, oldOK := event.ObjectOld.(*metalv1alpha4.Inventory)
+	upd, updOK := event.ObjectNew.(*metalv1alpha4.Inventory)
 	if !oldOK || !updOK {
 		r.Log.Info("printDiffOnUpdate: type assertions failed")
 		return false
@@ -249,42 +249,42 @@ func (r *InventoryReconciler) printDiffOnUpdate(event event.UpdateEvent) bool {
 }
 
 func (r *InventoryReconciler) createDefaultAggregate(ctx context.Context, namespace string) error {
-	agg := &inventories.Aggregate{
+	agg := &metalv1alpha4.Aggregate{
 		ObjectMeta: ctrl.ObjectMeta{
 			Namespace: namespace,
 			Name:      CDefaultAggregateName,
 		},
-		Spec: inventories.AggregateSpec{
-			Aggregates: []inventories.AggregateItem{
+		Spec: metalv1alpha4.AggregateSpec{
+			Aggregates: []metalv1alpha4.AggregateItem{
 				{
-					SourcePath: *inventories.JSONPathFromString("spec.blocks[*]"),
-					TargetPath: *inventories.JSONPathFromString("blocks.count"),
-					Aggregate:  inventories.CCountAggregateType,
+					SourcePath: *metalv1alpha4.JSONPathFromString("spec.blocks[*]"),
+					TargetPath: *metalv1alpha4.JSONPathFromString("blocks.count"),
+					Aggregate:  metalv1alpha4.CCountAggregateType,
 				},
 				{
-					SourcePath: *inventories.JSONPathFromString("spec.blocks[*].size"),
-					TargetPath: *inventories.JSONPathFromString("blocks.capacity"),
-					Aggregate:  inventories.CSumAggregateType,
+					SourcePath: *metalv1alpha4.JSONPathFromString("spec.blocks[*].size"),
+					TargetPath: *metalv1alpha4.JSONPathFromString("blocks.capacity"),
+					Aggregate:  metalv1alpha4.CSumAggregateType,
 				},
 				{
-					SourcePath: *inventories.JSONPathFromString("spec.cpus[*]"),
-					TargetPath: *inventories.JSONPathFromString("cpus.sockets"),
-					Aggregate:  inventories.CCountAggregateType,
+					SourcePath: *metalv1alpha4.JSONPathFromString("spec.cpus[*]"),
+					TargetPath: *metalv1alpha4.JSONPathFromString("cpus.sockets"),
+					Aggregate:  metalv1alpha4.CCountAggregateType,
 				},
 				{
-					SourcePath: *inventories.JSONPathFromString("spec.cpus[*].cores"),
-					TargetPath: *inventories.JSONPathFromString("cpus.cores"),
-					Aggregate:  inventories.CSumAggregateType,
+					SourcePath: *metalv1alpha4.JSONPathFromString("spec.cpus[*].cores"),
+					TargetPath: *metalv1alpha4.JSONPathFromString("cpus.cores"),
+					Aggregate:  metalv1alpha4.CSumAggregateType,
 				},
 				{
-					SourcePath: *inventories.JSONPathFromString("spec.cpus[*].siblings"),
-					TargetPath: *inventories.JSONPathFromString("cpus.threads"),
-					Aggregate:  inventories.CSumAggregateType,
+					SourcePath: *metalv1alpha4.JSONPathFromString("spec.cpus[*].siblings"),
+					TargetPath: *metalv1alpha4.JSONPathFromString("cpus.threads"),
+					Aggregate:  metalv1alpha4.CSumAggregateType,
 				},
 				{
-					SourcePath: *inventories.JSONPathFromString("spec.nics[*]"),
-					TargetPath: *inventories.JSONPathFromString("nics.count"),
-					Aggregate:  inventories.CCountAggregateType,
+					SourcePath: *metalv1alpha4.JSONPathFromString("spec.nics[*]"),
+					TargetPath: *metalv1alpha4.JSONPathFromString("nics.count"),
+					Aggregate:  metalv1alpha4.CCountAggregateType,
 				},
 			},
 		},

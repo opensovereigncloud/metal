@@ -1,5 +1,5 @@
-apiVersion: switch.onmetal.de/v1beta1
-kind: Switch
+apiVersion: metal.ironcore.dev/v1alpha4
+kind: NetworkSwitch
 metadata:
   name: sample-3
   namespace: sample

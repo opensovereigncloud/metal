@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	providers "github.com/onmetal/metal-api/providers-kubernetes/onboarding"
-	"github.com/onmetal/metal-api/providers-kubernetes/onboarding/fake"
+	providers "github.com/ironcore-dev/metal/providers-kubernetes/onboarding"
+	"github.com/ironcore-dev/metal/providers-kubernetes/onboarding/fake"
 	"github.com/stretchr/testify/assert"
 )
 

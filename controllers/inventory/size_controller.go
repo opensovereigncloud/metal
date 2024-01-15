@@ -20,19 +20,20 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/common/types/events"
-	domain "github.com/onmetal/metal-api/domain/inventory"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/common/types/events"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
 )
 
 const (
-	CSizeFinalizer = "size.machine.onmetal.de/finalizer"
+	CSizeFinalizer = "size.metal.ironcore.dev/finalizer"
 	CPageLimit     = 1000
 )
 
@@ -45,14 +46,14 @@ type SizeReconciler struct {
 	EventPublisher events.DomainEventPublisher
 }
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=sizes,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=sizes/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=sizes/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=sizes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=sizes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=sizes/finalizers,verbs=update
 
 func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("size", req.NamespacedName)
 
-	size := &v1alpha1.Size{}
+	size := &metalv1alpha4.Size{}
 	err := r.Get(ctx, req.NamespacedName, size)
 	if apierrors.IsNotFound(err) {
 		log.Error(err, "requested size resource not found", "name", req.NamespacedName)
@@ -92,7 +93,7 @@ func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	continueToken := ""
 	for {
-		inventoryList := &v1alpha1.InventoryList{}
+		inventoryList := &metalv1alpha4.InventoryList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     CPageLimit,
@@ -163,12 +164,12 @@ func (r *SizeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *SizeReconciler) finalizeSize(ctx context.Context, req ctrl.Request, log logr.Logger, size *v1alpha1.Size) error {
+func (r *SizeReconciler) finalizeSize(ctx context.Context, req ctrl.Request, log logr.Logger, size *metalv1alpha4.Size) error {
 	continueToken := ""
 	sizeLabel := size.GetMatchLabel()
 
 	for {
-		inventoryList := &v1alpha1.InventoryList{}
+		inventoryList := &metalv1alpha4.InventoryList{}
 		opts := &client.ListOptions{
 			Namespace: req.Namespace,
 			Limit:     CPageLimit,
@@ -215,6 +216,6 @@ func (r *SizeReconciler) finalizeSize(ctx context.Context, req ctrl.Request, log
 // SetupWithManager sets up the controller with the Manager.
 func (r *SizeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Size{}).
+		For(&metalv1alpha4.Size{}).
 		Complete(r)
 }

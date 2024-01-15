@@ -21,17 +21,18 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const percentageModifier = 100
 
-const UUIDLabel = "machine.onmetal.de/uuid"
+const UUIDLabel = "metal.ironcore.dev/uuid"
 
 type Benchmark struct {
 	client.Client
@@ -60,7 +61,7 @@ func (b *Benchmark) Create() error {
 }
 
 func isExist(ctx context.Context, c client.Client, req ctrl.Request) bool {
-	m := &v1alpha3.Machine{}
+	m := &metalv1alpha4.Benchmark{}
 	if err := c.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, m); err != nil {
 		if apierrors.IsNotFound(err) {
 			return false
@@ -70,8 +71,8 @@ func isExist(ctx context.Context, c client.Client, req ctrl.Request) bool {
 	return true
 }
 
-func prepareMachineBenchmark(name, namespace string) *v1alpha3.Machine {
-	return &v1alpha3.Machine{
+func prepareMachineBenchmark(name, namespace string) *metalv1alpha4.Benchmark {
+	return &metalv1alpha4.Benchmark{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -80,12 +81,12 @@ func prepareMachineBenchmark(name, namespace string) *v1alpha3.Machine {
 	}
 }
 
-func CalculateDeviation(oldObj, newObj *v1alpha3.Machine) map[string]v1alpha3.BenchmarkDeviations {
+func CalculateDeviation(oldObj, newObj *metalv1alpha4.Benchmark) map[string]metalv1alpha4.BenchmarkDeviations {
 	return calculateMachineDeviation(oldObj, newObj)
 }
 
-func calculateMachineDeviation(oldObj, newObj *v1alpha3.Machine) map[string]v1alpha3.BenchmarkDeviations {
-	md := make(map[string]v1alpha3.BenchmarkDeviations, len(newObj.Spec.Benchmarks))
+func calculateMachineDeviation(oldObj, newObj *metalv1alpha4.Benchmark) map[string]metalv1alpha4.BenchmarkDeviations {
+	md := make(map[string]metalv1alpha4.BenchmarkDeviations, len(newObj.Spec.Benchmarks))
 	for nn, newValue := range newObj.Spec.Benchmarks {
 		oldValue, ok := oldObj.Spec.Benchmarks[nn]
 		if !ok {
@@ -96,14 +97,14 @@ func calculateMachineDeviation(oldObj, newObj *v1alpha3.Machine) map[string]v1al
 	return md
 }
 
-func calculateDiffForBenchmark(oldV, newV []v1alpha3.Benchmark) []v1alpha3.BenchmarkDeviation {
-	dv := make([]v1alpha3.BenchmarkDeviation, 0, len(newV))
+func calculateDiffForBenchmark(oldV, newV []metalv1alpha4.BenchmarkResult) []metalv1alpha4.BenchmarkDeviation {
+	dv := make([]metalv1alpha4.BenchmarkDeviation, 0, len(newV))
 	for n := range newV {
 		for o := range oldV {
 			if newV[n].Name != oldV[o].Name {
 				continue
 			}
-			dv = append(dv, v1alpha3.BenchmarkDeviation{
+			dv = append(dv, metalv1alpha4.BenchmarkDeviation{
 				Name:  newV[n].Name,
 				Value: percentageChange(oldV[o].Value, newV[n].Value),
 			})

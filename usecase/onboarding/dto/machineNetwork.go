@@ -17,13 +17,12 @@ package dto
 import (
 	"net/netip"
 
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	domain "github.com/onmetal/metal-api/domain/machine"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	domain "github.com/ironcore-dev/metal/domain/machine"
 )
 
-func ToMachineInterfaces(nics []inventories.NICSpec) []machine.Interface {
-	interfaces := make([]machine.Interface, 0, len(nics))
+func ToMachineInterfaces(nics []metalv1alpha4.NICSpec) []metalv1alpha4.Interface {
+	interfaces := make([]metalv1alpha4.Interface, 0, len(nics))
 	for nic := range nics {
 		if len(nics[nic].LLDPs) == 0 {
 			continue
@@ -37,10 +36,10 @@ func ToMachineInterfaces(nics []inventories.NICSpec) []machine.Interface {
 }
 
 func toMachineInterface(
-	nicsSpec *inventories.NICSpec,
-) machine.Interface {
+	nicsSpec *metalv1alpha4.NICSpec,
+) metalv1alpha4.Interface {
 	if moreThenOneNeighbour(nicsSpec) {
-		return machine.Interface{
+		return metalv1alpha4.Interface{
 			Name:    nicsSpec.Name,
 			Unknown: true,
 		}
@@ -54,18 +53,18 @@ func toMachineInterface(
 	)
 }
 
-func moreThenOneNeighbour(nicsSpec *inventories.NICSpec) bool {
+func moreThenOneNeighbour(nicsSpec *metalv1alpha4.NICSpec) bool {
 	return len(nicsSpec.LLDPs) != 1
 }
 
 func appendNewAddress(
-	addresses []machine.IPAddressSpec,
+	addresses []metalv1alpha4.IPAddrSpec,
 	ip netip.Addr,
 	bits int,
-) []machine.IPAddressSpec {
+) []metalv1alpha4.IPAddrSpec {
 	return append(
 		addresses,
-		machine.IPAddressSpec{
+		metalv1alpha4.IPAddrSpec{
 			Prefix: netip.PrefixFrom(ip, bits),
 		})
 }

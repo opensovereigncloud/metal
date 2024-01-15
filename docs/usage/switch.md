@@ -4,25 +4,25 @@ Switches configuration depends on several custom resources. Important to keep in
 
 The complete list of custom resources switches are directly depend on is the following:
 
-- Group: `machine.onmetal.de`
+- Group: `metal.ironcore.dev`
   Version: `v1alpha1`
   Kind: `Inventory`
-- Group: `switch.onmetal.de`
+- Group: `metal.ironcore.dev`
   Version: `v1beta1`
   Kind: `SwitchConfig`
-- Group: `ipam.onmetal.de`
+- Group: `ipam.ironcore.dev`
   Version: `v1alpha1`
   Kind: `Subnet`
-- Group: `ipam.onmetal.de`
+- Group: `ipam.ironcore.dev`
   Version: `v1alpha1`
   Kind: `IP`
 
 Switches are indirectly depended on the following resources:
 
-- Group: `machine.onmetal.de`
+- Group: `metal.ironcore.dev`
   Version: `v1alpha1`
   Kind: `Size`
-- Group: `ipam.onmetal.de`
+- Group: `ipam.ironcore.dev`
   Version: `v1alpha1`
   Kind: `Network`
 
@@ -36,11 +36,11 @@ In total, aside from mentioned custom resource definitions, the following operat
 
 ## Dependencies description
 
-- `Size`: these objects are used to properly label `Inventory` objects. It is required that `Inventory` objects, containing switches data, are labeled with `machine.onmetal.de/size-switch: ""` label. 
+- `Size`: these objects are used to properly label `Inventory` objects. It is required that `Inventory` objects, containing switches data, are labeled with `metal.ironcore.dev/size-switch: ""` label. 
 Here is an example of `Size` object:
 
     ```yaml
-    apiVersion: machine.onmetal.de/v1alpha1
+    apiVersion: metal.ironcore.dev/v1alpha4
     kind: Size
     metadata:
       name: switch
@@ -55,17 +55,17 @@ Here is an example of `Size` object:
 - `SwitchConfig`: these objects contain configuration, common for user-defined switches' types. Example of `SwitchConfig` object:
 
     ```yaml
-    apiVersion: switch.onmetal.de/v1beta1
+    apiVersion: metal.ironcore.dev/v1beta1
     kind: SwitchConfig
     metadata:
       name: spines-config
       namespace: onmetal
       labels:
-        switch.onmetal.de/layer: "0"
+        metal.ironcore.dev/layer: "0"
     spec:
       switches:
         matchLabels:
-          switch.onmetal.de/type: "spine"
+          metal.ironcore.dev/type: "spine"
       portsDefaults:
         lanes: 4
         mtu: 9100
@@ -80,25 +80,25 @@ Here is an example of `Size` object:
         carrierSubnets:
           labelSelector:
             matchLabels:
-              ipam.onmetal.de/object-purpose: "switch-carrier"
+              ipam.ironcore.dev/object-purpose: "switch-carrier"
         loopbackSubnets:
           labelSelector:
             matchLabels:
-              ipam.onmetal.de/object-purpose: "switch-loopbacks"
+              ipam.ironcore.dev/object-purpose: "switch-loopbacks"
         southSubnets:
           labelSelector:
             matchLabels:
-              ipam.onmetal.de/object-purpose: "south-subnet"
+              ipam.ironcore.dev/object-purpose: "south-subnet"
           fieldSelector:
-            labelKey: "ipam.onmetal.de/object-owner"
+            labelKey: "ipam.ironcore.dev/object-owner"
             fieldRef:
               fieldPath: "metadata.name"
         loopbackAddresses:
           labelSelector:
             matchLabels:
-              ipam.onmetal.de/object-purpose: "loopback"
+              ipam.ironcore.dev/object-purpose: "loopback"
           fieldSelector:
-            labelKey: "ipam.onmetal.de/object-owner"
+            labelKey: "ipam.ironcore.dev/object-owner"
             fieldRef:
               fieldPath: "metadata.name"
     ```
@@ -121,7 +121,7 @@ Basically, `onboarding-controller` will create `Switch` object, which is origina
 1. use `uuidgen` command-line tool to generate UUID for namespace:
 
     ```shell
-    > uuidgen --md5 --namespace 00000000-0000-0000-0000-000000000000 --name "onmetal.de"
+    > uuidgen --md5 --namespace 00000000-0000-0000-0000-000000000000 --name "ironcore.dev"
     ```
 
 2. next generate UUID using switch's serial number as "name" parameter and UUID generated on previous step as namespace:
@@ -131,7 +131,7 @@ Basically, `onboarding-controller` will create `Switch` object, which is origina
     ```
 
 SONiC switch serial number can be found in the file `/sys/class/dmi/id/product_serial` or by using `dmidecode -t system` command.  
-After `Switch` object is created it might have no type label - **"switch.onmetal.de/type"** - which is required to proceed with configuration processing. In this case object's state will be set to `Pending` and there would be the message about the issue which blocks reconciliation.
+After `Switch` object is created it might have no type label - **"metal.ironcore.dev/type"** - which is required to proceed with configuration processing. In this case object's state will be set to `Pending` and there would be the message about the issue which blocks reconciliation.
 
 ## How to define connection hierarchy
 
@@ -166,8 +166,8 @@ Opposite to "south" interfaces, all "north" interfaces will inherit port paramet
 
 IPAM objects have to have proper labels, so the controller can get these objects and use them to configure switches. Labels could be either defined by selectors in `.spec.ipam` fields of `SwitchConfig` and `Switch` objects or default values could be used:
 
-- **"ipam.onmetal.de/object-purpose"** with values **"south-subnet"** (for `Subnet` object) or **"loopback"** (for `IP` object);
-- **"ipam.onmetal.de/object-owner"** with the switch object name as value;
+- **"ipam.ironcore.dev/object-purpose"** with values **"south-subnet"** (for `Subnet` object) or **"loopback"** (for `IP` object);
+- **"ipam.ironcore.dev/object-owner"** with the switch object name as value;
 
 Pay attention that labelSelector and fieldSelector in `.spec.ipam` configuration have to match labels of `Subnet` and `IP` objects which supposed to be used.
 
@@ -222,7 +222,7 @@ Each condition contains its name, state, last update and transition timestamp an
        name: ConfigRefOK
        state: false
        reason: MissingRequirements
-       message: "missing requirements: label switch.onmetal.de/type"
+       message: "missing requirements: label metal.ironcore.dev/type"
      ...
    ```
    In case of GET request to kube-apiserver for switchconfig object is failed for any reason except object does not exist:

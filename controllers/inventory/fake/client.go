@@ -17,7 +17,6 @@
 package fake
 
 import (
-	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	authv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -25,6 +24,8 @@ import (
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 func NewFakeWithObjects(objects ...ctrlclient.Object) (ctrlclient.Client, error) {
@@ -40,7 +41,7 @@ func NewFakeWithObjects(objects ...ctrlclient.Object) (ctrlclient.Client, error)
 
 func getScheme() (*k8sRuntime.Scheme, error) {
 	scheme := k8sRuntime.NewScheme()
-	if err := inventoryv1alpaha1.AddToScheme(scheme); err != nil {
+	if err := metalv1alpha4.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 	if err := authv1.AddToScheme(scheme); err != nil {
@@ -76,13 +77,13 @@ func IPObjectEndpoint(address string, port int32) *corev1.Endpoints {
 	}
 }
 
-func InventoryObject(name, namespace string) *inventoryv1alpaha1.Inventory {
-	return &inventoryv1alpaha1.Inventory{
+func InventoryObject(name, namespace string) *metalv1alpha4.Inventory {
+	return &metalv1alpha4.Inventory{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				inventoryv1alpaha1.GetSizeMatchLabel("machine"): "true",
+				metalv1alpha4.GetSizeMatchLabel("machine"): "true",
 			},
 		},
 		Spec: prepareSpecForInventory(name),
@@ -105,27 +106,27 @@ func RawEndpoints(address string, port int32) corev1.Endpoints {
 	}
 }
 
-func prepareSpecForInventory(name string) inventoryv1alpaha1.InventorySpec {
-	return inventoryv1alpaha1.InventorySpec{
-		System: &inventoryv1alpaha1.SystemSpec{
+func prepareSpecForInventory(name string) metalv1alpha4.InventorySpec {
+	return metalv1alpha4.InventorySpec{
+		System: &metalv1alpha4.SystemSpec{
 			ID: name,
 		},
-		Host: &inventoryv1alpaha1.HostSpec{
+		Host: &metalv1alpha4.HostSpec{
 			Name: "node1",
 		},
-		Blocks: []inventoryv1alpaha1.BlockSpec{
+		Blocks: []metalv1alpha4.BlockSpec{
 			{
 				Name:       "nvme1",
 				Type:       "",
 				Rotational: true,
 			},
 		},
-		Memory: &inventoryv1alpaha1.MemorySpec{},
-		CPUs:   []inventoryv1alpaha1.CPUSpec{},
-		NICs: []inventoryv1alpaha1.NICSpec{
+		Memory: &metalv1alpha4.MemorySpec{},
+		CPUs:   []metalv1alpha4.CPUSpec{},
+		NICs: []metalv1alpha4.NICSpec{
 			{
 				Name: "enp0s31f6",
-				LLDPs: []inventoryv1alpaha1.LLDPSpec{
+				LLDPs: []metalv1alpha4.LLDPSpec{
 					{
 						ChassisID:         "3c:2c:99:9d:cd:48",
 						SystemName:        "EC1817001226",
@@ -137,7 +138,7 @@ func prepareSpecForInventory(name string) inventoryv1alpaha1.InventorySpec {
 			},
 			{
 				Name: "enp0s32f6",
-				LLDPs: []inventoryv1alpaha1.LLDPSpec{
+				LLDPs: []metalv1alpha4.LLDPSpec{
 					{
 						ChassisID:         "3c:2c:99:9d:cd:48",
 						SystemName:        "EC1817001226",

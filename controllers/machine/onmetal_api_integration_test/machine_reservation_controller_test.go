@@ -20,8 +20,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	domain "github.com/onmetal/metal-api/domain/reservation"
 	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	"github.com/onmetal/onmetal-api/utils/testing"
@@ -32,6 +30,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	domain "github.com/ironcore-dev/metal/domain/reservation"
 )
 
 var _ = PDescribe("MachineReservation-Controller", func() {
@@ -40,7 +41,7 @@ var _ = PDescribe("MachineReservation-Controller", func() {
 
 	It("Should watch compute machine objects and update metal machine reservation", func() {
 		machinePool := &computev1alpha1.MachinePool{}
-		metalMachine := &machinev1alpha3.Machine{}
+		metalMachine := &metalv1alpha4.Machine{}
 		computeMachine := &computev1alpha1.Machine{}
 		ipxeCM := &corev1.ConfigMap{}
 
@@ -215,7 +216,7 @@ var _ = PDescribe("MachineReservation-Controller", func() {
 	})
 })
 
-func createHealthyRunningMachine(ctx context.Context, name, namespace string, machine *machinev1alpha3.Machine) {
+func createHealthyRunningMachine(ctx context.Context, name, namespace string, machine *metalv1alpha4.Machine) {
 	By("Expect successful machine creation")
 	Expect(k8sClient.Create(ctx, prepareTestMachineWithSizeLabels(name, namespace))).Should(Succeed())
 
@@ -243,7 +244,7 @@ func createHealthyRunningMachine(ctx context.Context, name, namespace string, ma
 		}
 
 		return machine.Status.Reservation.Status == domain.ReservationStatusRunning &&
-			machine.Status.Health == machinev1alpha3.MachineStateHealthy
+			machine.Status.Health == metalv1alpha4.MachineStateHealthy
 	}).Should(BeTrue())
 }
 

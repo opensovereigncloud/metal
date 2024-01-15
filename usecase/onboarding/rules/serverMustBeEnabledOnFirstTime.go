@@ -16,10 +16,10 @@ package rules
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/common/types/base"
-	infradomain "github.com/onmetal/metal-api/domain/infrastructure"
-	domain "github.com/onmetal/metal-api/domain/inventory"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
+	"github.com/ironcore-dev/metal/common/types/base"
+	infradomain "github.com/ironcore-dev/metal/domain/infrastructure"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 )
 
 type ServerMustBeEnabledOnFirstTimeRule struct {

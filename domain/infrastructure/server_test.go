@@ -17,7 +17,7 @@ package domain_test
 import (
 	"testing"
 
-	domain "github.com/onmetal/metal-api/domain/infrastructure"
+	domain "github.com/ironcore-dev/metal/domain/infrastructure"
 	"github.com/stretchr/testify/assert"
 )
 

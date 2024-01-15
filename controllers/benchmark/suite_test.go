@@ -22,8 +22,7 @@ import (
 	"testing"
 	"time"
 
-	benchv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
-	inventoriesv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -76,16 +75,12 @@ var _ = BeforeSuite(func() {
 	}
 	ctx, cancel = context.WithCancel(context.TODO())
 
-	inventoriesv1alpha1.SchemeBuilder.Register(&inventoriesv1alpha1.Inventory{}, &inventoriesv1alpha1.InventoryList{})
-	benchv1alpha3.SchemeBuilder.Register(&benchv1alpha3.Machine{}, &benchv1alpha3.MachineList{})
-
 	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	Expect(inventoriesv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
-	Expect(benchv1alpha3.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(metalv1alpha4.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
@@ -128,9 +123,9 @@ var _ = AfterSuite(func() {
 
 func cleanUp() {
 	By("Remove benchmarks")
-	Expect(k8sClient.DeleteAllOf(ctx, &benchv1alpha3.Machine{}, client.InNamespace("default"))).To(Succeed())
+	Expect(k8sClient.DeleteAllOf(ctx, &metalv1alpha4.Benchmark{}, client.InNamespace("default"))).To(Succeed())
 	Eventually(func() bool {
-		list := &benchv1alpha3.MachineList{}
+		list := &metalv1alpha4.BenchmarkList{}
 		err := k8sClient.List(ctx, list)
 		if err != nil {
 			return false
@@ -142,9 +137,9 @@ func cleanUp() {
 	}, timeout, interval).Should(BeTrue())
 
 	By("Remove invetories")
-	Expect(k8sClient.DeleteAllOf(ctx, &inventoriesv1alpha1.Inventory{}, client.InNamespace("default"))).To(Succeed())
+	Expect(k8sClient.DeleteAllOf(ctx, &metalv1alpha4.Inventory{}, client.InNamespace("default"))).To(Succeed())
 	Eventually(func() bool {
-		list := &inventoriesv1alpha1.InventoryList{}
+		list := &metalv1alpha4.InventoryList{}
 		err := k8sClient.List(ctx, list)
 		if err != nil {
 			return false

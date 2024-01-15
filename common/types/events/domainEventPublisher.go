@@ -14,7 +14,7 @@
 
 package events
 
-import "github.com/onmetal/metal-api/common/types/base"
+import "github.com/ironcore-dev/metal/common/types/base"
 
 type DomainEventPublisher interface {
 	Publish(events ...base.DomainEvent)

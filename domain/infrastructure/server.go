@@ -17,7 +17,7 @@ package domain
 import (
 	"slices"
 
-	"github.com/onmetal/metal-api/common/types/errors"
+	"github.com/ironcore-dev/metal/common/types/errors"
 )
 
 const PowerCapabilities = "power"

@@ -17,16 +17,17 @@ limitations under the License.
 package switches
 
 import (
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/auxiliary"
-	"github.com/onmetal/metal-api/pkg/constants"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/auxiliary"
+	"github.com/ironcore-dev/metal/pkg/constants"
 )
 
-type StateUpdateFunction func(*switchv1beta1.Switch, *SwitchEnvironment) *StateUpdateResult
+type StateUpdateFunction func(*metalv1alpha4.NetworkSwitch, *SwitchEnvironment) *StateUpdateResult
 
 type StateUpdateEvent struct {
 	eventType string
@@ -117,7 +118,7 @@ func (in *SwitchStateWriter) RegisterStateFunc(f StateUpdateFunction) *SwitchSta
 
 func (in *SwitchStateWriter) WriteState(o client.Object) auxiliary.Result {
 	result := NewStateUpdateResult()
-	obj, _ := o.(*switchv1beta1.Switch)
+	obj, _ := o.(*metalv1alpha4.NetworkSwitch)
 	if in.env == nil {
 		result.SetCondition("").SetReason("UndefinedEnvironment").
 			SetMessage("reconciliation interrupted due to undefined environment")

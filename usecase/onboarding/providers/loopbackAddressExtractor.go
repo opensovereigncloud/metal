@@ -15,7 +15,7 @@
 package providers
 
 import (
-	ipdomain "github.com/onmetal/metal-api/domain/address"
+	ipdomain "github.com/ironcore-dev/metal/domain/address"
 )
 
 type LoopbackAddressExtractor interface {

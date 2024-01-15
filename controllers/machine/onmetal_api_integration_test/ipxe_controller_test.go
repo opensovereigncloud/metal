@@ -25,8 +25,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	machinev1alpha3 "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	controllers "github.com/onmetal/metal-api/controllers/machine"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	controllers "github.com/ironcore-dev/metal/controllers/machine"
 )
 
 var _ = PDescribe("machine-power-controller", func() {
@@ -35,7 +35,7 @@ var _ = PDescribe("machine-power-controller", func() {
 
 	It("should create ipxe configmap", func() {
 		machinePool := &computev1alpha1.MachinePool{}
-		metalMachine := &machinev1alpha3.Machine{}
+		metalMachine := &metalv1alpha4.Machine{}
 		computeMachine := &computev1alpha1.Machine{}
 		ipxeCM := &corev1.ConfigMap{}
 

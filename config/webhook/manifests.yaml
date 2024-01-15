@@ -11,19 +11,19 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-switch-onmetal-de-v1beta1-switch
+      path: /mutate-metal-ironcore-dev-v1alpha4-networkswitch
   failurePolicy: Fail
-  name: mswitch.v1beta1.kb.io
+  name: mnetworkswitch.v1alpha4.kb.io
   rules:
   - apiGroups:
-    - switch.onmetal.de
+    - metal.ironcore.dev
     apiVersions:
-    - v1beta1
+    - v1alpha4
     operations:
     - CREATE
     - UPDATE
     resources:
-    - switches
+    - networkswitches
   sideEffects: None
 - admissionReviewVersions:
   - v1
@@ -32,14 +32,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-switch-onmetal-de-v1beta1-switchconfig
+      path: /mutate-metal-ironcore-dev-v1alpha4-switchconfig
   failurePolicy: Fail
-  name: mswitchconfig.v1beta1.kb.io
+  name: mswitchconfig.v1alpha4.kb.io
   rules:
   - apiGroups:
-    - switch.onmetal.de
+    - metal.ironcore.dev
     apiVersions:
-    - v1beta1
+    - v1alpha4
     operations:
     - CREATE
     - UPDATE
@@ -59,14 +59,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-machine-onmetal-de-v1alpha1-aggregate
+      path: /validate-metal-ironcore-dev-v1alpha4-aggregate
   failurePolicy: Fail
-  name: vaggregate.kb.io
+  name: vaggregate.v1alpha4.kb.io
   rules:
   - apiGroups:
-    - machine.onmetal.de
+    - metal.ironcore.dev
     apiVersions:
-    - v1alpha1
+    - v1alpha4
     operations:
     - CREATE
     - UPDATE
@@ -80,14 +80,35 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-machine-onmetal-de-v1alpha1-size
+      path: /validate-metal-ironcore-dev-v1alpha4-networkswitch
   failurePolicy: Fail
-  name: vsize.kb.io
+  name: vnetworkswitch.v1alpha4.kb.io
   rules:
   - apiGroups:
-    - machine.onmetal.de
+    - metal.ironcore.dev
     apiVersions:
-    - v1alpha1
+    - v1alpha4
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - networkswitches
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-metal-ironcore-dev-v1alpha4-size
+  failurePolicy: Fail
+  name: vsize.v1alpha4.kb.io
+  rules:
+  - apiGroups:
+    - metal.ironcore.dev
+    apiVersions:
+    - v1alpha4
     operations:
     - CREATE
     - UPDATE
@@ -101,35 +122,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-switch-onmetal-de-v1beta1-switch
+      path: /validate-metal-ironcore-dev-v1alpha4-switchconfig
   failurePolicy: Fail
-  name: vswitch.v1beta1.kb.io
+  name: vswitchconfig.v1alpha4.kb.io
   rules:
   - apiGroups:
-    - switch.onmetal.de
+    - metal.ironcore.dev
     apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - switches
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  - v1beta1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-switch-onmetal-de-v1beta1-switchconfig
-  failurePolicy: Fail
-  name: vswitchconfig.v1beta1.kb.io
-  rules:
-  - apiGroups:
-    - switch.onmetal.de
-    apiVersions:
-    - v1beta1
+    - v1alpha4
     operations:
     - CREATE
     - UPDATE

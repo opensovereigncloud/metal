@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	inventoryv1alpaha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -35,6 +34,8 @@ import (
 	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 const (
@@ -53,7 +54,7 @@ type APIEndpoint struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccessReconciler) SetupWithManager(mgr ctrlruntime.Manager) error {
 	return ctrlruntime.NewControllerManagedBy(mgr).
-		For(&inventoryv1alpaha1.Inventory{}).
+		For(&metalv1alpha4.Inventory{}).
 		Complete(r)
 }
 
@@ -66,9 +67,9 @@ type AccessReconciler struct {
 	Scheme             *k8sruntime.Scheme
 }
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=inventories/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
@@ -154,7 +155,7 @@ func (r *AccessReconciler) CurrentKubeConfig(
 func (r *AccessReconciler) CreateAccountForServerToClusterAccess(
 	ctx context.Context,
 	machineInventoryServiceAccount *corev1.ServiceAccount,
-	inventory *inventoryv1alpaha1.Inventory) (*corev1.Secret, error) {
+	inventory *metalv1alpha4.Inventory) (*corev1.Secret, error) {
 	exist, err := r.InventoryServiceAccountExist(ctx, machineInventoryServiceAccount)
 	if !exist {
 		if err := r.CreateInventoryServiceAccount(ctx, machineInventoryServiceAccount); err != nil {
@@ -194,7 +195,7 @@ func (r *AccessReconciler) BindInventoryAccountWithPermissions(
 	ctx context.Context,
 	machineInventoryServiceAccount *corev1.ServiceAccount,
 	machineInventoryNamespace string,
-	inventory *inventoryv1alpaha1.Inventory) error {
+	inventory *metalv1alpha4.Inventory) error {
 	machineInventoryRole := r.InventoryBaseRole(
 		machineInventoryNamespace,
 		machineInventoryServiceAccount.Name)
@@ -229,7 +230,7 @@ func (r *AccessReconciler) BindPermissionsToTheServiceAccount(
 	ctx context.Context,
 	machineInventoryServiceAccount *corev1.ServiceAccount,
 	machineInventoryNamespace string,
-	inventory *inventoryv1alpaha1.Inventory,
+	inventory *metalv1alpha4.Inventory,
 	machineInventoryRole *rbacv1.Role) error {
 	machineInventoryRoleBinding := r.BaseInventoryRoleBinding(
 		machineInventoryNamespace,
@@ -319,8 +320,8 @@ func (r *AccessReconciler) InventoryBaseRole(
 }
 
 func (r *AccessReconciler) ExtractInventory(ctx context.Context,
-	req ctrlruntime.Request) (*inventoryv1alpaha1.Inventory, error) {
-	inventory := &inventoryv1alpaha1.Inventory{
+	req ctrlruntime.Request) (*metalv1alpha4.Inventory, error) {
+	inventory := &metalv1alpha4.Inventory{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: req.Namespace,
 			Name:      req.Name,
@@ -359,7 +360,7 @@ func (r *AccessReconciler) UpdateExistingKubeconfigForClusterAccess(
 
 func (r *AccessReconciler) ClientKubeconfigSecret(
 	ctx context.Context,
-	inventory *inventoryv1alpaha1.Inventory,
+	inventory *metalv1alpha4.Inventory,
 	clusterAccessSecret *corev1.Secret,
 	inventoryServiceAccountName string,
 	targetNamespace string) (*corev1.Secret, error) {
@@ -384,7 +385,7 @@ func (r *AccessReconciler) ClientKubeconfigSecret(
 			Name:      kubeconfigName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         inventoryv1alpaha1.SchemeGroupVersion.Version,
+					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -452,7 +453,7 @@ func (r *AccessReconciler) ClusterName() string {
 
 func (r *AccessReconciler) InventoryRoleBinding(
 	machineInventoryNamespace string,
-	inventory *inventoryv1alpaha1.Inventory,
+	inventory *metalv1alpha4.Inventory,
 	machineInventoryServiceAccount *corev1.ServiceAccount,
 	machineInventoryRole *rbacv1.Role) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
@@ -461,7 +462,7 @@ func (r *AccessReconciler) InventoryRoleBinding(
 			Name:      machineInventoryServiceAccount.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         inventoryv1alpaha1.SchemeGroupVersion.Version,
+					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -489,14 +490,14 @@ func (r *AccessReconciler) InventoryRoleBinding(
 func (r *AccessReconciler) RoleForInventoryWithPermissions(
 	machineInventoryNamespace string,
 	machineInventoryServiceAccountName string,
-	inventory *inventoryv1alpaha1.Inventory) *rbacv1.Role {
+	inventory *metalv1alpha4.Inventory) *rbacv1.Role {
 	return &rbacv1.Role{
 		ObjectMeta: ctrlruntime.ObjectMeta{
 			Namespace: machineInventoryNamespace,
 			Name:      machineInventoryServiceAccountName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         inventoryv1alpaha1.SchemeGroupVersion.Version,
+					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -514,7 +515,7 @@ func (r *AccessReconciler) RoleForInventoryWithPermissions(
 					"patch",
 				},
 				APIGroups: []string{
-					"machine.onmetal.de",
+					"metal.ironcore.dev",
 				},
 				Resources: []string{
 					"inventories",
@@ -527,7 +528,7 @@ func (r *AccessReconciler) RoleForInventoryWithPermissions(
 func (r *AccessReconciler) InventoryServiceAccountSecretToken(
 	machineInventoryNamespace string,
 	machineInventoryServiceAccountName string,
-	inventory *inventoryv1alpaha1.Inventory) *corev1.Secret {
+	inventory *metalv1alpha4.Inventory) *corev1.Secret {
 	saTokenSecret := &corev1.Secret{
 		ObjectMeta: ctrlruntime.ObjectMeta{
 			Namespace: machineInventoryNamespace,
@@ -537,7 +538,7 @@ func (r *AccessReconciler) InventoryServiceAccountSecretToken(
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         inventoryv1alpaha1.SchemeGroupVersion.Version,
+					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -558,7 +559,7 @@ func (r *AccessReconciler) CreateInventoryServiceAccount(
 }
 
 func (r *AccessReconciler) InventoryServiceAccount(
-	inventory *inventoryv1alpaha1.Inventory) *corev1.ServiceAccount {
+	inventory *metalv1alpha4.Inventory) *corev1.ServiceAccount {
 	machineInventoryServiceAccountName := InventoryServiceAccountPrefix + inventory.Name
 	return &corev1.ServiceAccount{
 		ObjectMeta: ctrlruntime.ObjectMeta{
@@ -566,7 +567,7 @@ func (r *AccessReconciler) InventoryServiceAccount(
 			Name:      machineInventoryServiceAccountName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         inventoryv1alpaha1.SchemeGroupVersion.Version,
+					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -637,7 +638,7 @@ func (r *AccessReconciler) CreateInventoryRoleWithPermissions(
 func (r *AccessReconciler) InventoryBindingRoleForServiceAccount(machineInventoryRole *rbacv1.Role,
 	machineInventoryNamespace string,
 	machineInventoryServiceAccount *corev1.ServiceAccount,
-	inventory *inventoryv1alpaha1.Inventory) *rbacv1.RoleBinding {
+	inventory *metalv1alpha4.Inventory) *rbacv1.RoleBinding {
 	return r.InventoryRoleBinding(
 		machineInventoryNamespace,
 		inventory,

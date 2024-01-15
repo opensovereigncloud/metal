@@ -17,17 +17,18 @@ package scenarios_test
 import (
 	"testing"
 
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/common/types/base"
-	domain "github.com/onmetal/metal-api/domain/inventory"
-	providers "github.com/onmetal/metal-api/providers-kubernetes/onboarding"
-	"github.com/onmetal/metal-api/providers-kubernetes/onboarding/fake"
-	usecase "github.com/onmetal/metal-api/usecase/onboarding"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
-	"github.com/onmetal/metal-api/usecase/onboarding/invariants"
-	"github.com/onmetal/metal-api/usecase/onboarding/scenarios"
 	"github.com/stretchr/testify/assert"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/common/types/base"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
+	providers "github.com/ironcore-dev/metal/providers-kubernetes/onboarding"
+	"github.com/ironcore-dev/metal/providers-kubernetes/onboarding/fake"
+	usecase "github.com/ironcore-dev/metal/usecase/onboarding"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/invariants"
+	"github.com/ironcore-dev/metal/usecase/onboarding/scenarios"
 )
 
 func addMachineUseCase(
@@ -83,15 +84,15 @@ func inventory(uuid, namespace string) domain.Inventory {
 		ProductSKU:   "1",
 		SerialNumber: "1",
 		Sizes: map[string]string{
-			"machine.onmetal.de/size-m5.metal": "true",
-			"machine.onmetal.de/size-machine":  "true",
+			"metal.ironcore.dev/size-m5.metal": "true",
+			"metal.ironcore.dev/size-machine":  "true",
 		},
-		NICs: []inventories.NICSpec{
+		NICs: []metalv1alpha4.NICSpec{
 			{
 				Name:       "test",
 				MACAddress: "123",
 				MTU:        1500,
-				LLDPs: []inventories.LLDPSpec{
+				LLDPs: []metalv1alpha4.LLDPSpec{
 					{
 						ChassisID:         "test",
 						SystemName:        "test",

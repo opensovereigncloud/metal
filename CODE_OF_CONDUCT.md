@@ -30,5 +30,5 @@ We pledge to act and interact in ways that contribute to an open, welcoming, div
 ## Contributing
 Gardener on Metal uses GitHub to manage reviews of pull requests.
 
-Please, refer to [Contributors Guide](https://github.com/onmetal/metal-api/blob/main/docs/development/contribution.md) to find out detailed information. 
+Please, refer to [Contributors Guide](https://github.com/ironcore-dev/metal/blob/main/docs/development/contribution.md) to find out detailed information. 
 

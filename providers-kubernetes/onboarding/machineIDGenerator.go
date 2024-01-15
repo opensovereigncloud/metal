@@ -16,7 +16,7 @@ package providers
 
 import (
 	"github.com/google/uuid"
-	domain "github.com/onmetal/metal-api/domain/machine"
+	domain "github.com/ironcore-dev/metal/domain/machine"
 )
 
 type KubernetesMachineIDGenerator struct{}

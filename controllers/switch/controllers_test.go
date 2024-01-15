@@ -26,10 +26,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/pointer"
 
-	inventoryv1alpha1 "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	switchv1beta1 "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
-	switchespkg "github.com/onmetal/metal-api/pkg/switches"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
+	switchespkg "github.com/ironcore-dev/metal/pkg/switches"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -57,23 +56,23 @@ var (
 )
 
 // The following onboarding cases are covered:
-// - Inventory object is created. Onboarding-controller should reconcile object and create corresponding Switch object;
+// - Inventory object is created. Onboarding-controller should reconcile object and create corresponding NetworkSwitch object;
 //
-// - Onboarded Switch object was updated: onboarding metadata was deleted. Onboarding-controller should restore label
+// - Onboarded NetworkSwitch object was updated: onboarding metadata was deleted. Onboarding-controller should restore label
 //   and annotations related to onboarding process;
 //
-// - Inventory object exists, for some reason automatically created Switch object deleted, new Switch object
+// - Inventory object exists, for some reason automatically created NetworkSwitch object deleted, new NetworkSwitch object
 //   created manually without onboarding metadata (labels/annotations/inventory reference). Onboarding-controller
-//   should handle "Create" event and update existing Switch object with proper metadata and Inventory reference;
+//   should handle "Create" event and update existing NetworkSwitch object with proper metadata and Inventory reference;
 //   Constraints:
-//   - Switch object should either have the same name as Inventory object OR contain .spec.inventoryRef.name field
+//   - NetworkSwitch object should either have the same name as Inventory object OR contain .spec.inventoryRef.name field
 //     filled with proper Inventory object name;
 //
-// - Switch object exists, it was created without required labels/annotations/inventory reference. After creation of
-//   Inventory object, onboarding-controller should update existing Switch object with proper metadata and Inventory
+// - NetworkSwitch object exists, it was created without required labels/annotations/inventory reference. After creation of
+//   Inventory object, onboarding-controller should update existing NetworkSwitch object with proper metadata and Inventory
 //   reference;
 //   Constraints:
-//   - Switch object should either have the same name as Inventory object OR contain .spec.inventoryRef.name field
+//   - NetworkSwitch object should either have the same name as Inventory object OR contain .spec.inventoryRef.name field
 //     filled with proper Inventory object name;
 //
 // The following cases for configuration processing are covered:
@@ -81,7 +80,7 @@ var (
 // - IPAM objects are created during switch reconciliation;
 // - Interfaces' parameters are changed by changing of parameters defined in SwitchConfig object spec;
 
-var _ = Describe("Switch controller", func() {
+var _ = Describe("NetworkSwitch controller", func() {
 
 	AfterEach(func() {
 		postTestContext, postTestCancel := context.WithCancel(ctx)
@@ -118,7 +117,7 @@ var _ = Describe("Switch controller", func() {
 			checkSwitches()
 
 			By("Remove onboarding metadata")
-			switches := &switchv1beta1.SwitchList{}
+			switches := &metalv1alpha4.NetworkSwitchList{}
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.List(testContext, switches)).To(Succeed())
 				for _, item := range switches.Items {
@@ -138,7 +137,7 @@ var _ = Describe("Switch controller", func() {
 			preTestContext, preTestCancel := context.WithCancel(ctx)
 			defer preTestCancel()
 			Expect(seedInventories(preTestContext, k8sClient)).NotTo(HaveOccurred())
-			switches := &switchv1beta1.SwitchList{}
+			switches := &metalv1alpha4.NetworkSwitchList{}
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.List(preTestContext, switches)).To(Succeed())
 				g.Expect(len(switches.Items)).To(Equal(4))
@@ -150,7 +149,7 @@ var _ = Describe("Switch controller", func() {
 			testContext, testCancel := context.WithCancel(ctx)
 			defer testCancel()
 
-			By("Seed Switch objects without onboarding metadata - labels, annotations and inventory reference")
+			By("Seed NetworkSwitch objects without onboarding metadata - labels, annotations and inventory reference")
 			names := []string{
 				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
 				"044ca7d1-c6f8-37d8-83ce-bf6a18318f2d",
@@ -162,20 +161,20 @@ var _ = Describe("Switch controller", func() {
 				if name == "a177382d-a3b4-3ecd-97a4-01cc15e749e4" || name == "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b" {
 					topSpine = true
 				}
-				obj := &switchv1beta1.Switch{
+				obj := &metalv1alpha4.NetworkSwitch{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      name,
 						Namespace: defaultNamespace,
 					},
-					Spec: switchv1beta1.SwitchSpec{
+					Spec: metalv1alpha4.NetworkSwitchSpec{
 						TopSpine: pointer.Bool(topSpine),
 					},
 				}
 				Expect(k8sClient.Create(testContext, obj)).To(Succeed())
 			}
 
-			By("Expect Switch objects are updated with onboarding metadata")
-			switches := &switchv1beta1.SwitchList{}
+			By("Expect NetworkSwitch objects are updated with onboarding metadata")
+			switches := &metalv1alpha4.NetworkSwitchList{}
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.List(testContext, switches)).To(Succeed())
 				for _, item := range switches.Items {
@@ -192,7 +191,7 @@ var _ = Describe("Switch controller", func() {
 			testContext, testCancel := context.WithCancel(ctx)
 			defer testCancel()
 
-			By("Seed Switch objects without onboarding metadata - labels, annotations and inventory reference")
+			By("Seed NetworkSwitch objects without onboarding metadata - labels, annotations and inventory reference")
 			names := []string{
 				"b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
 				"044ca7d1-c6f8-37d8-83ce-bf6a18318f2d",
@@ -204,12 +203,12 @@ var _ = Describe("Switch controller", func() {
 				if name == "a177382d-a3b4-3ecd-97a4-01cc15e749e4" || name == "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b" {
 					topSpine = true
 				}
-				obj := &switchv1beta1.Switch{
+				obj := &metalv1alpha4.NetworkSwitch{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      name,
 						Namespace: defaultNamespace,
 					},
-					Spec: switchv1beta1.SwitchSpec{
+					Spec: metalv1alpha4.NetworkSwitchSpec{
 						TopSpine: pointer.Bool(topSpine),
 					},
 				}
@@ -219,8 +218,8 @@ var _ = Describe("Switch controller", func() {
 			By("Seed Inventory objects")
 			Expect(seedInventories(testContext, k8sClient)).NotTo(HaveOccurred())
 
-			By("Expect Switch objects are updated with onboarding metadata")
-			switches := &switchv1beta1.SwitchList{}
+			By("Expect NetworkSwitch objects are updated with onboarding metadata")
+			switches := &metalv1alpha4.NetworkSwitchList{}
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.List(testContext, switches)).To(Succeed())
 				for _, item := range switches.Items {
@@ -232,7 +231,7 @@ var _ = Describe("Switch controller", func() {
 		})
 	})
 
-	Context("Switch interfaces become updated on inventory update", func() {
+	Context("NetworkSwitch interfaces become updated on inventory update", func() {
 		JustBeforeEach(func() {
 			preTestContext, preTestCancel := context.WithCancel(ctx)
 			defer preTestCancel()
@@ -250,10 +249,10 @@ var _ = Describe("Switch controller", func() {
 
 			By("Expect switch spec matches initial state")
 			checkInterfaces()
-			target := &switchv1beta1.Switch{}
+			target := &metalv1alpha4.NetworkSwitch{}
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(testContext, types.NamespacedName{
-					Namespace: "onmetal",
+					Namespace: defaultNamespace,
 					Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
 				}, target)).NotTo(HaveOccurred())
 				targetInterface := target.Status.Interfaces["Ethernet100"]
@@ -264,7 +263,7 @@ var _ = Describe("Switch controller", func() {
 			updateInventory()
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Get(testContext, types.NamespacedName{
-					Namespace: "onmetal",
+					Namespace: defaultNamespace,
 					Name:      "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5",
 				}, target)).NotTo(HaveOccurred())
 				targetInterface := target.Status.Interfaces["Ethernet100"]
@@ -377,16 +376,16 @@ var _ = Describe("Switch controller", func() {
 func setTopSpines() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	spineOne := &switchv1beta1.Switch{}
+	spineOne := &metalv1alpha4.NetworkSwitch{}
 	Expect(k8sClient.Get(testContext, types.NamespacedName{
-		Namespace: "onmetal",
+		Namespace: defaultNamespace,
 		Name:      "a177382d-a3b4-3ecd-97a4-01cc15e749e4",
 	}, spineOne)).To(Succeed())
 	spineOne.SetTopSpine(true)
 	Expect(k8sClient.Update(testContext, spineOne)).To(Succeed())
-	spineTwo := &switchv1beta1.Switch{}
+	spineTwo := &metalv1alpha4.NetworkSwitch{}
 	Expect(k8sClient.Get(testContext, types.NamespacedName{
-		Namespace: "onmetal",
+		Namespace: defaultNamespace,
 		Name:      "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b",
 	}, spineTwo)).To(Succeed())
 	spineTwo.SetTopSpine(true)
@@ -396,7 +395,7 @@ func setTopSpines() {
 func setConfigSelector() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -418,7 +417,7 @@ func setConfigSelector() {
 func flushConfigSelector() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -432,7 +431,7 @@ func flushConfigSelector() {
 func checkConfigSelectorPopulated() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches))
 		for _, item := range switches.Items {
@@ -450,7 +449,7 @@ func checkConfigSelectorPopulated() {
 func updateSwitchConfigLabels() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switchConfigs := &switchv1beta1.SwitchConfigList{}
+	switchConfigs := &metalv1alpha4.SwitchConfigList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switchConfigs)).NotTo(HaveOccurred())
 		for _, item := range switchConfigs.Items {
@@ -470,7 +469,7 @@ func updateSwitchConfigLabels() {
 func checkSwitches() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		g.Expect(switches.Items).NotTo(BeEmpty())
@@ -485,7 +484,7 @@ func checkSwitches() {
 func checkConfigRef() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -497,7 +496,7 @@ func checkConfigRef() {
 func checkInterfaces() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -509,7 +508,7 @@ func checkInterfaces() {
 func checkLayerAndRole() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -528,7 +527,7 @@ func checkLayerAndRole() {
 func checkLoopbacks() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -541,7 +540,7 @@ func checkLoopbacks() {
 func checkASN() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -553,7 +552,7 @@ func checkASN() {
 func checkSubnets() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -566,7 +565,7 @@ func checkSubnets() {
 func checkIPAddresses() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -584,7 +583,7 @@ func checkIPAddresses() {
 func checkState(expected string) {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -596,10 +595,10 @@ func checkState(expected string) {
 func updateSpinesConfig() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	config := &switchv1beta1.SwitchConfig{}
+	config := &metalv1alpha4.SwitchConfig{}
 	Expect(k8sClient.Get(testContext, types.NamespacedName{
 		Name:      "spines-config",
-		Namespace: "onmetal",
+		Namespace: defaultNamespace,
 	}, config)).NotTo(HaveOccurred())
 	config.Spec.PortsDefaults.SetMTU(9216)
 	Expect(k8sClient.Update(testContext, config)).NotTo(HaveOccurred())
@@ -611,12 +610,12 @@ func updateInventory() {
 	samplePath := filepath.Join(samplesPath, "updatedInventory", "leaf-1.inventory.yaml")
 	raw, err := os.ReadFile(samplePath)
 	Expect(err).To(BeNil())
-	updatedInventory := &inventoryv1alpha1.Inventory{}
+	updatedInventory := &metalv1alpha4.Inventory{}
 	sampleYAML := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(raw), len(raw))
 	Expect(sampleYAML.Decode(updatedInventory)).To(Succeed())
 	updatedInventory.TypeMeta = metav1.TypeMeta{
 		Kind:       "Inventory",
-		APIVersion: "machine.onmetal.de/v1alpha1",
+		APIVersion: "metal.ironcore.dev/v1alpha4",
 	}
 	Expect(k8sClient.Patch(testContext, updatedInventory, client.Apply, switchespkg.PatchOpts)).NotTo(HaveOccurred())
 }
@@ -624,7 +623,7 @@ func updateInventory() {
 func checkInterfacesUpdated() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -641,7 +640,7 @@ func checkInterfacesUpdated() {
 func checkSeededLoopbacks() {
 	testContext, testCancel := context.WithTimeout(ctx, contextTimeout)
 	defer testCancel()
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {
@@ -670,8 +669,8 @@ func deleteInventories(ctx context.Context) {
 	delOpts := &client.DeleteAllOfOptions{
 		ListOptions: opts,
 	}
-	Expect(k8sClient.DeleteAllOf(testContext, &inventoryv1alpha1.Inventory{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
-	inventories := &inventoryv1alpha1.InventoryList{}
+	Expect(k8sClient.DeleteAllOf(testContext, &metalv1alpha4.Inventory{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	inventories := &metalv1alpha4.InventoryList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, inventories, &opts)).NotTo(HaveOccurred())
 		g.Expect(inventories.Items).To(BeEmpty())
@@ -691,8 +690,8 @@ func deleteSwitches(ctx context.Context) {
 	delOpts := &client.DeleteAllOfOptions{
 		ListOptions: opts,
 	}
-	Expect(k8sClient.DeleteAllOf(testContext, &switchv1beta1.Switch{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
-	switches := &switchv1beta1.SwitchList{}
+	Expect(k8sClient.DeleteAllOf(testContext, &metalv1alpha4.NetworkSwitch{}, delOpts, client.InNamespace(defaultNamespace))).NotTo(HaveOccurred())
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches, &opts)).NotTo(HaveOccurred())
 		g.Expect(switches.Items).To(BeEmpty())
@@ -772,7 +771,7 @@ func setSwitchesUnmanaged() {
 		LabelSelector: selector,
 		Namespace:     defaultNamespace,
 	}
-	switches := &switchv1beta1.SwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
 	Eventually(func(g Gomega) {
 		g.Expect(k8sClient.List(testContext, switches, &opts)).NotTo(HaveOccurred())
 		for _, item := range switches.Items {

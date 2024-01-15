@@ -17,15 +17,14 @@ package dto
 import (
 	"net/netip"
 
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	switches "github.com/onmetal/metal-api/apis/switch/v1beta1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 type SwitchInfo struct {
 	Name           string
 	Lanes          uint32
 	InterfacesInfo map[string]Interface
-	Interfaces     *switches.InterfaceSpec
+	Interfaces     *metalv1alpha4.InterfaceSpec
 }
 
 type Interface struct {
@@ -33,11 +32,11 @@ type Interface struct {
 }
 
 func (s *SwitchInfo) AddSwitchInfoToMachineInterfaces(
-	machineInterface machine.Interface,
-) machine.Interface {
+	machineInterface metalv1alpha4.Interface,
+) metalv1alpha4.Interface {
 	machineInterface.Lanes = s.Lanes
 	machineInterface.Unknown = false
-	machineInterface.SwitchReference = &machine.ResourceReference{Kind: "Switch", Name: s.Name}
+	machineInterface.SwitchReference = &metalv1alpha4.ResourceReference{Kind: "NetworkSwitch", Name: s.Name}
 	switchInterface := s.InterfacesInfo[machineInterface.Peer.LLDPPortDescription]
 	machineInterface.Addresses = CalculateMachineAddressFromSwitchInterface(switchInterface)
 	return machineInterface
@@ -45,10 +44,10 @@ func (s *SwitchInfo) AddSwitchInfoToMachineInterfaces(
 
 func CalculateMachineAddressFromSwitchInterface(
 	switchNIC Interface,
-) machine.Addresses {
+) metalv1alpha4.Addresses {
 	addresses4 := FilterAndGenerateAddresses(switchNIC, IsIPv4)
 	addresses6 := FilterAndGenerateAddresses(switchNIC, IsIPv6)
-	return machine.Addresses{
+	return metalv1alpha4.Addresses{
 		IPv4: addresses4,
 		IPv6: addresses6,
 	}
@@ -57,8 +56,8 @@ func CalculateMachineAddressFromSwitchInterface(
 func FilterAndGenerateAddresses(
 	switchInterface Interface,
 	ipTypeFunc func(addr netip.Addr) bool,
-) []machine.IPAddressSpec {
-	var addresses []machine.IPAddressSpec
+) []metalv1alpha4.IPAddrSpec {
+	var addresses []metalv1alpha4.IPAddrSpec
 	for _, ip := range switchInterface.IP {
 		if !ipTypeFunc(ip.Addr()) {
 			continue

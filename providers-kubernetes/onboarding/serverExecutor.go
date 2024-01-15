@@ -16,7 +16,7 @@ package providers
 
 import (
 	"github.com/go-logr/logr"
-	domain "github.com/onmetal/metal-api/domain/infrastructure"
+	domain "github.com/ironcore-dev/metal/domain/infrastructure"
 )
 
 type FakeServerExecutor struct {

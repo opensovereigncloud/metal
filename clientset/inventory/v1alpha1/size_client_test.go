@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
 
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 )
 
 // nolint:forcetypeassert
@@ -55,15 +55,15 @@ var _ = PDescribe("Size client", func() {
 			client := clientset.Sizes(SizeNamespace)
 
 			qty := resource.MustParse("12Gi")
-			size := &v1alpha1.Size{
+			size := &metalv1alpha4.Size{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      SizeName,
 					Namespace: SizeNamespace,
 				},
-				Spec: v1alpha1.SizeSpec{
-					Constraints: []v1alpha1.ConstraintSpec{
+				Spec: metalv1alpha4.SizeSpec{
+					Constraints: []metalv1alpha4.ConstraintSpec{
 						{
-							Path:        *v1alpha1.JSONPathFromString("a.b.c"),
+							Path:        *metalv1alpha4.JSONPathFromString("a.b.c"),
 							GreaterThan: &qty,
 						},
 					},
@@ -76,7 +76,7 @@ var _ = PDescribe("Size client", func() {
 			events := watcher.ResultChan()
 
 			By("Creating Size")
-			createdSize := &v1alpha1.Size{}
+			createdSize := &metalv1alpha4.Size{}
 			go func() {
 				defer GinkgoRecover()
 				createdSize, err = client.Create(ctx, size, v1.CreateOptions{})
@@ -88,14 +88,14 @@ var _ = PDescribe("Size client", func() {
 			event := &watch.Event{}
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Added))
-			eventSize := event.Object.(*v1alpha1.Size)
+			eventSize := event.Object.(*metalv1alpha4.Size)
 			Expect(eventSize).NotTo(BeNil())
 			Expect(eventSize.Spec).Should(Equal(size.Spec))
 
 			<-finished
 
 			By("Updating Size")
-			createdSize.Spec.Constraints[0].Path = *v1alpha1.JSONPathFromString("d.e.f")
+			createdSize.Spec.Constraints[0].Path = *metalv1alpha4.JSONPathFromString("d.e.f")
 			go func() {
 				defer GinkgoRecover()
 				updatedSize, err := client.Update(ctx, createdSize, v1.UpdateOptions{})
@@ -106,7 +106,7 @@ var _ = PDescribe("Size client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSize = event.Object.(*v1alpha1.Size)
+			eventSize = event.Object.(*metalv1alpha4.Size)
 			Expect(eventSize).NotTo(BeNil())
 			Expect(eventSize.Spec).Should(Equal(createdSize.Spec))
 
@@ -130,15 +130,15 @@ var _ = PDescribe("Size client", func() {
 				defer GinkgoRecover()
 				patchedSize, err := client.Patch(ctx, SizeName, types.JSONPatchType, patchData, v1.PatchOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(patchedSize.Spec.Constraints[0].Path.String()).Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
+				Expect(patchedSize.Spec.Constraints[0].Path.String()).Should(Equal(metalv1alpha4.JSONPathFromString(patch[0].Value).String()))
 				finished <- true
 			}()
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Modified))
-			eventSize = event.Object.(*v1alpha1.Size)
+			eventSize = event.Object.(*metalv1alpha4.Size)
 			Expect(eventSize).NotTo(BeNil())
-			Expect(eventSize.Spec.Constraints[0].Path.String()).Should(Equal(v1alpha1.JSONPathFromString(patch[0].Value).String()))
+			Expect(eventSize.Spec.Constraints[0].Path.String()).Should(Equal(metalv1alpha4.JSONPathFromString(patch[0].Value).String()))
 
 			<-finished
 
@@ -149,7 +149,7 @@ var _ = PDescribe("Size client", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(events).Should(Receive())
 
-			sizeToDelete := &v1alpha1.Size{
+			sizeToDelete := &metalv1alpha4.Size{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      SizeToDeleteName,
 					Namespace: SizeNamespace,
@@ -157,7 +157,7 @@ var _ = PDescribe("Size client", func() {
 						DeleteLabel: "",
 					},
 				},
-				Spec: v1alpha1.SizeSpec{},
+				Spec: metalv1alpha4.SizeSpec{},
 			}
 
 			By("Creating Size collection")
@@ -185,7 +185,7 @@ var _ = PDescribe("Size client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventSize = event.Object.(*v1alpha1.Size)
+			eventSize = event.Object.(*metalv1alpha4.Size)
 			Expect(eventSize).NotTo(BeNil())
 			Expect(eventSize.Name).To(Equal(SizeToDeleteName))
 
@@ -199,7 +199,7 @@ var _ = PDescribe("Size client", func() {
 
 			Eventually(events).Should(Receive(event))
 			Expect(event.Type).To(Equal(watch.Deleted))
-			eventSize = event.Object.(*v1alpha1.Size)
+			eventSize = event.Object.(*metalv1alpha4.Size)
 			Expect(eventSize).NotTo(BeNil())
 			Expect(eventSize.Name).To(Equal(SizeName))
 

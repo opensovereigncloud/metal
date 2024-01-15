@@ -1,13 +1,17 @@
 <p>Packages:</p>
 <ul>
 <li>
-<a href="#machine.onmetal.de%2fv1alpha1">machine.onmetal.de/v1alpha1</a>
+<a href="#metal.ironcore.dev%2fv1alpha1">metal.ironcore.dev/v1alpha4</a>
 </li>
 </ul>
-<h2 id="machine.onmetal.de/v1alpha1">machine.onmetal.de/v1alpha1</h2>
+<h2 id="metal.ironcore.dev/v1alpha4">metal.ironcore.dev/v1alpha4</h2>
 Resource Types:
-<ul></ul>
-<h3 id="machine.onmetal.de/v1alpha1.Aggregate">Aggregate
+<ul><li>
+<a href="#metal.ironcore.dev/v1alpha4.Aggregate">Aggregate</a>
+</li><li>
+<a href="#metal.ironcore.dev/v1alpha4.Inventory">Inventory</a>
+</li></ul>
+<h3 id="metal.ironcore.dev/v1alpha4.Aggregate">Aggregate
 </h3>
 <div>
 <p>Aggregate is the Schema for the aggregates API.</p>
@@ -20,6 +24,23 @@ Resource Types:
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+string</td>
+<td>
+<code>
+metal.ironcore.dev/v1alpha4
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code><br/>
+string
+</td>
+<td><code>Aggregate</code></td>
+</tr>
 <tr>
 <td>
 <code>metadata</code><br/>
@@ -38,7 +59,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.AggregateSpec">
+<a href="#metal.ironcore.dev/v1alpha4.AggregateSpec">
 AggregateSpec
 </a>
 </em>
@@ -51,7 +72,7 @@ AggregateSpec
 <td>
 <code>aggregates</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.AggregateItem">
+<a href="#metal.ironcore.dev/v1alpha4.AggregateItem">
 []AggregateItem
 </a>
 </em>
@@ -67,7 +88,7 @@ AggregateSpec
 <td>
 <code>status</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.AggregateStatus">
+<a href="#metal.ironcore.dev/v1alpha4.AggregateStatus">
 AggregateStatus
 </a>
 </em>
@@ -77,10 +98,227 @@ AggregateStatus
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.AggregateItem">AggregateItem
+<h3 id="metal.ironcore.dev/v1alpha4.Inventory">Inventory
+</h3>
+<div>
+<p>Inventory is the Schema for the inventories API.</p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiVersion</code><br/>
+string</td>
+<td>
+<code>
+metal.ironcore.dev/v1alpha4
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code><br/>
+string
+</td>
+<td><code>Inventory</code></td>
+</tr>
+<tr>
+<td>
+<code>metadata</code><br/>
+<em>
+<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.InventorySpec">
+InventorySpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>system</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.SystemSpec">
+SystemSpec
+</a>
+</em>
+</td>
+<td>
+<p>System contains DMI system information</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ipmis</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.IPMISpec">
+[]IPMISpec
+</a>
+</em>
+</td>
+<td>
+<p>IPMIs contains info about IPMI interfaces on the host</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>blocks</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.BlockSpec">
+[]BlockSpec
+</a>
+</em>
+</td>
+<td>
+<p>Blocks contains info about block devices on the host</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>memory</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.MemorySpec">
+MemorySpec
+</a>
+</em>
+</td>
+<td>
+<p>Memory contains info block devices on the host</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cpus</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.CPUSpec">
+[]CPUSpec
+</a>
+</em>
+</td>
+<td>
+<p>CPUs contains info about cpus, cores and threads</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>numa</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.NumaSpec">
+[]NumaSpec
+</a>
+</em>
+</td>
+<td>
+<p>NUMA contains info about cpu/memory topology</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>pciDevices</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceSpec">
+[]PCIDeviceSpec
+</a>
+</em>
+</td>
+<td>
+<p>PCIDevices contains info about devices accessible through</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nics</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.NICSpec">
+[]NICSpec
+</a>
+</em>
+</td>
+<td>
+<p>NICs contains info about network interfaces and network discovery</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>virt</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.VirtSpec">
+VirtSpec
+</a>
+</em>
+</td>
+<td>
+<p>Virt is a virtualization detected on host</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>host</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.HostSpec">
+HostSpec
+</a>
+</em>
+</td>
+<td>
+<p>Host contains info about inventorying object</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>distro</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.DistroSpec">
+DistroSpec
+</a>
+</em>
+</td>
+<td>
+<p>Distro contains info about OS distro</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br/>
+<em>
+<a href="#metal.ironcore.dev/v1alpha4.InventoryStatus">
+InventoryStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metal.ironcore.dev/v1alpha4.AggregateItem">AggregateItem
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.AggregateSpec">AggregateSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.AggregateSpec">AggregateSpec</a>)
 </p>
 <div>
 </div>
@@ -96,7 +334,7 @@ AggregateStatus
 <td>
 <code>sourcePath</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.JSONPath">
+<a href="#metal.ironcore.dev/v1alpha4.JSONPath">
 JSONPath
 </a>
 </em>
@@ -109,7 +347,7 @@ JSONPath
 <td>
 <code>targetPath</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.JSONPath">
+<a href="#metal.ironcore.dev/v1alpha4.JSONPath">
 JSONPath
 </a>
 </em>
@@ -122,7 +360,7 @@ JSONPath
 <td>
 <code>aggregate</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.AggregateType">
+<a href="#metal.ironcore.dev/v1alpha4.AggregateType">
 AggregateType
 </a>
 </em>
@@ -134,10 +372,10 @@ for constraint checks, in case if path defines selector for collection</p>
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.AggregateSpec">AggregateSpec
+<h3 id="metal.ironcore.dev/v1alpha4.AggregateSpec">AggregateSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Aggregate">Aggregate</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.Aggregate">Aggregate</a>)
 </p>
 <div>
 <p>AggregateSpec defines the desired state of Aggregate.</p>
@@ -154,7 +392,7 @@ for constraint checks, in case if path defines selector for collection</p>
 <td>
 <code>aggregates</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.AggregateItem">
+<a href="#metal.ironcore.dev/v1alpha4.AggregateItem">
 []AggregateItem
 </a>
 </em>
@@ -165,18 +403,18 @@ for constraint checks, in case if path defines selector for collection</p>
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.AggregateStatus">AggregateStatus
+<h3 id="metal.ironcore.dev/v1alpha4.AggregateStatus">AggregateStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Aggregate">Aggregate</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.Aggregate">Aggregate</a>)
 </p>
 <div>
 <p>AggregateStatus defines the observed state of Aggregate.</p>
 </div>
-<h3 id="machine.onmetal.de/v1alpha1.AggregateType">AggregateType
+<h3 id="metal.ironcore.dev/v1alpha4.AggregateType">AggregateType
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.AggregateItem">AggregateItem</a>, <a href="#machine.onmetal.de/v1alpha1.ConstraintSpec">ConstraintSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.AggregateItem">AggregateItem</a>, <a href="#metal.ironcore.dev/v1alpha4.ConstraintSpec">ConstraintSpec</a>)
 </p>
 <div>
 </div>
@@ -199,10 +437,10 @@ for constraint checks, in case if path defines selector for collection</p>
 <td></td>
 </tr></tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.AggregationResults">AggregationResults
+<h3 id="metal.ironcore.dev/v1alpha4.AggregationResults">AggregationResults
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventoryStatus">InventoryStatus</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventoryStatus">InventoryStatus</a>)
 </p>
 <div>
 </div>
@@ -226,10 +464,10 @@ map[string]interface{}
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.BlockSpec">BlockSpec
+<h3 id="metal.ironcore.dev/v1alpha4.BlockSpec">BlockSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>BlockSpec contains info about block device</p>
@@ -312,7 +550,7 @@ uint64
 <td>
 <code>partitionTable</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PartitionTableSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PartitionTableSpec">
 PartitionTableSpec
 </a>
 </em>
@@ -323,10 +561,10 @@ PartitionTableSpec
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.CPUSpec">CPUSpec
+<h3 id="metal.ironcore.dev/v1alpha4.CPUSpec">CPUSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>CPUSpec contains info about CPUs on hsot machine</p>
@@ -609,10 +847,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.ConstraintSpec">ConstraintSpec
+<h3 id="metal.ironcore.dev/v1alpha4.ConstraintSpec">ConstraintSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.SizeSpec">SizeSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.SizeSpec">SizeSpec</a>)
 </p>
 <div>
 <p>ConstraintSpec contains conditions of contraint that should be applied on resource.</p>
@@ -629,7 +867,7 @@ string
 <td>
 <code>path</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.JSONPath">
+<a href="#metal.ironcore.dev/v1alpha4.JSONPath">
 JSONPath
 </a>
 </em>
@@ -642,7 +880,7 @@ JSONPath
 <td>
 <code>agg</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.AggregateType">
+<a href="#metal.ironcore.dev/v1alpha4.AggregateType">
 AggregateType
 </a>
 </em>
@@ -656,7 +894,7 @@ for constraint checks, in case if path defines selector for collection</p>
 <td>
 <code>eq</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.ConstraintValSpec">
+<a href="#metal.ironcore.dev/v1alpha4.ConstraintValSpec">
 ConstraintValSpec
 </a>
 </em>
@@ -669,7 +907,7 @@ ConstraintValSpec
 <td>
 <code>neq</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.ConstraintValSpec">
+<a href="#metal.ironcore.dev/v1alpha4.ConstraintValSpec">
 ConstraintValSpec
 </a>
 </em>
@@ -732,10 +970,10 @@ k8s.io/apimachinery/pkg/api/resource.Quantity
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.ConstraintValSpec">ConstraintValSpec
+<h3 id="metal.ironcore.dev/v1alpha4.ConstraintValSpec">ConstraintValSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.ConstraintSpec">ConstraintSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.ConstraintSpec">ConstraintSpec</a>)
 </p>
 <div>
 <p>ConstraintValSpec is a wrapper around value for constraint.
@@ -775,10 +1013,10 @@ k8s.io/apimachinery/pkg/api/resource.Quantity
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.DistroSpec">DistroSpec
+<h3 id="metal.ironcore.dev/v1alpha4.DistroSpec">DistroSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>DistroSpec contains info about distro</p>
@@ -873,10 +1111,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.HostSpec">HostSpec
+<h3 id="metal.ironcore.dev/v1alpha4.HostSpec">HostSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>HostSpec contains type of inventorying object and in case it is a switch - SONiC version</p>
@@ -902,10 +1140,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.IPMISpec">IPMISpec
+<h3 id="metal.ironcore.dev/v1alpha4.IPMISpec">IPMISpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>IPMISpec contains info about IPMI module</p>
@@ -942,210 +1180,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.Inventory">Inventory
-</h3>
-<div>
-<p>Inventory is the Schema for the inventories API</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>metadata</code><br/>
-<em>
-<a href="https://v1-21.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta">
-Kubernetes meta/v1.ObjectMeta
-</a>
-</em>
-</td>
-<td>
-Refer to the Kubernetes API documentation for the fields of the
-<code>metadata</code> field.
-</td>
-</tr>
-<tr>
-<td>
-<code>spec</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.InventorySpec">
-InventorySpec
-</a>
-</em>
-</td>
-<td>
-<br/>
-<br/>
-<table>
-<tr>
-<td>
-<code>system</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.SystemSpec">
-SystemSpec
-</a>
-</em>
-</td>
-<td>
-<p>System contains DMI system information</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ipmis</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.IPMISpec">
-[]IPMISpec
-</a>
-</em>
-</td>
-<td>
-<p>IPMIs contains info about IPMI interfaces on the host</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>blocks</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.BlockSpec">
-[]BlockSpec
-</a>
-</em>
-</td>
-<td>
-<p>Blocks contains info about block devices on the host</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>memory</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.MemorySpec">
-MemorySpec
-</a>
-</em>
-</td>
-<td>
-<p>Memory contains info block devices on the host</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>cpus</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.CPUSpec">
-[]CPUSpec
-</a>
-</em>
-</td>
-<td>
-<p>CPUs contains info about cpus, cores and threads</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>numa</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.NumaSpec">
-[]NumaSpec
-</a>
-</em>
-</td>
-<td>
-<p>NUMA contains info about cpu/memory topology</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>pciDevices</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceSpec">
-[]PCIDeviceSpec
-</a>
-</em>
-</td>
-<td>
-<p>PCIDevices contains info about devices accessible through</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>nics</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.NICSpec">
-[]NICSpec
-</a>
-</em>
-</td>
-<td>
-<p>NICs contains info about network interfaces and network discovery</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>virt</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.VirtSpec">
-VirtSpec
-</a>
-</em>
-</td>
-<td>
-<p>Virt is a virtualization detected on host</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>host</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.HostSpec">
-HostSpec
-</a>
-</em>
-</td>
-<td>
-<p>Host contains info about inventorying object</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>distro</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.DistroSpec">
-DistroSpec
-</a>
-</em>
-</td>
-<td>
-<p>Distro contains info about OS distro</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>
-<tr>
-<td>
-<code>status</code><br/>
-<em>
-<a href="#machine.onmetal.de/v1alpha1.InventoryStatus">
-InventoryStatus
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec
+<h3 id="metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Inventory">Inventory</a>, <a href="#machine.onmetal.de/v1alpha1.ValidationInventory">ValidationInventory</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.Inventory">Inventory</a>, <a href="#metal.ironcore.dev/v1alpha4.ValidationInventory">ValidationInventory</a>)
 </p>
 <div>
 <p>InventorySpec contains result of inventorization process on the host</p>
@@ -1162,7 +1200,7 @@ InventoryStatus
 <td>
 <code>system</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.SystemSpec">
+<a href="#metal.ironcore.dev/v1alpha4.SystemSpec">
 SystemSpec
 </a>
 </em>
@@ -1175,7 +1213,7 @@ SystemSpec
 <td>
 <code>ipmis</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.IPMISpec">
+<a href="#metal.ironcore.dev/v1alpha4.IPMISpec">
 []IPMISpec
 </a>
 </em>
@@ -1188,7 +1226,7 @@ SystemSpec
 <td>
 <code>blocks</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.BlockSpec">
+<a href="#metal.ironcore.dev/v1alpha4.BlockSpec">
 []BlockSpec
 </a>
 </em>
@@ -1201,7 +1239,7 @@ SystemSpec
 <td>
 <code>memory</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.MemorySpec">
+<a href="#metal.ironcore.dev/v1alpha4.MemorySpec">
 MemorySpec
 </a>
 </em>
@@ -1214,7 +1252,7 @@ MemorySpec
 <td>
 <code>cpus</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.CPUSpec">
+<a href="#metal.ironcore.dev/v1alpha4.CPUSpec">
 []CPUSpec
 </a>
 </em>
@@ -1227,7 +1265,7 @@ MemorySpec
 <td>
 <code>numa</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.NumaSpec">
+<a href="#metal.ironcore.dev/v1alpha4.NumaSpec">
 []NumaSpec
 </a>
 </em>
@@ -1240,7 +1278,7 @@ MemorySpec
 <td>
 <code>pciDevices</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceSpec">
 []PCIDeviceSpec
 </a>
 </em>
@@ -1253,7 +1291,7 @@ MemorySpec
 <td>
 <code>nics</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.NICSpec">
+<a href="#metal.ironcore.dev/v1alpha4.NICSpec">
 []NICSpec
 </a>
 </em>
@@ -1266,7 +1304,7 @@ MemorySpec
 <td>
 <code>virt</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.VirtSpec">
+<a href="#metal.ironcore.dev/v1alpha4.VirtSpec">
 VirtSpec
 </a>
 </em>
@@ -1279,7 +1317,7 @@ VirtSpec
 <td>
 <code>host</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.HostSpec">
+<a href="#metal.ironcore.dev/v1alpha4.HostSpec">
 HostSpec
 </a>
 </em>
@@ -1292,7 +1330,7 @@ HostSpec
 <td>
 <code>distro</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.DistroSpec">
+<a href="#metal.ironcore.dev/v1alpha4.DistroSpec">
 DistroSpec
 </a>
 </em>
@@ -1303,10 +1341,10 @@ DistroSpec
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.InventoryStatus">InventoryStatus
+<h3 id="metal.ironcore.dev/v1alpha4.InventoryStatus">InventoryStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Inventory">Inventory</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.Inventory">Inventory</a>)
 </p>
 <div>
 <p>InventoryStatus defines the observed state of Inventory</p>
@@ -1323,7 +1361,7 @@ DistroSpec
 <td>
 <code>computed</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.AggregationResults">
+<a href="#metal.ironcore.dev/v1alpha4.AggregationResults">
 AggregationResults
 </a>
 </em>
@@ -1335,7 +1373,7 @@ AggregationResults
 <td>
 <code>inventoryStatuses</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.InventoryStatuses">
+<a href="#metal.ironcore.dev/v1alpha4.InventoryStatuses">
 InventoryStatuses
 </a>
 </em>
@@ -1345,10 +1383,10 @@ InventoryStatuses
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.InventoryStatuses">InventoryStatuses
+<h3 id="metal.ironcore.dev/v1alpha4.InventoryStatuses">InventoryStatuses
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventoryStatus">InventoryStatus</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventoryStatus">InventoryStatus</a>)
 </p>
 <div>
 </div>
@@ -1382,10 +1420,10 @@ int
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.JSONPath">JSONPath
+<h3 id="metal.ironcore.dev/v1alpha4.JSONPath">JSONPath
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.AggregateItem">AggregateItem</a>, <a href="#machine.onmetal.de/v1alpha1.ConstraintSpec">ConstraintSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.AggregateItem">AggregateItem</a>, <a href="#metal.ironcore.dev/v1alpha4.ConstraintSpec">ConstraintSpec</a>)
 </p>
 <div>
 </div>
@@ -1409,18 +1447,18 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.LLDPCapabilities">LLDPCapabilities
+<h3 id="metal.ironcore.dev/v1alpha4.LLDPCapabilities">LLDPCapabilities
 (<code>string</code> alias)</h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.LLDPSpec">LLDPSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.LLDPSpec">LLDPSpec</a>)
 </p>
 <div>
 <p>LLDPCapabilities</p>
 </div>
-<h3 id="machine.onmetal.de/v1alpha1.LLDPSpec">LLDPSpec
+<h3 id="metal.ironcore.dev/v1alpha4.LLDPSpec">LLDPSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.NICSpec">NICSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.NICSpec">NICSpec</a>)
 </p>
 <div>
 <p>LLDPSpec is an entry received by network interface by Link Layer Discovery Protocol</p>
@@ -1492,7 +1530,7 @@ string
 <td>
 <code>capabilities</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.LLDPCapabilities">
+<a href="#metal.ironcore.dev/v1alpha4.LLDPCapabilities">
 []LLDPCapabilities
 </a>
 </em>
@@ -1503,10 +1541,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.MemorySpec">MemorySpec
+<h3 id="metal.ironcore.dev/v1alpha4.MemorySpec">MemorySpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>, <a href="#machine.onmetal.de/v1alpha1.NumaSpec">NumaSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>, <a href="#metal.ironcore.dev/v1alpha4.NumaSpec">NumaSpec</a>)
 </p>
 <div>
 <p>MemorySpec contains info about RAM on host</p>
@@ -1532,10 +1570,10 @@ uint64
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.NDPSpec">NDPSpec
+<h3 id="metal.ironcore.dev/v1alpha4.NDPSpec">NDPSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.NICSpec">NICSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.NICSpec">NICSpec</a>)
 </p>
 <div>
 <p>NDPSpec is an entry received by IPv6 Neighbour Discovery Protocol</p>
@@ -1583,10 +1621,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.NICSpec">NICSpec
+<h3 id="metal.ironcore.dev/v1alpha4.NICSpec">NICSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>NICSpec contains info about network interfaces</p>
@@ -1680,7 +1718,7 @@ string
 <td>
 <code>lldps</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.LLDPSpec">
+<a href="#metal.ironcore.dev/v1alpha4.LLDPSpec">
 []LLDPSpec
 </a>
 </em>
@@ -1693,7 +1731,7 @@ string
 <td>
 <code>ndps</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.NDPSpec">
+<a href="#metal.ironcore.dev/v1alpha4.NDPSpec">
 []NDPSpec
 </a>
 </em>
@@ -1704,10 +1742,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.NumaSpec">NumaSpec
+<h3 id="metal.ironcore.dev/v1alpha4.NumaSpec">NumaSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>NumaSpec describes NUMA node</p>
@@ -1757,7 +1795,7 @@ int
 <td>
 <code>memory</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.MemorySpec">
+<a href="#metal.ironcore.dev/v1alpha4.MemorySpec">
 MemorySpec
 </a>
 </em>
@@ -1768,10 +1806,10 @@ MemorySpec
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">PCIDeviceDescriptionSpec
+<h3 id="metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">PCIDeviceDescriptionSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.PCIDeviceSpec">PCIDeviceSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.PCIDeviceSpec">PCIDeviceSpec</a>)
 </p>
 <div>
 <p>PCIDeviceDescriptionSpec contains one of the options that is describing the PCI device</p>
@@ -1808,10 +1846,10 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.PCIDeviceSpec">PCIDeviceSpec
+<h3 id="metal.ironcore.dev/v1alpha4.PCIDeviceSpec">PCIDeviceSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>PCIDeviceSpec contains description of PCI device</p>
@@ -1850,7 +1888,7 @@ string
 <td>
 <code>vendor</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">
 PCIDeviceDescriptionSpec
 </a>
 </em>
@@ -1863,7 +1901,7 @@ PCIDeviceDescriptionSpec
 <td>
 <code>subvendor</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">
 PCIDeviceDescriptionSpec
 </a>
 </em>
@@ -1876,7 +1914,7 @@ PCIDeviceDescriptionSpec
 <td>
 <code>type</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">
 PCIDeviceDescriptionSpec
 </a>
 </em>
@@ -1889,7 +1927,7 @@ PCIDeviceDescriptionSpec
 <td>
 <code>subtype</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">
 PCIDeviceDescriptionSpec
 </a>
 </em>
@@ -1902,7 +1940,7 @@ PCIDeviceDescriptionSpec
 <td>
 <code>class</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">
 PCIDeviceDescriptionSpec
 </a>
 </em>
@@ -1915,7 +1953,7 @@ PCIDeviceDescriptionSpec
 <td>
 <code>subclass</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">
 PCIDeviceDescriptionSpec
 </a>
 </em>
@@ -1928,7 +1966,7 @@ PCIDeviceDescriptionSpec
 <td>
 <code>interface</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceDescriptionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceDescriptionSpec">
 PCIDeviceDescriptionSpec
 </a>
 </em>
@@ -1939,10 +1977,10 @@ PCIDeviceDescriptionSpec
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.PartitionSpec">PartitionSpec
+<h3 id="metal.ironcore.dev/v1alpha4.PartitionSpec">PartitionSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.PartitionTableSpec">PartitionTableSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.PartitionTableSpec">PartitionTableSpec</a>)
 </p>
 <div>
 <p>PartitionSpec contains info about partition</p>
@@ -1990,10 +2028,10 @@ uint64
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.PartitionTableSpec">PartitionTableSpec
+<h3 id="metal.ironcore.dev/v1alpha4.PartitionTableSpec">PartitionTableSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.BlockSpec">BlockSpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.BlockSpec">BlockSpec</a>)
 </p>
 <div>
 <p>PartitionTableSpec contains info about partition table on block device</p>
@@ -2021,7 +2059,7 @@ string
 <td>
 <code>partitions</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PartitionSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PartitionSpec">
 []PartitionSpec
 </a>
 </em>
@@ -2032,7 +2070,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.Size">Size
+<h3 id="metal.ironcore.dev/v1alpha4.Size">Size
 </h3>
 <div>
 <p>Size is the Schema for the sizes API.</p>
@@ -2063,7 +2101,7 @@ Refer to the Kubernetes API documentation for the fields of the
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.SizeSpec">
+<a href="#metal.ironcore.dev/v1alpha4.SizeSpec">
 SizeSpec
 </a>
 </em>
@@ -2076,7 +2114,7 @@ SizeSpec
 <td>
 <code>constraints</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.ConstraintSpec">
+<a href="#metal.ironcore.dev/v1alpha4.ConstraintSpec">
 []ConstraintSpec
 </a>
 </em>
@@ -2092,7 +2130,7 @@ SizeSpec
 <td>
 <code>status</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.SizeStatus">
+<a href="#metal.ironcore.dev/v1alpha4.SizeStatus">
 SizeStatus
 </a>
 </em>
@@ -2102,10 +2140,10 @@ SizeStatus
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.SizeSpec">SizeSpec
+<h3 id="metal.ironcore.dev/v1alpha4.SizeSpec">SizeSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Size">Size</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.Size">Size</a>)
 </p>
 <div>
 <p>SizeSpec defines the desired state of Size.</p>
@@ -2122,7 +2160,7 @@ SizeStatus
 <td>
 <code>constraints</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.ConstraintSpec">
+<a href="#metal.ironcore.dev/v1alpha4.ConstraintSpec">
 []ConstraintSpec
 </a>
 </em>
@@ -2133,18 +2171,18 @@ SizeStatus
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.SizeStatus">SizeStatus
+<h3 id="metal.ironcore.dev/v1alpha4.SizeStatus">SizeStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.Size">Size</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.Size">Size</a>)
 </p>
 <div>
 <p>SizeStatus defines the observed state of Size.</p>
 </div>
-<h3 id="machine.onmetal.de/v1alpha1.SystemSpec">SystemSpec
+<h3 id="metal.ironcore.dev/v1alpha4.SystemSpec">SystemSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>SystemSpec contains DMI system information</p>
@@ -2203,7 +2241,7 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.ValidationInventory">ValidationInventory
+<h3 id="metal.ironcore.dev/v1alpha4.ValidationInventory">ValidationInventory
 </h3>
 <div>
 </div>
@@ -2219,7 +2257,7 @@ string
 <td>
 <code>spec</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.InventorySpec">
+<a href="#metal.ironcore.dev/v1alpha4.InventorySpec">
 InventorySpec
 </a>
 </em>
@@ -2232,7 +2270,7 @@ InventorySpec
 <td>
 <code>system</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.SystemSpec">
+<a href="#metal.ironcore.dev/v1alpha4.SystemSpec">
 SystemSpec
 </a>
 </em>
@@ -2245,7 +2283,7 @@ SystemSpec
 <td>
 <code>ipmis</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.IPMISpec">
+<a href="#metal.ironcore.dev/v1alpha4.IPMISpec">
 []IPMISpec
 </a>
 </em>
@@ -2258,7 +2296,7 @@ SystemSpec
 <td>
 <code>blocks</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.BlockSpec">
+<a href="#metal.ironcore.dev/v1alpha4.BlockSpec">
 []BlockSpec
 </a>
 </em>
@@ -2271,7 +2309,7 @@ SystemSpec
 <td>
 <code>memory</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.MemorySpec">
+<a href="#metal.ironcore.dev/v1alpha4.MemorySpec">
 MemorySpec
 </a>
 </em>
@@ -2284,7 +2322,7 @@ MemorySpec
 <td>
 <code>cpus</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.CPUSpec">
+<a href="#metal.ironcore.dev/v1alpha4.CPUSpec">
 []CPUSpec
 </a>
 </em>
@@ -2297,7 +2335,7 @@ MemorySpec
 <td>
 <code>numa</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.NumaSpec">
+<a href="#metal.ironcore.dev/v1alpha4.NumaSpec">
 []NumaSpec
 </a>
 </em>
@@ -2310,7 +2348,7 @@ MemorySpec
 <td>
 <code>pciDevices</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.PCIDeviceSpec">
+<a href="#metal.ironcore.dev/v1alpha4.PCIDeviceSpec">
 []PCIDeviceSpec
 </a>
 </em>
@@ -2323,7 +2361,7 @@ MemorySpec
 <td>
 <code>nics</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.NICSpec">
+<a href="#metal.ironcore.dev/v1alpha4.NICSpec">
 []NICSpec
 </a>
 </em>
@@ -2336,7 +2374,7 @@ MemorySpec
 <td>
 <code>virt</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.VirtSpec">
+<a href="#metal.ironcore.dev/v1alpha4.VirtSpec">
 VirtSpec
 </a>
 </em>
@@ -2349,7 +2387,7 @@ VirtSpec
 <td>
 <code>host</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.HostSpec">
+<a href="#metal.ironcore.dev/v1alpha4.HostSpec">
 HostSpec
 </a>
 </em>
@@ -2362,7 +2400,7 @@ HostSpec
 <td>
 <code>distro</code><br/>
 <em>
-<a href="#machine.onmetal.de/v1alpha1.DistroSpec">
+<a href="#metal.ironcore.dev/v1alpha4.DistroSpec">
 DistroSpec
 </a>
 </em>
@@ -2376,10 +2414,10 @@ DistroSpec
 </tr>
 </tbody>
 </table>
-<h3 id="machine.onmetal.de/v1alpha1.VirtSpec">VirtSpec
+<h3 id="metal.ironcore.dev/v1alpha4.VirtSpec">VirtSpec
 </h3>
 <p>
-(<em>Appears on:</em><a href="#machine.onmetal.de/v1alpha1.InventorySpec">InventorySpec</a>)
+(<em>Appears on:</em><a href="#metal.ironcore.dev/v1alpha4.InventorySpec">InventorySpec</a>)
 </p>
 <div>
 <p>VirtSpec contains info about detected host virtualization</p>
@@ -2408,5 +2446,5 @@ string
 <hr/>
 <p><em>
 Generated with <code>gen-crd-api-reference-docs</code>
-on git commit <code>1a7d81b</code>.
+on git commit <code>95c3af5</code>.
 </em></p>

@@ -14,7 +14,7 @@
 
 package domain
 
-import "github.com/onmetal/metal-api/common/types/base"
+import "github.com/ironcore-dev/metal/common/types/base"
 
 type MachineCreatedDomainEvent struct {
 	id MachineID

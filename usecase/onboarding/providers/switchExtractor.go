@@ -14,7 +14,7 @@
 
 package providers
 
-import "github.com/onmetal/metal-api/usecase/onboarding/dto"
+import "github.com/ironcore-dev/metal/usecase/onboarding/dto"
 
 type SwitchExtractor interface {
 	ByChassisID(chassisID string) (dto.SwitchInfo, error)

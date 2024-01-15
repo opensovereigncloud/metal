@@ -18,11 +18,12 @@ import (
 	"context"
 	"net/netip"
 
-	switches "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	"github.com/onmetal/metal-api/pkg/constants"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/constants"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
 )
 
 type SwitchRepository struct {
@@ -54,8 +55,8 @@ func (s *SwitchRepository) ByChassisID(chassisID string) (dto.SwitchInfo, error)
 
 func (s *SwitchRepository) extractSwitchFromCluster(
 	listOptions *ctrlclient.ListOptions,
-) (*switches.Switch, error) {
-	obj := &switches.SwitchList{}
+) (*metalv1alpha4.NetworkSwitch, error) {
+	obj := &metalv1alpha4.NetworkSwitchList{}
 	if err := s.
 		client.
 		List(
@@ -71,7 +72,7 @@ func (s *SwitchRepository) extractSwitchFromCluster(
 	return &obj.Items[0], nil
 }
 
-func toSwitchInfo(sw *switches.Switch) dto.SwitchInfo {
+func toSwitchInfo(sw *metalv1alpha4.NetworkSwitch) dto.SwitchInfo {
 	var lanes uint32
 	if sw.Spec.Interfaces != nil && sw.Spec.Interfaces.Defaults != nil {
 		lanes = sw.Spec.Interfaces.Defaults.GetLanes()
@@ -83,7 +84,7 @@ func toSwitchInfo(sw *switches.Switch) dto.SwitchInfo {
 	}
 }
 
-func toSwitchInterfaces(sw *switches.Switch) map[string]dto.Interface {
+func toSwitchInterfaces(sw *metalv1alpha4.NetworkSwitch) map[string]dto.Interface {
 	swInterfaces := make(map[string]dto.Interface, len(sw.Status.Interfaces))
 	for k, v := range sw.Status.Interfaces {
 		if v == nil {
@@ -94,7 +95,7 @@ func toSwitchInterfaces(sw *switches.Switch) map[string]dto.Interface {
 	return swInterfaces
 }
 
-func toSwitchIP(ips []*switches.IPAddressSpec) []netip.Prefix {
+func toSwitchIP(ips []*metalv1alpha4.IPAddressSpec) []netip.Prefix {
 	switchIPs := make([]netip.Prefix, 0, len(ips))
 	for ip := range ips {
 		if ips[ip] == nil || ips[ip].Address == nil {

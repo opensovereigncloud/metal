@@ -21,16 +21,17 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	benchmarkv1alpha3 "github.com/onmetal/metal-api/apis/benchmark/v1alpha3"
-	"github.com/onmetal/metal-api/pkg/benchmark"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/pkg/benchmark"
 )
 
-// Reconciler reconciles a Machine object.
+// Reconciler reconciles a Benchmark object.
 type Reconciler struct {
 	client.Client
 
@@ -41,7 +42,7 @@ type Reconciler struct {
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&benchmarkv1alpha3.Machine{}).
+		For(&metalv1alpha4.Benchmark{}).
 		WithEventFilter(r.constructPredicates()).
 		Complete(r)
 }
@@ -53,17 +54,17 @@ func (r *Reconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
-// +kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=benchmark.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
 
 func (r *Reconciler) Reconcile(_ context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) compareDifference(e event.UpdateEvent) bool {
-	oldObj, oldOk := e.ObjectOld.(*benchmarkv1alpha3.Machine)
-	newObj, newOk := e.ObjectNew.(*benchmarkv1alpha3.Machine)
+	oldObj, oldOk := e.ObjectOld.(*metalv1alpha4.Benchmark)
+	newObj, newOk := e.ObjectNew.(*metalv1alpha4.Benchmark)
 	if !oldOk || !newOk {
 		r.Log.Info("compare failed")
 		return false
@@ -75,7 +76,7 @@ func (r *Reconciler) compareDifference(e event.UpdateEvent) bool {
 	r.Log.Info("disks deviation between old and new benchmarks", "uuid", newObj.Name,
 		"value", dev)
 
-	newObj.Status.MachineDeviation = dev
+	newObj.Status.BenchmarkDeviations = dev
 	if err := r.Status().Update(context.Background(), newObj); err != nil {
 		r.Log.Info("failed to update benchmark status", "error", err)
 		return false

@@ -15,9 +15,9 @@
 package scenarios
 
 import (
-	domain "github.com/onmetal/metal-api/domain/infrastructure"
-	usecase "github.com/onmetal/metal-api/usecase/onboarding"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
+	domain "github.com/ironcore-dev/metal/domain/infrastructure"
+	usecase "github.com/ironcore-dev/metal/usecase/onboarding"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
 )
 
 type GetServerUseCase struct {

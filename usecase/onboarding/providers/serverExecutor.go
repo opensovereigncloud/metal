@@ -15,7 +15,7 @@
 package providers
 
 import (
-	domain "github.com/onmetal/metal-api/domain/infrastructure"
+	domain "github.com/ironcore-dev/metal/domain/infrastructure"
 )
 
 type ServerExecutor interface {

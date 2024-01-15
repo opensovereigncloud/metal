@@ -16,8 +16,8 @@ package publisher
 
 import (
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/common/types/base"
-	"github.com/onmetal/metal-api/common/types/events"
+	"github.com/ironcore-dev/metal/common/types/base"
+	"github.com/ironcore-dev/metal/common/types/events"
 )
 
 type DomainEventPublisher struct {

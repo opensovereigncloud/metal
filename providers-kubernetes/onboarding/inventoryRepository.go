@@ -20,12 +20,13 @@ import (
 	"context"
 	"strings"
 
-	inventories "github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	"github.com/onmetal/metal-api/common/types/events"
-	domain "github.com/onmetal/metal-api/domain/inventory"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	"github.com/ironcore-dev/metal/common/types/events"
+	domain "github.com/ironcore-dev/metal/domain/inventory"
 )
 
 type InventoryRepository struct {
@@ -79,8 +80,8 @@ func (r *InventoryRepository) ByID(id domain.InventoryID) (domain.Inventory, err
 
 func (r *InventoryRepository) extractInventoryFromCluster(
 	options ctrlclient.ListOption,
-) (*inventories.Inventory, error) {
-	obj := &inventories.InventoryList{}
+) (*metalv1alpha4.Inventory, error) {
+	obj := &metalv1alpha4.InventoryList{}
 	if err := r.
 		client.
 		List(
@@ -96,8 +97,8 @@ func (r *InventoryRepository) extractInventoryFromCluster(
 	return &obj.Items[0], nil
 }
 
-func prepareInventory(inv domain.Inventory) *inventories.Inventory {
-	return &inventories.Inventory{
+func prepareInventory(inv domain.Inventory) *metalv1alpha4.Inventory {
+	return &metalv1alpha4.Inventory{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      inv.UUID,
 			Namespace: inv.Namespace,
@@ -105,16 +106,16 @@ func prepareInventory(inv domain.Inventory) *inventories.Inventory {
 				"id": inv.ID.String(),
 			},
 		},
-		Spec: inventories.InventorySpec{
-			System: &inventories.SystemSpec{
+		Spec: metalv1alpha4.InventorySpec{
+			System: &metalv1alpha4.SystemSpec{
 				ID: "",
 			},
-			Host: &inventories.HostSpec{
+			Host: &metalv1alpha4.HostSpec{
 				Name: "",
 			},
 		},
-		Status: inventories.InventoryStatus{
-			InventoryStatuses: inventories.InventoryStatuses{
+		Status: metalv1alpha4.InventoryStatus{
+			InventoryStatuses: metalv1alpha4.InventoryStatuses{
 				RequestsCount: 1,
 			},
 		},
@@ -124,7 +125,7 @@ func prepareInventory(inv domain.Inventory) *inventories.Inventory {
 func sizeLabels(labels map[string]string) map[string]string {
 	machineLabels := make(map[string]string, len(labels))
 	for key, value := range labels {
-		if !strings.Contains(key, inventories.CLabelPrefix) {
+		if !strings.Contains(key, metalv1alpha4.CLabelPrefix) {
 			continue
 		}
 		machineLabels[key] = value
@@ -132,7 +133,7 @@ func sizeLabels(labels map[string]string) map[string]string {
 	return machineLabels
 }
 
-func domainInventory(inv *inventories.Inventory) domain.Inventory {
+func domainInventory(inv *metalv1alpha4.Inventory) domain.Inventory {
 	sizes := sizeLabels(inv.Labels)
 
 	var productSKU, serialNumber string

@@ -14,7 +14,7 @@
 
 package domain
 
-import machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
+import metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 
 func NewMachineInterface(
 	interfaceName string,
@@ -22,11 +22,11 @@ func NewMachineInterface(
 	chassisID string,
 	portID string,
 	portDescription string,
-) machine.Interface {
-	return machine.Interface{
+) metalv1alpha4.Interface {
+	return metalv1alpha4.Interface{
 		Name:    interfaceName,
 		Unknown: false,
-		Peer: machine.Peer{
+		Peer: metalv1alpha4.Peer{
 			LLDPSystemName:      systemName,
 			LLDPChassisID:       chassisID,
 			LLDPPortID:          portID,

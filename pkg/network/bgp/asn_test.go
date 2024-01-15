@@ -18,7 +18,7 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/onmetal/metal-api/pkg/network/bgp"
+	"github.com/ironcore-dev/metal/pkg/network/bgp"
 	"github.com/stretchr/testify/assert"
 )
 

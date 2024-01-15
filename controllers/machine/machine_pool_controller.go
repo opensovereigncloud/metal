@@ -21,9 +21,6 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
-	"github.com/onmetal/metal-api/apis/inventory/v1alpha1"
-	machine "github.com/onmetal/metal-api/apis/machine/v1alpha3"
-	domain "github.com/onmetal/metal-api/domain/reservation"
 	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
 	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,6 +31,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	domain "github.com/ironcore-dev/metal/domain/reservation"
 )
 
 const (
@@ -69,9 +69,9 @@ type machinePoolReconcileWrappedCtx struct {
 	req ctrl.Request
 }
 
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=machine.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools,verbs=get;list;watch;update;patch;create;delete
 // +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/finalizers,verbs=update
@@ -86,7 +86,7 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		log: r.Log.WithValues("namespace", req.NamespacedName),
 	}
 
-	metalMachine := &machine.Machine{
+	metalMachine := &metalv1alpha4.Machine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      req.Name,
 			Namespace: req.Namespace,
@@ -139,13 +139,13 @@ func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 func (r *MachinePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&machine.Machine{}).
+		For(&metalv1alpha4.Machine{}).
 		Complete(r)
 }
 
 func (r *MachinePoolReconciler) handleMachineDeletion(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machine.Machine,
+	machine *metalv1alpha4.Machine,
 ) (ctrl.Result, error) {
 	if controllerutil.ContainsFinalizer(machine, MachineFinalizer) {
 		result, err := r.deleteMachinePool(wCtx, machine)
@@ -164,7 +164,7 @@ func (r *MachinePoolReconciler) handleMachineDeletion(
 
 func (r *MachinePoolReconciler) createMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machine.Machine,
+	machine *metalv1alpha4.Machine,
 	sizes []string,
 ) (ctrl.Result, error) {
 	wCtx.log.Info("creating machine_pool")
@@ -209,7 +209,7 @@ func (r *MachinePoolReconciler) createMachinePool(
 
 func (r *MachinePoolReconciler) updateMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machine.Machine,
+	machine *metalv1alpha4.Machine,
 	machinePool *poolv1alpha1.MachinePool,
 	sizes []string,
 ) (ctrl.Result, error) {
@@ -262,7 +262,7 @@ func (r *MachinePoolReconciler) updateMachinePool(
 // nolint:unparam
 func (r *MachinePoolReconciler) deleteMachinePool(
 	wCtx *machinePoolReconcileWrappedCtx,
-	machine *machine.Machine,
+	machine *metalv1alpha4.Machine,
 ) (ctrl.Result, error) {
 	wCtx.log.Info("deleting machine_pool")
 
@@ -282,14 +282,14 @@ func (r *MachinePoolReconciler) deleteMachinePool(
 }
 
 func (r *MachinePoolReconciler) getAvailableMachineClasses(
-	machine *machine.Machine,
+	machine *metalv1alpha4.Machine,
 	sizes []string,
 ) []corev1.LocalObjectReference {
 	var availableMachineClasses []corev1.LocalObjectReference
 
 	availableMachineClasses = make([]corev1.LocalObjectReference, 0)
 	for _, size := range sizes {
-		if metav1.HasLabel(machine.ObjectMeta, v1alpha1.GetSizeMatchLabel(size)) {
+		if metav1.HasLabel(machine.ObjectMeta, metalv1alpha4.GetSizeMatchLabel(size)) {
 			machineClass := corev1.LocalObjectReference{Name: size}
 			availableMachineClasses = append(availableMachineClasses, machineClass)
 		}
@@ -301,7 +301,7 @@ func (r *MachinePoolReconciler) getAvailableMachineClasses(
 func (r *MachinePoolReconciler) resolveSizes(wCtx *machinePoolReconcileWrappedCtx) ([]string, error) {
 	sizes := make([]string, 0)
 
-	sizeList := &v1alpha1.SizeList{}
+	sizeList := &metalv1alpha4.SizeList{}
 	err := r.List(wCtx.ctx, sizeList)
 	switch {
 	case err == nil:

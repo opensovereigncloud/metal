@@ -18,16 +18,17 @@ import (
 	"net/netip"
 	"testing"
 
-	switches "github.com/onmetal/metal-api/apis/switch/v1beta1"
-	ipdomain "github.com/onmetal/metal-api/domain/address"
-	invdomain "github.com/onmetal/metal-api/domain/inventory"
-	domain "github.com/onmetal/metal-api/domain/machine"
-	usecase "github.com/onmetal/metal-api/usecase/onboarding"
-	"github.com/onmetal/metal-api/usecase/onboarding/dto"
-	"github.com/onmetal/metal-api/usecase/onboarding/providers"
-	"github.com/onmetal/metal-api/usecase/onboarding/scenarios"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
+	ipdomain "github.com/ironcore-dev/metal/domain/address"
+	invdomain "github.com/ironcore-dev/metal/domain/inventory"
+	domain "github.com/ironcore-dev/metal/domain/machine"
+	usecase "github.com/ironcore-dev/metal/usecase/onboarding"
+	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
+	"github.com/ironcore-dev/metal/usecase/onboarding/providers"
+	"github.com/ironcore-dev/metal/usecase/onboarding/scenarios"
 )
 
 var (
@@ -131,7 +132,7 @@ func (f *fakeSwitchRepository) ByChassisID(id string) (dto.SwitchInfo, error) {
 	return dto.SwitchInfo{
 		Name:  "test",
 		Lanes: 1,
-		Interfaces: &switches.InterfaceSpec{
+		Interfaces: &metalv1alpha4.InterfaceSpec{
 			IP: nil,
 		},
 	}, nil

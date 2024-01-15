@@ -1,13 +1,13 @@
-apiVersion: machine.onmetal.de/v1alpha1
+apiVersion: metal.ironcore.dev/v1alpha4
 kind: Inventory
 metadata:
   labels:
-    machine.onmetal.de/mac-address-68215f47166e: ""
-    machine.onmetal.de/mac-address-68215f47166f: ""
-    machine.onmetal.de/mac-address-68215f471670: ""
-    machine.onmetal.de/size-switch: ""
+    metal.ironcore.dev/mac-address-68215f47166e: ""
+    metal.ironcore.dev/mac-address-68215f47166f: ""
+    metal.ironcore.dev/mac-address-68215f471670: ""
+    metal.ironcore.dev/size-switch: ""
   name: b9a234a5-416b-3d49-a4f8-65b6f30c8ee5
-  namespace: onmetal
+  namespace: ironcore
 spec:
   blocks:
   - model: TS64GMTS400
@@ -194,7 +194,7 @@ spec:
     debianVersion: "10.8"
     kernelVersion: 4.19.0-6-2-amd64
   host:
-    name: leaf-1.fra3.infra.onmetal.de
+    name: leaf-1.fra3.infra.ironcore.dev
   memory:
     total: 16716300288
   nics:
