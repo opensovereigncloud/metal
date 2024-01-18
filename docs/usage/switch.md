@@ -44,7 +44,7 @@ Here is an example of `Size` object:
     kind: Size
     metadata:
       name: switch
-      namespace: metal-api-system
+      namespace: metal-api
     spec:
       constraints:
       - eq: broadcom
