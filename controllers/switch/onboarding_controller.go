@@ -43,7 +43,7 @@ type OnboardingReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches,verbs=get;list;create
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches,verbs=get;list;create
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories,verbs=get;list;watch
 
 func (r *OnboardingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

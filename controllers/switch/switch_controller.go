@@ -52,9 +52,9 @@ type SwitchReconciler struct {
 	Recorder record.EventRecorder
 }
 
-// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switches/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches/finalizers,verbs=update
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=switchconfigs,verbs=get;list;watch
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories,verbs=get;list;watch
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=inventories/status,verbs=get;list;watch
