@@ -288,6 +288,32 @@ rules:
 - apiGroups:
   - metal.ironcore.dev
   resources:
+  - networkswitches
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - networkswitches/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - networkswitches/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
   - sizes
   verbs:
   - create
@@ -319,32 +345,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - metal.ironcore.dev
-  resources:
-  - switches
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - metal.ironcore.dev
-  resources:
-  - switches/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - metal.ironcore.dev
-  resources:
-  - switches/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - onmetal.de
   resources:

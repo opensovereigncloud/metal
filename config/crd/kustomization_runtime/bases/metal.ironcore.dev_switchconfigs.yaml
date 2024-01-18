@@ -492,7 +492,7 @@ spec:
             - portsDefaults
             type: object
           status:
-            description: SwitchConfigStatus contains observed state of SwitchConfig
+            description: SwitchConfigStatus contains observed state of SwitchConfig.
             type: object
         type: object
     served: true

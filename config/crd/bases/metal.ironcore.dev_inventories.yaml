@@ -58,12 +58,12 @@ spec:
             type: object
           spec:
             description: InventorySpec contains result of inventorization process
-              on the host
+              on the host.
             properties:
               blocks:
                 description: Blocks contains info about block devices on the host
                 items:
-                  description: BlockSpec contains info about block device
+                  description: BlockSpec contains info about block device.
                   properties:
                     model:
                       description: Model is a unique hardware part identifier
@@ -80,7 +80,7 @@ spec:
                           description: Partitions are active partition records on
                             disk
                           items:
-                            description: PartitionSpec contains info about partition
+                            description: PartitionSpec contains info about partition.
                             properties:
                               id:
                                 description: ID is a GUID of GPT partition or number
@@ -137,7 +137,7 @@ spec:
               cpus:
                 description: CPUs contains info about cpus, cores and threads
                 items:
-                  description: CPUSpec contains info about CPUs on hsot machine
+                  description: CPUSpec contains info about CPUs on hsot machine.
                   properties:
                     addressSizes:
                       description: AddressSizes is an info about address transition
@@ -275,7 +275,7 @@ spec:
               ipmis:
                 description: IPMIs contains info about IPMI interfaces on the host
                 items:
-                  description: IPMISpec contains info about IPMI module
+                  description: IPMISpec contains info about IPMI module.
                   properties:
                     ipAddress:
                       description: IPAddress is an IP address assigned to IPMI network
@@ -301,7 +301,7 @@ spec:
                 description: NICs contains info about network interfaces and network
                   discovery
                 items:
-                  description: NICSpec contains info about network interfaces
+                  description: NICSpec contains info about network interfaces.
                   properties:
                     activeFEC:
                       description: ActiveFEC is an active error correction mode
@@ -318,7 +318,7 @@ spec:
                         by the network interface
                       items:
                         description: LLDPSpec is an entry received by network interface
-                          by Link Layer Discovery Protocol
+                          by Link Layer Discovery Protocol.
                         properties:
                           capabilities:
                             description: Capabilities is a list of LLDP capabilities
@@ -377,7 +377,7 @@ spec:
                         the network interface
                       items:
                         description: NDPSpec is an entry received by IPv6 Neighbour
-                          Discovery Protocol
+                          Discovery Protocol.
                         properties:
                           ipAddress:
                             description: IPAddress is an IPv6 address of a neighbour
@@ -417,7 +417,7 @@ spec:
               numa:
                 description: NUMA contains info about cpu/memory topology
                 items:
-                  description: NumaSpec describes NUMA node
+                  description: NumaSpec describes NUMA node.
                   properties:
                     cpus:
                       description: CPUs is a list of CPU logical IDs in current numa
@@ -453,7 +453,7 @@ spec:
               pciDevices:
                 description: PCIDevices contains info about devices accessible through
                 items:
-                  description: PCIDeviceSpec contains description of PCI device
+                  description: PCIDeviceSpec contains description of PCI device.
                   properties:
                     address:
                       description: Address is an ID of device on PCI bus.
@@ -610,7 +610,7 @@ spec:
             - host
             type: object
           status:
-            description: InventoryStatus defines the observed state of Inventory
+            description: InventoryStatus defines the observed state of Inventory.
             properties:
               computed:
                 type: object

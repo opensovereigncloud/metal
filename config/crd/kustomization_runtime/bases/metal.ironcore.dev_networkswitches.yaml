@@ -61,7 +61,7 @@ spec:
             type: object
           spec:
             description: NetworkSwitchSpec contains desired state of resulting NetworkSwitch
-              configuration
+              configuration.
             properties:
               configSelector:
                 description: ConfigSelector contains selector to filter out corresponding
@@ -171,7 +171,7 @@ spec:
                       be overridden for listed switch ports
                     items:
                       description: InterfaceOverridesSpec contains overridden parameters
-                        for certain switch port
+                        for certain switch port.
                       properties:
                         fec:
                           description: FEC refers to forward error correction method
@@ -185,7 +185,7 @@ spec:
                             for interface
                           items:
                             description: AdditionalIPSpec defines IP address and selector
-                              for subnet where address should be reserved
+                              for subnet where address should be reserved.
                             properties:
                               address:
                                 description: Address contains additional IP address
@@ -482,7 +482,7 @@ spec:
             - topSpine
             type: object
           status:
-            description: NetworkSwitchStatus contains observed state of NetworkSwitch
+            description: NetworkSwitchStatus contains observed state of NetworkSwitch.
             properties:
               asn:
                 description: ASN contains current autonomous system number defined
@@ -492,7 +492,7 @@ spec:
               conditions:
                 description: Condition contains state of port parameters
                 items:
-                  description: ConditionSpec contains current condition of port parameters
+                  description: ConditionSpec contains current condition of port parameters.
                   properties:
                     lastTransitionTimestamp:
                       description: LastTransitionTimestamp reflects the last timestamp
@@ -541,7 +541,7 @@ spec:
                 x-kubernetes-map-type: atomic
               interfaces:
                 additionalProperties:
-                  description: InterfaceSpec defines the state of switch's interface
+                  description: InterfaceSpec defines the state of switch's interface.
                   properties:
                     direction:
                       description: Direction refers to the interface's connection
@@ -562,7 +562,7 @@ spec:
                         to interface
                       items:
                         description: IPAddressSpec defines interface's ip address
-                          info
+                          info.
                         properties:
                           address:
                             description: Address refers to the ip address value
@@ -680,7 +680,7 @@ spec:
               loopbackAddresses:
                 description: LoopbackAddresses refers to the switch's loopback addresses
                 items:
-                  description: IPAddressSpec defines interface's ip address info
+                  description: IPAddressSpec defines interface's ip address info.
                   properties:
                     address:
                       description: Address refers to the ip address value
@@ -739,7 +739,7 @@ spec:
               subnets:
                 description: Subnets refers to the switch's south subnets
                 items:
-                  description: SubnetSpec defines switch's subnet info
+                  description: SubnetSpec defines switch's subnet info.
                   properties:
                     addressFamily:
                       description: AddressFamily refers to the AF of subnet
