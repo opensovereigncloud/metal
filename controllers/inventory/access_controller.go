@@ -31,7 +31,7 @@ import (
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -389,8 +389,8 @@ func (r *AccessReconciler) ClientKubeconfigSecret(
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 		},
@@ -466,8 +466,8 @@ func (r *AccessReconciler) InventoryRoleBinding(
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 		},
@@ -501,8 +501,8 @@ func (r *AccessReconciler) RoleForInventoryWithPermissions(
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 		},
@@ -542,8 +542,8 @@ func (r *AccessReconciler) InventoryServiceAccountSecretToken(
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 		},
@@ -571,8 +571,8 @@ func (r *AccessReconciler) InventoryServiceAccount(
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 		},

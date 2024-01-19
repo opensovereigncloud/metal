@@ -23,9 +23,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ironcore-dev/ironcore-image/oci/remote"
+	poolv1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
-	"github.com/onmetal/onmetal-image/oci/remote"
 	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

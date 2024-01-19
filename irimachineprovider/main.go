@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	onmetalcomputev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	onmetalcomputev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	"github.com/ironcore-dev/metal/irimachineprovider/internal/log"

@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
@@ -164,10 +164,10 @@ func (in *SwitchEnvironmentSvc) GetLoopbacks(
 		}
 		switch {
 		case item.Status.Reserved.Net.Is4():
-			addressFamiliesMap[ipamv1alpha1.CIPv4SubnetType] = pointer.Bool(true)
+			addressFamiliesMap[ipamv1alpha1.CIPv4SubnetType] = ptr.To(true)
 			afEnabledFlag = afEnabledFlag | 1
 		case item.Status.Reserved.Net.Is6():
-			addressFamiliesMap[ipamv1alpha1.CIPv6SubnetType] = pointer.Bool(true)
+			addressFamiliesMap[ipamv1alpha1.CIPv6SubnetType] = ptr.To(true)
 			afEnabledFlag = afEnabledFlag | 2
 		}
 	}
@@ -211,7 +211,7 @@ func (in *SwitchEnvironmentSvc) GetSubnets(
 			continue
 		}
 		if item.Status.State == ipamv1alpha1.CProcessingSubnetState {
-			addressFamiliesMap[item.Status.Type] = pointer.Bool(true)
+			addressFamiliesMap[item.Status.Type] = ptr.To(true)
 			continue
 		}
 		if (!af.GetIPv4() && item.Status.Reserved.IsIPv4()) || (!af.GetIPv6() && item.Status.Reserved.IsIPv6()) {
@@ -224,7 +224,7 @@ func (in *SwitchEnvironmentSvc) GetSubnets(
 		if requiredCapacity.Cmp(item.Status.Capacity) > 0 {
 			continue
 		}
-		addressFamiliesMap[item.Status.Type] = pointer.Bool(true)
+		addressFamiliesMap[item.Status.Type] = ptr.To(true)
 		switch item.Status.Type {
 		case ipamv1alpha1.CIPv4SubnetType:
 			afEnabledFlag = afEnabledFlag | 1

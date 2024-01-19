@@ -24,14 +24,14 @@ import (
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
-	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	computev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-logr/logr"
-	onmetalimage "github.com/onmetal/onmetal-image"
-	"github.com/onmetal/onmetal-image/oci/remote"
+	onmetalimage "github.com/ironcore-dev/ironcore-image"
+	"github.com/ironcore-dev/ironcore-image/oci/remote"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -138,8 +138,8 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 					Kind:               machineKind,
 					Name:               machine.Name,
 					UID:                machine.UID,
-					Controller:         pointer.Bool(true),
-					BlockOwnerDeletion: pointer.Bool(true),
+					Controller:         ptr.To(true),
+					BlockOwnerDeletion: ptr.To(true),
 				},
 			},
 		},

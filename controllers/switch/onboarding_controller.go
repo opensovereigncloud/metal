@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/reference"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -83,7 +83,7 @@ func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&metalv1alpha4.Inventory{}).
 		WithOptions(controller.Options{
-			RecoverPanic: pointer.Bool(true),
+			RecoverPanic: ptr.To(true),
 		}).
 		WithEventFilter(predicate.And(labelPredicate)).
 		Complete(r)
@@ -118,10 +118,10 @@ func (r *OnboardingReconciler) onboardNewSwitch(ctx context.Context, inv *metalv
 			Namespace: inv.Namespace,
 		},
 		Spec: metalv1alpha4.NetworkSwitchSpec{
-			Managed:   pointer.Bool(true),
-			Cordon:    pointer.Bool(false),
-			TopSpine:  pointer.Bool(false),
-			ScanPorts: pointer.Bool(true),
+			Managed:   ptr.To(true),
+			Cordon:    ptr.To(false),
+			TopSpine:  ptr.To(false),
+			ScanPorts: ptr.To(true),
 		},
 	}
 	targetSwitch.SetInventoryRef(inv.Name)

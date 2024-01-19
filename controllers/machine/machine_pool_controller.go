@@ -21,8 +21,8 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
-	poolv1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
-	corev1alpha1 "github.com/onmetal/onmetal-api/api/core/v1alpha1"
+	poolv1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
+	corev1alpha1 "github.com/ironcore-dev/ironcore/api/core/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -72,12 +72,12 @@ type machinePoolReconcileWrappedCtx struct {
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools,verbs=get;list;watch;update;patch;create;delete
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machinepools/finalizers,verbs=update
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machineclasses,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machineclasses/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machineclasses/finalizers,verbs=update
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machinepools,verbs=get;list;watch;update;patch;create;delete
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machinepools/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machinepools/finalizers,verbs=update
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machineclasses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machineclasses/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machineclasses/finalizers,verbs=update
 
 func (r *MachinePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	wCtx := &machinePoolReconcileWrappedCtx{

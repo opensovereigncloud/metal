@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/tools/reference"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -176,7 +176,7 @@ func (r *IPAMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&metalv1alpha4.NetworkSwitch{}).
 		WithOptions(controller.Options{
-			RecoverPanic: pointer.Bool(true),
+			RecoverPanic: ptr.To(true),
 		}).
 		WithEventFilter(predicate.And(labelPredicate)).
 		Complete(r)

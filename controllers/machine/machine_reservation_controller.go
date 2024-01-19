@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
+	computev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,9 +51,9 @@ var (
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=compute.api.onmetal.de,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=compute.ironcore.dev,resources=machines/finalizers,verbs=update
 
 func (r *MachineReservationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName)

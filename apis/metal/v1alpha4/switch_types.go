@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/ironcore-dev/metal/pkg/constants"
 )
@@ -317,25 +317,25 @@ func (in *NetworkSwitch) GetInventoryRef() string {
 // Managed returns value of spec.managed field if it is not nil,
 // otherwise false.
 func (in *NetworkSwitch) Managed() bool {
-	return pointer.BoolDeref(in.Spec.Managed, false)
+	return ptr.Deref(in.Spec.Managed, false)
 }
 
 // Cordon returns value of spec.cordon field if it is not nil,
 // otherwise false.
 func (in *NetworkSwitch) Cordon() bool {
-	return pointer.BoolDeref(in.Spec.Cordon, false)
+	return ptr.Deref(in.Spec.Cordon, false)
 }
 
 // TopSpine returns value of spec.topSpine field if it is not nil,
 // otherwise false.
 func (in *NetworkSwitch) TopSpine() bool {
-	return pointer.BoolDeref(in.Spec.TopSpine, false)
+	return ptr.Deref(in.Spec.TopSpine, false)
 }
 
 // ScanPorts returns value of spec.topSpine field if it is not nil,
 // otherwise false.
 func (in *NetworkSwitch) ScanPorts() bool {
-	return pointer.BoolDeref(in.Spec.ScanPorts, false)
+	return ptr.Deref(in.Spec.ScanPorts, false)
 }
 
 // GetConfigSelector returns LabelSelector if it is not nil and
@@ -411,13 +411,13 @@ func (in *NetworkSwitch) GetSwitchPorts() uint32 {
 // GetState returns value of status.state field if it is not nil,
 // otherwise empty string.
 func (in *NetworkSwitch) GetState() string {
-	return pointer.StringDeref(in.Status.State, "")
+	return ptr.Deref(in.Status.State, "")
 }
 
 // GetMessage returns value of status.message field if it is not nil,
 // otherwise empty string.
 func (in *NetworkSwitch) GetMessage() string {
-	return pointer.StringDeref(in.Status.Message, "")
+	return ptr.Deref(in.Status.Message, "")
 }
 
 // ----------------------------------------
@@ -433,25 +433,25 @@ func (in *NetworkSwitch) SetInventoryRef(value string) {
 // SetManaged sets passed argument as a value of
 // spec.managed field.
 func (in *NetworkSwitch) SetManaged(value bool) {
-	in.Spec.Managed = pointer.Bool(value)
+	in.Spec.Managed = ptr.To(value)
 }
 
 // SetCordon sets passed argument as a value of
 // spec.cordon field.
 func (in *NetworkSwitch) SetCordon(value bool) {
-	in.Spec.Cordon = pointer.Bool(value)
+	in.Spec.Cordon = ptr.To(value)
 }
 
 // SetTopSpine sets passed argument as a value of
 // spec.topSpine field.
 func (in *NetworkSwitch) SetTopSpine(value bool) {
-	in.Spec.TopSpine = pointer.Bool(value)
+	in.Spec.TopSpine = ptr.To(value)
 }
 
 // SetScanPorts sets passed argument as a value of
 // spec.scanPorts field.
 func (in *NetworkSwitch) SetScanPorts(value bool) {
-	in.Spec.ScanPorts = pointer.Bool(value)
+	in.Spec.ScanPorts = ptr.To(value)
 }
 
 // ----------------------------------------
@@ -502,7 +502,7 @@ func (in *NetworkSwitch) SetRole(value string) {
 	// case "":
 	//	in.Status.Role = nil
 	// default:
-	//	in.Status.Role = pointer.String(value)
+	//	in.Status.Role = ptr.To(value)
 	// }
 	in.Status.Role = value
 }
@@ -533,7 +533,7 @@ func (in *NetworkSwitch) SetState(value string) {
 	case "":
 		in.Status.State = nil
 	default:
-		in.Status.State = pointer.String(value)
+		in.Status.State = ptr.To(value)
 	}
 }
 
@@ -546,7 +546,7 @@ func (in *NetworkSwitch) SetMessage(value string) {
 	case "":
 		in.Status.Message = nil
 	default:
-		in.Status.Message = pointer.String(value)
+		in.Status.Message = ptr.To(value)
 	}
 }
 
@@ -571,37 +571,37 @@ func (in *ConditionSpec) GetState() bool {
 	if in == nil {
 		return false
 	}
-	return pointer.BoolDeref(in.State, false)
+	return ptr.Deref(in.State, false)
 }
 
 // GetName returns value of ConditionSpec.Name if it is not nil,
 // otherwise empty string.
 func (in *ConditionSpec) GetName() string {
-	return pointer.StringDeref(in.Name, "")
+	return ptr.Deref(in.Name, "")
 }
 
 // GetLastTransitionTimestamp returns value of ConditionSpec.LastTransitionTimestamp
 // if it is not nil, otherwise empty string.
 func (in *ConditionSpec) GetLastTransitionTimestamp() string {
-	return pointer.StringDeref(in.LastTransitionTimestamp, "")
+	return ptr.Deref(in.LastTransitionTimestamp, "")
 }
 
 // GetLastUpdateTimestamp returns value of ConditionSpec.LastUpdateTimestamp
 // if it is not nil, otherwise empty string.
 func (in *ConditionSpec) GetLastUpdateTimestamp() string {
-	return pointer.StringDeref(in.LastUpdateTimestamp, "")
+	return ptr.Deref(in.LastUpdateTimestamp, "")
 }
 
 // GetReason returns value of ConditionSpec.Reason if it is not nil,
 // otherwise empty string.
 func (in *ConditionSpec) GetReason() string {
-	return pointer.StringDeref(in.Reason, "")
+	return ptr.Deref(in.Reason, "")
 }
 
 // GetMessage returns value of ConditionSpec.Message if it is not nil,
 // otherwise empty string.
 func (in *ConditionSpec) GetMessage() string {
-	return pointer.StringDeref(in.Message, "")
+	return ptr.Deref(in.Message, "")
 }
 
 // ----------------------------------------
@@ -609,7 +609,7 @@ func (in *ConditionSpec) GetMessage() string {
 // ----------------------------------------
 
 func NewCondition(name string) *ConditionSpec {
-	return &ConditionSpec{Name: pointer.String(name)}
+	return &ConditionSpec{Name: ptr.To(name)}
 }
 
 // UpdateCondition updates the switch object's status.conditions list.
@@ -649,21 +649,21 @@ func (in *NetworkSwitch) UpdateCondition(name, reason, message string, state boo
 // SetState sets passed argument as a value of
 // condition.state field.
 func (in *ConditionSpec) SetState(value bool) *ConditionSpec {
-	in.State = pointer.Bool(value)
+	in.State = ptr.To(value)
 	return in
 }
 
 // SetLastUpdateTimestamp sets passed argument as a value of
 // condition.lastUpdateTimestamp field.
 func (in *ConditionSpec) SetLastUpdateTimestamp(value string) *ConditionSpec {
-	in.LastUpdateTimestamp = pointer.String(value)
+	in.LastUpdateTimestamp = ptr.To(value)
 	return in
 }
 
 // SetLastTransitionTimestamp sets passed argument as a value of
 // condition.lastTransitionTimestamp field.
 func (in *ConditionSpec) SetLastTransitionTimestamp(value string) *ConditionSpec {
-	in.LastTransitionTimestamp = pointer.String(value)
+	in.LastTransitionTimestamp = ptr.To(value)
 	return in
 }
 
@@ -674,7 +674,7 @@ func (in *ConditionSpec) SetReason(value string) *ConditionSpec {
 	case "":
 		in.Reason = nil
 	default:
-		in.Reason = pointer.String(value)
+		in.Reason = ptr.To(value)
 	}
 	return in
 }
@@ -692,7 +692,7 @@ func (in *ConditionSpec) SetMessage(value string) *ConditionSpec {
 	case "":
 		in.Message = nil
 	default:
-		in.Message = pointer.String(value)
+		in.Message = ptr.To(value)
 	}
 	return in
 }
@@ -711,20 +711,20 @@ func (in *ConditionSpec) FlushMessage() *ConditionSpec {
 // given InterfaceSpec object if it is not nil, otherwise
 // empty string.
 func (in *InterfaceSpec) GetMACAddress() string {
-	return pointer.StringDeref(in.MACAddress, "")
+	return ptr.Deref(in.MACAddress, "")
 }
 
 // GetSpeed returns value of speed field of given
 // InterfaceSpec object if it is not nil, otherwise 0.
 func (in *InterfaceSpec) GetSpeed() uint32 {
-	return pointer.Uint32Deref(in.Speed, 0)
+	return ptr.Deref(in.Speed, 0)
 }
 
 // GetDirection returns value of direction field of
 // given InterfaceSpec object if it is not nil, otherwise
 // empty string.
 func (in *InterfaceSpec) GetDirection() string {
-	return pointer.StringDeref(in.Direction, "")
+	return ptr.Deref(in.Direction, "")
 }
 
 // ----------------------------------------
@@ -734,13 +734,13 @@ func (in *InterfaceSpec) GetDirection() string {
 // SetMACAddress sets passed argument as a value of
 // macAddress field for given InterfaceSpec object.
 func (in *InterfaceSpec) SetMACAddress(value string) {
-	in.MACAddress = pointer.String(value)
+	in.MACAddress = ptr.To(value)
 }
 
 // SetSpeed sets passed argument as a value of
 // speed field for given InterfaceSpec object.
 func (in *InterfaceSpec) SetSpeed(value uint32) {
-	in.Speed = pointer.Uint32(value)
+	in.Speed = ptr.To(value)
 }
 
 // SetDirection sets passed argument as a value of
@@ -749,7 +749,7 @@ func (in *InterfaceSpec) SetSpeed(value uint32) {
 //   - north
 //   - south
 func (in *InterfaceSpec) SetDirection(value string) {
-	in.Direction = pointer.String(value)
+	in.Direction = ptr.To(value)
 }
 
 // SetIPEmpty empties the list of assigned IP addresses
@@ -773,41 +773,41 @@ func (in *InterfaceSpec) SetPortParametersEmpty() {
 // PortParametersSpec object if it is not nil,
 // otherwise 0.
 func (in *PortParametersSpec) GetLanes() uint32 {
-	return pointer.Uint32Deref(in.Lanes, 0)
+	return ptr.Deref(in.Lanes, 0)
 }
 
 // GetMTU returns value of mtu field of given
 // PortParametersSpec object if it is not nil,
 // otherwise 0.
 func (in *PortParametersSpec) GetMTU() uint32 {
-	return pointer.Uint32Deref(in.MTU, 0)
+	return ptr.Deref(in.MTU, 0)
 }
 
 // GetIPv4MaskLength returns value of ipv4MaskLength
 // field of given PortParametersSpec object if it is not nil,
 // otherwise 0.
 func (in *PortParametersSpec) GetIPv4MaskLength() uint32 {
-	return pointer.Uint32Deref(in.IPv4MaskLength, 0)
+	return ptr.Deref(in.IPv4MaskLength, 0)
 }
 
 // GetIPv6Prefix returns value of ipv6Prefix field of given
 // PortParametersSpec object if it is not nil, otherwise 0.
 func (in *PortParametersSpec) GetIPv6Prefix() uint32 {
-	return pointer.Uint32Deref(in.IPv6Prefix, 0)
+	return ptr.Deref(in.IPv6Prefix, 0)
 }
 
 // GetFEC returns value of fec field of given
 // PortParametersSpec object if it is not nil,
 // otherwise empty string.
 func (in *PortParametersSpec) GetFEC() string {
-	return pointer.StringDeref(in.FEC, "")
+	return ptr.Deref(in.FEC, "")
 }
 
 // GetState returns value of state field of given
 // PortParametersSpec object if it is not nil,
 // otherwise empty string.
 func (in *PortParametersSpec) GetState() string {
-	return pointer.StringDeref(in.State, "")
+	return ptr.Deref(in.State, "")
 }
 
 // ----------------------------------------
@@ -817,25 +817,25 @@ func (in *PortParametersSpec) GetState() string {
 // SetLanes sets passed argument as value of lanes field
 // for given PortParametersSpec object.
 func (in *PortParametersSpec) SetLanes(value uint32) {
-	in.Lanes = pointer.Uint32(value)
+	in.Lanes = ptr.To(value)
 }
 
 // SetMTU sets passed argument as value of mtu field
 // for given PortParametersSpec object.
 func (in *PortParametersSpec) SetMTU(value uint32) {
-	in.MTU = pointer.Uint32(value)
+	in.MTU = ptr.To(value)
 }
 
 // SetIPv4MaskLength sets passed argument as value of
 // ipv4MaskLength for given PortParametersSpec object.
 func (in *PortParametersSpec) SetIPv4MaskLength(value uint32) {
-	in.IPv4MaskLength = pointer.Uint32(value)
+	in.IPv4MaskLength = ptr.To(value)
 }
 
 // SetIPv6Prefix sets passed argument as value of
 // ipv6Prefix field for given PortParametersSpec object.
 func (in *PortParametersSpec) SetIPv6Prefix(value uint32) {
-	in.IPv6Prefix = pointer.Uint32(value)
+	in.IPv6Prefix = ptr.To(value)
 }
 
 // SetFEC sets passed argument as value of fec field
@@ -843,7 +843,7 @@ func (in *PortParametersSpec) SetIPv6Prefix(value uint32) {
 //   - rs
 //   - none
 func (in *PortParametersSpec) SetFEC(value string) {
-	in.FEC = pointer.String(value)
+	in.FEC = ptr.To(value)
 }
 
 // SetState sets passed argument as value of state field
@@ -851,7 +851,7 @@ func (in *PortParametersSpec) SetFEC(value string) {
 //   - up
 //   - down
 func (in *PortParametersSpec) SetState(value string) {
-	in.State = pointer.String(value)
+	in.State = ptr.To(value)
 }
 
 // ----------------------------------------
@@ -861,39 +861,39 @@ func (in *PortParametersSpec) SetState(value string) {
 // GetAddress returns value of address field of given
 // IPAddressSpec object if it is not nil, otherwise empty string.
 func (in *IPAddressSpec) GetAddress() string {
-	return pointer.StringDeref(in.Address, "")
+	return ptr.Deref(in.Address, "")
 }
 
 // GetAddressFamily returns value of addressFamily field of given
 // IPAddressSpec object if it is not nil, otherwise empty string.
 func (in *IPAddressSpec) GetAddressFamily() string {
-	return pointer.StringDeref(in.AddressFamily, "")
+	return ptr.Deref(in.AddressFamily, "")
 }
 
 // GetExtraAddress returns value of extraAddress field of given
 // IPAddressSpec object if it is not nil, otherwise false.
 func (in *IPAddressSpec) GetExtraAddress() bool {
-	return pointer.BoolDeref(in.ExtraAddress, false)
+	return ptr.Deref(in.ExtraAddress, false)
 }
 
 // GetObjectReferenceName returns value of objectReference.name field
 // of given IPAddressSpec object if objectReference is not nil,
 // otherwise empty string.
 func (in *IPAddressSpec) GetObjectReferenceName() string {
-	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+	if ptr.AllPtrFieldsNil(in.ObjectReference) {
 		return ""
 	}
-	return pointer.StringDeref(in.ObjectReference.Name, "")
+	return ptr.Deref(in.ObjectReference.Name, "")
 }
 
 // GetObjectReferenceNamespace returns value of objectReference.namespace
 // field of given IPAddressSpec object if objectReference is not nil,
 // otherwise empty string.
 func (in *IPAddressSpec) GetObjectReferenceNamespace() string {
-	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+	if ptr.AllPtrFieldsNil(in.ObjectReference) {
 		return ""
 	}
-	return pointer.StringDeref(in.ObjectReference.Namespace, "")
+	return ptr.Deref(in.ObjectReference.Namespace, "")
 }
 
 // ----------------------------------------
@@ -903,7 +903,7 @@ func (in *IPAddressSpec) GetObjectReferenceNamespace() string {
 // SetAddress sets passed argument as value of address
 // field for given IPAddressSpec object.
 func (in *IPAddressSpec) SetAddress(value string) {
-	in.Address = pointer.String(value)
+	in.Address = ptr.To(value)
 }
 
 // SetAddressFamily sets passed argument as value of
@@ -912,13 +912,13 @@ func (in *IPAddressSpec) SetAddress(value string) {
 //   - IPv4
 //   - IPv6
 func (in *IPAddressSpec) SetAddressFamily(value string) {
-	in.AddressFamily = pointer.String(value)
+	in.AddressFamily = ptr.To(value)
 }
 
 // SetExtraAddress sets passed argument as value of
 // extraAddress field for given IPAddressSpec object.
 func (in *IPAddressSpec) SetExtraAddress(value bool) {
-	in.ExtraAddress = pointer.Bool(value)
+	in.ExtraAddress = ptr.To(value)
 }
 
 // SetObjectReference updates value of objectReference field of
@@ -926,8 +926,8 @@ func (in *IPAddressSpec) SetExtraAddress(value bool) {
 // where Name and Namespace fields are assigned with passed arguments.
 func (in *IPAddressSpec) SetObjectReference(name, namespace string) {
 	in.ObjectReference = &ObjectReference{
-		Name:      pointer.String(name),
-		Namespace: pointer.String(namespace),
+		Name:      ptr.To(name),
+		Namespace: ptr.To(namespace),
 	}
 }
 
@@ -939,20 +939,20 @@ func (in *IPAddressSpec) SetObjectReference(name, namespace string) {
 // of given PeerSpec object if objectReference is not nil,
 // otherwise empty string.
 func (in *PeerSpec) GetObjectReferenceName() string {
-	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+	if ptr.AllPtrFieldsNil(in.ObjectReference) {
 		return ""
 	}
-	return pointer.StringDeref(in.ObjectReference.Name, "")
+	return ptr.Deref(in.ObjectReference.Name, "")
 }
 
 // GetObjectReferenceNamespace returns value of objectReference.namespace
 // field of given PeerSpec object if objectReference is not nil,
 // otherwise empty string.
 func (in *PeerSpec) GetObjectReferenceNamespace() string {
-	if pointer.AllPtrFieldsNil(in.ObjectReference) {
+	if ptr.AllPtrFieldsNil(in.ObjectReference) {
 		return ""
 	}
-	return pointer.StringDeref(in.ObjectReference.Namespace, "")
+	return ptr.Deref(in.ObjectReference.Namespace, "")
 }
 
 // ----------------------------------------
@@ -964,8 +964,8 @@ func (in *PeerSpec) GetObjectReferenceNamespace() string {
 // Name and Namespace fields are assigned with passed arguments.
 func (in *PeerSpec) SetObjectReference(name, namespace string) {
 	in.ObjectReference = &ObjectReference{
-		Name:      pointer.String(name),
-		Namespace: pointer.String(namespace),
+		Name:      ptr.To(name),
+		Namespace: ptr.To(namespace),
 	}
 }
 
@@ -977,35 +977,35 @@ func (in *PeerSpec) SetObjectReference(name, namespace string) {
 // given PeerInfoSpec object if it is not nil, otherwise
 // empty string.
 func (in *PeerInfoSpec) GetChassisID() string {
-	return pointer.StringDeref(in.ChassisID, "")
+	return ptr.Deref(in.ChassisID, "")
 }
 
 // GetSystemName returns value of systemName field
 // of given PeerInfoSpec object if it is not nil,
 // otherwise empty string.
 func (in *PeerInfoSpec) GetSystemName() string {
-	return pointer.StringDeref(in.SystemName, "")
+	return ptr.Deref(in.SystemName, "")
 }
 
 // GetPortID returns value of portID field of given
 // PeerInfoSpec object if it is not nil, otherwise
 // empty string.
 func (in *PeerInfoSpec) GetPortID() string {
-	return pointer.StringDeref(in.PortID, "")
+	return ptr.Deref(in.PortID, "")
 }
 
 // GetPortDescription returns value of portDescription
 // field of given PeerInfoSpec object if it is not nil,
 // otherwise empty string.
 func (in *PeerInfoSpec) GetPortDescription() string {
-	return pointer.StringDeref(in.PortDescription, "")
+	return ptr.Deref(in.PortDescription, "")
 }
 
 // GetType returns value of type field of given
 // PeerInfoSpec object if it is not nil, otherwise
 // empty string.
 func (in *PeerInfoSpec) GetType() string {
-	return pointer.StringDeref(in.Type, "")
+	return ptr.Deref(in.Type, "")
 }
 
 // ----------------------------------------
@@ -1015,25 +1015,25 @@ func (in *PeerInfoSpec) GetType() string {
 // SetChassisID sets passed argument as value of chassisID
 // field for given PeerInfoSpec object.
 func (in *PeerInfoSpec) SetChassisID(value string) {
-	in.ChassisID = pointer.String(value)
+	in.ChassisID = ptr.To(value)
 }
 
 // SetSystemName sets passed argument as value of systemName
 // field for given PeerInfoSpec object.
 func (in *PeerInfoSpec) SetSystemName(value string) {
-	in.SystemName = pointer.String(value)
+	in.SystemName = ptr.To(value)
 }
 
 // SetPortID sets passed argument as value of portID field
 // for given PeerSpecInfo object.
 func (in *PeerInfoSpec) SetPortID(value string) {
-	in.PortID = pointer.String(value)
+	in.PortID = ptr.To(value)
 }
 
 // SetPortDescription sets passed arguments as value of
 // portDescription field for given PeerInfoSpec object.
 func (in *PeerInfoSpec) SetPortDescription(value string) {
-	in.PortDescription = pointer.String(value)
+	in.PortDescription = ptr.To(value)
 }
 
 // SetType sets passed argument as value of type field
@@ -1043,7 +1043,7 @@ func (in *PeerInfoSpec) SetPortDescription(value string) {
 //   - router (for future use)
 //   - undefined
 func (in *PeerInfoSpec) SetType(value string) {
-	in.Type = pointer.String(value)
+	in.Type = ptr.To(value)
 }
 
 // ----------------------------------------
@@ -1054,52 +1054,52 @@ func (in *PeerInfoSpec) SetType(value string) {
 // of given SubnetSpec object if Subnet is not nil,
 // otherwise empty string.
 func (in *SubnetSpec) GetSubnetObjectRefName() string {
-	if pointer.AllPtrFieldsNil(in.Subnet) {
+	if ptr.AllPtrFieldsNil(in.Subnet) {
 		return ""
 	}
-	return pointer.StringDeref(in.Subnet.Name, "")
+	return ptr.Deref(in.Subnet.Name, "")
 }
 
 // GetSubnetObjectRefNamespace returns value of Subnet.namespace
 // field of given SubnetSpec object if Subnet is not nil,
 // otherwise empty string.
 func (in *SubnetSpec) GetSubnetObjectRefNamespace() string {
-	if pointer.AllPtrFieldsNil(in.Subnet) {
+	if ptr.AllPtrFieldsNil(in.Subnet) {
 		return ""
 	}
-	return pointer.StringDeref(in.Subnet.Namespace, "")
+	return ptr.Deref(in.Subnet.Namespace, "")
 }
 
 // GetNetworkObjectRefName returns value of Network.name field
 // of given SubnetSpec object if Network is not nil,
 // otherwise empty string.
 func (in *SubnetSpec) GetNetworkObjectRefName() string {
-	if pointer.AllPtrFieldsNil(in.Network) {
+	if ptr.AllPtrFieldsNil(in.Network) {
 		return ""
 	}
-	return pointer.StringDeref(in.Network.Name, "")
+	return ptr.Deref(in.Network.Name, "")
 }
 
 // GetNetworkObjectRefNamespace returns value of Network.namespace
 // field of given SubnetSpec object if Network is not nil,
 // otherwise empty string.
 func (in *SubnetSpec) GetNetworkObjectRefNamespace() string {
-	if pointer.AllPtrFieldsNil(in.Network) {
+	if ptr.AllPtrFieldsNil(in.Network) {
 		return ""
 	}
-	return pointer.StringDeref(in.Network.Namespace, "")
+	return ptr.Deref(in.Network.Namespace, "")
 }
 
 // GetCIDR returns value of cidr field of given SubnetSpec object
 // if it is not nil, otherwise empty string.
 func (in *SubnetSpec) GetCIDR() string {
-	return pointer.StringDeref(in.CIDR, "")
+	return ptr.Deref(in.CIDR, "")
 }
 
 // GetAddressFamily returns value of addressFamily field of given
 // SubnetSpec object if it is not nil, otherwise empty string.
 func (in *SubnetSpec) GetAddressFamily() string {
-	return pointer.StringDeref(in.AddressFamily, "")
+	return ptr.Deref(in.AddressFamily, "")
 }
 
 // ----------------------------------------
@@ -1111,8 +1111,8 @@ func (in *SubnetSpec) GetAddressFamily() string {
 // Name and Namespace fields are assigned with passed arguments.
 func (in *SubnetSpec) SetSubnetObjectRef(name, namespace string) {
 	in.Subnet = &ObjectReference{
-		Name:      pointer.String(name),
-		Namespace: pointer.String(namespace),
+		Name:      ptr.To(name),
+		Namespace: ptr.To(namespace),
 	}
 }
 
@@ -1121,15 +1121,15 @@ func (in *SubnetSpec) SetSubnetObjectRef(name, namespace string) {
 // Name and Namespace fields are assigned with passed arguments.
 func (in *SubnetSpec) SetNetworkObjectRef(name, namespace string) {
 	in.Network = &ObjectReference{
-		Name:      pointer.String(name),
-		Namespace: pointer.String(namespace),
+		Name:      ptr.To(name),
+		Namespace: ptr.To(namespace),
 	}
 }
 
 // SetCIDR sets passed argument as value of cidr field of
 // given SubnetSpec object.
 func (in *SubnetSpec) SetCIDR(value string) {
-	in.CIDR = pointer.String(value)
+	in.CIDR = ptr.To(value)
 }
 
 // SetAddressFamily sets passed argument as value of
@@ -1138,7 +1138,7 @@ func (in *SubnetSpec) SetCIDR(value string) {
 //   - IPv4
 //   - IPv6
 func (in *SubnetSpec) SetAddressFamily(value string) {
-	in.AddressFamily = pointer.String(value)
+	in.AddressFamily = ptr.To(value)
 }
 
 // ----------------------------------------
@@ -1149,7 +1149,7 @@ func (in *SubnetSpec) SetAddressFamily(value string) {
 // InterfaceOverridesSpec object if it is not nil,
 // otherwise empty string.
 func (in *InterfaceOverridesSpec) GetName() string {
-	return pointer.StringDeref(in.Name, "")
+	return ptr.Deref(in.Name, "")
 }
 
 // ----------------------------------------
@@ -1159,32 +1159,32 @@ func (in *InterfaceOverridesSpec) GetName() string {
 // SetName sets passed argument as value of name field
 // of given InterfaceOverridesSpec object.
 func (in *InterfaceOverridesSpec) SetName(value string) {
-	in.Name = pointer.String(value)
+	in.Name = ptr.To(value)
 }
 
 // GetAddress returns value of address field of given
 // AdditionalIPSpec object if it is not nil, otherwise empty string.
 func (in *AdditionalIPSpec) GetAddress() string {
-	return pointer.StringDeref(in.Address, "")
+	return ptr.Deref(in.Address, "")
 }
 
 // GetIPv4 returns value of ipv4 field of given AddressFamilyMap
 // object if it is not nil, otherwise false.
 func (in *AddressFamiliesMap) GetIPv4() bool {
-	return pointer.BoolDeref(in.IPv4, false)
+	return ptr.Deref(in.IPv4, false)
 }
 
 // GetIPv6 returns value of ipv6 field of given AddressFamilyMap
 // object if it is not nil, otherwise false.
 func (in *AddressFamiliesMap) GetIPv6() bool {
-	return pointer.BoolDeref(in.IPv6, false)
+	return ptr.Deref(in.IPv6, false)
 }
 
 // GetLabelKey returns value of labelKey field of given
 // FieldSelectorSpec object if it is not nil, otherwise
 // empty string.
 func (in *FieldSelectorSpec) GetLabelKey() string {
-	return pointer.StringDeref(in.LabelKey, "")
+	return ptr.Deref(in.LabelKey, "")
 }
 
 // GetLoopbacksSelection helps to get the loopback addresses selection spec

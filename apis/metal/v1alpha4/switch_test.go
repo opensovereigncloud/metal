@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestSpecGetters(t *testing.T) {
@@ -116,7 +116,7 @@ func TestConditionSpecGetters(t *testing.T) {
 func TestConditionSpecSetters(t *testing.T) {
 	t.Parallel()
 	ts := time.Now()
-	obj := &ConditionSpec{Name: pointer.String("sample")}
+	obj := &ConditionSpec{Name: ptr.To("sample")}
 	obj.SetState(true)
 	obj.SetReason("test")
 	obj.SetMessage("testing")
@@ -288,7 +288,7 @@ func TestAdditionalIPSpecFuncs(t *testing.T) {
 	t.Parallel()
 	obj := &AdditionalIPSpec{}
 	assert.Equal(t, "", obj.GetAddress())
-	obj.Address = pointer.String("fe80:abcd::1")
+	obj.Address = ptr.To("fe80:abcd::1")
 	assert.Equal(t, "fe80:abcd::1", obj.GetAddress())
 }
 
@@ -297,8 +297,8 @@ func TestAddressFamiliesMapFuncs(t *testing.T) {
 	obj := &AddressFamiliesMap{}
 	assert.False(t, obj.GetIPv4())
 	assert.False(t, obj.GetIPv6())
-	obj.IPv4 = pointer.Bool(true)
-	obj.IPv6 = pointer.Bool(true)
+	obj.IPv4 = ptr.To(true)
+	obj.IPv6 = ptr.To(true)
 	assert.True(t, obj.GetIPv4())
 	assert.True(t, obj.GetIPv6())
 }
@@ -307,6 +307,6 @@ func TestFieldSelectorSpecFuncs(t *testing.T) {
 	t.Parallel()
 	obj := FieldSelectorSpec{}
 	assert.Equal(t, "", obj.GetLabelKey())
-	obj.LabelKey = pointer.String("metal.ironcore.dev/type")
+	obj.LabelKey = ptr.To("metal.ironcore.dev/type")
 	assert.Equal(t, "metal.ironcore.dev/type", obj.GetLabelKey())
 }

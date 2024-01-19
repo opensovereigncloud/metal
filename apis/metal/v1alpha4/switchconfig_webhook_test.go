@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/ironcore-dev/metal/pkg/constants"
@@ -58,9 +58,9 @@ var _ = Describe("SwitchConfig Webhook", func() {
 						MatchLabels: map[string]string{"metal.ironcore.dev/type": "spine"},
 					},
 					PortsDefaults: &PortParametersSpec{
-						FEC:   pointer.String(constants.FECRS),
-						MTU:   pointer.Uint32(9216),
-						State: pointer.String(constants.NICUp),
+						FEC:   ptr.To(constants.FECRS),
+						MTU:   ptr.To(uint32(9216)),
+						State: ptr.To(constants.NICUp),
 					},
 					IPAM: &GeneralIPAMSpec{
 						CarrierSubnets: &IPAMSelectionSpec{

@@ -64,7 +64,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machineclasses
   verbs:
@@ -76,13 +76,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machineclasses/finalizers
   verbs:
   - update
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machineclasses/status
   verbs:
@@ -90,7 +90,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machinepools
   verbs:
@@ -102,13 +102,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machinepools/finalizers
   verbs:
   - update
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machinepools/status
   verbs:
@@ -116,7 +116,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machines
   verbs:
@@ -128,13 +128,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machines/finalizers
   verbs:
   - update
 - apiGroups:
-  - compute.api.onmetal.de
+  - compute.ironcore.dev
   resources:
   - machines/status
   verbs:
@@ -201,6 +201,32 @@ rules:
   - metal.ironcore.dev
   resources:
   - aggregates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - benchmarks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - benchmarks/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metal.ironcore.dev
+  resources:
+  - benchmarks/status
   verbs:
   - get
   - patch

@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	"github.com/ironcore-dev/metal/pkg/constants"
@@ -62,10 +62,10 @@ var _ = PDescribe("NetworkSwitch client", func() {
 				},
 				Spec: metalv1alpha4.NetworkSwitchSpec{
 					InventoryRef: &v1.LocalObjectReference{Name: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"},
-					TopSpine:     pointer.Bool(false),
-					Managed:      pointer.Bool(true),
-					Cordon:       pointer.Bool(false),
-					ScanPorts:    pointer.Bool(true),
+					TopSpine:     ptr.To(false),
+					Managed:      ptr.To(true),
+					Cordon:       ptr.To(false),
+					ScanPorts:    ptr.To(true),
 				},
 			}
 
@@ -157,17 +157,17 @@ var _ = PDescribe("NetworkSwitch client", func() {
 				Role:        "spine",
 				Layer:       0,
 				Interfaces: map[string]*metalv1alpha4.InterfaceSpec{"Ethernet0": {
-					MACAddress: pointer.String("00:00:00:00:00:01"),
-					Direction:  pointer.String(constants.DirectionSouth),
-					Speed:      pointer.Uint32(100000),
+					MACAddress: ptr.To("00:00:00:00:00:01"),
+					Direction:  ptr.To(constants.DirectionSouth),
+					Speed:      ptr.To(uint32(100000)),
 					PortParametersSpec: &metalv1alpha4.PortParametersSpec{
-						FEC:   pointer.String(constants.FECNone),
-						MTU:   pointer.Uint32(9100),
-						Lanes: pointer.Uint32(4),
-						State: pointer.String(constants.NICUp),
+						FEC:   ptr.To(constants.FECNone),
+						MTU:   ptr.To(uint32(9100)),
+						Lanes: ptr.To(uint32(4)),
+						State: ptr.To(constants.NICUp),
 					},
 				}},
-				State: pointer.String("Initial"),
+				State: ptr.To("Initial"),
 			}
 			go func() {
 				defer GinkgoRecover()

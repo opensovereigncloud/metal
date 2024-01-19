@@ -54,9 +54,9 @@ func (r *Reconciler) constructPredicates() predicate.Predicate {
 	}
 }
 
-// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=benchmarks,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=benchmarks/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=metal.ironcore.dev,resources=benchmarks/finalizers,verbs=update
 
 func (r *Reconciler) Reconcile(_ context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil

@@ -18,8 +18,8 @@ package controllers
 
 import (
 	"github.com/google/uuid"
-	computev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
-	"github.com/onmetal/onmetal-api/utils/testing"
+	computev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
+	"github.com/ironcore-dev/ironcore/utils/testing"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"

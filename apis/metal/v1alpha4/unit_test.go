@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/ironcore-dev/metal/pkg/constants"
 )
@@ -36,10 +36,10 @@ func TestSetDefaultConfigSelector(t *testing.T) {
 			APIVersion: "v1beta1",
 		},
 		Spec: NetworkSwitchSpec{
-			Managed:   pointer.Bool(true),
-			Cordon:    pointer.Bool(false),
-			TopSpine:  pointer.Bool(true),
-			ScanPorts: pointer.Bool(true),
+			Managed:   ptr.To(true),
+			Cordon:    ptr.To(false),
+			TopSpine:  ptr.To(true),
+			ScanPorts: ptr.To(true),
 		},
 		Status: NetworkSwitchStatus{
 			Layer: 255,

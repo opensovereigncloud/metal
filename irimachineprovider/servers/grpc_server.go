@@ -31,9 +31,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	onmetalcomputev1alpha1 "github.com/onmetal/onmetal-api/api/compute/v1alpha1"
-	irimachinev1alpha1 "github.com/onmetal/onmetal-api/ori/apis/machine/v1alpha1"
-	irimetav1alpha1 "github.com/onmetal/onmetal-api/ori/apis/meta/v1alpha1"
+	onmetalcomputev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
+	irimachinev1alpha1 "github.com/ironcore-dev/ironcore/iri/apis/machine/v1alpha1"
+	irimetav1alpha1 "github.com/ironcore-dev/ironcore/iri/apis/meta/v1alpha1"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	metalv1alpha4apply "github.com/ironcore-dev/metal/applyconfiguration/metal/v1alpha4"
@@ -510,7 +510,7 @@ func (s *GRPCServer) Status(ctx context.Context, _ *irimachinev1alpha1.StatusReq
 						Name: sz,
 						Capabilities: &irimachinev1alpha1.MachineClassCapabilities{
 							CpuMillis:   cpu,
-							MemoryBytes: uint64(mem),
+							MemoryBytes: mem,
 						},
 					},
 				}

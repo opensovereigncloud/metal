@@ -24,7 +24,7 @@ import (
 
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	"github.com/ironcore-dev/metal/pkg/constants"
@@ -167,7 +167,7 @@ var _ = Describe("NetworkSwitch controller", func() {
 						Namespace: defaultNamespace,
 					},
 					Spec: metalv1alpha4.NetworkSwitchSpec{
-						TopSpine: pointer.Bool(topSpine),
+						TopSpine: ptr.To(topSpine),
 					},
 				}
 				Expect(k8sClient.Create(testContext, obj)).To(Succeed())
@@ -209,7 +209,7 @@ var _ = Describe("NetworkSwitch controller", func() {
 						Namespace: defaultNamespace,
 					},
 					Spec: metalv1alpha4.NetworkSwitchSpec{
-						TopSpine: pointer.Bool(topSpine),
+						TopSpine: ptr.To(topSpine),
 					},
 				}
 				Expect(k8sClient.Create(testContext, obj)).To(Succeed())

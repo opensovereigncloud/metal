@@ -62,7 +62,7 @@ const (
 const (
 	EmptyString string = ""
 
-	SwitchManager string = "metal-api-controller-manager"
+	SwitchManager string = "metal-controller-manager"
 
 	SwitchStateInvalid    string = "Invalid"
 	SwitchStateInitial    string = "Initial"

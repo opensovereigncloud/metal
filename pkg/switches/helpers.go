@@ -48,7 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
@@ -65,7 +65,7 @@ var (
 
 var PatchOpts *client.SubResourcePatchOptions = &client.SubResourcePatchOptions{
 	PatchOptions: client.PatchOptions{
-		Force:        pointer.Bool(true),
+		Force:        ptr.To(true),
 		FieldManager: constants.SwitchManager,
 	},
 }

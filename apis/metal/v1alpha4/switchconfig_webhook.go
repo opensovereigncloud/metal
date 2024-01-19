@@ -20,7 +20,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -87,7 +87,7 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	}
 	if in.Spec.IPAM.SouthSubnets.FieldSelector == nil {
 		in.Spec.IPAM.SouthSubnets.FieldSelector = &FieldSelectorSpec{
-			LabelKey: pointer.String(constants.IPAMObjectOwnerLabel),
+			LabelKey: ptr.To(constants.IPAMObjectOwnerLabel),
 			FieldRef: &v1.ObjectFieldSelector{
 				APIVersion: constants.APIVersion,
 				FieldPath:  constants.DefaultIPAMFieldRef,
@@ -111,7 +111,7 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	}
 	if in.Spec.IPAM.LoopbackAddresses.FieldSelector == nil {
 		in.Spec.IPAM.LoopbackAddresses.FieldSelector = &FieldSelectorSpec{
-			LabelKey: pointer.String(constants.IPAMObjectOwnerLabel),
+			LabelKey: ptr.To(constants.IPAMObjectOwnerLabel),
 			FieldRef: &v1.ObjectFieldSelector{
 				APIVersion: constants.APIVersion,
 				FieldPath:  constants.DefaultIPAMFieldRef,
@@ -122,8 +122,8 @@ func (in *SwitchConfig) setDefaultIPAMSelectors() {
 	// defaulting address families
 	if in.Spec.IPAM.AddressFamily == nil {
 		in.Spec.IPAM.AddressFamily = &AddressFamiliesMap{
-			IPv4: pointer.Bool(true),
-			IPv6: pointer.Bool(false),
+			IPv4: ptr.To(true),
+			IPv6: ptr.To(false),
 		}
 	}
 }

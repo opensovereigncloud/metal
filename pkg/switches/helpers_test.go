@@ -27,6 +27,7 @@ import (
 	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/utils/ptr"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	"github.com/ironcore-dev/metal/pkg/constants"
@@ -34,7 +35,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 )
 
 func TestLabelFromFieldRef(t *testing.T) {
@@ -49,14 +49,14 @@ func TestLabelFromFieldRef(t *testing.T) {
 			APIVersion: "v1beta1",
 		},
 		Spec: metalv1alpha4.NetworkSwitchSpec{
-			Managed:   pointer.Bool(true),
-			Cordon:    pointer.Bool(false),
-			TopSpine:  pointer.Bool(true),
-			ScanPorts: pointer.Bool(true),
+			Managed:   ptr.To(true),
+			Cordon:    ptr.To(false),
+			TopSpine:  ptr.To(true),
+			ScanPorts: ptr.To(true),
 		},
 	}
 	fieldSelector := &metalv1alpha4.FieldSelectorSpec{
-		LabelKey: pointer.String("metal.ironcore.dev/object-owner"),
+		LabelKey: ptr.To("metal.ironcore.dev/object-owner"),
 		FieldRef: &v1.ObjectFieldSelector{
 			APIVersion: "v1beta1",
 			FieldPath:  "metadata.name",
@@ -80,14 +80,14 @@ func TestLabelFromFieldRefFail(t *testing.T) {
 			APIVersion: "v1beta1",
 		},
 		Spec: metalv1alpha4.NetworkSwitchSpec{
-			Managed:   pointer.Bool(true),
-			Cordon:    pointer.Bool(false),
-			TopSpine:  pointer.Bool(true),
-			ScanPorts: pointer.Bool(true),
+			Managed:   ptr.To(true),
+			Cordon:    ptr.To(false),
+			TopSpine:  ptr.To(true),
+			ScanPorts: ptr.To(true),
 		},
 	}
 	fieldSelector := &metalv1alpha4.FieldSelectorSpec{
-		LabelKey: pointer.String("metal.ironcore.dev/object-owner"),
+		LabelKey: ptr.To("metal.ironcore.dev/object-owner"),
 		FieldRef: &v1.ObjectFieldSelector{
 			APIVersion: "v1",
 			FieldPath:  "metadata.name",
@@ -104,12 +104,12 @@ func TestCalculateASN(t *testing.T) {
 	loopbacksSamples := []*metalv1alpha4.IPAddressSpec{
 
 		{
-			Address:       pointer.String("100.64.0.1"),
-			AddressFamily: pointer.String(constants.IPv4AF),
+			Address:       ptr.To("100.64.0.1"),
+			AddressFamily: ptr.To(constants.IPv4AF),
 		},
 		{
-			Address:       pointer.String("fd00:afc0:e013:1003:ffff::"),
-			AddressFamily: pointer.String(constants.IPv6AF),
+			Address:       ptr.To("fd00:afc0:e013:1003:ffff::"),
+			AddressFamily: ptr.To(constants.IPv6AF),
 		},
 	}
 	asn, err := CalculateASN(loopbacksSamples)
@@ -119,8 +119,8 @@ func TestCalculateASN(t *testing.T) {
 
 	loopbacksSamples = []*metalv1alpha4.IPAddressSpec{
 		{
-			Address:       pointer.String("fd00:afc0:e013:1003:ffff::"),
-			AddressFamily: pointer.String(constants.IPv6AF),
+			Address:       ptr.To("fd00:afc0:e013:1003:ffff::"),
+			AddressFamily: ptr.To(constants.IPv6AF),
 		},
 	}
 	asn, err = CalculateASN(loopbacksSamples)
@@ -129,12 +129,12 @@ func TestCalculateASN(t *testing.T) {
 
 	loopbacksSamples = []*metalv1alpha4.IPAddressSpec{
 		{
-			Address:       pointer.String("100.64.999.1"),
-			AddressFamily: pointer.String(constants.IPv4AF),
+			Address:       ptr.To("100.64.999.1"),
+			AddressFamily: ptr.To(constants.IPv4AF),
 		},
 		{
-			Address:       pointer.String("fd00:afc0:e013:1003:ffff::"),
-			AddressFamily: pointer.String(constants.IPv6AF),
+			Address:       ptr.To("fd00:afc0:e013:1003:ffff::"),
+			AddressFamily: ptr.To(constants.IPv6AF),
 		},
 	}
 	asn, err = CalculateASN(loopbacksSamples)
@@ -147,15 +147,15 @@ func TestRequestIPs(t *testing.T) {
 	nicSample := &metalv1alpha4.InterfaceSpec{
 		IP: []*metalv1alpha4.IPAddressSpec{
 			{
-				Address:       pointer.String("100.64.0.1/30"),
-				AddressFamily: pointer.String(constants.IPv4AF),
+				Address:       ptr.To("100.64.0.1/30"),
+				AddressFamily: ptr.To(constants.IPv4AF),
 			},
 			{
-				Address:       pointer.String("fd00:afc0:e013:1003:ffff::0/127"),
-				AddressFamily: pointer.String(constants.IPv6AF),
+				Address:       ptr.To("fd00:afc0:e013:1003:ffff::0/127"),
+				AddressFamily: ptr.To(constants.IPv6AF),
 				ObjectReference: &metalv1alpha4.ObjectReference{
-					Name:      pointer.String("sample"),
-					Namespace: pointer.String("default"),
+					Name:      ptr.To("sample"),
+					Namespace: ptr.To("default"),
 				},
 			},
 		},
@@ -163,18 +163,18 @@ func TestRequestIPs(t *testing.T) {
 	expectedIPs := []*metalv1alpha4.IPAddressSpec{
 		{
 			ObjectReference: nil,
-			Address:         pointer.String("100.64.0.2/30"),
-			AddressFamily:   pointer.String(constants.IPv4AF),
-			ExtraAddress:    pointer.Bool(false),
+			Address:         ptr.To("100.64.0.2/30"),
+			AddressFamily:   ptr.To(constants.IPv4AF),
+			ExtraAddress:    ptr.To(false),
 		},
 		{
 			ObjectReference: &metalv1alpha4.ObjectReference{
-				Name:      pointer.String("sample"),
-				Namespace: pointer.String("default"),
+				Name:      ptr.To("sample"),
+				Namespace: ptr.To("default"),
 			},
-			Address:       pointer.String("fd00:afc0:e013:1003:ffff::1/127"),
-			AddressFamily: pointer.String(constants.IPv6AF),
-			ExtraAddress:  pointer.Bool(false),
+			Address:       ptr.To("fd00:afc0:e013:1003:ffff::1/127"),
+			AddressFamily: ptr.To(constants.IPv6AF),
+			ExtraAddress:  ptr.To(false),
 		},
 	}
 	requestedIPs := RequestIPs(nicSample)
@@ -183,15 +183,15 @@ func TestRequestIPs(t *testing.T) {
 	nicSample = &metalv1alpha4.InterfaceSpec{
 		IP: []*metalv1alpha4.IPAddressSpec{
 			{
-				Address:       pointer.String("100.64.0.1/30"),
-				AddressFamily: pointer.String(constants.IPv4AF),
+				Address:       ptr.To("100.64.0.1/30"),
+				AddressFamily: ptr.To(constants.IPv4AF),
 			},
 			{
-				Address:       pointer.String("fd00:afc0:e013:1003:ffff::1/112"),
-				AddressFamily: pointer.String(constants.IPv6AF),
+				Address:       ptr.To("fd00:afc0:e013:1003:ffff::1/112"),
+				AddressFamily: ptr.To(constants.IPv6AF),
 				ObjectReference: &metalv1alpha4.ObjectReference{
-					Name:      pointer.String("sample"),
-					Namespace: pointer.String("default"),
+					Name:      ptr.To("sample"),
+					Namespace: ptr.To("default"),
 				},
 			},
 		},
@@ -199,18 +199,18 @@ func TestRequestIPs(t *testing.T) {
 	expectedIPs = []*metalv1alpha4.IPAddressSpec{
 		{
 			ObjectReference: nil,
-			Address:         pointer.String("100.64.0.2/30"),
-			AddressFamily:   pointer.String(constants.IPv4AF),
-			ExtraAddress:    pointer.Bool(false),
+			Address:         ptr.To("100.64.0.2/30"),
+			AddressFamily:   ptr.To(constants.IPv4AF),
+			ExtraAddress:    ptr.To(false),
 		},
 		{
 			ObjectReference: &metalv1alpha4.ObjectReference{
-				Name:      pointer.String("sample"),
-				Namespace: pointer.String("default"),
+				Name:      ptr.To("sample"),
+				Namespace: ptr.To("default"),
 			},
-			Address:       pointer.String("fd00:afc0:e013:1003:ffff::2/112"),
-			AddressFamily: pointer.String(constants.IPv6AF),
-			ExtraAddress:  pointer.Bool(false),
+			Address:       ptr.To("fd00:afc0:e013:1003:ffff::2/112"),
+			AddressFamily: ptr.To(constants.IPv6AF),
+			ExtraAddress:  ptr.To(false),
 		},
 	}
 	requestedIPs = RequestIPs(nicSample)
@@ -239,42 +239,42 @@ func TestConditionsUpdated(t *testing.T) {
 	tsPast := tsNow.Add(-time.Hour)
 	conditionsNow := []*metalv1alpha4.ConditionSpec{
 		{
-			Name:                    pointer.String(constants.ConditionInitialized),
-			State:                   pointer.Bool(true),
-			LastUpdateTimestamp:     pointer.String(tsNow.String()),
-			LastTransitionTimestamp: pointer.String(tsNow.String()),
+			Name:                    ptr.To(constants.ConditionInitialized),
+			State:                   ptr.To(true),
+			LastUpdateTimestamp:     ptr.To(tsNow.String()),
+			LastTransitionTimestamp: ptr.To(tsNow.String()),
 		},
 		{
-			Name:                    pointer.String(constants.ConditionInterfacesOK),
-			State:                   pointer.Bool(true),
-			LastUpdateTimestamp:     pointer.String(tsNow.String()),
-			LastTransitionTimestamp: pointer.String(tsNow.String()),
+			Name:                    ptr.To(constants.ConditionInterfacesOK),
+			State:                   ptr.To(true),
+			LastUpdateTimestamp:     ptr.To(tsNow.String()),
+			LastTransitionTimestamp: ptr.To(tsNow.String()),
 		},
 		{
-			Name:                    pointer.String(constants.ConditionConfigRefOK),
-			State:                   pointer.Bool(false),
-			LastUpdateTimestamp:     pointer.String(tsNow.String()),
-			LastTransitionTimestamp: pointer.String(tsNow.String()),
+			Name:                    ptr.To(constants.ConditionConfigRefOK),
+			State:                   ptr.To(false),
+			LastUpdateTimestamp:     ptr.To(tsNow.String()),
+			LastTransitionTimestamp: ptr.To(tsNow.String()),
 		},
 	}
 	conditionsPast := []*metalv1alpha4.ConditionSpec{
 		{
-			Name:                    pointer.String(constants.ConditionInitialized),
-			State:                   pointer.Bool(true),
-			LastUpdateTimestamp:     pointer.String(tsNow.String()),
-			LastTransitionTimestamp: pointer.String(tsPast.String()),
+			Name:                    ptr.To(constants.ConditionInitialized),
+			State:                   ptr.To(true),
+			LastUpdateTimestamp:     ptr.To(tsNow.String()),
+			LastTransitionTimestamp: ptr.To(tsPast.String()),
 		},
 		{
-			Name:                    pointer.String(constants.ConditionInterfacesOK),
-			State:                   pointer.Bool(true),
-			LastUpdateTimestamp:     pointer.String(tsNow.String()),
-			LastTransitionTimestamp: pointer.String(tsNow.String()),
+			Name:                    ptr.To(constants.ConditionInterfacesOK),
+			State:                   ptr.To(true),
+			LastUpdateTimestamp:     ptr.To(tsNow.String()),
+			LastTransitionTimestamp: ptr.To(tsNow.String()),
 		},
 		{
-			Name:                    pointer.String(constants.ConditionConfigRefOK),
-			State:                   pointer.Bool(false),
-			LastUpdateTimestamp:     pointer.String(tsNow.String()),
-			LastTransitionTimestamp: pointer.String(tsNow.String()),
+			Name:                    ptr.To(constants.ConditionConfigRefOK),
+			State:                   ptr.To(false),
+			LastUpdateTimestamp:     ptr.To(tsNow.String()),
+			LastTransitionTimestamp: ptr.To(tsNow.String()),
 		},
 	}
 	actual := conditionsUpdated(conditionsPast, conditionsNow)
@@ -293,10 +293,10 @@ func TestUpdateSwitchConfigSelector(t *testing.T) {
 			APIVersion: "v1beta1",
 		},
 		Spec: metalv1alpha4.NetworkSwitchSpec{
-			Managed:   pointer.Bool(true),
-			Cordon:    pointer.Bool(false),
-			TopSpine:  pointer.Bool(true),
-			ScanPorts: pointer.Bool(true),
+			Managed:   ptr.To(true),
+			Cordon:    ptr.To(false),
+			TopSpine:  ptr.To(true),
+			ScanPorts: ptr.To(true),
 		},
 		Status: metalv1alpha4.NetworkSwitchStatus{
 			Layer: 255,
