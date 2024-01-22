@@ -2,7 +2,6 @@
 FROM golang:1.21.6 as builder
 
 ARG GOARCH
-ARG GOPRIVATE
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -19,14 +18,15 @@ RUN --mount=type=ssh --mount=type=secret,id=github_pat GITHUB_PAT_PATH=/run/secr
 
 # Copy the go source
 COPY main.go main.go
-COPY publisher/ publisher/
 COPY apis/ apis/
-COPY controllers/ controllers/
-COPY pkg/ pkg/
+COPY applyconfiguration/ applyconfiguration/
 COPY common/ common/
+COPY controllers/ controllers/
 COPY domain/ domain/
-COPY usecase/ usecase/
+COPY pkg/ pkg/
 COPY providers-kubernetes/ providers-kubernetes/
+COPY publisher/ publisher/
+COPY usecase/ usecase/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o manager main.go
