@@ -1,4 +1,4 @@
-apiVersion: metal.ironcore.dev/v1beta1
+apiVersion: metal.ironcore.dev/v1alpha4
 kind: SwitchConfig
 metadata:
   name: switchconfig-sample

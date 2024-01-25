@@ -45,27 +45,28 @@ var switchlog = logf.Log.WithName("networkswitch-resource")
 // - inventory-ref label can be only valid UUID.
 func validateInventoryLabels(switchObject *NetworkSwitch) (err error) {
 	inventoried, inventoriedOk := switchObject.Labels["metal.ironcore.dev/inventoried"]
-	inventoryRef, inventoryRefOk := switchObject.Labels["metal.ironcore.dev/inventory-ref"]
 
-	switch {
-	case !inventoriedOk && !inventoryRefOk:
-		return
-	case !inventoriedOk && inventoryRefOk:
-		return errors.New("inventory-ref label is set but inventoried label is not set")
-	case inventoriedOk && !inventoryRefOk:
-		return errors.New("inventoried label is set but inventory-ref label is not set")
+	if !inventoriedOk {
+		return nil
 	}
 
+	if inventoriedOk && switchObject.Spec.InventoryRef == nil {
+		return fmt.Errorf(`inventoried label can't be applied to the object, 
+which does not contain reference to Inventory object in .spec.inventoryRef.name field`)
+	}
+
+	inventoryRef := switchObject.Spec.InventoryRef.Name
 	_, err = uuid.Parse(inventoryRef)
 	if err != nil {
-		return fmt.Errorf("inventory-ref label must be a valid UUID, but current value is %s", inventoryRef)
+		return fmt.Errorf(".spec.inventoryRef label must be a valid UUID, but current value is %s", inventoryRef)
 	}
 
-	if inventoried == "true" || inventoried == "false" {
-		return
+	switch inventoried {
+	case "", "true", "false":
+		return nil
+	default:
+		return fmt.Errorf("inventoried label must be set to true or false, but current value is %s", inventoried)
 	}
-
-	return fmt.Errorf("inventoried label must be set to true or false, but current value is %s", inventoried)
 }
 
 // validateOverrides validates switch interface overrides with following conditions:

@@ -5,7 +5,7 @@ metadata:
     metal.ironcore.dev/mac-address-68215f470d6e: ""
     metal.ironcore.dev/mac-address-68215f470d6f: ""
     metal.ironcore.dev/mac-address-68215f470d70: ""
-    metal.ironcore.dev/size-switch: ""
+    metal.ironcore.dev/size-switch: "true"
   name: 92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b
   namespace: ironcore
 spec:

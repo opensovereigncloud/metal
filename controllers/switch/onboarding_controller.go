@@ -74,7 +74,7 @@ func (r *OnboardingReconciler) reconcileRequired(ctx context.Context, obj *metal
 // SetupWithManager sets up the controller with the Manager.
 func (r *OnboardingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	labelPredicate, err := predicate.LabelSelectorPredicate(metav1.LabelSelector{
-		MatchLabels: map[string]string{constants.SizeLabel: ""},
+		MatchLabels: map[string]string{constants.SizeLabel: "true"},
 	})
 	if err != nil {
 		r.Log.Error(err, "failed to setup predicates")
@@ -111,7 +111,7 @@ func (r *OnboardingReconciler) onboardNewSwitch(ctx context.Context, inv *metalv
 	targetSwitch := &metalv1alpha4.NetworkSwitch{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "NetworkSwitch",
-			APIVersion: "metal.ironcore.dev/v1beta1",
+			APIVersion: "metal.ironcore.dev/v1alpha4",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      inv.Name,

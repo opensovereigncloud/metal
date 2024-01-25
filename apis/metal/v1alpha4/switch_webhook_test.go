@@ -135,79 +135,60 @@ var _ = Describe("NetworkSwitch Webhook", func() {
 			Expect(err).To(Succeed())
 			switchObject.Namespace = SwitchNamespace
 
-			By("Empty inventoried label but valid inventory-ref label")
-			switchObject.Labels[inventoried] = ""
-			switchObject.Labels[inventoryRef] = validInventoryRef
-			Expect(k8sClient.Create(ctx, switchObject)).To(HaveOccurred())
+			By("Valid inventoried label but empty spec.inventoryRef")
+			switchObject.Labels[inventoried] = validInventoried
+			switchObject.Spec.InventoryRef = nil
+			_, err = switchObject.ValidateCreate()
+			Expect(err).To(HaveOccurred())
 
-			By("Bad value inventoried label but valid inventory-ref label")
+			By("Valid inventoried label but empty spec.inventoryRef.name")
+			switchObject.Labels[inventoried] = validInventoried
+			switchObject.SetInventoryRef("")
+			_, err = switchObject.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+
+			By("Valid inventoried label but invalid spec.inventoryRef.name")
+			switchObject.Labels[inventoried] = validInventoried
+			switchObject.SetInventoryRef("123-456")
+			_, err = switchObject.ValidateCreate()
+			Expect(err).To(HaveOccurred())
+
+			By("Invalid inventoried label but valid spec.inventoryRef.name")
 			switchObject.Labels[inventoried] = "123"
-			switchObject.Labels[inventoryRef] = validInventoryRef
-			Expect(k8sClient.Create(ctx, switchObject)).To(HaveOccurred())
-
-			By("Empty inventory-ref label but valid inventoried label")
-			switchObject.Labels[inventoried] = validInventoried
-			switchObject.Labels[inventoryRef] = ""
-			Expect(k8sClient.Create(ctx, switchObject)).To(HaveOccurred())
-
-			By("Bad value inventory-ref label but valid inventoried label")
-			switchObject.Labels[inventoried] = validInventoried
-			switchObject.Labels[inventoryRef] = "123-456"
-			Expect(k8sClient.Create(ctx, switchObject)).To(HaveOccurred())
-
-			By("No inventory-ref label but valid inventoried label")
-			switchObject.Labels[inventoried] = validInventoried
-			delete(switchObject.Labels, inventoryRef)
-			Expect(k8sClient.Create(ctx, switchObject)).To(HaveOccurred())
-
-			By("No inventoried label but valid inventory-ref label")
-			switchObject.Labels[inventoryRef] = validInventoryRef
-			delete(switchObject.Labels, inventoried)
-			Expect(k8sClient.Create(ctx, switchObject)).To(HaveOccurred())
+			switchObject.SetInventoryRef(validInventoryRef)
+			_, err = switchObject.ValidateCreate()
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("Should not update switch with bad labels", func() {
 			switchObject, err := createSwitchFromSampleFile()
 			Expect(err).To(Succeed())
 			switchObject.Namespace = SwitchNamespace
+			baseSwitch := switchObject.DeepCopy()
+
+			By("Valid inventoried label but empty spec.inventoryRef")
 			switchObject.Labels[inventoried] = validInventoried
-			switchObject.Labels[inventoryRef] = validInventoryRef
-			labels := switchObject.Labels
-			status := switchObject.Status
-			Expect(k8sClient.Create(ctx, switchObject)).To(Succeed())
-			switchObject.Labels = labels
-			switchObject.Status = status
-			Expect(k8sClient.Status().Update(ctx, switchObject)).To(Succeed())
+			switchObject.Spec.InventoryRef = nil
+			_, err = switchObject.ValidateUpdate(baseSwitch)
+			Expect(err).To(HaveOccurred())
 
-			By("Empty inventoried label but valid inventory-ref label")
-			switchObject.Labels[inventoried] = ""
-			switchObject.Labels[inventoryRef] = validInventoryRef
-			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
+			By("Valid inventoried label but empty spec.inventoryRef.name")
+			switchObject.Labels[inventoried] = validInventoried
+			switchObject.SetInventoryRef("")
+			_, err = switchObject.ValidateUpdate(baseSwitch)
+			Expect(err).To(HaveOccurred())
 
-			By("Bad value inventoried label but valid inventory-ref label")
+			By("Valid inventoried label but invalid spec.inventoryRef.name")
+			switchObject.Labels[inventoried] = validInventoried
+			switchObject.SetInventoryRef("123-456")
+			_, err = switchObject.ValidateUpdate(baseSwitch)
+			Expect(err).To(HaveOccurred())
+
+			By("Invalid inventoried label but valid spec.inventoryRef.name")
 			switchObject.Labels[inventoried] = "123"
-			switchObject.Labels[inventoryRef] = validInventoryRef
-			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
-
-			By("Empty inventory-ref label but valid inventoried label")
-			switchObject.Labels[inventoried] = validInventoried
-			switchObject.Labels[inventoryRef] = ""
-			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
-
-			By("Bad value inventory-ref label but valid inventoried label")
-			switchObject.Labels[inventoried] = validInventoried
-			switchObject.Labels[inventoryRef] = "123-456"
-			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
-
-			By("No inventory-ref label but valid inventoried label")
-			switchObject.Labels[inventoried] = validInventoried
-			delete(switchObject.Labels, inventoryRef)
-			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
-
-			By("No inventoried label but valid inventory-ref label")
-			switchObject.Labels[inventoryRef] = validInventoryRef
-			delete(switchObject.Labels, inventoried)
-			Expect(k8sClient.Update(ctx, switchObject)).To(HaveOccurred())
+			switchObject.SetInventoryRef(validInventoryRef)
+			_, err = switchObject.ValidateUpdate(baseSwitch)
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("Should create switch with good labels", func() {
@@ -215,7 +196,7 @@ var _ = Describe("NetworkSwitch Webhook", func() {
 			Expect(err).To(Succeed())
 			switchObject.Namespace = SwitchNamespace
 			switchObject.Labels[inventoried] = validInventoried
-			switchObject.Labels[inventoryRef] = validInventoryRef
+			switchObject.SetInventoryRef(validInventoryRef)
 			Expect(k8sClient.Create(ctx, switchObject)).To(Succeed())
 		})
 
@@ -224,7 +205,7 @@ var _ = Describe("NetworkSwitch Webhook", func() {
 			Expect(err).To(Succeed())
 			switchObject.Namespace = SwitchNamespace
 			switchObject.Labels[inventoried] = validInventoried
-			switchObject.Labels[inventoryRef] = validInventoryRef
+			switchObject.SetInventoryRef(validInventoryRef)
 			labels := switchObject.Labels
 			status := switchObject.Status
 			Expect(k8sClient.Create(ctx, switchObject)).To(Succeed())
@@ -232,7 +213,6 @@ var _ = Describe("NetworkSwitch Webhook", func() {
 			switchObject.Status = status
 			Expect(k8sClient.Status().Update(ctx, switchObject)).To(Succeed())
 			switchObject.Labels[inventoried] = "false"
-			switchObject.Labels[inventoryRef] = "e0e223f5-032a-48d7-8481-a828c3cd868a"
 			Expect(k8sClient.Update(ctx, switchObject)).To(Succeed())
 		})
 
