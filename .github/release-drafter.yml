@@ -5,7 +5,6 @@ categories:
     labels:
       - 'feature'
       - 'enhancement'
-      - 'controllers'
   - title: '🐛 Bug Fixes'
     labels:
       - 'fix'
