@@ -385,7 +385,7 @@ func (r *AccessReconciler) ClientKubeconfigSecret(
 			Name:      kubeconfigName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
+					APIVersion:         inventory.APIVersion,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -462,7 +462,7 @@ func (r *AccessReconciler) InventoryRoleBinding(
 			Name:      machineInventoryServiceAccount.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
+					APIVersion:         inventory.APIVersion,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -497,7 +497,7 @@ func (r *AccessReconciler) RoleForInventoryWithPermissions(
 			Name:      machineInventoryServiceAccountName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
+					APIVersion:         inventory.APIVersion,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -538,7 +538,7 @@ func (r *AccessReconciler) InventoryServiceAccountSecretToken(
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
+					APIVersion:         inventory.APIVersion,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
@@ -567,7 +567,7 @@ func (r *AccessReconciler) InventoryServiceAccount(
 			Name:      machineInventoryServiceAccountName,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         metalv1alpha4.SchemeGroupVersion.Version,
+					APIVersion:         inventory.APIVersion,
 					Kind:               inventoryKind,
 					Name:               inventory.Name,
 					UID:                inventory.UID,
