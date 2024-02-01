@@ -37,9 +37,9 @@ import (
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	metalv1alpha4apply "github.com/ironcore-dev/metal/applyconfiguration/metal/v1alpha4"
-	"github.com/ironcore-dev/metal/irimachineprovider/internal/log"
-	"github.com/ironcore-dev/metal/irimachineprovider/internal/patch"
-	"github.com/ironcore-dev/metal/irimachineprovider/internal/unix"
+	"github.com/ironcore-dev/metal/metal-provider/internal/log"
+	"github.com/ironcore-dev/metal/metal-provider/internal/patch"
+	"github.com/ironcore-dev/metal/metal-provider/internal/unix"
 )
 
 func NewGRPCServer(addr string, namespace string) (*GRPCServer, error) {
@@ -126,7 +126,11 @@ func (s *GRPCServer) ListMachines(ctx context.Context, req *irimachinev1alpha1.L
 			return nil, internalError(ctx, fmt.Errorf("could not list machines: %w", err))
 		}
 
-		machines = machineList.Items
+		for _, m := range machineList.Items {
+			if m.Status.Reservation.Status == "Reserved" {
+				machines = append(machines, m)
+			}
+		}
 	} else {
 		ctx = log.WithValues(ctx, "machine", id)
 
@@ -151,7 +155,7 @@ func (s *GRPCServer) ListMachines(ctx context.Context, req *irimachinev1alpha1.L
 		machines = append(machines, machine)
 	}
 
-	resMachines := make([]*irimachinev1alpha1.Machine, len(machines))
+	resMachines := make([]*irimachinev1alpha1.Machine, 0, len(machines))
 	for _, m := range machines {
 		resMachines = append(resMachines, &irimachinev1alpha1.Machine{
 			Metadata: kMetaToMeta(&m.ObjectMeta),
@@ -276,7 +280,7 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 		},
 	}
 	log.Debug(ctx, "Applying machine status")
-	err = s.Client.Status().Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
+	err = s.Client.Status().Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("could not apply machine status: %w", err))
 	}
@@ -302,7 +306,7 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 			},
 		}
 		log.Debug(ctx, "Applying machine annotations and labels")
-		err = s.Client.Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
+		err = s.Client.Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
 		if err != nil {
 			return nil, internalError(ctx, fmt.Errorf("could not apply machine: %w", err))
 		}
@@ -386,7 +390,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 			},
 		}
 		log.Debug(ctx, "Applying machine annotations and labels")
-		err = s.Client.Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
+		err = s.Client.Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
 		if err != nil {
 			return nil, internalError(ctx, fmt.Errorf("could not apply machine: %w", err))
 		}
@@ -404,7 +408,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 		},
 	}
 	log.Debug(ctx, "Applying machine status")
-	err = s.Client.Status().Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/irimachineprovider"), client.ForceOwnership)
+	err = s.Client.Status().Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("could not apply machine status: %w", err))
 	}

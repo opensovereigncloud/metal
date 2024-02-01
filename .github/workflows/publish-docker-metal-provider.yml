@@ -63,7 +63,7 @@ jobs:
         timeout-minutes: 40
         uses: docker/build-push-action@v5
         with:
-          file: irimachineprovider/Dockerfile
+          file: metal-provider/Dockerfile
           context: .
           platforms: ${{ env.platforms }}
           push: true
