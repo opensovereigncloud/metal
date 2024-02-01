@@ -318,7 +318,7 @@ func processSouthSubnets(
 	cfg := svc.Env.Config
 	params := cfg.Spec.IPAM.SouthSubnets
 	if obj.Spec.IPAM != nil && obj.Spec.IPAM.SouthSubnets != nil {
-		params = obj.Spec.IPAM.LoopbackAddresses
+		params = obj.Spec.IPAM.SouthSubnets
 	}
 	subnets := &ipamv1alpha1.SubnetList{}
 	if err := svc.ListIPAMObjects(ctx, obj, params, subnets); err != nil {

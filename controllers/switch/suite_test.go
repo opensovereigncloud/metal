@@ -155,6 +155,18 @@ var _ = BeforeSuite(func() {
 		Log:                     ctrl.Log.WithName("controllers").WithName("switch-ipam-reconciler"),
 		SwitchPortsIPAMDisabled: true,
 	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
+	Expect((&IPTracker{
+		Client:   k8sManager.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("ip-tracker"),
+		Scheme:   k8sManager.GetScheme(),
+		Recorder: k8sManager.GetEventRecorderFor("ip-tracker"),
+	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
+	Expect((&SubnetTracker{
+		Client:   k8sManager.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("subnet-tracker"),
+		Scheme:   k8sManager.GetScheme(),
+		Recorder: k8sManager.GetEventRecorderFor("subnet-tracker"),
+	}).SetupWithManager(k8sManager)).NotTo(HaveOccurred())
 
 	Expect((&ipamctrl.SubnetReconciler{
 		Client:        k8sManager.GetClient(),
