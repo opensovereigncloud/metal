@@ -98,9 +98,13 @@ func (s *GRPCServer) addLogger(ctx context.Context, req interface{}, _ *grpc.Una
 }
 
 func (s *GRPCServer) Version(ctx context.Context, _ *irimachinev1alpha1.VersionRequest) (*irimachinev1alpha1.VersionResponse, error) {
-	err := status.Errorf(codes.Unimplemented, "Version() has not been implemented yet")
-	log.Error(ctx, err)
-	return nil, err
+	ctx = log.WithValues(ctx, "request", "ListMachines")
+	log.Debug(ctx, "Serving")
+
+	return &irimachinev1alpha1.VersionResponse{
+		RuntimeName:    "metal-provider",
+		RuntimeVersion: "0.0.0",
+	}, nil
 }
 
 func (s *GRPCServer) ListMachines(ctx context.Context, req *irimachinev1alpha1.ListMachinesRequest) (*irimachinev1alpha1.ListMachinesResponse, error) {
