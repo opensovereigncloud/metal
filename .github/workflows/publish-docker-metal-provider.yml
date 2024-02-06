@@ -1,4 +1,4 @@
-name: Build and Publish Docker Image for IRI machine provider
+name: Build and Publish Docker Image for metal-provider
 
 env:
   platforms: linux/amd64

@@ -79,7 +79,7 @@ func parseCmdLine() params {
 	pflag.String("metrics-bind-address", "0", "The address that the metrics server will listen on.")
 	pflag.String("kubeconfig", "", "Use a kubeconfig to run out of cluster.")
 	pflag.String("namespace", "", "Limit monitoring to a specific namespace.")
-	pflag.String("grpc-address", "/run/iri_machineprovider.sock", "The address that the gRPC server will listen on.")
+	pflag.String("grpc-address", "/run/metal-provider.sock", "The address that the gRPC server will listen on.")
 
 	var help bool
 	pflag.BoolVarP(&help, "help", "h", false, "Show this help message.")

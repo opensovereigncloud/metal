@@ -30,41 +30,11 @@ spec:
           type: RuntimeDefault
       containers:
       - command:
-        - /metal-provier
-        args:
-        - --leader-elect
-        image: metal-provider:latest
-        name: metal-provider
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - "ALL"
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-      - command:
         - /machinepoollet
         args:
         - --leader-elect
         image: machinepoollet:latest
-        name: machinepoollet
+        name: manager
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:
@@ -86,6 +56,39 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        volumeMounts:
+        - mountPath: /var/run
+          name: var-run
+      - command:
+        - /metal-provider
+        args:
+        - --leader-elect
+        image: metal-provider:latest
+        name: metal-provider
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
         volumeMounts:
         - mountPath: /var/run
           name: var-run

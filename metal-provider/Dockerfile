@@ -16,7 +16,7 @@ COPY metal-provider/ metal-provider/
 COPY pkg/ pkg/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o /metal-provider metal-provider/main.go
 
-FROM gcr.io/distroless/static:nonroot
+FROM debian:bookworm-20240110-slim
 WORKDIR /
 USER 65532:65532
 ENTRYPOINT ["/metal-provider"]

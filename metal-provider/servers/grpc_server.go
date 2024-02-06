@@ -201,28 +201,16 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 
 	reqSpec := reqMachine.GetSpec()
 	if reqSpec.GetImage().GetImage() != "" {
-		// TODO: Make it happen
-		err := status.Errorf(codes.Unimplemented, "image is not supported yet")
-		log.Error(ctx, err)
-		return nil, err
+		log.Error(ctx, status.Errorf(codes.Unimplemented, "image is not supported yet"))
 	}
 	if len(reqSpec.GetIgnitionData()) != 0 {
-		// TODO: Make it happen
-		err := status.Errorf(codes.Unimplemented, "ignition_data is not supported yet")
-		log.Error(ctx, err)
-		return nil, err
+		log.Error(ctx, status.Errorf(codes.Unimplemented, "ignition_data is not supported yet"))
 	}
 	if len(reqSpec.GetVolumes()) != 0 {
-		// TODO: Make it happen
-		err := status.Errorf(codes.Unimplemented, "volumes are not supported yet")
-		log.Error(ctx, err)
-		return nil, err
+		log.Error(ctx, status.Errorf(codes.Unimplemented, "volumes are not supported yet"))
 	}
 	if len(reqSpec.GetNetworkInterfaces()) != 0 {
-		// TODO: Make it happen
-		err := status.Errorf(codes.Unimplemented, "network_interfaces are not supported yet")
-		log.Error(ctx, err)
-		return nil, err
+		log.Error(ctx, status.Errorf(codes.Unimplemented, "network_interfaces are not supported yet"))
 	}
 
 	class := reqSpec.GetClass()
