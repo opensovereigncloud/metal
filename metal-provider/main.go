@@ -181,7 +181,7 @@ func main() {
 		},
 		Scheme:                 scheme,
 		LeaderElection:         p.leaderElect,
-		LeaderElectionID:       "orimachineprovider.onmetal.de",
+		LeaderElectionID:       "metal-provider.ironcore.dev",
 		HealthProbeBindAddress: p.healthProbeBindAddress,
 		Metrics: server.Options{
 			BindAddress: p.metricsBindAddress,
