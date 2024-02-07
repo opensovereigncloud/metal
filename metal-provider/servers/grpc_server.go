@@ -1,18 +1,5 @@
-/*
-Copyright (c) 2023 T-Systems International GmbH, SAP SE or an SAP affiliate company. All right reserved
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and IronCore contributors
+// SPDX-License-Identifier: Apache-2.0
 
 package servers
 
@@ -36,7 +23,7 @@ import (
 	irimetav1alpha1 "github.com/ironcore-dev/ironcore/iri/apis/meta/v1alpha1"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
-	metalv1alpha4apply "github.com/ironcore-dev/metal/applyconfiguration/metal/v1alpha4"
+	metalv1alpha4apply "github.com/ironcore-dev/metal/client/applyconfiguration/metal/v1alpha4"
 	"github.com/ironcore-dev/metal/metal-provider/internal/log"
 	"github.com/ironcore-dev/metal/metal-provider/internal/patch"
 	"github.com/ironcore-dev/metal/metal-provider/internal/unix"

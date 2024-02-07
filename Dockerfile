@@ -19,7 +19,7 @@ RUN --mount=type=ssh --mount=type=secret,id=github_pat GITHUB_PAT_PATH=/run/secr
 # Copy the go source
 COPY main.go main.go
 COPY apis/ apis/
-COPY applyconfiguration/ applyconfiguration/
+COPY client/applyconfiguration/ client/applyconfiguration/
 COPY common/ common/
 COPY controllers/ controllers/
 COPY domain/ domain/

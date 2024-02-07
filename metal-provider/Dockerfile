@@ -11,7 +11,7 @@ RUN --mount=type=ssh --mount=type=secret,id=github_pat GITHUB_PAT_PATH=/run/secr
   && go mod download
 
 COPY apis/ apis/
-COPY applyconfiguration/ applyconfiguration/
+COPY client/applyconfiguration/ client/applyconfiguration/
 COPY metal-provider/ metal-provider/
 COPY pkg/ pkg/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} go build -a -o /metal-provider metal-provider/main.go

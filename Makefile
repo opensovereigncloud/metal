@@ -5,16 +5,6 @@ IMG ?= controller:latest
 CRD_OPTIONS ?= "crd"
 # Docker image name for the mkdocs based local development setup
 IMAGE=metal-api/documentation
-# Kubebuilder assets version used to run testing environment
-KUBE_VERSION ?= 1.28.3
-# Vgopath version
-VGOPATH_VERSION ?= v0.1.3
-# Models schema version
-MODELS_SCHEMA_VERSION ?= v0.1.1
-# Controller tools version
-CONTROLLER_TOOLS_VERSION ?= v0.13.0
-# Code generator version
-CODE_GENERATOR_VERSION ?= v0.28.4
 
 GOPRIVATE ?= "github.com/onmetal/*"
 
@@ -65,36 +55,46 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen vgopath openapi-gen models-schema applyconfiguration-gen ## Generate DeepCopy, DeepCopyInto, and DeepCopyObject method implementations and applyconfiguration.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+generate: vgopath openapi-gen models-schema applyconfiguration-gen deepcopy-gen client-gen ## Generate DeepCopy, DeepCopyInto, and DeepCopyObject method implementations and applyconfiguration.
+	@VGOPATH=$(VGOPATH) \
+   	MODELS_SCHEMA=$(MODELS_SCHEMA) \
+   	DEEPCOPY_GEN=$(DEEPCOPY_GEN) \
+   	CLIENT_GEN=$(CLIENT_GEN) \
+   	OPENAPI_GEN=$(OPENAPI_GEN) \
+   	APPLYCONFIGURATION_GEN=$(APPLYCONFIGURATION_GEN) \
 	hack/generate.sh
 
 .PHONY: fmt
-fmt: ## Run go fmt against code.
+fmt: goimports
 	go fmt ./...
+	$(GOIMPORTS) -w .
 
 .PHONY: vet
 vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: lint
-lint:
-	golangci-lint run ./...
+lint: golangci-lint
+	$(GOLANGCI_LINT) run
 
-.PHONY: addlicense
-addlicense: ## Add license headers to all go files.
-	find . -name '*.go' -exec go run github.com/google/addlicense -c 'OnMetal authors' {} +
+.PHONY: lint-fix
+lint-fix: golangci-lint
+	$(GOLANGCI_LINT) run --fix
 
-.PHONY: checklicense
-checklicense: ## Check that every file has a license header present.
-	find . -name '*.go' -exec go run github.com/google/addlicense  -check -c 'OnMetal authors' {} +
+.PHONY: add-license
+add-license: addlicense ## Add license header to all .go files in project
+	@find . -name '*.go' -exec $(ADDLICENSE) -f hack/license-header.txt {} +
+
+.PHONY: check-license
+check-license: addlicense ## Check license header presence in all .go files in project
+	@find . -name '*.go' -exec $(ADDLICENSE) -check -c 'IronCore authors' {} +
 
 .PHONY: check
-check: manifests generate addlicense lint test # Generate manifests, code, lint, add licenses, test
+check: manifests generate add-license lint test # Generate manifests, code, lint, add licenses, test
 
 .PHONY: docs
-docs: ## Run go generate to generate API reference documentation.
-	go generate ./...
+docs: gen-crd-api-reference-docs ## Run go generate to generate API reference documentation.
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir ./apis/metal/v1alpha4 -config ./hack/api-reference/template.json -template-dir ./hack/api-reference/template -out-file ./docs/api-reference/metal.md
 
 .PHONY: start-docs
 start-docs: ## Start the local mkdocs based development environment.
@@ -105,10 +105,9 @@ start-docs: ## Start the local mkdocs based development environment.
 clean-docs: ## Remove all local mkdocs Docker images (cleanup).
 	docker container prune --force --filter "label=project=metal_api_documentation"
 
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 .PHONY: test
-test: manifests generate fmt vet ## Run tests.
-	source $(shell pwd)/hack/setup-envtest.sh; VERSION=${KUBE_VERSION} fetch_envtest_tools; VERSION=${KUBE_VERSION} setup_envtest_env; \
+test: envtest
+	@KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
 	KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=600s KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT=600s go test ./... -coverprofile cover.out
 
 ##@ Build
@@ -148,41 +147,105 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
+### AUXILIARY ###
+LOCAL_BIN ?= $(shell pwd)/bin
+$(LOCAL_BIN):
+	mkdir -p $(LOCAL_BIN)
+
+## Tools locations
+ADDLICENSE ?= $(LOCAL_BIN)/addlicense
+CONTROLLER_GEN ?= $(LOCAL_BIN)/controller-gen
+GOLANGCI_LINT ?= $(LOCAL_BIN)/golangci-lint
+GOIMPORTS ?= $(LOCAL_BIN)/goimports
+ENVTEST ?= $(LOCAL_BIN)/setup-envtest
+DEEPCOPY_GEN ?= $(LOCAL_BIN)/deepcopy-gen
+CLIENT_GEN ?= $(LOCAL_BIN)/client-gen
+LISTER_GEN ?= $(LOCAL_BIN)/lister-gen
+INFORMER_GEN ?= $(LOCAL_BIN)/informer-gen
+DEFAULTER_GEN ?= $(LOCAL_BIN)/defaulter-gen
+CONVERSION_GEN ?= $(LOCAL_BIN)/conversion-gen
+OPENAPI_GEN ?= $(LOCAL_BIN)/openapi-gen
+APPLYCONFIGURATION_GEN ?= $(LOCAL_BIN)/applyconfiguration-gen
+MODELS_SCHEMA ?= $(LOCAL_BIN)/models-schema
+VGOPATH ?= $(LOCAL_BIN)/vgopath
+GEN_CRD_API_REFERENCE_DOCS ?= $(LOCAL_BIN)/gen-crd-api-reference-docs
+KUSTOMIZE ?= $(LOCAL_BIN)/kustomize
+
+## Tools versions
+ADDLICENSE_VERSION ?= v1.1.1
+CONTROLLER_GEN_VERSION ?= v0.13.0
+GOLANGCI_LINT_VERSION ?= v1.55.2
+GOIMPORTS_VERSION ?= v0.16.1
+ENVTEST_K8S_VERSION ?= 1.28.3
+CODE_GENERATOR_VERSION ?= v0.28.3
+VGOPATH_VERSION ?= v0.1.3
+MODELS_SCHEMA_VERSION ?= main
+GEN_CRD_API_REFERENCE_DOCS_VERSION ?= v0.3.0
+KUSTOMIZE_VERSION ?= v4.5.4
+
+.PHONY: addlicense
+addlicense: $(ADDLICENSE)
+$(ADDLICENSE): $(LOCAL_BIN)
+	@test -s $(ADDLICENSE) || GOBIN=$(LOCAL_BIN) go install github.com/google/addlicense@$(ADDLICENSE_VERSION)
+
 .PHONY: controller-gen
-controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION))
+controller-gen: $(CONTROLLER_GEN)
+$(CONTROLLER_GEN): $(LOCAL_BIN)
+	@test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_GEN_VERSION) || \
+	GOBIN=$(LOCAL_BIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_GEN_VERSION)
 
-VGOPATH = $(shell pwd)/bin/vgopath
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT)
+$(GOLANGCI_LINT): $(LOCAL_BIN)
+	@test -s $(GOLANGCI_LINT) && $(GOLANGCI_LINT) --version | grep -q $(GOLANGCI_LINT_VERSION) || \
+	GOBIN=$(LOCAL_BIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+
+.PHONY: goimports
+goimports: $(GOIMPORTS)
+$(GOIMPORTS): $(LOCAL_BIN)
+	@test -s $(GOIMPORTS) || GOBIN=$(LOCAL_BIN) go install golang.org/x/tools/cmd/goimports@$(GOIMPORTS_VERSION)
+
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCAL_BIN)
+	@test -s $(ENVTEST) || GOBIN=$(LOCAL_BIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
 .PHONY: vgopath
-vgopath: ## Download vgopath locally if necessary.
-	$(call go-get-tool,$(VGOPATH),github.com/ironcore-dev/vgopath@$(VGOPATH_VERSION))
+vgopath: $(VGOPATH)
+$(VGOPATH): $(LOCAL_BIN)
+	@test -s $(VGOPATH) || GOBIN=$(LOCAL_BIN) go install github.com/ironcore-dev/vgopath@$(VGOPATH_VERSION)
 
-OPENAPI_GEN = $(shell pwd)/bin/openapi-gen
+.PHONY: deepcopy-gen
+deepcopy-gen: $(DEEPCOPY_GEN)
+$(DEEPCOPY_GEN): $(LOCAL_BIN)
+	@test -s $(DEEPCOPY_GEN) || GOBIN=$(LOCAL_BIN) go install k8s.io/code-generator/cmd/deepcopy-gen@$(CODE_GENERATOR_VERSION)
+
 .PHONY: openapi-gen
-openapi-gen: ## Download openapi-gen locally if necessary.
-	$(call go-get-tool,$(OPENAPI_GEN),k8s.io/code-generator/cmd/openapi-gen@$(CODE_GENERATOR_VERSION))
+openapi-gen: $(OPENAPI_GEN)
+$(OPENAPI_GEN): $(LOCAL_BIN)
+	@test -s $(OPENAPI_GEN) || GOBIN=$(LOCAL_BIN) go install k8s.io/code-generator/cmd/openapi-gen@$(CODE_GENERATOR_VERSION)
 
-MODELS_SCHEMA = $(shell pwd)/bin/models-schema
 .PHONY: models-schema
-models-schema: ## Download models-schema locally if necessary.
-	$(call go-get-tool,$(MODELS_SCHEMA),github.com/onmetal/onmetal-api/models-schema@$(MODELS_SCHEMA_VERSION))
+models-schema: $(MODELS_SCHEMA)
+$(MODELS_SCHEMA): $(LOCALBIN)
+	@test -s $(MODELS_SCHEMA) || GOBIN=$(LOCAL_BIN) go install github.com/ironcore-dev/ironcore/models-schema@$(MODELS_SCHEMA_VERSION)
 
-APPLYCONFIGURATION_GEN = $(shell pwd)/bin/applyconfiguration-gen
+.PHONY: gen-crd-api-reference-docs
+gen-crd-api-reference-docs: $(GEN_CRD_API_REFERENCE_DOCS) ## Download gen-crd-api-reference-docs locally if necessary.
+$(GEN_CRD_API_REFERENCE_DOCS): $(LOCAL_BIN)
+	@test -s $(GEN_CRD_API_REFERENCE_DOCS) || GOBIN=$(LOCAL_BIN) go install github.com/ahmetb/gen-crd-api-reference-docs@$(GEN_CRD_API_REFERENCE_DOCS_VERSION)
+
 .PHONY: applyconfiguration-gen
-applyconfiguration-gen: ## Download applyconfiguration-gen locally if necessary.
-	$(call go-get-tool,$(APPLYCONFIGURATION_GEN),k8s.io/code-generator/cmd/applyconfiguration-gen@$(CODE_GENERATOR_VERSION))
+applyconfiguration-gen: $(APPLYCONFIGURATION_GEN) ## Download applyconfiguration-gen locally if necessary.
+$(APPLYCONFIGURATION_GEN): $(LOCALBIN)
+	@test -s $(APPLYCONFIGURATION_GEN) || GOBIN=$(LOCAL_BIN) go install k8s.io/code-generator/cmd/applyconfiguration-gen@$(CODE_GENERATOR_VERSION)
 
-KUSTOMIZE = $(shell pwd)/bin/kustomize
+.PHONY: client-gen
+client-gen: $(CLIENT_GEN) ## Download client-gen locally if necessary.
+$(CLIENT_GEN): $(LOCALBIN)
+	@test -s $(CLIENT_GEN) || GOBIN=$(LOCAL_BIN) go install k8s.io/code-generator/cmd/client-gen@$(CODE_GENERATOR_VERSION)
+
 .PHONY: kustomize
-kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.4)
-
-# go-get-tool will 'go install' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-define go-get-tool
-@[ -f $(1) ] || { \
-set -e ; \
-GOBIN=$(PROJECT_DIR)/bin go install $(2) ; \
-}
-endef
+kustomize: $(KUSTOMIZE)
+$(KUSTOMIZE): $(LOCAL_BIN)
+	@test -s $(KUSTOMIZE) || GOBIN=$(LOCAL_BIN) go install sigs.k8s.io/kustomize/kustomize/v4@$(KUSTOMIZE_VERSION)

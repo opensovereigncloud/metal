@@ -1,18 +1,5 @@
-/*
-Copyright 2021.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and IronCore contributors
+// SPDX-License-Identifier: Apache-2.0
 
 package v1alpha4
 
@@ -420,6 +407,7 @@ type InventoryStatuses struct {
 // +kubebuilder:printcolumn:name="Disks",type=string,JSONPath=`.status.computed.default.blocks.count`,description="Hardware disk count"
 // +kubebuilder:printcolumn:name="Storage",type=string,JSONPath=`.status.computed.default.blocks.capacity`,description="Total amount of disk capacity"
 // +kubebuilder:printcolumn:name="NICs",type=string,JSONPath=`.status.computed.default.nics.count`,description="Total amount of hardware network interfaces"
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +genclient
 
 // Inventory is the Schema for the inventories API.
@@ -432,6 +420,7 @@ type Inventory struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // InventoryList contains a list of Inventory.
 type InventoryList struct {

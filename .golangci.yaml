@@ -1,31 +1,43 @@
 run:
+  concurrency: 4
+  allow-parallel-runners: true
   timeout: 5m
 
 linters:
+  # temporarily disabled linters
+  disable:
+    - funlen
+    - goconst
+    - lll
+
   enable:
-    - ineffassign
-    - misspell
-    - goimports
-    - govet
+    - asciicheck
+    - dogsled
+    - durationcheck
+    - dupl
+    - errcheck
+    - forcetypeassert
+    - gocyclo
+    - godot
     - gofmt
     - goimports
-    - godot
-    - predeclared
-    - unconvert
-    - whitespace
-    - unused
-    - unconvert
-    - dogsled
+    - goprintffuncname
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
     - misspell
+    - nakedret
     - paralleltest
     - prealloc
-    - importas
-    - asciicheck
+    - predeclared
+    - staticcheck
     - stylecheck
-    - durationcheck
+    - typecheck
+    - unconvert
     - unparam
-    - goprintffuncname
-    - forcetypeassert
+    - unused
+    - whitespace
 
 severity:
   default-severity: error
@@ -43,3 +55,18 @@ issues:
     - path: _gen\.go
       linters:
         - typecheck
+    - path: _test\.go
+      linters:
+        - dupl
+        - funlen
+        - lll
+        - goconst
+    - path: track_controller.go
+      linters:
+        - dupl
+    - path: constants
+      linters:
+        - lll
+    - linters:
+        - lll
+      source: "^// [+]kubebuilder"

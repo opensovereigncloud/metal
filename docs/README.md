@@ -20,10 +20,7 @@
 
 ## [API Reference](api-reference/README.md)
 
-* [`benchmark.onemtal.de` API Group](api-reference/benchmark.md)
-* [`inventory.ironcore.dev` API Group](api-reference/inventory.md)
-* [`switch.ironcore.dev` API Group](api-reference/switch.md)
-* [`machine.ironcore.dev` API Group](api-reference/machine.md)
+* [`metal.ironcore.dev` API Group](api-reference/metal.md)
 
 ## Proposals
 

@@ -1,18 +1,5 @@
-/*
-Copyright (c) 2021 T-Systems International GmbH, SAP SE or an SAP affiliate company. All right reserved
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// SPDX-FileCopyrightText: 2023 SAP SE or an SAP affiliate company and IronCore contributors
+// SPDX-License-Identifier: Apache-2.0
 
 package controllers
 
@@ -30,7 +17,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-logr/logr"
-	onmetalimage "github.com/ironcore-dev/ironcore-image"
+	ironcoreimage "github.com/ironcore-dev/ironcore-image"
 	"github.com/ironcore-dev/ironcore-image/oci/remote"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -112,7 +99,7 @@ func (r *IpxeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	if computeMachine.Spec.Image == "" {
-		log.Info("unable to handle ipxe CM, onmetal image url is empty")
+		log.Info("unable to handle ipxe CM, ironcore image url is empty")
 		return ctrl.Result{}, nil
 	}
 
@@ -208,58 +195,58 @@ type ImageDescription struct {
 	CommandLine     string
 }
 
-type OnmetalImageParser struct {
+type IroncoreImageParser struct {
 	Log      logr.Logger
 	Registry *remote.Registry
 }
 
-func (p *OnmetalImageParser) GetDescription(url string) (ImageDescription, error) {
+func (p *IroncoreImageParser) GetDescription(url string) (ImageDescription, error) {
 	var imageDescription ImageDescription
 
-	onmetalImage, err := p.getOnmetalImage(url)
+	ironcoreImage, err := p.getIroncoreImage(url)
 	if err != nil {
-		p.Log.Error(err, "could not get onmetal image")
+		p.Log.Error(err, "could not get ironcore image")
 		return imageDescription, err
 	}
 
-	p.describeImage(&imageDescription, onmetalImage)
+	p.describeImage(&imageDescription, ironcoreImage)
 	return imageDescription, nil
 }
 
-func (p *OnmetalImageParser) describeImage(imageDescription *ImageDescription, onmetalImage *onmetalimage.Image) {
-	if onmetalImage.Kernel != nil {
-		imageDescription.KernelDigest = p.formatDigest(string(onmetalImage.Kernel.Descriptor().Digest))
+func (p *IroncoreImageParser) describeImage(imageDescription *ImageDescription, ironcoreImage *ironcoreimage.Image) {
+	if ironcoreImage.Kernel != nil {
+		imageDescription.KernelDigest = p.formatDigest(string(ironcoreImage.Kernel.Descriptor().Digest))
 	}
 
-	if onmetalImage.InitRAMFs != nil {
-		imageDescription.InitRAMFsDigest = p.formatDigest(string(onmetalImage.InitRAMFs.Descriptor().Digest))
+	if ironcoreImage.InitRAMFs != nil {
+		imageDescription.InitRAMFsDigest = p.formatDigest(string(ironcoreImage.InitRAMFs.Descriptor().Digest))
 	}
 
-	if onmetalImage.RootFS != nil {
-		imageDescription.RootFSDigest = p.formatDigest(string(onmetalImage.RootFS.Descriptor().Digest))
+	if ironcoreImage.RootFS != nil {
+		imageDescription.RootFSDigest = p.formatDigest(string(ironcoreImage.RootFS.Descriptor().Digest))
 	}
 
-	imageDescription.CommandLine = onmetalImage.Config.CommandLine
+	imageDescription.CommandLine = ironcoreImage.Config.CommandLine
 }
 
-func (p *OnmetalImageParser) getOnmetalImage(url string) (*onmetalimage.Image, error) {
+func (p *IroncoreImageParser) getIroncoreImage(url string) (*ironcoreimage.Image, error) {
 	ociImage, err := p.Registry.Resolve(context.Background(), url)
 	if err != nil {
 		p.Log.Error(err, "registry resolving failed")
 		return nil, err
 	}
 
-	onmetalImage, err := onmetalimage.ResolveImage(context.Background(), ociImage)
+	ironcoreImage, err := ironcoreimage.ResolveImage(context.Background(), ociImage)
 	if err != nil {
 		p.Log.Error(err, "image resolving failed")
 		return nil, err
 	}
 
-	return onmetalImage, nil
+	return ironcoreImage, nil
 }
 
 // remove sha256 prefix.
-func (p *OnmetalImageParser) formatDigest(digest string) string {
+func (p *IroncoreImageParser) formatDigest(digest string) string {
 	separatedStrings := strings.Split(digest, ":")
 
 	if len(separatedStrings) > 1 {
