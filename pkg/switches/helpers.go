@@ -32,8 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -453,27 +451,24 @@ func ResultingLabels(
 }
 
 func GetSelectorFromIPAMSpec(
-	obj *metalv1alpha4.NetworkSwitch, spec *metalv1alpha4.IPAMSelectionSpec) (labels.Selector, error) {
-	var err error
-	var selector labels.Selector
+	obj *metalv1alpha4.NetworkSwitch,
+	spec *metalv1alpha4.IPAMSelectionSpec,
+) (*metav1.LabelSelector, error) {
+	result := &metav1.LabelSelector{}
 	if spec != nil {
-		selector, err = metav1.LabelSelectorAsSelector(spec.LabelSelector)
-		if err != nil {
-			return nil, err
-		}
+		result.MatchLabels = spec.LabelSelector.MatchLabels
 		if spec.FieldSelector == nil {
-			return selector, nil
+			return result, nil
 		}
 		ipamLabelFromFieldRef, err := labelFromFieldRef(*obj, spec.FieldSelector)
 		if err != nil {
 			return nil, err
 		}
 		for key, value := range ipamLabelFromFieldRef {
-			req, _ := labels.NewRequirement(key, selection.In, []string{value})
-			selector = selector.Add(*req)
+			result.MatchLabels[key] = value
 		}
 	}
-	return selector, nil
+	return result, nil
 }
 
 func labelFromFieldRef(obj interface{}, src *metalv1alpha4.FieldSelectorSpec) (map[string]string, error) {
@@ -542,10 +537,26 @@ func interfaceToMap(i interface{}) (map[string]interface{}, error) {
 	return m, nil
 }
 
-// func SetState(obj *metalv1alpha4.NetworkSwitch, state, message string) {
-//	obj.SetState(state)
-//	obj.SetMessage(message)
-// }
+func IPAMSelectorMatchLabels(
+	obj *metalv1alpha4.NetworkSwitch,
+	sel *metalv1alpha4.IPAMSelectionSpec,
+	lbl map[string]string,
+) bool {
+	selector, err := GetSelectorFromIPAMSpec(obj, sel)
+	if err != nil {
+		return false
+	}
+	for k, v := range selector.MatchLabels {
+		vv, ok := lbl[k]
+		if !ok {
+			return false
+		}
+		if vv != v {
+			return false
+		}
+	}
+	return true
+}
 
 func CalculateASN(loopbacks []*metalv1alpha4.IPAddressSpec) (uint32, error) {
 	var result uint32 = 0
@@ -743,18 +754,33 @@ func GetTotalAddressesCount(
 	return resource.NewQuantity(counter, resource.DecimalSI)
 }
 
-func AddressFamiliesMatchConfig(ipv4, ipv6 bool, flag int) bool {
+func AddressFamiliesMatchConfig(ipv4, ipv6 bool, flag int) (int, bool) {
 	result := true
+	missedAFFlag := 0
 	if flag == 0 {
-		return false
+		missedAFFlag = ComputeAFFlag(ipv4, ipv6, flag)
+		return missedAFFlag, false
 	}
 	if ipv4 && flag == 2 {
+		missedAFFlag = missedAFFlag | 1
 		result = false
 	}
 	if ipv6 && flag == 1 {
+		missedAFFlag = missedAFFlag | 2
 		result = false
 	}
-	return result
+	return missedAFFlag, result
+}
+
+func ComputeAFFlag(ipv4, ipv6 bool, flag int) int {
+	afFlag := flag
+	if ipv4 {
+		afFlag = afFlag | 1
+	}
+	if ipv6 {
+		afFlag = afFlag | 2
+	}
+	return afFlag
 }
 
 func NeighborIsSwitch(nicData *metalv1alpha4.InterfaceSpec) bool {

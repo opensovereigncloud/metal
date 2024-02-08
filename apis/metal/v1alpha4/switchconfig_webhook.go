@@ -4,6 +4,7 @@
 package v1alpha4
 
 import (
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,14 +42,24 @@ func (in *SwitchConfig) Default() {
 var _ webhook.Validator = &SwitchConfig{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (in *SwitchConfig) ValidateCreate() (warnings admission.Warnings, err error) {
-	// todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
-	return
+func (in *SwitchConfig) ValidateCreate() (admission.Warnings, error) {
+	if in.Spec.IPAM.CarrierSubnets.FieldSelector != nil {
+		return nil, errors.New("field selector is not applicable for carrier subnets")
+	}
+	if in.Spec.IPAM.LoopbackSubnets.FieldSelector != nil {
+		return nil, errors.New("field selector is not applicable for loopback subnets")
+	}
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (in *SwitchConfig) ValidateUpdate(_ runtime.Object) (warnings admission.Warnings, err error) {
-	// todo: validate if label(s) with switch type(s) exist, if type != all in.Spec.Switches is not nil and types in labels match switches selector
+	if in.Spec.IPAM.CarrierSubnets.FieldSelector != nil {
+		return nil, errors.New("field selector is not applicable for carrier subnets")
+	}
+	if in.Spec.IPAM.LoopbackSubnets.FieldSelector != nil {
+		return nil, errors.New("field selector is not applicable for loopback subnets")
+	}
 	return
 }
 

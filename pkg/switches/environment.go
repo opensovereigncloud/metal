@@ -158,7 +158,7 @@ func (in *SwitchEnvironmentSvc) GetLoopbacks(
 			afEnabledFlag = afEnabledFlag | 2
 		}
 	}
-	afOK := AddressFamiliesMatchConfig(true, cfg.Spec.IPAM.AddressFamily.GetIPv6(), afEnabledFlag)
+	_, afOK := AddressFamiliesMatchConfig(true, cfg.Spec.IPAM.AddressFamily.GetIPv6(), afEnabledFlag)
 	if len(loopbacks.Items) == 0 || !afOK {
 		return nil
 	}
@@ -219,7 +219,7 @@ func (in *SwitchEnvironmentSvc) GetSubnets(
 			afEnabledFlag = afEnabledFlag | 2
 		}
 	}
-	afOK := AddressFamiliesMatchConfig(af.GetIPv4(), af.GetIPv6(), afEnabledFlag)
+	_, afOK := AddressFamiliesMatchConfig(af.GetIPv4(), af.GetIPv6(), afEnabledFlag)
 	if len(subnets.Items) == 0 || !afOK {
 		return nil
 	}
@@ -291,10 +291,15 @@ func (in *SwitchEnvironmentSvc) ListIPAMObjects(
 	params *metalv1alpha4.IPAMSelectionSpec,
 	list client.ObjectList,
 ) error {
-	selector, err := GetSelectorFromIPAMSpec(obj, params)
+	labelSelector, err := GetSelectorFromIPAMSpec(obj, params)
 	if err != nil {
 		return err
 	}
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		return err
+	}
+	in.Log.Info("ipam objects lookup", "selector", labelSelector.MatchLabels)
 	opts := &client.ListOptions{
 		LabelSelector: selector,
 		Namespace:     obj.Namespace,

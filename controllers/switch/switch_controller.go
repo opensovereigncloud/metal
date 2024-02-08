@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
+	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,6 +18,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -153,26 +155,39 @@ func (r *SwitchReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithOptions(controller.Options{
 			RecoverPanic: ptr.To(true),
 		}).
-		WithEventFilter(predicate.And(discoverObjectChangesPredicate)).
-		// watches for NetworkSwitch objects required, because switches are
-		// interconnected and changes in configuration of one object
+		// watches for NetworkSwitch objects are required, because switches
+		// are interconnected and changes in configuration of one object
 		// might affect another objects.
 		Watches(&metalv1alpha4.NetworkSwitch{}, &handler.Funcs{
 			UpdateFunc: r.handleSwitchUpdateEvent,
 			DeleteFunc: r.handleSwitchDeleteEvent,
-		}).
-		// watches for SwitchConfig objects required, because
+		}, builder.WithPredicates(discoverObjectChangesPredicate)).
+		// watches for SwitchConfig objects are required, because
 		// NetworkSwitch objects' configuration is based on config defined
 		// in SwitchConfig objects, so changes must be tracked.
 		Watches(&metalv1alpha4.SwitchConfig{}, &handler.Funcs{
 			UpdateFunc: r.handleSwitchConfigUpdateEvent,
-		}).
-		// watches for Inventory objects required, because
+		}, builder.WithPredicates(discoverObjectChangesPredicate)).
+		// watches for Inventory objects are required, because
 		// changes in hardware, especially discovering new
 		// neighbors connected to switch ports must be tracked.
 		Watches(&metalv1alpha4.Inventory{}, &handler.Funcs{
 			CreateFunc: r.handleInventoryCreateEvent,
 			UpdateFunc: r.handleInventoryUpdateEvent,
+		}, builder.WithPredicates(discoverObjectChangesPredicate)).
+		// watches for ipam.IP objects are required to trigger reconciliation
+		// in case related ipam.IP object defining switch's loopback address
+		// was updated or being deleted
+		Watches(&ipamv1alpha1.IP{}, &handler.Funcs{
+			UpdateFunc: r.handleIPUpdateEvent,
+			DeleteFunc: r.handleIPDeleteEvent,
+		}).
+		// watches for ipam.Subnet objects are required to trigger reconciliation
+		// in case related ipam.Subnet object defining switch's south subnet
+		// was updated or being deleted
+		Watches(&ipamv1alpha1.Subnet{}, handler.Funcs{
+			UpdateFunc: r.handleSubnetUpdateEvent,
+			DeleteFunc: r.handleSubnetDeleteEvent,
 		}).
 		Complete(r)
 }
@@ -292,6 +307,124 @@ func (r *SwitchReconciler) handleInventoryUpdateEvent(_ context.Context, e event
 		return
 	}
 	q.Add(reconcile.Request{NamespacedName: client.ObjectKeyFromObject(inventoryNew)})
+}
+
+func (r *SwitchReconciler) handleIPUpdateEvent(ctx context.Context, e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+	r.Log.WithValues("handler", "IPUpdateEvent")
+
+	ip, ok := e.ObjectNew.(*ipamv1alpha1.IP)
+	if !ok {
+		return
+	}
+	if ip.Status.State != ipamv1alpha1.CFinishedIPState {
+		return
+	}
+	switches := r.switchesToEnqueueOnIPAMEvent(ctx, ip)
+	if switches == nil {
+		return
+	}
+	for _, item := range switches.Items {
+		q.Add(reconcile.Request{NamespacedName: item.NamespacedName()})
+	}
+}
+
+func (r *SwitchReconciler) handleIPDeleteEvent(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+	r.Log.WithValues("handler", "IPDeleteEvent")
+	ip, ok := e.Object.(*ipamv1alpha1.IP)
+	if !ok {
+		return
+	}
+	if ip.Status.State != ipamv1alpha1.CFinishedIPState {
+		return
+	}
+	switches := r.switchesToEnqueueOnIPAMEvent(ctx, ip)
+	if switches == nil {
+		return
+	}
+	for _, item := range switches.Items {
+		q.Add(reconcile.Request{NamespacedName: item.NamespacedName()})
+	}
+}
+
+func (r *SwitchReconciler) handleSubnetUpdateEvent(
+	ctx context.Context,
+	e event.UpdateEvent,
+	q workqueue.RateLimitingInterface,
+) {
+	r.Log.WithValues("handler", "SubnetUpdateEvent")
+	subnet, ok := e.ObjectNew.(*ipamv1alpha1.Subnet)
+	if !ok {
+		return
+	}
+	if subnet.Status.State != ipamv1alpha1.CFinishedSubnetState {
+		return
+	}
+	switches := r.switchesToEnqueueOnIPAMEvent(ctx, subnet)
+	if switches == nil {
+		return
+	}
+	for _, item := range switches.Items {
+		q.Add(reconcile.Request{NamespacedName: item.NamespacedName()})
+	}
+}
+
+func (r *SwitchReconciler) handleSubnetDeleteEvent(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+	r.Log.WithValues("handler", "SubnetDeleteEvent")
+	subnet, ok := e.Object.(*ipamv1alpha1.Subnet)
+	if !ok {
+		return
+	}
+	if subnet.Status.State != ipamv1alpha1.CFinishedSubnetState {
+		return
+	}
+	switches := r.switchesToEnqueueOnIPAMEvent(ctx, subnet)
+	if switches == nil {
+		return
+	}
+	for _, item := range switches.Items {
+		q.Add(reconcile.Request{NamespacedName: item.NamespacedName()})
+	}
+}
+
+func (r *SwitchReconciler) switchesToEnqueueOnIPAMEvent(
+	ctx context.Context,
+	obj client.Object,
+) *metalv1alpha4.NetworkSwitchList {
+	_, isIP := obj.(*ipamv1alpha1.IP)
+	_, isSubnet := obj.(*ipamv1alpha1.Subnet)
+
+	result := &metalv1alpha4.NetworkSwitchList{}
+	switches := &metalv1alpha4.NetworkSwitchList{}
+	if err := r.List(ctx, switches); err != nil {
+		r.Log.Error(err, "failed to list NetworkSwitch objects")
+		return nil
+	}
+
+	for _, item := range switches.Items {
+		nsw := item.DeepCopy()
+		if item.Status.ConfigRef.Name == "" {
+			continue
+		}
+		config := &metalv1alpha4.SwitchConfig{}
+		key := types.NamespacedName{Namespace: item.Namespace, Name: item.Status.ConfigRef.Name}
+		if err := r.Get(ctx, key, config); err != nil {
+			r.Log.Error(err, "failed to get SwitchConfig object")
+			continue
+		}
+		var selector *metalv1alpha4.IPAMSelectionSpec
+		switch {
+		case isIP:
+			selector = config.Spec.IPAM.LoopbackAddresses
+		case isSubnet:
+			selector = config.Spec.IPAM.SouthSubnets
+		}
+		if switchespkg.IPAMSelectorMatchLabels(nsw, selector, obj.GetLabels()) {
+			r.Log.Info("enqueueing network switch", "name", nsw.Name)
+			result.Items = append(result.Items, *nsw)
+		}
+	}
+
+	return result
 }
 
 func (r *SwitchReconciler) mapToInventory(ctx context.Context, obj *metalv1alpha4.NetworkSwitch) (bool, error) {

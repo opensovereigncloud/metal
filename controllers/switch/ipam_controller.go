@@ -21,11 +21,16 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	"github.com/ironcore-dev/metal/pkg/constants"
@@ -161,12 +166,84 @@ func (r *IPAMReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&metalv1alpha4.NetworkSwitch{}).
+		For(&metalv1alpha4.NetworkSwitch{}, builder.WithPredicates(labelPredicate)).
 		WithOptions(controller.Options{
 			RecoverPanic: ptr.To(true),
 		}).
-		WithEventFilter(predicate.And(labelPredicate)).
+		// watches for ipam.Subnet objects are required to trigger reconciliation
+		// in case related ipam.Subnet object defining switch's loopbacks or carrier
+		// subnet was updated or being deleted
+		Watches(&ipamv1alpha1.Subnet{}, handler.Funcs{
+			UpdateFunc: r.handleSubnetUpdateEvent,
+			DeleteFunc: r.handleSubnetDeleteEvent,
+		}).
 		Complete(r)
+}
+
+func (r *IPAMReconciler) handleSubnetUpdateEvent(
+	ctx context.Context,
+	e event.UpdateEvent,
+	q workqueue.RateLimitingInterface,
+) {
+	r.Log.WithValues("handler", "SubnetUpdateEvent")
+	subnet, ok := e.ObjectNew.(*ipamv1alpha1.Subnet)
+	if !ok {
+		return
+	}
+	if subnet.Status.State != ipamv1alpha1.CFinishedSubnetState {
+		return
+	}
+	switches := r.switchesToEnqueueOnSubnetEvent(ctx, subnet)
+	if switches == nil {
+		return
+	}
+	for _, item := range switches.Items {
+		q.Add(reconcile.Request{NamespacedName: item.NamespacedName()})
+	}
+}
+
+func (r *IPAMReconciler) handleSubnetDeleteEvent(ctx context.Context, e event.DeleteEvent, q workqueue.RateLimitingInterface) {
+	r.Log.WithValues("handler", "SubnetDeleteEvent")
+	subnet, ok := e.Object.(*ipamv1alpha1.Subnet)
+	if !ok {
+		return
+	}
+	if subnet.Status.State != ipamv1alpha1.CFinishedSubnetState {
+		return
+	}
+	switches := r.switchesToEnqueueOnSubnetEvent(ctx, subnet)
+	if switches == nil {
+		return
+	}
+	for _, item := range switches.Items {
+		q.Add(reconcile.Request{NamespacedName: item.NamespacedName()})
+	}
+}
+
+func (r *IPAMReconciler) switchesToEnqueueOnSubnetEvent(
+	ctx context.Context,
+	subnet *ipamv1alpha1.Subnet,
+) *metalv1alpha4.NetworkSwitchList {
+	switches := &metalv1alpha4.NetworkSwitchList{}
+	if err := r.List(ctx, switches); err != nil {
+		r.Log.Error(err, "failed to list NetworkSwitch objects")
+		return nil
+	}
+	switchConfigs := &metalv1alpha4.SwitchConfigList{}
+	if err := r.List(ctx, switchConfigs); err != nil {
+		r.Log.Error(err, "failed to list SwitchConfig objects")
+		return nil
+	}
+	for _, item := range switchConfigs.Items {
+		switch {
+		case switchespkg.IPAMSelectorMatchLabels(nil, item.Spec.IPAM.CarrierSubnets, subnet.Labels):
+			return switches
+		case switchespkg.IPAMSelectorMatchLabels(nil, item.Spec.IPAM.LoopbackSubnets, subnet.Labels):
+			return switches
+		}
+	}
+
+	return nil
 }
 
 func processLoopbacks(
@@ -184,11 +261,12 @@ func processLoopbacks(
 	if err := svc.ListIPAMObjects(ctx, obj, params, loopbacks); err != nil {
 		return err
 	}
-	targetAF := cfg.Spec.IPAM.AddressFamily
-	afEnabledFlag := existingLoopbacksAddressFamilies(loopbacks, targetAF)
-	if !switchespkg.AddressFamiliesMatchConfig(true, targetAF.GetIPv6(), afEnabledFlag) {
+	expectedAF := cfg.Spec.IPAM.AddressFamily
+	existingAFFlag := existingLoopbacksAddressFamilies(loopbacks, expectedAF)
+	if missedAFFlag, ok := switchespkg.AddressFamiliesMatchConfig(
+		true, expectedAF.GetIPv6(), existingAFFlag); !ok {
 		svc.Log.Info("discrepancy between required and existing IP objects in part of address families")
-		created, err := createIPs(ctx, obj, svc, afEnabledFlag)
+		created, err := createIPs(ctx, obj, svc, missedAFFlag)
 		if err != nil {
 			return err
 		}
@@ -210,12 +288,8 @@ func existingLoopbacksAddressFamilies(
 		if !af.GetIPv6() && item.Status.Reserved.Net.Is6() {
 			continue
 		}
-		switch {
-		case item.Status.Reserved.Net.Is4():
-			afEnabledFlag = afEnabledFlag | 1
-		case item.Status.Reserved.Net.Is6():
-			afEnabledFlag = afEnabledFlag | 2
-		}
+		afEnabledFlag = switchespkg.ComputeAFFlag(
+			item.Status.Reserved.Net.Is4(), item.Status.Reserved.Net.Is6(), afEnabledFlag)
 	}
 	return afEnabledFlag
 }
@@ -311,11 +385,12 @@ func processSouthSubnets(
 	if err := svc.ListIPAMObjects(ctx, obj, params, subnets); err != nil {
 		return err
 	}
-	targetAF := cfg.Spec.IPAM.AddressFamily
-	afEnabledFlag := existingSouthSubnetsAddressFamilies(obj, subnets, targetAF)
-	if !switchespkg.AddressFamiliesMatchConfig(targetAF.GetIPv4(), targetAF.GetIPv6(), afEnabledFlag) {
+	expectedAF := cfg.Spec.IPAM.AddressFamily
+	existingAFFlag := existingSouthSubnetsAddressFamilies(obj, subnets, expectedAF)
+	if missedAFFlag, ok := switchespkg.AddressFamiliesMatchConfig(
+		expectedAF.GetIPv4(), expectedAF.GetIPv6(), existingAFFlag); !ok {
 		svc.Log.Info("discrepancy between required and existing Subnet objects in part of address families")
-		created, err := createSubnets(ctx, obj, svc, afEnabledFlag)
+		created, err := createSubnets(ctx, obj, svc, missedAFFlag)
 		if err != nil {
 			return err
 		}
@@ -342,12 +417,8 @@ func existingSouthSubnetsAddressFamilies(
 		if requiredCapacity.Cmp(item.Status.Capacity) >= 0 {
 			continue
 		}
-		switch item.Status.Type {
-		case ipamv1alpha1.CIPv4SubnetType:
-			afEnabledFlag = afEnabledFlag | 1
-		case ipamv1alpha1.CIPv6SubnetType:
-			afEnabledFlag = afEnabledFlag | 2
-		}
+		afEnabledFlag = switchespkg.ComputeAFFlag(
+			item.Status.Reserved.IsIPv4(), item.Status.Reserved.IsIPv6(), afEnabledFlag)
 	}
 	return afEnabledFlag
 }

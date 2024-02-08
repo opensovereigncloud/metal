@@ -181,24 +181,6 @@ func startReconcilers(
 		setupLog.Error(err, "unable to create controller", "controller", "NetworkSwitch-IPAM")
 		os.Exit(1)
 	}
-	if err = (&switchcontroller.IPTracker{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("IPTracker"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("IPTracker"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "IPTracker")
-		os.Exit(1)
-	}
-	if err = (&switchcontroller.SubnetTracker{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("SubnetTracker"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("SubnetTracker"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SubnetTracker")
-		os.Exit(1)
-	}
 
 	if err = (&inventorycontrollers.InventoryReconciler{
 		Client: mgr.GetClient(),

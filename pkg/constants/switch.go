@@ -3,7 +3,7 @@
 
 package constants
 
-const APIVersion string = "v1beta1"
+const APIVersion string = "v1alpha4"
 
 const (
 	FECNone string = "none"
