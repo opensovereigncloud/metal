@@ -479,20 +479,17 @@ func (s *GRPCServer) Status(ctx context.Context, _ *irimachinev1alpha1.StatusReq
 					return nil, internalError(ctxx, fmt.Errorf("cannot get machine class: %w", err))
 				}
 
-				var cpu, mem int64
-				cpu, ok = machineClass.Capabilities.CPU().AsInt64()
-				if !ok {
-					cpu = 0
-				}
+				cpum := machineClass.Capabilities.CPU().MilliValue()
+				var mem int64
 				mem, ok = machineClass.Capabilities.Memory().AsInt64()
-				if !ok || mem < 0 {
+				if !ok {
 					mem = 0
 				}
 				c = &irimachinev1alpha1.MachineClassStatus{
 					MachineClass: &irimachinev1alpha1.MachineClass{
 						Name: sz,
 						Capabilities: &irimachinev1alpha1.MachineClassCapabilities{
-							CpuMillis:   cpu,
+							CpuMillis:   cpum,
 							MemoryBytes: mem,
 						},
 					},
