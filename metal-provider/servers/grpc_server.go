@@ -13,8 +13,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1apply "k8s.io/client-go/applyconfigurations/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -148,20 +150,40 @@ func (s *GRPCServer) ListMachines(ctx context.Context, req *irimachinev1alpha1.L
 
 	resMachines := make([]*irimachinev1alpha1.Machine, 0, len(machines))
 	for _, m := range machines {
+		var bootMap v1.ConfigMap
+		err := s.Get(ctx, client.ObjectKey{Namespace: m.Namespace, Name: fmt.Sprintf("ipxe-%s", m.Name)}, &bootMap)
+		if err != nil {
+			_ = internalError(ctx, fmt.Errorf("reserved machine has no boot configmap: %w", err))
+			continue
+		}
+		image, ok := bootMap.Data["image"]
+		if !ok {
+			_ = internalError(ctx, fmt.Errorf("reserved machine has no image in boot configmap"))
+			continue
+		}
+		var ignition []byte
+		ignition, ok = bootMap.BinaryData["ignition-customer"]
+		if !ok {
+			_ = internalError(ctx, fmt.Errorf("reserved machine has no ignition-customer in boot configmap"))
+			continue
+		}
+
 		resMachines = append(resMachines, &irimachinev1alpha1.Machine{
 			Metadata: kMetaToMeta(&m.ObjectMeta),
 			Spec: &irimachinev1alpha1.MachineSpec{
 				// TODO: Power
-				// TODO: Image
-				Class: m.Status.Reservation.Class,
-				// TODO: Ignition
+				Image: &irimachinev1alpha1.ImageSpec{
+					Image: image,
+				},
+				Class:        m.Status.Reservation.Class,
+				IgnitionData: ignition,
 				// TODO: Volumes
 				// TODO: Network
 			},
 			Status: &irimachinev1alpha1.MachineStatus{
 				// TODO: ObservedGeneration
-				State: irimachinev1alpha1.MachineState_MACHINE_PENDING,
-				// TODO: Image
+				State:    irimachinev1alpha1.MachineState_MACHINE_PENDING,
+				ImageRef: image,
 				// TODO: Volumes
 				// TODO: Network
 			},
@@ -191,26 +213,20 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 	}
 
 	reqSpec := reqMachine.GetSpec()
-	if reqSpec.GetImage().GetImage() != "" {
-		log.Error(ctx, status.Errorf(codes.Unimplemented, "image is not supported yet"))
-	}
-	if len(reqSpec.GetIgnitionData()) != 0 {
-		log.Error(ctx, status.Errorf(codes.Unimplemented, "ignition_data is not supported yet"))
-	}
 	if len(reqSpec.GetVolumes()) != 0 {
 		log.Error(ctx, status.Errorf(codes.Unimplemented, "volumes are not supported yet"))
 	}
 	if len(reqSpec.GetNetworkInterfaces()) != 0 {
 		log.Error(ctx, status.Errorf(codes.Unimplemented, "network_interfaces are not supported yet"))
 	}
-
 	class := reqSpec.GetClass()
 	if class == "" {
 		err := status.Errorf(codes.InvalidArgument, "machine class must be set")
 		log.Error(ctx, err)
 		return nil, err
 	}
-	ctx = log.WithValues(ctx, "class", class)
+	image := reqSpec.GetImage().GetImage()
+	ctx = log.WithValues(ctx, "class", class, "image", image)
 	log.Debug(ctx, "Getting machine class")
 	var machineClass onmetalcomputev1alpha1.MachineClass
 	err := s.Get(ctx, client.ObjectKey{Name: class}, &machineClass)
@@ -259,7 +275,7 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 		},
 	}
 	log.Debug(ctx, "Applying machine status")
-	err = s.Client.Status().Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
+	err = s.Client.Status().Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-provider.ironcore.dev"), client.ForceOwnership)
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("could not apply machine status: %w", err))
 	}
@@ -285,10 +301,48 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 			},
 		}
 		log.Debug(ctx, "Applying machine annotations and labels")
-		err = s.Client.Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
+		err = s.Patch(ctx, machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-provider.ironcore.dev"), client.ForceOwnership)
 		if err != nil {
 			return nil, internalError(ctx, fmt.Errorf("could not apply machine: %w", err))
 		}
+	}
+
+	bootMapData := map[string]string{
+		"image": image,
+	}
+	bootMapBinaryData := map[string][]byte{
+		"ignition-customer": reqSpec.GetIgnitionData(),
+	}
+	bootMapApply := v1apply.ConfigMap(fmt.Sprintf("ipxe-%s", machine.Name), machine.Namespace).WithData(bootMapData).WithBinaryData(bootMapBinaryData)
+	bootMap := &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: *bootMapApply.APIVersion,
+			Kind:       *bootMapApply.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: *bootMapApply.Namespace,
+			Name:      *bootMapApply.Name,
+		},
+	}
+	err = s.Delete(ctx, bootMap)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return nil, internalError(ctx, fmt.Errorf("could not delete boot configmap: %w", err))
+	}
+
+	bootMap = &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: *bootMapApply.APIVersion,
+			Kind:       *bootMapApply.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: *bootMapApply.Namespace,
+			Name:      *bootMapApply.Name,
+		},
+	}
+	log.Debug(ctx, "Applying boot configmap")
+	err = s.Patch(ctx, bootMap, patch.ApplyConfiguration(bootMapApply), client.FieldOwner("metal-provider.ironcore.dev"), client.ForceOwnership)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return nil, internalError(ctx, fmt.Errorf("could not apply boot configmap: %w", err))
 	}
 
 	// TODO: Power
@@ -299,16 +353,16 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 			Metadata: kMetaToMeta(&machine.ObjectMeta),
 			Spec: &irimachinev1alpha1.MachineSpec{
 				// TODO: Power
-				// TODO: Image
-				Class: class,
-				// TODO: Ignition
+				Image:        reqSpec.Image,
+				Class:        reqSpec.Class,
+				IgnitionData: reqSpec.IgnitionData,
 				// TODO: Volumes
 				// TODO: Network
 			},
 			Status: &irimachinev1alpha1.MachineStatus{
 				// TODO: ObservedGeneration
-				State: irimachinev1alpha1.MachineState_MACHINE_PENDING,
-				// TODO: Image
+				State:    irimachinev1alpha1.MachineState_MACHINE_PENDING,
+				ImageRef: image,
 				// TODO: Volumes
 				// TODO: Network
 			},
@@ -348,6 +402,22 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 
 	// TODO: Power
 
+	bootMapApply := v1apply.ConfigMap(fmt.Sprintf("ipxe-%s", machine.Name), machine.Namespace)
+	bootMap := &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: *bootMapApply.APIVersion,
+			Kind:       *bootMapApply.Kind,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: *bootMapApply.Namespace,
+			Name:      *bootMapApply.Name,
+		},
+	}
+	err = s.Delete(ctx, bootMap)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return nil, internalError(ctx, fmt.Errorf("could not delete boot configmap: %w", err))
+	}
+
 	machineApply := metalv1alpha4apply.Machine(machine.Name, machine.Namespace)
 	annotations, moda := overlayOntoPrefixed("iri-", map[string]string{}, machine.Annotations)
 	if moda {
@@ -369,7 +439,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 			},
 		}
 		log.Debug(ctx, "Applying machine annotations and labels")
-		err = s.Client.Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
+		err = s.Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-provider.ironcore.dev"), client.ForceOwnership)
 		if err != nil {
 			return nil, internalError(ctx, fmt.Errorf("could not apply machine: %w", err))
 		}
@@ -387,7 +457,7 @@ func (s *GRPCServer) DeleteMachine(ctx context.Context, req *irimachinev1alpha1.
 		},
 	}
 	log.Debug(ctx, "Applying machine status")
-	err = s.Client.Status().Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal.ironcore.dev/metal-provider"), client.ForceOwnership)
+	err = s.Client.Status().Patch(ctx, &machine, patch.ApplyConfiguration(machineApply), client.FieldOwner("metal-provider.ironcore.dev"), client.ForceOwnership)
 	if err != nil {
 		return nil, internalError(ctx, fmt.Errorf("could not apply machine status: %w", err))
 	}
