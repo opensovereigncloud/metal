@@ -1,0 +1,39 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: metal
+Upstream-Contact: IronCore authors <ospo@sap.com>
+Source: https://github.com/ironcore-dev/metal
+
+# --------------------------------------------------
+# source code
+
+Files:
+  .dockerignore
+  .github/*
+  .gitignore
+  .golangci.yaml
+  CODE_OF_CONDUCT.md
+  Dockerfile
+  Makefile
+  PROJECT
+  README.md
+  applyconfiguration/*
+  config/*
+  client/openapi/api_violations.report
+  go.mod
+  go.sum
+  hack/*
+  metal-provider/Dockerfile
+  metal-provider/config/*
+  test_samples/*
+  usecase/*
+Copyright: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+License: Apache-2.0
+
+# --------------------------------------------------
+# documentation
+
+Files:
+  docs/*
+  README.md
+Copyright: 2024 SAP SE or an SAP affiliate company and IronCore contributors
+License: Apache-2.0
