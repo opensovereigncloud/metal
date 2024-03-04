@@ -12,7 +12,7 @@ apiVersion: ipam.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: ipv4-cidr-subnet-sample
-  namespace: onmetal
+  namespace: metal
   labels:
     "loopback": "loopback"
 spec:
@@ -34,7 +34,7 @@ apiVersion: ipam.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: ipv6-cidr-subnet-sample
-  namespace: onmetal
+  namespace: metal
   labels:
     "loopback": "loopback"
 spec:

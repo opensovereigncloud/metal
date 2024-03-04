@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/util/yaml"
 

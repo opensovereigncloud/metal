@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 

@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	usecase "github.com/ironcore-dev/metal/usecase/onboarding"
 	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
-	oob "github.com/onmetal/oob-operator/api/v1alpha1"
+	oob "github.com/ironcore-dev/oob/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -31,10 +31,10 @@ func NewInventoryOnboardingReconciler(
 	}
 }
 
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips/status,verbs=get
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets/status,verbs=get
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InventoryOnboardingReconciler) SetupWithManager(

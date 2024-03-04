@@ -1,8 +1,8 @@
-apiVersion: ipam.onmetal.de/v1alpha1
+apiVersion: ipam.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: ipv4-cidr-subnet-sample
-  namespace: onmetal
+  namespace: metal
   labels:
     "loopback": "loopback-v4"
 spec:

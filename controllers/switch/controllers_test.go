@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
 

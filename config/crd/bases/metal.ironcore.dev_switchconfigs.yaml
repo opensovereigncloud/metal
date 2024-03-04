@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: switchconfigs.metal.ironcore.dev
 spec:
   group: metal.ironcore.dev
@@ -22,14 +22,19 @@ spec:
         description: SwitchConfig is the Schema for switch config API.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -57,17 +62,16 @@ spec:
                         type: boolean
                     type: object
                   carrierSubnets:
-                    description: CarrierSubnets contains label selector for Subnet
-                      object where switch's south subnet should be reserved
+                    description: |-
+                      CarrierSubnets contains label selector for Subnet object where switch's south subnet
+                      should be reserved
                     properties:
                       fieldSelector:
-                        description: FieldSelector contains label key and field path
-                          where to get label value for search. If FieldSelector is
-                          used as part of IPAM configuration in SwitchConfig object
-                          it will reference to the field path in related NetworkSwitch
-                          object. If FieldSelector is used as part of IPAM configuration
-                          in NetworkSwitch object, it will reference to the field
-                          path in the same object
+                        description: |-
+                          FieldSelector contains label key and field path where to get label value for search.
+                          If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will
+                          reference to the field path in related NetworkSwitch object. If FieldSelector is used as part of IPAM
+                          configuration in NetworkSwitch object, it will reference to the field path in the same object
                         properties:
                           fieldRef:
                             description: FieldRef contains reference to the field
@@ -97,8 +101,8 @@ spec:
                             description: matchExpressions is a list of label selector
                               requirements. The requirements are ANDed.
                             items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
                                 relates the key and values.
                               properties:
                                 key:
@@ -106,17 +110,16 @@ spec:
                                     applies to.
                                   type: string
                                 operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
                                   type: string
                                 values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
                                   items:
                                     type: string
                                   type: array
@@ -128,11 +131,10 @@ spec:
                           matchLabels:
                             additionalProperties:
                               type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
@@ -142,13 +144,11 @@ spec:
                       which should be referenced as switch's loopback addresses
                     properties:
                       fieldSelector:
-                        description: FieldSelector contains label key and field path
-                          where to get label value for search. If FieldSelector is
-                          used as part of IPAM configuration in SwitchConfig object
-                          it will reference to the field path in related NetworkSwitch
-                          object. If FieldSelector is used as part of IPAM configuration
-                          in NetworkSwitch object, it will reference to the field
-                          path in the same object
+                        description: |-
+                          FieldSelector contains label key and field path where to get label value for search.
+                          If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will
+                          reference to the field path in related NetworkSwitch object. If FieldSelector is used as part of IPAM
+                          configuration in NetworkSwitch object, it will reference to the field path in the same object
                         properties:
                           fieldRef:
                             description: FieldRef contains reference to the field
@@ -178,8 +178,8 @@ spec:
                             description: matchExpressions is a list of label selector
                               requirements. The requirements are ANDed.
                             items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
                                 relates the key and values.
                               properties:
                                 key:
@@ -187,17 +187,16 @@ spec:
                                     applies to.
                                   type: string
                                 operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
                                   type: string
                                 values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
                                   items:
                                     type: string
                                   type: array
@@ -209,27 +208,25 @@ spec:
                           matchLabels:
                             additionalProperties:
                               type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
                     type: object
                   loopbackSubnets:
-                    description: LoopbackSubnets contains label selector for Subnet
-                      object where switch's loopback IP addresses should be reserved
+                    description: |-
+                      LoopbackSubnets contains label selector for Subnet object where switch's loopback
+                      IP addresses should be reserved
                     properties:
                       fieldSelector:
-                        description: FieldSelector contains label key and field path
-                          where to get label value for search. If FieldSelector is
-                          used as part of IPAM configuration in SwitchConfig object
-                          it will reference to the field path in related NetworkSwitch
-                          object. If FieldSelector is used as part of IPAM configuration
-                          in NetworkSwitch object, it will reference to the field
-                          path in the same object
+                        description: |-
+                          FieldSelector contains label key and field path where to get label value for search.
+                          If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will
+                          reference to the field path in related NetworkSwitch object. If FieldSelector is used as part of IPAM
+                          configuration in NetworkSwitch object, it will reference to the field path in the same object
                         properties:
                           fieldRef:
                             description: FieldRef contains reference to the field
@@ -259,8 +256,8 @@ spec:
                             description: matchExpressions is a list of label selector
                               requirements. The requirements are ANDed.
                             items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
                                 relates the key and values.
                               properties:
                                 key:
@@ -268,17 +265,16 @@ spec:
                                     applies to.
                                   type: string
                                 operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
                                   type: string
                                 values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
                                   items:
                                     type: string
                                   type: array
@@ -290,11 +286,10 @@ spec:
                           matchLabels:
                             additionalProperties:
                               type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
@@ -304,13 +299,11 @@ spec:
                       which will be assigned to switch
                     properties:
                       fieldSelector:
-                        description: FieldSelector contains label key and field path
-                          where to get label value for search. If FieldSelector is
-                          used as part of IPAM configuration in SwitchConfig object
-                          it will reference to the field path in related NetworkSwitch
-                          object. If FieldSelector is used as part of IPAM configuration
-                          in NetworkSwitch object, it will reference to the field
-                          path in the same object
+                        description: |-
+                          FieldSelector contains label key and field path where to get label value for search.
+                          If FieldSelector is used as part of IPAM configuration in SwitchConfig object it will
+                          reference to the field path in related NetworkSwitch object. If FieldSelector is used as part of IPAM
+                          configuration in NetworkSwitch object, it will reference to the field path in the same object
                         properties:
                           fieldRef:
                             description: FieldRef contains reference to the field
@@ -340,8 +333,8 @@ spec:
                             description: matchExpressions is a list of label selector
                               requirements. The requirements are ANDed.
                             items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
+                              description: |-
+                                A label selector requirement is a selector that contains values, a key, and an operator that
                                 relates the key and values.
                               properties:
                                 key:
@@ -349,17 +342,16 @@ spec:
                                     applies to.
                                   type: string
                                 operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
+                                  description: |-
+                                    operator represents a key's relationship to a set of values.
+                                    Valid operators are In, NotIn, Exists and DoesNotExist.
                                   type: string
                                 values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
+                                  description: |-
+                                    values is an array of string values. If the operator is In or NotIn,
+                                    the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                    the values array must be empty. This array is replaced during a strategic
+                                    merge patch.
                                   items:
                                     type: string
                                   type: array
@@ -371,11 +363,10 @@ spec:
                           matchLabels:
                             additionalProperties:
                               type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
+                            description: |-
+                              matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                              map is equivalent to an element of matchExpressions, whose key field is "key", the
+                              operator is "In", and the values array contains only "value". The requirements are ANDed.
                             type: object
                         type: object
                         x-kubernetes-map-type: atomic
@@ -386,8 +377,9 @@ spec:
                 - loopbackSubnets
                 type: object
               portsDefaults:
-                description: PortsDefaults contains switch port parameters which will
-                  be applied to all ports of the switches which fit selector conditions
+                description: |-
+                  PortsDefaults contains switch port parameters which will be applied to all ports of the switches
+                  which fit selector conditions
                 properties:
                   fec:
                     description: FEC refers to forward error correction method which
@@ -436,8 +428,10 @@ spec:
                   object which contains go-template for FRR config
                 properties:
                   name:
-                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
@@ -449,24 +443,24 @@ spec:
                     description: matchExpressions is a list of label selector requirements.
                       The requirements are ANDed.
                     items:
-                      description: A label selector requirement is a selector that
-                        contains values, a key, and an operator that relates the key
-                        and values.
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
                       properties:
                         key:
                           description: key is the label key that the selector applies
                             to.
                           type: string
                         operator:
-                          description: operator represents a key's relationship to
-                            a set of values. Valid operators are In, NotIn, Exists
-                            and DoesNotExist.
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
                           type: string
                         values:
-                          description: values is an array of string values. If the
-                            operator is In or NotIn, the values array must be non-empty.
-                            If the operator is Exists or DoesNotExist, the values
-                            array must be empty. This array is replaced during a strategic
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
                             merge patch.
                           items:
                             type: string
@@ -479,11 +473,10 @@ spec:
                   matchLabels:
                     additionalProperties:
                       type: string
-                    description: matchLabels is a map of {key,value} pairs. A single
-                      {key,value} in the matchLabels map is equivalent to an element
-                      of matchExpressions, whose key field is "key", the operator
-                      is "In", and the values array contains only "value". The requirements
-                      are ANDed.
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic

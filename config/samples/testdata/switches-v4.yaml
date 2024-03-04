@@ -1,8 +1,8 @@
-apiVersion: ipam.onmetal.de/v1alpha1
+apiVersion: ipam.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: switches-v4
-  namespace: onmetal
+  namespace: metal
 spec:
   capacity: 255
   parentSubnet:

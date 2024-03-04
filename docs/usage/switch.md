@@ -59,7 +59,7 @@ Here is an example of `Size` object:
     kind: SwitchConfig
     metadata:
       name: spines-config
-      namespace: onmetal
+      namespace: metal
       labels:
         metal.ironcore.dev/layer: "0"
     spec:
@@ -109,7 +109,7 @@ Here is an example of `Size` object:
 - `Subnet`: these objects are required to be assigned to switches as their subnets. Switch ports' IP addresses are reserved in these subnets;
 - `IP`: these objects require to be assigned to switches as they're loopback addresses. It is also required for switch to have IPv4 loopback address, since it is used to compute switch's ASN for BGP routing;
 
-To learn more about IPAM objects, please refer to the [documentation](https://github.com/onmetal/ipam/blob/main/docs/usage.md)
+To learn more about IPAM objects, please refer to the [documentation](https://github.com/ironcore-dev/ipam/blob/main/docs/usage.md)
 
 > :heavy_exclamation_mark: To be consumed by the switch-controller, `Subnet` and `IP` objects have to have labels which match to the selectors defined in corresponding `.spec.ipam` section of `Switch` and `SwitchConfig` objects.
 

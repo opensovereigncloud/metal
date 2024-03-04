@@ -142,7 +142,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ipam.onmetal.de
+  - ipam.ironcore.dev
   resources:
   - ips
   verbs:
@@ -155,13 +155,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ipam.onmetal.de
+  - ipam.ironcore.dev
   resources:
   - ips/status
   verbs:
   - get
 - apiGroups:
-  - ipam.onmetal.de
+  - ipam.ironcore.dev
   resources:
   - subnets
   verbs:
@@ -174,11 +174,37 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ipam.onmetal.de
+  - ipam.ironcore.dev
   resources:
   - subnets/status
   verbs:
   - get
+- apiGroups:
+  - ironcore.dev
+  resources:
+  - oobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ironcore.dev
+  resources:
+  - oobs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ironcore.dev
+  resources:
+  - oobs/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - metal.ironcore.dev
   resources:
@@ -371,32 +397,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - onmetal.de
-  resources:
-  - oobs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - onmetal.de
-  resources:
-  - oobs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - onmetal.de
-  resources:
-  - oobs/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

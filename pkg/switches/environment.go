@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"

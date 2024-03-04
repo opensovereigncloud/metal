@@ -2,7 +2,7 @@ apiVersion: metal.ironcore.dev/v1alpha4
 kind: Inventory
 metadata:
   name: a967954c-3475-11b2-a85c-84d8b4f8cd2d
-  namespace: onmetal
+  namespace: metal
   labels:
     metal.ironcore.dev/size-m5.metal: "true"
     metal.ironcore.dev/size-machine: "true"

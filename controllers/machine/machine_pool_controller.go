@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	MachineFinalizer                  = "metal-api.onmetal.de/machine-finalizer"
-	MachinePoolOOBNameAnnotation      = "metal-api.onmetal.de/oob-name"
-	MachinePoolOOBNamespaceAnnotation = "metal-api.onmetal.de/oob-namespace"
+	MachineFinalizer                  = "metal.ironcore.dev/machine-finalizer"
+	MachinePoolOOBNameAnnotation      = "metal.ironcore.dev/oob-name"
+	MachinePoolOOBNamespaceAnnotation = "metal.ironcore.dev/oob-namespace"
 )
 
 var OOBServiceAddr = poolv1alpha1.MachinePoolAddress{

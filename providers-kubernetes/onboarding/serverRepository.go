@@ -8,7 +8,7 @@ import (
 
 	domain "github.com/ironcore-dev/metal/domain/infrastructure"
 	"github.com/ironcore-dev/metal/usecase/onboarding/dto"
-	oob "github.com/onmetal/oob-operator/api/v1alpha1"
+	oob "github.com/ironcore-dev/oob/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

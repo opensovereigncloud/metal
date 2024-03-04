@@ -8,12 +8,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
+	switchespkg "github.com/ironcore-dev/metal/pkg/switches"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	controllers "github.com/ironcore-dev/metal/controllers/machine"
 
-	oobonmetal "github.com/onmetal/oob-operator/api/v1alpha1"
+	oobv1alpha1 "github.com/ironcore-dev/oob/api/v1alpha1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -48,26 +50,36 @@ func TestMachineController(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	var (
+		metalCRDPath, oobCRDPath, ipamCRDPath string
+		err                                   error
+	)
+
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 	By("bootstrapping test environment")
 
+	metalCRDPath = filepath.Join("..", "..", "..", "config", "crd", "bases")
+	ipamCRDPath, err = switchespkg.GetCrdPath(ipamv1alpha1.Subnet{}, filepath.Join("..", "..", "..", "go.mod"))
+	Expect(err).ToNot(HaveOccurred())
+	oobCRDPath, err = switchespkg.GetCrdPath(oobv1alpha1.OOB{}, filepath.Join("..", "..", "..", "go.mod"))
+	Expect(err).ToNot(HaveOccurred())
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "..", "..", "config", "crd", "additional"),
-			filepath.Join("..", "..", "..", "config", "crd", "bases"),
+			metalCRDPath,
+			oobCRDPath,
+			ipamCRDPath,
 		},
 		ErrorIfCRDPathMissing: true,
 	}
 	ctx, cancel = context.WithCancel(context.TODO())
 
-	oobonmetal.SchemeBuilder.Register(&oobonmetal.OOB{})
+	oobv1alpha1.SchemeBuilder.Register(&oobv1alpha1.OOB{})
 
-	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	Expect(oobonmetal.AddToScheme(scheme)).NotTo(HaveOccurred())
+	Expect(oobv1alpha1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(corev1.AddToScheme(scheme)).NotTo(HaveOccurred())
 	Expect(metalv1alpha4.AddToScheme(scheme)).NotTo(HaveOccurred())
 

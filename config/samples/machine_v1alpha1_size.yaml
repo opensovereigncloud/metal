@@ -2,7 +2,7 @@ apiVersion: metal.ironcore.dev/v1alpha4
 kind: Size
 metadata:
   name: m5.metal
-  namespace: onmetal
+  namespace: metal
 spec:
   constraints:
     - path: "spec.system.manufacturer"

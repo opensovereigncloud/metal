@@ -23,8 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	onmetalcomputev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
-
+	computev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"
 	"github.com/ironcore-dev/metal/metal-provider/internal/log"
 	"github.com/ironcore-dev/metal/metal-provider/servers"
@@ -142,7 +141,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	err = onmetalcomputev1alpha1.AddToScheme(scheme)
+	err = computev1alpha1.AddToScheme(scheme)
 	if err != nil {
 		log.Error(ctx, fmt.Errorf("cannot create type scheme: %w", err))
 		exitCode = 1

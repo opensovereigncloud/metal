@@ -4,8 +4,8 @@
 package controllers
 
 import (
-	ipam "github.com/onmetal/ipam/api/v1alpha1"
-	oob "github.com/onmetal/oob-operator/api/v1alpha1"
+	ipam "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
+	oob "github.com/ironcore-dev/oob/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metalv1alpha4 "github.com/ironcore-dev/metal/apis/metal/v1alpha4"

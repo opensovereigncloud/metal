@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
+	oobv1 "github.com/ironcore-dev/oob/api/v1alpha1"
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,9 +31,9 @@ type MachinePowerReconciler struct {
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=machines/finalizers,verbs=update
-// +kubebuilder:rbac:groups=onmetal.de,resources=oobs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=onmetal.de,resources=oobs/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=onmetal.de,resources=oobs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=ironcore.dev,resources=oobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ironcore.dev,resources=oobs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=ironcore.dev,resources=oobs/finalizers,verbs=update
 
 func (r *MachinePowerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("namespace", req.NamespacedName)

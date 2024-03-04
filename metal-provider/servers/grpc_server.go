@@ -20,7 +20,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	onmetalcomputev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
+	computev1alpha1 "github.com/ironcore-dev/ironcore/api/compute/v1alpha1"
 	irimachinev1alpha1 "github.com/ironcore-dev/ironcore/iri/apis/machine/v1alpha1"
 	irimetav1alpha1 "github.com/ironcore-dev/ironcore/iri/apis/meta/v1alpha1"
 
@@ -228,7 +228,7 @@ func (s *GRPCServer) CreateMachine(ctx context.Context, req *irimachinev1alpha1.
 	image := reqSpec.GetImage().GetImage()
 	ctx = log.WithValues(ctx, "class", class, "image", image)
 	log.Debug(ctx, "Getting machine class")
-	var machineClass onmetalcomputev1alpha1.MachineClass
+	var machineClass computev1alpha1.MachineClass
 	err := s.Get(ctx, client.ObjectKey{Name: class}, &machineClass)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
@@ -539,7 +539,7 @@ func (s *GRPCServer) Status(ctx context.Context, _ *irimachinev1alpha1.StatusReq
 				}
 
 				log.Debug(ctxx, "Getting machine class")
-				var machineClass onmetalcomputev1alpha1.MachineClass
+				var machineClass computev1alpha1.MachineClass
 				err = s.Get(ctx, client.ObjectKey{Name: sz}, &machineClass)
 				if err != nil {
 					if kerrors.IsNotFound(err) {

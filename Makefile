@@ -6,8 +6,6 @@ CRD_OPTIONS ?= "crd"
 # Docker image name for the mkdocs based local development setup
 IMAGE=metal-api/documentation
 
-GOPRIVATE ?= "github.com/onmetal/*"
-
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -173,8 +171,8 @@ KUSTOMIZE ?= $(LOCAL_BIN)/kustomize
 
 ## Tools versions
 ADDLICENSE_VERSION ?= v1.1.1
-CONTROLLER_GEN_VERSION ?= v0.13.0
-GOLANGCI_LINT_VERSION ?= v1.55.2
+CONTROLLER_GEN_VERSION ?= v0.14.0
+GOLANGCI_LINT_VERSION ?= v1.56.2
 GOIMPORTS_VERSION ?= v0.16.1
 ENVTEST_K8S_VERSION ?= 1.28.3
 CODE_GENERATOR_VERSION ?= v0.28.3

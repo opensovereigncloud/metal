@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
-	ipamctrl "github.com/onmetal/ipam/controllers"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
+	ipamctrl "github.com/ironcore-dev/ipam/controllers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -66,9 +66,10 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 
 	metalapiCRDPath := filepath.Join("..", "..", "config", "crd", "bases")
-	ipamCRDPath, err := switchespkg.GetCrdPath(ipamv1alpha1.Subnet{})
+	ipamCRDPath, err := switchespkg.GetCrdPath(ipamv1alpha1.Subnet{}, filepath.Join("..", "..", "go.mod"))
 	Expect(err).ToNot(HaveOccurred())
-	ipamWebhookPath, err := switchespkg.GetWebhookPath(ipamv1alpha1.Subnet{})
+	ipamWebhookPath, err := switchespkg.GetWebhookPath(
+		ipamv1alpha1.Subnet{}, filepath.Join("..", "..", "go.mod"))
 	Expect(err).ToNot(HaveOccurred())
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{

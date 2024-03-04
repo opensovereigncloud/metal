@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -50,10 +50,10 @@ type IPAMReconciler struct {
 
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets,verbs=get;list;watch;create;update;patch;delete;deletecollection
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=subnets/status,verbs=get
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips,verbs=get;list;watch;create;update;patch;delete;deletecollection
-// +kubebuilder:rbac:groups=ipam.onmetal.de,resources=ips/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips/status,verbs=get
 
 func (r *IPAMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	obj := &metalv1alpha4.NetworkSwitch{}

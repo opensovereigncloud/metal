@@ -7,8 +7,8 @@ package fake
 import (
 	"net/netip"
 
-	ipam "github.com/onmetal/ipam/api/v1alpha1"
-	oob "github.com/onmetal/oob-operator/api/v1alpha1"
+	ipam "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
+	oob "github.com/ironcore-dev/oob/api/v1alpha1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"

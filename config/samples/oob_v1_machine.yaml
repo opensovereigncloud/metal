@@ -1,8 +1,8 @@
-apiVersion: onmetal.de/v1alpha1
+apiVersion: ironcore.dev/v1alpha1
 kind: OOB
 metadata:
   name: a967954c-3475-11b2-a85c-84d8b4f8cd2d
-  namespace: onmetal
+  namespace: metal
 spec:
   power: "Off"
 status:

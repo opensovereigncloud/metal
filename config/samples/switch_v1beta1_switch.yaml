@@ -74,14 +74,14 @@ status:
   conditions: []
   subnets:
     - name: "some-subnet"
-      namespace: "onmetal"
+      namespace: "metal"
       cidr: "100.64.2.0/23"
       region:
         availabilityZone: "A"
         name: "eu-west"
   loopbackAddresses:
     - name: "loopback-ip"
-      namespace: "onmetal"
+      namespace: "metal"
       address: "100.64.11.1/32"
   interfaces:
     Ethernet0:
@@ -94,11 +94,11 @@ status:
       direction: "south"
       ip:
         - address: "192.168.100.1/24"
-          namespace: "onmetal"
+          namespace: "metal"
           name: "some-additional-ip"
         - address: "100.64.2.1/30"
           name: "ethernet0-computed-ip"
-          namespace: "onmetal"
+          namespace: "metal"
     Ethernet1:
       macAddress: "68215f47176e"
       fec: "rs"
@@ -110,7 +110,7 @@ status:
       ip:
         - address: "100.64.2.5/30"
           name: "ethernet1-computed-ip"
-          namespace: "onmetal"
+          namespace: "metal"
     Ethernet2:
       macAddress: "68215f47176e"
       fec: "rs"
@@ -122,7 +122,7 @@ status:
       ip:
         - address: "100.64.2.9/30"
           name: "ethernet2-computed-ip"
-          namespace: "onmetal"
+          namespace: "metal"
     Ethernet3:
       macAddress: "68215f47176e"
       fec: "rs"
@@ -134,6 +134,6 @@ status:
       ip:
         - address: "100.64.2.13/30"
           name: "ethernet3-computed-ip"
-          namespace: "onmetal"
+          namespace: "metal"
   totalPorts: 4
   switchPorts: 4

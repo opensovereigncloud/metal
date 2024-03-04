@@ -2,7 +2,7 @@
 
 ## Resources
 
-Switch operator manages two custom resources: [`SwitchConfig`](#switchconfig) and [`Switch`](#switch). Apart from that `Switch` objects reconciliation depends on other resources: `Inventory`, `Size` (both are parts of [metal-api](https://github.com/ironcore-dev/metal)) and `Subnet`, `IP` (both are parts of [IPAM](https://github.com/onmetal/ipam)). Switches also affect `Machines` (also part of [metal-api](https://github.com/ironcore-dev/metal)) in terms of obtaining IP addresses by machines.
+Switch operator manages two custom resources: [`SwitchConfig`](#switchconfig) and [`Switch`](#switch). Apart from that `Switch` objects reconciliation depends on other resources: `Inventory`, `Size` (both are parts of [metal-api](https://github.com/ironcore-dev/metal)) and `Subnet`, `IP` (both are parts of [IPAM](https://github.com/ironcore-dev/ipam)). Switches also affect `Machines` (also part of [metal-api](https://github.com/ironcore-dev/metal)) in terms of obtaining IP addresses by machines.
 
 ## SwitchConfig
 

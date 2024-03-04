@@ -10,7 +10,7 @@ import (
 
 	domain "github.com/ironcore-dev/metal/domain/reservation"
 
-	oobv1 "github.com/onmetal/oob-operator/api/v1alpha1"
+	oobv1 "github.com/ironcore-dev/oob/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

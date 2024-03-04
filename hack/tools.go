@@ -3,7 +3,6 @@
 
 //go:build tools
 
-
 package hack
 
 import (

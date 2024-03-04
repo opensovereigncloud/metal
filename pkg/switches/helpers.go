@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	gocidr "github.com/apparentlymart/go-cidr/cidr"
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
 	"github.com/pkg/errors"
 	"go4.org/netipx"
 	"golang.org/x/mod/modfile"
@@ -937,9 +937,9 @@ func ParseInterfaceNameFromSubnet(name string) string {
 
 // functions used in tests.
 
-func GetCrdPath(crdPackageScheme interface{}) (string, error) {
+func GetCrdPath(crdPackageScheme interface{}, goModPath string) (string, error) {
 	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
-	goModData, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
+	goModData, err := os.ReadFile(goModPath)
 	if err != nil {
 		return "", err
 	}
@@ -957,9 +957,9 @@ func GetCrdPath(crdPackageScheme interface{}) (string, error) {
 	return filepath.Join(build.Default.GOPATH, "pkg", "mod", globalModulePath, "config", "crd", "bases"), nil
 }
 
-func GetWebhookPath(crdPackageScheme interface{}) (string, error) {
+func GetWebhookPath(crdPackageScheme interface{}, goModPath string) (string, error) {
 	globalPackagePath := reflect.TypeOf(crdPackageScheme).PkgPath()
-	goModData, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
+	goModData, err := os.ReadFile(goModPath)
 	if err != nil {
 		return "", err
 	}

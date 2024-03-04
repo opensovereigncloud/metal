@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	ipamv1alpha1 "github.com/onmetal/ipam/api/v1alpha1"
+	ipamv1alpha1 "github.com/ironcore-dev/ipam/api/ipam/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/utils/ptr"
@@ -206,16 +206,16 @@ func TestRequestIPs(t *testing.T) {
 
 func TestGetCrdPath(t *testing.T) {
 	t.Parallel()
-	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.26/config/crd/bases")
-	computed, err := GetCrdPath(ipamv1alpha1.Subnet{})
+	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/ironcore-dev/ipam@v0.1.0/config/crd/bases")
+	computed, err := GetCrdPath(ipamv1alpha1.Subnet{}, filepath.Join("..", "..", "go.mod"))
 	assert.Nil(t, err)
 	assert.Equal(t, expected, computed)
 }
 
 func TestGetWebhookPath(t *testing.T) {
 	t.Parallel()
-	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/onmetal/ipam@v0.0.26/config/webhook")
-	computed, err := GetWebhookPath(ipamv1alpha1.Subnet{})
+	expected := filepath.Join(build.Default.GOPATH, "pkg/mod/github.com/ironcore-dev/ipam@v0.1.0/config/webhook")
+	computed, err := GetWebhookPath(ipamv1alpha1.Subnet{}, filepath.Join("..", "..", "go.mod"))
 	assert.Nil(t, err)
 	assert.Equal(t, expected, computed)
 }
