@@ -3,7 +3,7 @@
 # Metal-API
 [![REUSE status](https://api.reuse.software/badge/github.com/ironcore-dev/metal)](https://api.reuse.software/info/github.com/ironcore-dev/metal)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-[![GitHub license](https://img.shields.io/badge/license-APACHE-red.svg?style=flat-square)](https://github.com/ironcore-dev/metal/blob/main/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-APACHE-blue.svg?style=flat-square)](https://github.com/ironcore-dev/metal/blob/main/LICENSE)
 
 Stack of applications to work with baremetal servers and providing them to the metal-api customer.
 
