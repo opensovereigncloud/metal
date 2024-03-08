@@ -15,8 +15,3 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
-  - package-ecosystem: "docker"
-    directory: "/metal-provider"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 10
