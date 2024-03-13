@@ -1,11 +1,11 @@
-apiVersion: ipam.ironcore.dev/v1alpha1
+apiVersion: ipam.metal.ironcore.dev/v1alpha1
 kind: IP
 metadata:
   name: leaf-1-loopback-v4
   namespace: ironcore
   labels:
-    ipam.ironcore.dev/object-purpose: "loopback"
-    ipam.ironcore.dev/object-owner: "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5"
+    ipam.metal.ironcore.dev/object-purpose: "loopback"
+    ipam.metal.ironcore.dev/object-owner: "b9a234a5-416b-3d49-a4f8-65b6f30c8ee5"
 spec:
   subnet:
     name: loopbacks-v4

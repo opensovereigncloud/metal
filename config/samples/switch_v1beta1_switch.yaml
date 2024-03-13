@@ -28,13 +28,13 @@ spec:
     southSubnets:
       labelSelector:
         matchLabels:
-          ipam.ironcore.dev/object-purpose: "south-subnet"
-          ipam.ironcore.dev/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+          ipam.metal.ironcore.dev/object-purpose: "south-subnet"
+          ipam.metal.ironcore.dev/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
     loopbackAddresses:
       labelSelector:
         matchLabels:
-          ipam.ironcore.dev/object-purpose: "loopback"
-          ipam.ironcore.dev/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
+          ipam.metal.ironcore.dev/object-purpose: "loopback"
+          ipam.metal.ironcore.dev/object-owner: "a177382d-a3b4-3ecd-97a4-01cc15e749e4"
   interfaces:
     defaults:
       lanes: 4

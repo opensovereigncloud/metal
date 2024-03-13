@@ -142,7 +142,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ipam.ironcore.dev
+  - ipam.metal.ironcore.dev
   resources:
   - ips
   verbs:
@@ -155,13 +155,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ipam.ironcore.dev
+  - ipam.metal.ironcore.dev
   resources:
   - ips/status
   verbs:
   - get
 - apiGroups:
-  - ipam.ironcore.dev
+  - ipam.metal.ironcore.dev
   resources:
   - subnets
   verbs:
@@ -174,7 +174,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ipam.ironcore.dev
+  - ipam.metal.ironcore.dev
   resources:
   - subnets/status
   verbs:

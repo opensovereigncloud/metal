@@ -19,24 +19,24 @@ spec:
     carrierSubnets:
       labelSelector:
         matchLabels:
-          ipam.ironcore.dev/object-purpose: "switch-carrier"
+          ipam.metal.ironcore.dev/object-purpose: "switch-carrier"
     loopbackSubnets:
       labelSelector:
         matchLabels:
-          ipam.ironcore.dev/object-purpose: "switch-loopbacks"
+          ipam.metal.ironcore.dev/object-purpose: "switch-loopbacks"
     southSubnets:
       labelSelector:
         matchLabels:
-          ipam.ironcore.dev/object-purpose: "south-subnet"
+          ipam.metal.ironcore.dev/object-purpose: "south-subnet"
       fieldSelector:
-        labelKey: "ipam.ironcore.dev/object-owner"
+        labelKey: "ipam.metal.ironcore.dev/object-owner"
         fieldRef:
           fieldPath: "metadata.name"
     loopbackAddresses:
       labelSelector:
         matchLabels:
-          ipam.ironcore.dev/object-purpose: "loopback"
+          ipam.metal.ironcore.dev/object-purpose: "loopback"
       fieldSelector:
-        labelKey: "ipam.ironcore.dev/object-owner"
+        labelKey: "ipam.metal.ironcore.dev/object-owner"
         fieldRef:
           fieldPath: "metadata.name"

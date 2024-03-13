@@ -1,10 +1,10 @@
-apiVersion: ipam.ironcore.dev/v1alpha1
+apiVersion: ipam.metal.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: switch-ranges-v6
   namespace: ironcore
   labels:
-    ipam.ironcore.dev/object-purpose: "switch-carrier"
+    ipam.metal.ironcore.dev/object-purpose: "switch-carrier"
 spec:
   cidr: "fd00:afc0:e014::/52"
   network:

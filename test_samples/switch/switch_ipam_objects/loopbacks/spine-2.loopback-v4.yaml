@@ -1,11 +1,11 @@
-apiVersion: ipam.ironcore.dev/v1alpha1
+apiVersion: ipam.metal.ironcore.dev/v1alpha1
 kind: IP
 metadata:
   name: spine-2-loopback-v4
   namespace: ironcore
   labels:
-    ipam.ironcore.dev/object-purpose: "loopback"
-    ipam.ironcore.dev/object-owner: "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b"
+    ipam.metal.ironcore.dev/object-purpose: "loopback"
+    ipam.metal.ironcore.dev/object-owner: "92b9de0f-19f2-3f3b-95d0-fb668b1d3d3b"
 spec:
   subnet:
     name: loopbacks-v4

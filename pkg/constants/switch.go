@@ -36,10 +36,10 @@ const (
 	SwitchTypeLabel        string = "metal.ironcore.dev/type"
 	SwitchConfigLayerLabel string = "metal.ironcore.dev/layer"
 
-	IPAMObjectPurposeLabel     string = "ipam.ironcore.dev/object-purpose"
-	IPAMObjectOwnerLabel       string = "ipam.ironcore.dev/object-owner"
-	IPAMObjectGeneratedByLabel string = "ipam.ironcore.dev/generated-by"
-	IPAMObjectNICNameLabel     string = "ipam.ironcore.dev/interface-name"
+	IPAMObjectPurposeLabel     string = "ipam.metal.ironcore.dev/object-purpose"
+	IPAMObjectOwnerLabel       string = "ipam.metal.ironcore.dev/object-owner"
+	IPAMObjectGeneratedByLabel string = "ipam.metal.ironcore.dev/generated-by"
+	IPAMObjectNICNameLabel     string = "ipam.metal.ironcore.dev/interface-name"
 
 	SizeLabel string = "metal.ironcore.dev/size-switch"
 

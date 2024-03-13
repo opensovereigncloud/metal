@@ -1,10 +1,10 @@
-apiVersion: ipam.ironcore.dev/v1alpha1
+apiVersion: ipam.metal.ironcore.dev/v1alpha1
 kind: Subnet
 metadata:
   name: loopbacks-v4
   namespace: ironcore
   labels:
-    ipam.ironcore.dev/object-purpose: "switch-loopbacks"
+    ipam.metal.ironcore.dev/object-purpose: "switch-loopbacks"
 spec:
   cidr: "100.64.255.0/24"
   parentSubnet:

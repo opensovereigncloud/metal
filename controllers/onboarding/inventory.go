@@ -31,10 +31,10 @@ func NewInventoryOnboardingReconciler(
 	}
 }
 
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips/status,verbs=get
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=ips,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=ips/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=subnets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=subnets/status,verbs=get
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InventoryOnboardingReconciler) SetupWithManager(

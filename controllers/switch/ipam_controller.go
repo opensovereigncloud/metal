@@ -50,10 +50,10 @@ type IPAMReconciler struct {
 
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=metal.ironcore.dev,resources=networkswitches/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets,verbs=get;list;watch;create;update;patch;delete;deletecollection
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=subnets/status,verbs=get
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips,verbs=get;list;watch;create;update;patch;delete;deletecollection
-// +kubebuilder:rbac:groups=ipam.ironcore.dev,resources=ips/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=subnets,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=subnets/status,verbs=get
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=ips,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=ipam.metal.ironcore.dev,resources=ips/status,verbs=get
 
 func (r *IPAMReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	obj := &metalv1alpha4.NetworkSwitch{}

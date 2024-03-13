@@ -10,10 +10,10 @@ The complete list of custom resources switches are directly depend on is the fol
 - Group: `metal.ironcore.dev`
   Version: `v1beta1`
   Kind: `SwitchConfig`
-- Group: `ipam.ironcore.dev`
+- Group: `ipam.metal.ironcore.dev`
   Version: `v1alpha1`
   Kind: `Subnet`
-- Group: `ipam.ironcore.dev`
+- Group: `ipam.metal.ironcore.dev`
   Version: `v1alpha1`
   Kind: `IP`
 
@@ -22,7 +22,7 @@ Switches are indirectly depended on the following resources:
 - Group: `metal.ironcore.dev`
   Version: `v1alpha1`
   Kind: `Size`
-- Group: `ipam.ironcore.dev`
+- Group: `ipam.metal.ironcore.dev`
   Version: `v1alpha1`
   Kind: `Network`
 
@@ -80,25 +80,25 @@ Here is an example of `Size` object:
         carrierSubnets:
           labelSelector:
             matchLabels:
-              ipam.ironcore.dev/object-purpose: "switch-carrier"
+              ipam.metal.ironcore.dev/object-purpose: "switch-carrier"
         loopbackSubnets:
           labelSelector:
             matchLabels:
-              ipam.ironcore.dev/object-purpose: "switch-loopbacks"
+              ipam.metal.ironcore.dev/object-purpose: "switch-loopbacks"
         southSubnets:
           labelSelector:
             matchLabels:
-              ipam.ironcore.dev/object-purpose: "south-subnet"
+              ipam.metal.ironcore.dev/object-purpose: "south-subnet"
           fieldSelector:
-            labelKey: "ipam.ironcore.dev/object-owner"
+            labelKey: "ipam.metal.ironcore.dev/object-owner"
             fieldRef:
               fieldPath: "metadata.name"
         loopbackAddresses:
           labelSelector:
             matchLabels:
-              ipam.ironcore.dev/object-purpose: "loopback"
+              ipam.metal.ironcore.dev/object-purpose: "loopback"
           fieldSelector:
-            labelKey: "ipam.ironcore.dev/object-owner"
+            labelKey: "ipam.metal.ironcore.dev/object-owner"
             fieldRef:
               fieldPath: "metadata.name"
     ```
@@ -166,8 +166,8 @@ Opposite to "south" interfaces, all "north" interfaces will inherit port paramet
 
 IPAM objects have to have proper labels, so the controller can get these objects and use them to configure switches. Labels could be either defined by selectors in `.spec.ipam` fields of `SwitchConfig` and `Switch` objects or default values could be used:
 
-- **"ipam.ironcore.dev/object-purpose"** with values **"south-subnet"** (for `Subnet` object) or **"loopback"** (for `IP` object);
-- **"ipam.ironcore.dev/object-owner"** with the switch object name as value;
+- **"ipam.metal.ironcore.dev/object-purpose"** with values **"south-subnet"** (for `Subnet` object) or **"loopback"** (for `IP` object);
+- **"ipam.metal.ironcore.dev/object-owner"** with the switch object name as value;
 
 Pay attention that labelSelector and fieldSelector in `.spec.ipam` configuration have to match labels of `Subnet` and `IP` objects which supposed to be used.
 

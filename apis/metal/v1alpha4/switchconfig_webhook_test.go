@@ -52,12 +52,12 @@ var _ = Describe("SwitchConfig Webhook", func() {
 					IPAM: &GeneralIPAMSpec{
 						CarrierSubnets: &IPAMSelectionSpec{
 							LabelSelector: &v1.LabelSelector{
-								MatchLabels: map[string]string{"ipam.ironcore.dev/object-purpose": "switch-carrier"},
+								MatchLabels: map[string]string{"ipam.metal.ironcore.dev/object-purpose": "switch-carrier"},
 							},
 						},
 						LoopbackSubnets: &IPAMSelectionSpec{
 							LabelSelector: &v1.LabelSelector{
-								MatchLabels: map[string]string{"ipam.ironcore.dev/object-purpose": "switch-loopbacks"},
+								MatchLabels: map[string]string{"ipam.metal.ironcore.dev/object-purpose": "switch-loopbacks"},
 							},
 						},
 					},
